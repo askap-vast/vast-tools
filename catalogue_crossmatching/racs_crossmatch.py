@@ -91,13 +91,15 @@ def make_images(field, imgpath, size):
 
 def get_selavy_info(field, selavypath, crossmatch_radius):
     try:
-        #selavy_info = ascii.read(selavypath)
         selavy_info = table.Table.read(selavypath,format='ascii')
     except:
         return
+        
+    header, units = selavy_info.meta['comments']
+    selavy_info.rename_columns(selavy_info.colnames, header.split()[:-1])
     
-    selavy_ra = selavy_info['col4']
-    selavy_dec = selavy_info['col5']
+    selavy_ra = selavy_info['ra_hms_cont']
+    selavy_dec = selavy_info['dec_dms_cont']
     
     selavy_sc = SkyCoord(selavy_ra, selavy_dec, unit=(u.hourangle, u.deg))
     
