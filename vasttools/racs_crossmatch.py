@@ -18,12 +18,16 @@ from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
 
 import warnings
 import logging
+import os
 
 warnings.filterwarnings('ignore', category=AstropyWarning, append=True)
 warnings.filterwarnings('ignore', category=AstropyDeprecationWarning, append=True)
 
 
-def find_field(fields_csv, cat_coords, max_sep):
+def find_field(cat_coords, max_sep, fields_csv=None):
+    if fields_csv is None:
+        fields_csv = os.path.join(os.path.split(__file__)[0],'racs_test4.csv')
+
     beam_info = ascii.read(fields_csv, format='csv')
     
     beam_direction = SkyCoord(beam_info["RA_HMS"], beam_info["DEC_DMS"], unit=(u.hourangle, u.deg))
@@ -174,7 +178,7 @@ def search_catalogue(cat_table, imsize, crossmatch_radius, IMGFOLDER=None, IMGNA
 if __name__ == '__main__':
     test_cat = load_cat()
     cat_coords = SkyCoord(test_cat['ra'], test_cat['dec'], unit=(u.hourangle, u.deg))
-    match_table = find_field('racs_test4.csv', cat_coords, 1*u.deg)
+    match_table = find_field(cat_coords, 1*u.deg)
 
     cat_table = add_RACS_info(test_cat, match_table)
 
