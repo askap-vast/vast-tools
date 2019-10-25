@@ -23,7 +23,7 @@ warnings.filterwarnings('ignore', category=AstropyDeprecationWarning, append=Tru
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
 from matplotlib.collections import PatchCollection
-from astropy.visualization import ZScaleInterval,ImageNormalize
+from astropy.visualization import ZScaleInterval,ImageNormalize, simple_norm
 
 class Fields:
     def __init__(self, fname):
@@ -106,34 +106,74 @@ class Source:
             print("No selavy catalogue match. Nearest source %.0f arcsec away."%(match_sep.arcsec))
             
         
+    def write_ann(self, outfile):
+        outfile=outfile.replace(".fits", ".ann")
+        with open(outfile, 'w') as f:
+            f.write("COORD W\n")
+            f.write("PA SKY\n")
+            f.write("COLOR GREEN\n")
+            f.write("FONT hershey14\n")
+            for i,row in self.selavy_cat_cut.iterrows():
+                ra = row["ra_deg_cont"]
+                dec = row["dec_deg_cont"]
+                f.write("ELLIPSE {} {} {} {} {}\n".format(ra, dec,
+                float(row["maj_axis"])/3600./2., float(row["min_axis"])/3600./2., float(row["pos_ang"])))
+                f.write("TEXT {} {} {}\n".format(ra, dec, self._remove_sbid(row["island_id"])))
+                
+        print("Wrote annotation file {}.".format(outfile))
+        
+    def write_reg(self, outfile):
+        outfile=outfile.replace(".fits", ".reg")
+        with open(outfile, 'w') as f:
+            f.write("# Region file format: DS9 version 4.0\n")
+            f.write("global color=green font=\"helvetica 10 normal\" select=1 highlite=1 edit=1 move=1 delete=1 include=1 fixed=0 source=1\n")
+            f.write("fk5\n")
+            for i,row in self.selavy_cat_cut.iterrows():
+                ra = row["ra_deg_cont"]
+                dec = row["dec_deg_cont"]
+                f.write("ellipse({} {} {} {} {})\n".format(ra, dec,
+                float(row["maj_axis"])/3600./2., float(row["min_axis"])/3600./2., float(row["pos_ang"])+90.))
+                f.write("text({} {} \"{}\")\n".format(ra, dec, self._remove_sbid(row["island_id"])))
+                
+        print("Wrote region file {}.".format(outfile))
+    
     def _remove_sbid(self, island):
         temp = island.split("_")
         new_val = "_".join(temp[-2:])
         return new_val
     
+    def filter_selavy_components(self, src_coord, imsize):
+        #Filter out selavy components outside field of image
+        seps = src_coord.separation(self.selavy_sc)
+        mask = seps <= imsize/2. #I think cutout2d angle means the width of the image, not a radius hence /2
+        #drop the ones we don't need
+        self.selavy_cat_cut = self.selavy_cat[mask].reset_index(drop=True)
+    
     def make_png(self, src_coord, imsize, selavy, contrast, outfile, colorbar):
         #image has already been loaded to get the fits
         outfile = outfile.replace(".fits", ".png")
-        fig = plt.figure(figsize=(8,8))
-        #convert data to mJy
+        #convert data to mJy in case colorbar is used.
         cutout_data = self.cutout.data*1000.
+        #create figure
+        fig = plt.figure(figsize=(8,8))
         ax = fig.add_subplot(1,1,1, projection=self.cutout.wcs)
+        #Get the Image Normalisation from zscale, user contrast.
         self.img_norms = ImageNormalize(cutout_data, interval=ZScaleInterval(contrast=contrast))
+        # self.img_norms = simple_norm(cutout_data, 'sqrt')
         im = ax.imshow(cutout_data, norm=self.img_norms, cmap="gray_r")
         if selavy:
-            #Filter out selavy
-            seps = src_coord.separation(self.selavy_sc)
-            mask = seps <= imsize/2.
-            selavy_cat_cut = self.selavy_cat[mask].reset_index(drop=True)
-            ww = selavy_cat_cut["maj_axis"].astype(float)/3600.
-            hh = selavy_cat_cut["min_axis"].astype(float)/3600.
-            aa = selavy_cat_cut["pos_ang"].astype(float)+90.
-            x = selavy_cat_cut["ra_deg_cont"].astype(float)
-            y = selavy_cat_cut["dec_deg_cont"].astype(float)
-            island_names = selavy_cat_cut["island_id"].apply(self._remove_sbid)
-            patches = [Ellipse((x[i], y[i]), ww[i], hh[i], angle=aa[i]) for i in range(len(x))]
+            #define ellipse properties for clarity, selavy cut will have already been created.
+            ww = self.selavy_cat_cut["maj_axis"].astype(float)/3600.
+            hh = self.selavy_cat_cut["min_axis"].astype(float)/3600.
+            aa = self.selavy_cat_cut["pos_ang"].astype(float)+90.
+            x = self.selavy_cat_cut["ra_deg_cont"].astype(float)
+            y = self.selavy_cat_cut["dec_deg_cont"].astype(float)
+            island_names = self.selavy_cat_cut["island_id"].apply(self._remove_sbid)
+            #Create ellipses, collect them, add to axis.
+            patches = [Ellipse((x[i], y[i]), ww[i], hh[i], aa[i]) for i in range(len(x))]
             collection = PatchCollection(patches, fc="None", ec="C1", ls="--", lw=2, transform=ax.get_transform('world'))
             ax.add_collection(collection)
+            #Add island labels, haven't found a better way other than looping at the moment.
             for i,val in enumerate(patches):
                 ax.annotate(island_names[i], val.center, xycoords=ax.get_transform('world'), annotation_clip=True, color="C0", weight="bold")
         lon = ax.coords[0]
@@ -152,7 +192,7 @@ parser.add_argument('coord', metavar="\"HH:MM:SS [+/-]DD:MM:SS\"", type=str, hel
 
 parser.add_argument('--imsize', type=float, help='Edge size of the postagestamp in arcmin', default=30.)
 parser.add_argument('--maxsep', type=float, help='Maximum separation of source from beam centre')
-parser.add_argument('--outfile', type=float, help='Name of the output file (or prefix for multiple)')
+parser.add_argument('--outfile', type=str, help='Name of the output file (or prefix for multiple)')
 parser.add_argument('--crossmatch_radius', type=float, help='Crossmatch radius in arcseconds')
 parser.add_argument('--use-combined', action="store_true", help='Use the combined mosaics instead.')
 parser.add_argument('--img_folder', type=float, help='Path to folder where images are stored')
@@ -161,6 +201,8 @@ parser.add_argument('--create-png', action="store_true", help='Create a png of t
 parser.add_argument('--png-selavy-overlay', action="store_true", help='Overlay selavy components onto the png image.')
 parser.add_argument('--png-zscale-contrast', type=float, default=0.2, help='Select contrast to use for zscale.')
 parser.add_argument('--png-colorbar', action="store_true", help='Add a colorbar to the png plot.')
+parser.add_argument('--ann', action="store_true", help='Create a kvis annotation file of the components.')
+parser.add_argument('--reg', action="store_true", help='Create a DS9 region file of the components.')
 
 
 args=parser.parse_args()
@@ -221,6 +263,11 @@ elif len(uniq_fields) == 1:
     source = Source(field_name,SBID, combined=args.use_combined)
     source.make_postagestamp(src_coord, imsize, "%s.fits"%(outfile_prefix))
     source.extract_source(src_coord, crossmatch_radius)
+    source.filter_selavy_components(src_coord, imsize)
+    if args.ann:
+        source.write_ann(outfile)
+    if args.reg:
+        source.write_reg(outfile)
     if args.create_png:
         source.make_png(src_coord, imsize, args.png_selavy_overlay, args.png_zscale_contrast, outfile_prefix, args.png_colorbar)
 
@@ -241,6 +288,12 @@ else:
         source = Source(field_name,SBID,combined=args.use_combined)
         source.make_postagestamp(src_coord, imsize, outfile)
         source.extract_source(src_coord, crossmatch_radius)
+        #not ideal but line below has to be run after those above
+        source.filter_selavy_components(src_coord, imsize)
+        if args.ann:
+            source.write_ann(outfile)
+        if args.reg:
+            source.write_reg(outfile)
         if args.create_png:
             source.make_png(src_coord, imsize, args.png_selavy_overlay, args.png_zscale_contrast, outfile, args.png_colorbar)
 
