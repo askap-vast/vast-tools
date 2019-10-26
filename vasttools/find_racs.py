@@ -145,11 +145,11 @@ class Source:
     def filter_selavy_components(self, src_coord, imsize):
         #Filter out selavy components outside field of image
         seps = src_coord.separation(self.selavy_sc)
-        mask = seps <= imsize/2. #I think cutout2d angle means the width of the image, not a radius hence /2
+        mask = seps <= imsize/1.4 #I think cutout2d angle means the width of the image, not a radius hence /2
         #drop the ones we don't need
         self.selavy_cat_cut = self.selavy_cat[mask].reset_index(drop=True)
     
-    def make_png(self, src_coord, imsize, selavy, contrast, outfile, colorbar):
+    def make_png(self, src_coord, imsize, selavy, zscale, contrast, outfile, colorbar, pa_corr):
         #image has already been loaded to get the fits
         outfile = outfile.replace(".fits", ".png")
         #convert data to mJy in case colorbar is used.
@@ -158,21 +158,25 @@ class Source:
         fig = plt.figure(figsize=(8,8))
         ax = fig.add_subplot(1,1,1, projection=self.cutout.wcs)
         #Get the Image Normalisation from zscale, user contrast.
-        self.img_norms = ImageNormalize(cutout_data, interval=ZScaleInterval(contrast=contrast))
-        # self.img_norms = simple_norm(cutout_data, 'sqrt')
+        if zscale:
+            self.img_norms = ImageNormalize(cutout_data, interval=ZScaleInterval(contrast=contrast))
+        else:
+            self.img_norms = simple_norm(cutout_data, 'linear')
         im = ax.imshow(cutout_data, norm=self.img_norms, cmap="gray_r")
         if selavy:
+            ax.set_autoscale_on(False)
             #define ellipse properties for clarity, selavy cut will have already been created.
             ww = self.selavy_cat_cut["maj_axis"].astype(float)/3600.
             hh = self.selavy_cat_cut["min_axis"].astype(float)/3600.
-            aa = self.selavy_cat_cut["pos_ang"].astype(float)+90.
+            aa = self.selavy_cat_cut["pos_ang"].astype(float)
             x = self.selavy_cat_cut["ra_deg_cont"].astype(float)
             y = self.selavy_cat_cut["dec_deg_cont"].astype(float)
             island_names = self.selavy_cat_cut["island_id"].apply(self._remove_sbid)
             #Create ellipses, collect them, add to axis.
-            patches = [Ellipse((x[i], y[i]), ww[i], hh[i], aa[i]) for i in range(len(x))]
+            #Also where correction is applied to PA to account for how selavy defines it vs matplotlib
+            patches = [Ellipse((x[i], y[i]), ww[i]*1.1, hh[i]*1.1, 90.+(180.-aa[i])+pa_corr) for i in range(len(x))]
             collection = PatchCollection(patches, fc="None", ec="C1", ls="--", lw=2, transform=ax.get_transform('world'))
-            ax.add_collection(collection)
+            ax.add_collection(collection, autolim=False)
             #Add island labels, haven't found a better way other than looping at the moment.
             for i,val in enumerate(patches):
                 ax.annotate(island_names[i], val.center, xycoords=ax.get_transform('world'), annotation_clip=True, color="C0", weight="bold")
@@ -184,6 +188,7 @@ class Source:
             cbar = fig.colorbar(im)
             cbar.set_label('mJy')
         plt.savefig(outfile, bbox_inches="tight")
+        print("Saved {}".format(outfile))
         plt.clf()
 
 parser=argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -199,8 +204,10 @@ parser.add_argument('--img_folder', type=float, help='Path to folder where image
 parser.add_argument('--cat_folder', type=float, help='Path to folder where selavy catalogues are stored')
 parser.add_argument('--create-png', action="store_true", help='Create a png of the fits cutout.')
 parser.add_argument('--png-selavy-overlay', action="store_true", help='Overlay selavy components onto the png image.')
-parser.add_argument('--png-zscale-contrast', type=float, default=0.2, help='Select contrast to use for zscale.')
+parser.add_argument('--png-use-zscale', action="store_true", help='Select ZScale normalisation (default is \'sqrt\').')
+parser.add_argument('--png-zscale-contrast', type=float, default=0.1, help='Select contrast to use for zscale.')
 parser.add_argument('--png-colorbar', action="store_true", help='Add a colorbar to the png plot.')
+parser.add_argument('--png-ellipse-pa-corr', type=float, help='Correction to apply to ellipse position angle if needed (in deg). Angle is from x-axis from left to right.', default=0.0)
 parser.add_argument('--ann', action="store_true", help='Create a kvis annotation file of the components.')
 parser.add_argument('--reg', action="store_true", help='Create a DS9 region file of the components.')
 
@@ -257,11 +264,11 @@ if len(uniq_fields) == 0:
 elif len(uniq_fields) == 1:
     field_name = src_fields['FIELD_NAME'][0]
     SBID = src_fields['SBID'][0]
-    
+    outfile = "%s.fits"%(outfile_prefix)
     print("Source in %s %s"%(SBID, field_name))
     
     source = Source(field_name,SBID, combined=args.use_combined)
-    source.make_postagestamp(src_coord, imsize, "%s.fits"%(outfile_prefix))
+    source.make_postagestamp(src_coord, imsize, outfile)
     source.extract_source(src_coord, crossmatch_radius)
     source.filter_selavy_components(src_coord, imsize)
     if args.ann:
@@ -269,7 +276,7 @@ elif len(uniq_fields) == 1:
     if args.reg:
         source.write_reg(outfile)
     if args.create_png:
-        source.make_png(src_coord, imsize, args.png_selavy_overlay, args.png_zscale_contrast, outfile_prefix, args.png_colorbar)
+        source.make_png(src_coord, imsize, args.png_selavy_overlay, args.png_use_zscale, args.png_zscale_contrast, outfile, args.png_colorbar, args.png_ellipse_pa_corr)
 
 else:
     completed_fields = []
@@ -295,7 +302,7 @@ else:
         if args.reg:
             source.write_reg(outfile)
         if args.create_png:
-            source.make_png(src_coord, imsize, args.png_selavy_overlay, args.png_zscale_contrast, outfile, args.png_colorbar)
+            source.make_png(src_coord, imsize, args.png_selavy_overlay, args.png_use_zscale, args.png_zscale_contrast, outfile, args.png_colorbar, args.png_ellipse_pa_corr)
 
         completed_fields.append(field_name)
 
