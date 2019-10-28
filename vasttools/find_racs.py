@@ -281,6 +281,7 @@ else:
 if args.stokesv and not args.use_combined:
     print("Stokes V can only be used with combined mosaics at the moment.")
     print ("Run again with the option '--use-combined'.")
+    sys.exit()
 
 IMAGE_FOLDER = args.img_folder
 if not IMAGE_FOLDER:
