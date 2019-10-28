@@ -36,7 +36,7 @@ class Fields:
         return self.fields[within_beam]
 
 class Source:
-    def __init__(self, field, sbid, combined=False):
+    def __init__(self, field, sbid, combined=False, stokesv=False):
         self.field = field
         self.sbid = sbid
         
@@ -48,9 +48,13 @@ class Source:
         
         if combined:
             self.selavyname = '%s-selavy.components.txt'%(self.field)
+            if args.stokesv:
+                self.nselavyname = 'n%s-selavy.components.txt'%(self.field)
         else:
             self.selavyname = 'selavy-image.i.SB%s.cont.%s.linmos.taylor.0.restored.components.txt'%(self.sbid, self.field)
         self.selavypath = os.path.join(SELAVY_FOLDER, self.selavyname)
+        if args.stokesv:
+            self.nselavypath = os.path.join(SELAVY_FOLDER, self.nselavyname)
         
     
     def make_postagestamp(self, src_coord, size, outfile):
@@ -73,7 +77,7 @@ class Source:
         # Write the cutout to a new FITS file
         self.hdu.writeto(outfile, overwrite=True)
         
-    def extract_source(self, src_coord, crossmatch_radius):
+    def extract_source(self, src_coord, crossmatch_radius, stokesv):
         try:
             with open(self.selavypath, "r") as f:
                 lines=f.readlines()
@@ -82,6 +86,21 @@ class Source:
             data=[i.split() for i in lines[2:]]
 
             self.selavy_cat=pd.DataFrame(data, columns=columns)
+            
+            if stokesv:
+                with open(self.nselavypath, "r") as f:
+                    lines=f.readlines()
+
+                columns=lines[0].split()[1:-1]
+                data=[i.split() for i in lines[2:]]
+                
+                nselavy_cat=pd.DataFrame(data, columns=columns)
+                
+                nselavy_cat["island_id"]=["n{}".format(i) for i in nselavy_cat["island_id"]]
+                nselavy_cat["component_id"]=["n{}".format(i) for i in nselavy_cat["component_id"]]
+
+                self.selavy_cat = self.selavy_cat.append(nselavy_cat)
+                
         except:
             print('Selavy image does not exist')
             return
@@ -108,17 +127,24 @@ class Source:
         
     def write_ann(self, outfile):
         outfile=outfile.replace(".fits", ".ann")
+        neg = False
         with open(outfile, 'w') as f:
             f.write("COORD W\n")
             f.write("PA SKY\n")
             f.write("COLOR GREEN\n")
             f.write("FONT hershey14\n")
             for i,row in self.selavy_cat_cut.iterrows():
+                if row["island_id"].startswith("n"):
+                    neg = True
+                    f.write("COLOR RED\n")
                 ra = row["ra_deg_cont"]
                 dec = row["dec_deg_cont"]
                 f.write("ELLIPSE {} {} {} {} {}\n".format(ra, dec,
                 float(row["maj_axis"])/3600./2., float(row["min_axis"])/3600./2., float(row["pos_ang"])))
                 f.write("TEXT {} {} {}\n".format(ra, dec, self._remove_sbid(row["island_id"])))
+                if neg:
+                    f.write("COLOR GREEN\n")
+                    neg = False
                 
         print("Wrote annotation file {}.".format(outfile))
         
@@ -129,17 +155,23 @@ class Source:
             f.write("global color=green font=\"helvetica 10 normal\" select=1 highlite=1 edit=1 move=1 delete=1 include=1 fixed=0 source=1\n")
             f.write("fk5\n")
             for i,row in self.selavy_cat_cut.iterrows():
+                if row["island_id"].startswith("n"):
+                    color = "red"
+                else:
+                    color = "green"
                 ra = row["ra_deg_cont"]
                 dec = row["dec_deg_cont"]
-                f.write("ellipse({} {} {} {} {})\n".format(ra, dec,
-                float(row["maj_axis"])/3600./2., float(row["min_axis"])/3600./2., float(row["pos_ang"])+90.))
-                f.write("text({} {} \"{}\")\n".format(ra, dec, self._remove_sbid(row["island_id"])))
+                f.write("ellipse({} {} {} {} {}) # color={}\n".format(ra, dec,
+                float(row["maj_axis"])/3600./2., float(row["min_axis"])/3600./2., float(row["pos_ang"])+90., color))
+                f.write("text({} {} \"{}\") # color={}\n".format(ra, dec, self._remove_sbid(row["island_id"]), color))
                 
         print("Wrote region file {}.".format(outfile))
     
     def _remove_sbid(self, island):
         temp = island.split("_")
         new_val = "_".join(temp[-2:])
+        if temp[0].startswith("n"):
+            new_val="n"+new_val
         return new_val
     
     def filter_selavy_components(self, src_coord, imsize):
@@ -174,8 +206,9 @@ class Source:
             island_names = self.selavy_cat_cut["island_id"].apply(self._remove_sbid)
             #Create ellipses, collect them, add to axis.
             #Also where correction is applied to PA to account for how selavy defines it vs matplotlib
+            colors = ["C2" if c.startswith("n") else "C1" for c in island_names]
             patches = [Ellipse((x[i], y[i]), ww[i]*1.1, hh[i]*1.1, 90.+(180.-aa[i])+pa_corr) for i in range(len(x))]
-            collection = PatchCollection(patches, fc="None", ec="C1", ls="--", lw=2, transform=ax.get_transform('world'))
+            collection = PatchCollection(patches, fc="None", ec=colors, ls="--", lw=2, transform=ax.get_transform('world'))
             ax.add_collection(collection, autolim=False)
             #Add island labels, haven't found a better way other than looping at the moment.
             for i,val in enumerate(patches):
@@ -193,8 +226,9 @@ class Source:
 
 parser=argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-parser.add_argument('coord', metavar="\"HH:MM:SS [+/-]DD:MM:SS\"", type=str, help='Right Ascension and Declination in formnat "HH:MM:SS [+/-]DD:MM:SS", in quotes. E.g. "12:00:00 -20:00:00".')
-
+parser.add_argument('coord', metavar="\"HH:MM:SS [+/-]DD:MM:SS\"", type=str, help='Right Ascension and Declination in formnat "HH:MM:SS [+/-]DD:MM:SS", in quotes. E.g. "12:00:00 -20:00:00".\
+ Degrees is also acceptable, e.g. "12.123 -20.123".')
+ 
 parser.add_argument('--imsize', type=float, help='Edge size of the postagestamp in arcmin', default=30.)
 parser.add_argument('--maxsep', type=float, help='Maximum separation of source from beam centre')
 parser.add_argument('--outfile', type=str, help='Name of the output file (or prefix for multiple)')
@@ -210,10 +244,17 @@ parser.add_argument('--png-colorbar', action="store_true", help='Add a colorbar 
 parser.add_argument('--png-ellipse-pa-corr', type=float, help='Correction to apply to ellipse position angle if needed (in deg). Angle is from x-axis from left to right.', default=0.0)
 parser.add_argument('--ann', action="store_true", help='Create a kvis annotation file of the components.')
 parser.add_argument('--reg', action="store_true", help='Create a DS9 region file of the components.')
+parser.add_argument('--stokesv', action="store_true", help='Use Stokes V images and catalogues. Works with combined images only!')
 
 
 args=parser.parse_args()
 ra_str, dec_str = args.coord.split(" ")
+if ":" in ra_str:
+    hms = True
+    deg = False
+else:
+    deg = True
+    hms = False
 
 imsize = Angle(args.imsize, unit=u.arcmin)
   
@@ -225,6 +266,8 @@ if not args.outfile:
     outfile_prefix = '%s_%s'%(ra_str, dec_str)
     if args.use_combined:
         outfile_prefix+="_combined"
+        if args.stokesv:
+            outfile_prefix+="_stokesv"
     else:
         outfile_prefix+="_tile"
 else:
@@ -235,21 +278,34 @@ if not args.crossmatch_radius:
 else:
     crossmatch_radius = Angle(args.crossmatch_radius,unit=u.arcsec)
 
+if args.stokesv and not args.use_combined:
+    print("Stokes V can only be used with combined mosaics at the moment.")
+    print ("Run again with the option '--use-combined'.")
+
 IMAGE_FOLDER = args.img_folder
 if not IMAGE_FOLDER:
     if args.use_combined:
-        IMAGE_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/I_mosaic_1.0/'
+        if args.stokesv:
+            IMAGE_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/V_mosaic_1.0/'
+        else:
+            IMAGE_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/I_mosaic_1.0/'
     else:
         IMAGE_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/FLD_IMAGES/stokesI/'
 
 SELAVY_FOLDER = args.cat_folder
 if not SELAVY_FOLDER:
     if args.use_combined:
-        SELAVY_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/racs_cat/'
+        if args.stokesv:
+            SELAVY_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/racs_catv/'
+        else:
+            SELAVY_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/racs_cat/'
     else:
         SELAVY_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/SELAVY_OUTPUT/stokesI_cat/'
     
-src_coord = SkyCoord(ra_str, dec_str, unit=(u.hourangle, u.deg))
+if hms:
+    src_coord = SkyCoord(ra_str, dec_str, unit=(u.hourangle, u.deg))
+else:
+    src_coord = SkyCoord(ra_str, dec_str, unit=(u.deg, u.deg))
 
 fields = Fields("racs_test4.csv")
 src_fields = fields.find(src_coord, max_sep)
@@ -267,9 +323,9 @@ elif len(uniq_fields) == 1:
     outfile = "%s.fits"%(outfile_prefix)
     print("Source in %s %s"%(SBID, field_name))
     
-    source = Source(field_name,SBID, combined=args.use_combined)
+    source = Source(field_name,SBID, combined=args.use_combined, stokesv=args.stokesv)
     source.make_postagestamp(src_coord, imsize, outfile)
-    source.extract_source(src_coord, crossmatch_radius)
+    source.extract_source(src_coord, crossmatch_radius, args.stokesv)
     source.filter_selavy_components(src_coord, imsize)
     if args.ann:
         source.write_ann(outfile)
@@ -292,9 +348,9 @@ else:
         print("Producing data for %s (SB%s)"%(field_name, SBID))
         outfile = "%s_%s.fits"%(outfile_prefix, field_name)
 
-        source = Source(field_name,SBID,combined=args.use_combined)
+        source = Source(field_name,SBID,combined=args.use_combined, stokesv=args.stokesv)
         source.make_postagestamp(src_coord, imsize, outfile)
-        source.extract_source(src_coord, crossmatch_radius)
+        source.extract_source(src_coord, crossmatch_radius, args.stokesv)
         #not ideal but line below has to be run after those above
         source.filter_selavy_components(src_coord, imsize)
         if args.ann:
