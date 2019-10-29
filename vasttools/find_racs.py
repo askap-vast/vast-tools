@@ -103,6 +103,7 @@ class Source:
                 
         except:
             print('Selavy image does not exist')
+            self.selavy_fail = True
             return
         
         self.selavy_sc = SkyCoord(self.selavy_cat['ra_deg_cont'], self.selavy_cat['dec_deg_cont'], unit=(u.deg, u.deg))
@@ -123,6 +124,7 @@ class Source:
             print("Source in selavy catalogue %s %s, %s+/-%s mJy (%.0f arcsec offset) "%(selavy_ra, selavy_dec, selavy_iflux, selavy_iflux_err, match_sep.arcsec))
         else:
             print("No selavy catalogue match. Nearest source %.0f arcsec away."%(match_sep.arcsec))
+        self.selavy_fail = False
             
         
     def write_ann(self, outfile):
@@ -195,7 +197,7 @@ class Source:
         else:
             self.img_norms = simple_norm(cutout_data, 'linear')
         im = ax.imshow(cutout_data, norm=self.img_norms, cmap="gray_r")
-        if selavy:
+        if selavy and self.selavy_fail == False:
             ax.set_autoscale_on(False)
             #define ellipse properties for clarity, selavy cut will have already been created.
             ww = self.selavy_cat_cut["maj_axis"].astype(float)/3600.
@@ -213,6 +215,8 @@ class Source:
             #Add island labels, haven't found a better way other than looping at the moment.
             for i,val in enumerate(patches):
                 ax.annotate(island_names[i], val.center, xycoords=ax.get_transform('world'), annotation_clip=True, color="C0", weight="bold")
+        else:
+            print("No selavy selected or selavy catalogue failed.")
         lon = ax.coords[0]
         lat = ax.coords[1]
         lon.set_axislabel("RA")
@@ -327,11 +331,12 @@ elif len(uniq_fields) == 1:
     source = Source(field_name,SBID, combined=args.use_combined, stokesv=args.stokesv)
     source.make_postagestamp(src_coord, imsize, outfile)
     source.extract_source(src_coord, crossmatch_radius, args.stokesv)
-    source.filter_selavy_components(src_coord, imsize)
-    if args.ann:
-        source.write_ann(outfile)
-    if args.reg:
-        source.write_reg(outfile)
+    if source.selavy_fail == False:
+        source.filter_selavy_components(src_coord, imsize)
+        if args.ann:
+            source.write_ann(outfile)
+        if args.reg:
+            source.write_reg(outfile)
     if args.create_png:
         source.make_png(src_coord, imsize, args.png_selavy_overlay, args.png_use_zscale, args.png_zscale_contrast, outfile, args.png_colorbar, args.png_ellipse_pa_corr)
 
