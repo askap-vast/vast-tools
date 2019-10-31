@@ -420,7 +420,7 @@ for uf in uniq_fields:
     srcs = srcs.reset_index()
     field_src_coords = src_coords[mask]
     image = Image(srcs["SBID"].iloc[0], uf, tiles=args.use_tiles)
-
+    
     for i,row in srcs.iterrows():
         field_name = uf
             
@@ -435,7 +435,7 @@ for uf in uniq_fields:
         if not QUIET:
             print("Searching for crossmatch to source {}".format(label))
         # print("Producing data for %s (SB%s)"%(field_name, SBID))
-        outfile = "{}_{}_{}.fits".format(outfile_prefix, field_name, label)
+        outfile = "{}_{}_{}.fits".format(label, field_name, outfile_prefix)
 
         source = Source(field_name,SBID,tiles=args.use_tiles, stokesv=args.stokesv)
         src_coord = field_src_coords[i]
