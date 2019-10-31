@@ -249,7 +249,7 @@ class Source:
             #Also where correction is applied to PA to account for how selavy defines it vs matplotlib
             colors = ["C2" if c.startswith("n") else "C1" for c in island_names]
             patches = [Ellipse((x[i], y[i]), ww[i]*1.1, hh[i]*1.1, 90.+(180.-aa[i])+pa_corr) for i in range(len(x))]
-            collection = PatchCollection(patches, fc="None", ec=colors, ls="--", lw=2, transform=ax.get_transform('world'))
+            collection = PatchCollection(patches, facecolors="None", edgecolors=colors, linestyle="--", lw=2, transform=ax.get_transform('world'))
             ax.add_collection(collection, autolim=False)
             #Add island labels, haven't found a better way other than looping at the moment.
             if not no_islands:
