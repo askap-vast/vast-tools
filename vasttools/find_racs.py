@@ -364,8 +364,12 @@ if not SELAVY_FOLDER:
             SELAVY_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/racs_catv/'
         else:
             SELAVY_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/racs_cat/'
-    
-if ":" in catalog['ra'].iloc[0]:
+
+print(catalog['ra'].dtype)
+if catalog['ra'].dtype == np.float64:
+    deg = True
+    hms = False
+elif ":" in catalog['ra'].iloc[0]:
     hms = True
     deg = False
 else:
