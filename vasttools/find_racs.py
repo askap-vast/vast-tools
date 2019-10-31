@@ -27,56 +27,94 @@ from astropy.visualization import ZScaleInterval,ImageNormalize, simple_norm
 
 class Fields:
     def __init__(self, fname):
-        self.fields = ascii.read(fname,format='csv')
+        self.fields = pd.read_csv(fname)
         self.direction = SkyCoord(Angle(self.fields["RA_HMS"], unit=u.hourangle), Angle(self.fields["DEC_DMS"], unit=u.deg))
 
-    def find(self, src_dir, max_sep):
-        seps = self.direction.separation(src_dir).deg
-        within_beam = np.where(seps < max_sep)
-        return self.fields[within_beam]
+    def find(self, src_dir, max_sep, catalog):
+        # if len(src_dir) > 1:
+        nearest_beams, seps, _d3d = src_dir.match_to_catalog_sky(self.direction)
+        within_beam = seps.deg < max_sep
+        catalog["SBID"]=self.fields["SBID"].iloc[nearest_beams].values
+        catalog["FIELD_NAME"]=self.fields["FIELD_NAME"].iloc[nearest_beams].values
+        catalog["ORIGINAL_INDEX"]=catalog.index.values
+        new_catalog = catalog[within_beam].reset_index(drop=True)
+        print("Matches found for {}/{} sources.".format(len(new_catalog.index),len(nearest_beams)))
+        if len(new_catalog.index)-len(nearest_beams) != 0:
+            print("No matches found for sources with index (or name):")
+            for i in range(0, len(catalog.index)):
+                if i not in new_catalog["ORIGINAL_INDEX"]:
+                    if "name" in catalog.columns:
+                        print(catalog["name"].iloc[i])
+                    else:
+                        print("{:03d}".format(i+1))
+        else:
+            print("All sources found!")
+            
+        return new_catalog, within_beam
+        
+
+class Image:
+    def __init__(self, imgpath):
+        self.hdu = fits.open(imgpath)[0]
+        self.wcs = WCS(self.hdu.header, naxis=2)
+        
+        try:
+            self.data = self.hdu.data[0,0,:,:]
+        except:
+            self.data = self.hdu.data
 
 class Source:
-    def __init__(self, field, sbid, combined=False, stokesv=False):
+    def __init__(self, field, sbid, tiles=False, stokesv=False):
         self.field = field
         self.sbid = sbid
         
-        if combined:
-            self.imgname = '%s.fits'%(self.field)
+        if tiles:
+            self.imgname = 'image.i.SB%s.cont.%s.linmos.taylor.0.restored.fits'%(self.sbid, self.field)            
         else:
-            self.imgname = 'image.i.SB%s.cont.%s.linmos.taylor.0.restored.fits'%(self.sbid, self.field)
+            self.imgname = '%s.fits'%(self.field)
+
         self.imgpath = os.path.join(IMAGE_FOLDER, self.imgname)
         
-        if combined:
+        if tiles:
+            self.selavyname = 'selavy-image.i.SB%s.cont.%s.linmos.taylor.0.restored.components.txt'%(self.sbid, self.field)
+        else:
             self.selavyname = '%s-selavy.components.txt'%(self.field)
             if args.stokesv:
                 self.nselavyname = 'n%s-selavy.components.txt'%(self.field)
-        else:
-            self.selavyname = 'selavy-image.i.SB%s.cont.%s.linmos.taylor.0.restored.components.txt'%(self.sbid, self.field)
         self.selavypath = os.path.join(SELAVY_FOLDER, self.selavyname)
         if args.stokesv:
             self.nselavypath = os.path.join(SELAVY_FOLDER, self.nselavyname)
         
     
-    def make_postagestamp(self, src_coord, size, outfile):
-        self.hdu = fits.open(self.imgpath)[0]
-        self.wcs = WCS(self.hdu.header, naxis=2)
+    def make_postagestamp(self, img_data, hdu, wcs, src_coord, size, outfile):
+
         
-        try:
-            self.img_data = self.hdu.data[0,0,:,:]
-        except:
-            self.img_data = self.hdu.data
-        
-        self.cutout = Cutout2D(self.img_data, position=src_coord, size=size, wcs=self.wcs)
+        self.cutout = Cutout2D(img_data, position=src_coord, size=size, wcs=wcs)
         
         # Put the cutout image in the FITS HDU
-        self.hdu.data = self.cutout.data
-
+        
+        hdu_stamp = fits.PrimaryHDU(data=self.cutout.data)
+        
+        hdu_stamp.header = hdu.header
         # Update the FITS header with the cutout WCS
-        self.hdu.header.update(self.cutout.wcs.to_header())
+        hdu_stamp.header.update(self.cutout.wcs.to_header())
 
         # Write the cutout to a new FITS file
-        self.hdu.writeto(outfile, overwrite=True)
+        hdu_stamp.writeto(outfile, overwrite=True)
         
+    def _empty_selavy(self):
+        columns = ['island_id', 'component_id', 'component_name', 'ra_hms_cont',
+               'dec_dms_cont', 'ra_deg_cont', 'dec_deg_cont', 'ra_err', 'dec_err',
+               'freq', 'flux_peak', 'flux_peak_err', 'flux_int', 'flux_int_err',
+               'maj_axis', 'min_axis', 'pos_ang', 'maj_axis_err', 'min_axis_err',
+               'pos_ang_err', 'maj_axis_deconv', 'min_axis_deconv', 'pos_ang_deconv',
+               'maj_axis_deconv_err', 'min_axis_deconv_err', 'pos_ang_deconv_err',
+               'chi_squared_fit', 'rms_fit_gauss', 'spectral_index',
+               'spectral_curvature', 'spectral_index_err', 'spectral_curvature_err',
+               'rms_image', 'has_siblings', 'fit_is_estimate',
+               'spectral_index_from_TT', 'flag_c4']
+        return pd.DataFrame(np.array([[np.nan for i in range(len(columns))]]), columns=columns)
+    
     def extract_source(self, src_coord, crossmatch_radius, stokesv):
         try:
             with open(self.selavypath, "r") as f:
@@ -104,26 +142,26 @@ class Source:
         except:
             print('Selavy image does not exist')
             self.selavy_fail = True
+            self.selavy_info = self._empty_selavy()
             return
         
         self.selavy_sc = SkyCoord(self.selavy_cat['ra_deg_cont'], self.selavy_cat['dec_deg_cont'], unit=(u.deg, u.deg))
         
-        #src_coord = SkyCoord("12:00:00", "-30:00:00", unit=(u.hourangle, u.deg))
-        
         match_id, match_sep, _dist = src_coord.match_to_catalog_sky(self.selavy_sc)
         
         if match_sep < crossmatch_radius:
-            selavy_info = self.selavy_cat.iloc[match_id]
+            self.selavy_info = self.selavy_cat[self.selavy_cat.index.isin([match_id])]
             
-            selavy_ra = selavy_info['ra_hms_cont']
-            selavy_dec = selavy_info['dec_dms_cont']
+            selavy_ra = self.selavy_info['ra_hms_cont'].iloc[0]
+            selavy_dec = self.selavy_info['dec_dms_cont'].iloc[0]
             
-            selavy_iflux = selavy_info['flux_int']
-            selavy_iflux_err = selavy_info['flux_int_err']
+            selavy_iflux = self.selavy_info['flux_int'].iloc[0]
+            selavy_iflux_err = self.selavy_info['flux_int_err'].iloc[0]
             
             print("Source in selavy catalogue %s %s, %s+/-%s mJy (%.0f arcsec offset) "%(selavy_ra, selavy_dec, selavy_iflux, selavy_iflux_err, match_sep.arcsec))
         else:
             print("No selavy catalogue match. Nearest source %.0f arcsec away."%(match_sep.arcsec))
+            self.selavy_info = self._empty_selavy()
         self.selavy_fail = False
             
         
@@ -183,7 +221,7 @@ class Source:
         #drop the ones we don't need
         self.selavy_cat_cut = self.selavy_cat[mask].reset_index(drop=True)
     
-    def make_png(self, src_coord, imsize, selavy, zscale, contrast, outfile, colorbar, pa_corr):
+    def make_png(self, src_coord, imsize, selavy, zscale, contrast, outfile, colorbar, pa_corr, no_islands=False, label="Source"):
         #image has already been loaded to get the fits
         outfile = outfile.replace(".fits", ".png")
         #convert data to mJy in case colorbar is used.
@@ -197,6 +235,7 @@ class Source:
         else:
             self.img_norms = simple_norm(cutout_data, 'linear')
         im = ax.imshow(cutout_data, norm=self.img_norms, cmap="gray_r")
+        ax.scatter([src_coord.ra.deg], [src_coord.dec.deg], transform=ax.get_transform('world'), marker="x", color="r", zorder=10, label=label)
         if selavy and self.selavy_fail == False:
             ax.set_autoscale_on(False)
             #define ellipse properties for clarity, selavy cut will have already been created.
@@ -213,38 +252,41 @@ class Source:
             collection = PatchCollection(patches, fc="None", ec=colors, ls="--", lw=2, transform=ax.get_transform('world'))
             ax.add_collection(collection, autolim=False)
             #Add island labels, haven't found a better way other than looping at the moment.
-            for i,val in enumerate(patches):
-                ax.annotate(island_names[i], val.center, xycoords=ax.get_transform('world'), annotation_clip=True, color="C0", weight="bold")
+            if not no_islands:
+                for i,val in enumerate(patches):
+                    ax.annotate(island_names[i], val.center, xycoords=ax.get_transform('world'), annotation_clip=True, color="C0", weight="bold")
         else:
-            print("No selavy selected or selavy catalogue failed.")
+            print("PNG: No selavy selected or selavy catalogue failed.")
+        ax.legend()
         lon = ax.coords[0]
         lat = ax.coords[1]
-        lon.set_axislabel("RA")
-        lat.set_axislabel("Dec")
+        lon.set_axislabel("Right Ascension (J2000)")
+        lat.set_axislabel("Declination (J2000)")
         if colorbar:
             cbar = fig.colorbar(im)
             cbar.set_label('mJy')
         plt.savefig(outfile, bbox_inches="tight")
         print("Saved {}".format(outfile))
-        plt.clf()
+        plt.close()
 
 parser=argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-parser.add_argument('coord', metavar="\"HH:MM:SS [+/-]DD:MM:SS\"", type=str, help='Right Ascension and Declination in formnat "HH:MM:SS [+/-]DD:MM:SS", in quotes. E.g. "12:00:00 -20:00:00".\
+parser.add_argument('coords', metavar="\"HH:MM:SS [+/-]DD:MM:SS\"", type=str, help='Right Ascension and Declination in formnat "HH:MM:SS [+/-]DD:MM:SS", in quotes. E.g. "12:00:00 -20:00:00".\
  Degrees is also acceptable, e.g. "12.123 -20.123".')
  
 parser.add_argument('--imsize', type=float, help='Edge size of the postagestamp in arcmin', default=30.)
 parser.add_argument('--maxsep', type=float, help='Maximum separation of source from beam centre')
 parser.add_argument('--outfile', type=str, help='Name of the output file (or prefix for multiple)')
-parser.add_argument('--crossmatch_radius', type=float, help='Crossmatch radius in arcseconds')
-parser.add_argument('--use-combined', action="store_true", help='Use the combined mosaics instead.')
-parser.add_argument('--img_folder', type=float, help='Path to folder where images are stored')
-parser.add_argument('--cat_folder', type=float, help='Path to folder where selavy catalogues are stored')
+parser.add_argument('--crossmatch-radius', type=float, help='Crossmatch radius in arcseconds')
+parser.add_argument('--use-tiles', action="store_true", help='Use the individual tiles instead of combined mosaics.')
+parser.add_argument('--img-folder', type=float, help='Path to folder where images are stored')
+parser.add_argument('--cat-folder', type=float, help='Path to folder where selavy catalogues are stored')
 parser.add_argument('--create-png', action="store_true", help='Create a png of the fits cutout.')
 parser.add_argument('--png-selavy-overlay', action="store_true", help='Overlay selavy components onto the png image.')
 parser.add_argument('--png-use-zscale', action="store_true", help='Select ZScale normalisation (default is \'sqrt\').')
 parser.add_argument('--png-zscale-contrast', type=float, default=0.1, help='Select contrast to use for zscale.')
 parser.add_argument('--png-colorbar', action="store_true", help='Add a colorbar to the png plot.')
+parser.add_argument('--png-no-island-labels', action="store_true", help='Disable island lables on the png.')
 parser.add_argument('--png-ellipse-pa-corr', type=float, help='Correction to apply to ellipse position angle if needed (in deg). Angle is from x-axis from left to right.', default=0.0)
 parser.add_argument('--ann', action="store_true", help='Create a kvis annotation file of the components.')
 parser.add_argument('--reg', action="store_true", help='Create a DS9 region file of the components.')
@@ -252,14 +294,28 @@ parser.add_argument('--stokesv', action="store_true", help='Use Stokes V images 
 
 
 args=parser.parse_args()
-ra_str, dec_str = args.coord.split(" ")
-if ":" in ra_str:
-    hms = True
-    deg = False
+if " " not in args.coords:
+    print("Loading file {}".format(args.coords))
+    #Give explicit check to file existence
+    user_file = os.path.abspath(args.coords)
+    if not os.path.isfile(user_file):
+        print("{} not found!")
+        sys.exit()
+    try:
+        catalog = pd.read_csv(user_file, comment="#")
+    except:
+        print("Pandas reading of {} failed!".format(args.coords))
+        print("Check format!")
+        sys.exit()
 else:
-    deg = True
-    hms = False
-
+    catalog_dict = {'ra':[], 'dec':[]}
+    coords = args.coords.split(",")
+    for i in coords:    
+        ra_str, dec_str = i.split(" ")
+        catalog_dict['ra'].append(ra_str)
+        catalog_dict['dec'].append(dec_str)
+    catalog = pd.DataFrame.from_dict(catalog_dict)
+        
 imsize = Angle(args.imsize, unit=u.arcmin)
   
 max_sep = args.maxsep
@@ -268,12 +324,13 @@ if not max_sep:
 
 if not args.outfile:
     outfile_prefix = '%s_%s'%(ra_str, dec_str)
-    if args.use_combined:
+    if args.use_tiles:
+        outfile_prefix+="_tile"
+    else:
         outfile_prefix+="_combined"
         if args.stokesv:
             outfile_prefix+="_stokesv"
-    else:
-        outfile_prefix+="_tile"
+
 else:
     outfile_prefix = args.outfile.replace('.fits','')
     
@@ -282,92 +339,115 @@ if not args.crossmatch_radius:
 else:
     crossmatch_radius = Angle(args.crossmatch_radius,unit=u.arcsec)
 
-if args.stokesv and not args.use_combined:
+if args.stokesv and args.use_tiles:
     print("Stokes V can only be used with combined mosaics at the moment.")
-    print ("Run again with the option '--use-combined'.")
+    print ("Run again but remove the option '--use-tiles'.")
     sys.exit()
 
 IMAGE_FOLDER = args.img_folder
 if not IMAGE_FOLDER:
-    if args.use_combined:
+    if args.use_tiles:
+        IMAGE_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/FLD_IMAGES/stokesI/'
+    else:
         if args.stokesv:
             IMAGE_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/V_mosaic_1.0/'
         else:
             IMAGE_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/I_mosaic_1.0/'
-    else:
-        IMAGE_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/FLD_IMAGES/stokesI/'
+
 
 SELAVY_FOLDER = args.cat_folder
 if not SELAVY_FOLDER:
-    if args.use_combined:
+    if args.use_tiles:
+        SELAVY_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/SELAVY_OUTPUT/stokesI_cat/'
+    else:
         if args.stokesv:
             SELAVY_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/racs_catv/'
         else:
             SELAVY_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/racs_cat/'
-    else:
-        SELAVY_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/SELAVY_OUTPUT/stokesI_cat/'
     
-if hms:
-    src_coord = SkyCoord(ra_str, dec_str, unit=(u.hourangle, u.deg))
+if ":" in catalog['ra'].iloc[0]:
+    hms = True
+    deg = False
 else:
-    src_coord = SkyCoord(ra_str, dec_str, unit=(u.deg, u.deg))
+    deg = True
+    hms = False
+
+if hms:
+    src_coords = SkyCoord(catalog['ra'], catalog['dec'], unit=(u.hourangle, u.deg))
+else:
+    src_coords = SkyCoord(catalog['ra'], catalog['dec'], unit=(u.deg, u.deg))
 
 fields = Fields("racs_test4.csv")
-src_fields = fields.find(src_coord, max_sep)
+src_fields, coords_mask = fields.find(src_coords, max_sep, catalog)
 
-uniq_fields = list(set(src_fields['FIELD_NAME']))
+src_coords = src_coords[coords_mask]
 
-print(uniq_fields)
+uniq_fields = src_fields['FIELD_NAME'].unique().tolist()
 
 if len(uniq_fields) == 0:
-    print("Source not in RACS")
+    print("Source(s) not in RACS!")
+    sys.exit()
 
-elif len(uniq_fields) == 1:
-    field_name = src_fields['FIELD_NAME'][0]
-    SBID = src_fields['SBID'][0]
-    outfile = "%s.fits"%(outfile_prefix)
-    print("Source in %s %s"%(SBID, field_name))
-    
-    source = Source(field_name,SBID, combined=args.use_combined, stokesv=args.stokesv)
-    source.make_postagestamp(src_coord, imsize, outfile)
-    source.extract_source(src_coord, crossmatch_radius, args.stokesv)
-    if source.selavy_fail == False:
-        source.filter_selavy_components(src_coord, imsize)
-        if args.ann:
-            source.write_ann(outfile)
-        if args.reg:
-            source.write_reg(outfile)
-    if args.create_png:
-        source.make_png(src_coord, imsize, args.png_selavy_overlay, args.png_use_zscale, args.png_zscale_contrast, outfile, args.png_colorbar, args.png_ellipse_pa_corr)
+crossmatch_output_check = False
 
-else:
-    completed_fields = []
-
-    for row in src_fields:
-        field_name = row['FIELD_NAME']
-
-        if field_name in completed_fields:
-            continue
+for uf in uniq_fields:
+    mask = src_fields["FIELD_NAME"]==uf
+    srcs = src_fields[mask].reset_index()
+    field_src_coords = src_coords[mask]
+    for i,row in srcs.iterrows():
+        print("-------------------------------------------------------------")
+        print("Starting Field {}".format(uf))
+        print("-------------------------------------------------------------")
+        field_name = uf
             
         SBID = row['SBID']
-
+        
+        number = row["ORIGINAL_INDEX"]+1
+        
+        if "name" in srcs.columns:
+            label = row["name"]
+        else:
+            label = "{:03d}".format(number)
+        print("Searching for crossmatch to source {}".format(label))
         print("Producing data for %s (SB%s)"%(field_name, SBID))
-        outfile = "%s_%s.fits"%(outfile_prefix, field_name)
-
-        source = Source(field_name,SBID,combined=args.use_combined, stokesv=args.stokesv)
-        source.make_postagestamp(src_coord, imsize, outfile)
+        outfile = "{}_{}_{}.fits".format(outfile_prefix, field_name, label)
+        
+        source = Source(field_name,SBID,tiles=args.use_tiles, stokesv=args.stokesv)
+        image = Image(source.imgpath)
+        src_coord = field_src_coords[i]
+        source.make_postagestamp(image.data, image.hdu, image.wcs, src_coord, imsize, outfile)
         source.extract_source(src_coord, crossmatch_radius, args.stokesv)
         #not ideal but line below has to be run after those above
-        source.filter_selavy_components(src_coord, imsize)
-        if args.ann:
-            source.write_ann(outfile)
-        if args.reg:
-            source.write_reg(outfile)
+        if source.selavy_fail == False:
+            source.filter_selavy_components(src_coord, imsize)
+            if args.ann:
+                source.write_ann(outfile)
+            if args.reg:
+                source.write_reg(outfile)
+        else:
+            print("Selavy failed! No region or annotation files will be made if requested.")
         if args.create_png:
-            source.make_png(src_coord, imsize, args.png_selavy_overlay, args.png_use_zscale, args.png_zscale_contrast, outfile, args.png_colorbar, args.png_ellipse_pa_corr)
+            source.make_png(src_coord, imsize, args.png_selavy_overlay, args.png_use_zscale, args.png_zscale_contrast, 
+                outfile, args.png_colorbar, args.png_ellipse_pa_corr, no_islands=args.png_no_island_labels, label=label)
+        if not crossmatch_output_check:
+            crossmatch_output = source.selavy_info
+            crossmatch_output_check = True
+        else:
+            crossmatch_output = crossmatch_output.append(source.selavy_info)
+        print("-------------------------------------------------------------")
 
-        completed_fields.append(field_name)
 
-
-
+print("Summary")
+print("-------------------------------------------------------------")
+print("Number of sources searched for: {}".format(len(catalog.index)))
+print("Number of sources in RACS: {}".format(len(src_fields.index)))
+print("Number of sources with matches < {} arcsec: {}".format(crossmatch_radius.arcsec, len(crossmatch_output[~crossmatch_output["island_id"].isna()].index)))
+#Create and write final crossmatch csv
+crossmatch_output.index = src_fields.index
+print(crossmatch_output.index)
+print(src_fields.index)
+final = src_fields.join(crossmatch_output)
+output_crossmatch_name = "{}_racs_crossmatch.csv".format(outfile_prefix)
+final.to_csv(output_crossmatch_name, index=False)
+print("Written {}.".format("{}_racs_crossmatch.csv".format(outfile_prefix)))
 
