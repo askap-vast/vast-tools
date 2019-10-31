@@ -38,9 +38,9 @@ class Fields:
         catalog["FIELD_NAME"]=self.fields["FIELD_NAME"].iloc[nearest_beams].values
         catalog["ORIGINAL_INDEX"]=catalog.index.values
         new_catalog = catalog[within_beam].reset_index(drop=True)
-        print("Matches found for {}/{} sources.".format(len(new_catalog.index),len(nearest_beams)))
+        print("RACS field match found for {}/{} sources.".format(len(new_catalog.index),len(nearest_beams)))
         if len(new_catalog.index)-len(nearest_beams) != 0:
-            print("No matches found for sources with index (or name):")
+            print("No RACS field matches found for sources with index (or name):")
             for i in range(0, len(catalog.index)):
                 if i not in new_catalog["ORIGINAL_INDEX"]:
                     if "name" in catalog.columns:
@@ -54,8 +54,15 @@ class Fields:
         
 
 class Image:
-    def __init__(self, imgpath):
-        self.hdu = fits.open(imgpath)[0]
+    def __init__(self, sbid, field, tiles=False):
+        if tiles:
+            self.imgname = 'image.i.SB%s.cont.%s.linmos.taylor.0.restored.fits'%(sbid, field)            
+        else:
+            self.imgname = '%s.fits'%(field)
+
+        self.imgpath = os.path.join(IMAGE_FOLDER, self.imgname)
+        
+        self.hdu = fits.open(self.imgpath)[0]
         self.wcs = WCS(self.hdu.header, naxis=2)
         
         try:
@@ -67,13 +74,6 @@ class Source:
     def __init__(self, field, sbid, tiles=False, stokesv=False):
         self.field = field
         self.sbid = sbid
-        
-        if tiles:
-            self.imgname = 'image.i.SB%s.cont.%s.linmos.taylor.0.restored.fits'%(self.sbid, self.field)            
-        else:
-            self.imgname = '%s.fits'%(self.field)
-
-        self.imgpath = os.path.join(IMAGE_FOLDER, self.imgname)
         
         if tiles:
             self.selavyname = 'selavy-image.i.SB%s.cont.%s.linmos.taylor.0.restored.components.txt'%(self.sbid, self.field)
@@ -137,10 +137,11 @@ class Source:
                 nselavy_cat["island_id"]=["n{}".format(i) for i in nselavy_cat["island_id"]]
                 nselavy_cat["component_id"]=["n{}".format(i) for i in nselavy_cat["component_id"]]
 
-                self.selavy_cat = self.selavy_cat.append(nselavy_cat)
+                self.selavy_cat = self.selavy_cat.append(nselavy_cat, ignore_index=True)
                 
         except:
-            print('Selavy image does not exist')
+            if not QUIET:
+                print('Selavy image does not exist')
             self.selavy_fail = True
             self.selavy_info = self._empty_selavy()
             return
@@ -157,10 +158,11 @@ class Source:
             
             selavy_iflux = self.selavy_info['flux_int'].iloc[0]
             selavy_iflux_err = self.selavy_info['flux_int_err'].iloc[0]
-            
-            print("Source in selavy catalogue %s %s, %s+/-%s mJy (%.0f arcsec offset) "%(selavy_ra, selavy_dec, selavy_iflux, selavy_iflux_err, match_sep.arcsec))
+            if not QUIET:
+                print("Source in selavy catalogue %s %s, %s+/-%s mJy (%.0f arcsec offset) "%(selavy_ra, selavy_dec, selavy_iflux, selavy_iflux_err, match_sep.arcsec))
         else:
-            print("No selavy catalogue match. Nearest source %.0f arcsec away."%(match_sep.arcsec))
+            if not QUIET:
+                print("No selavy catalogue match. Nearest source %.0f arcsec away."%(match_sep.arcsec))
             self.selavy_info = self._empty_selavy()
         self.selavy_fail = False
             
@@ -186,7 +188,8 @@ class Source:
                     f.write("COLOR GREEN\n")
                     neg = False
                 
-        print("Wrote annotation file {}.".format(outfile))
+        if not QUIET:
+            print("Wrote annotation file {}.".format(outfile))
         
     def write_reg(self, outfile):
         outfile=outfile.replace(".fits", ".reg")
@@ -205,7 +208,8 @@ class Source:
                 float(row["maj_axis"])/3600./2., float(row["min_axis"])/3600./2., float(row["pos_ang"])+90., color))
                 f.write("text({} {} \"{}\") # color={}\n".format(ra, dec, self._remove_sbid(row["island_id"]), color))
                 
-        print("Wrote region file {}.".format(outfile))
+        if not QUIET:
+            print("Wrote region file {}.".format(outfile))
     
     def _remove_sbid(self, island):
         temp = island.split("_")
@@ -256,7 +260,8 @@ class Source:
                 for i,val in enumerate(patches):
                     ax.annotate(island_names[i], val.center, xycoords=ax.get_transform('world'), annotation_clip=True, color="C0", weight="bold")
         else:
-            print("PNG: No selavy selected or selavy catalogue failed.")
+            if not QUIET:
+                print("PNG: No selavy selected or selavy catalogue failed.")
         ax.legend()
         lon = ax.coords[0]
         lat = ax.coords[1]
@@ -266,13 +271,17 @@ class Source:
             cbar = fig.colorbar(im)
             cbar.set_label('mJy')
         plt.savefig(outfile, bbox_inches="tight")
-        print("Saved {}".format(outfile))
+        if not QUIET:
+            print("Saved {}".format(outfile))
         plt.close()
+
+os.nice(5)
 
 parser=argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-parser.add_argument('coords', metavar="\"HH:MM:SS [+/-]DD:MM:SS\"", type=str, help='Right Ascension and Declination in formnat "HH:MM:SS [+/-]DD:MM:SS", in quotes. E.g. "12:00:00 -20:00:00".\
- Degrees is also acceptable, e.g. "12.123 -20.123".')
+parser.add_argument('coords', metavar="\"HH:MM:SS [+/-]DD:MM:SS\" OR input.csv", type=str, help='Right Ascension and Declination in formnat "HH:MM:SS [+/-]DD:MM:SS", in quotes. E.g. "12:00:00 -20:00:00".\
+ Degrees is also acceptable, e.g. "12.123 -20.123". Multiple coordinates are supported by separating with a comma (no space) e.g. "12.231 -56.56,123.4 +21.3. Finally you can also\
+ enter coordinates using a .csv file. See example file for format.')
  
 parser.add_argument('--imsize', type=float, help='Edge size of the postagestamp in arcmin', default=30.)
 parser.add_argument('--maxsep', type=float, help='Maximum separation of source from beam centre')
@@ -291,6 +300,7 @@ parser.add_argument('--png-ellipse-pa-corr', type=float, help='Correction to app
 parser.add_argument('--ann', action="store_true", help='Create a kvis annotation file of the components.')
 parser.add_argument('--reg', action="store_true", help='Create a DS9 region file of the components.')
 parser.add_argument('--stokesv', action="store_true", help='Use Stokes V images and catalogues. Works with combined images only!')
+parser.add_argument('--quiet', action="store_true", help='Turn off non-essential terminal output.')
 
 
 args=parser.parse_args()
@@ -344,6 +354,8 @@ if args.stokesv and args.use_tiles:
     print ("Run again but remove the option '--use-tiles'.")
     sys.exit()
 
+QUIET = args.quiet
+
 IMAGE_FOLDER = args.img_folder
 if not IMAGE_FOLDER:
     if args.use_tiles:
@@ -364,12 +376,8 @@ if not SELAVY_FOLDER:
             SELAVY_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/racs_catv/'
         else:
             SELAVY_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/racs_cat/'
-
-print(catalog['ra'].dtype)
-if catalog['ra'].dtype == np.float64:
-    deg = True
-    hms = False
-elif ":" in catalog['ra'].iloc[0]:
+    
+if ":" in catalog['ra'].iloc[0]:
     hms = True
     deg = False
 else:
@@ -394,14 +402,22 @@ if len(uniq_fields) == 0:
 
 crossmatch_output_check = False
 
+if QUIET:
+    print("Performing crossmatching for sources, please wait...")
+
 for uf in uniq_fields:
-    mask = src_fields["FIELD_NAME"]==uf
-    srcs = src_fields[mask].reset_index()
-    field_src_coords = src_coords[mask]
-    for i,row in srcs.iterrows():
+    if not QUIET:
         print("-------------------------------------------------------------")
         print("Starting Field {}".format(uf))
         print("-------------------------------------------------------------")
+    mask = src_fields["FIELD_NAME"]==uf
+    srcs = src_fields[mask]
+    indexes = srcs.index
+    srcs = srcs.reset_index()
+    field_src_coords = src_coords[mask]
+    image = Image(srcs["SBID"].iloc[0], uf, tiles=args.use_tiles)
+
+    for i,row in srcs.iterrows():
         field_name = uf
             
         SBID = row['SBID']
@@ -412,12 +428,12 @@ for uf in uniq_fields:
             label = row["name"]
         else:
             label = "{:03d}".format(number)
-        print("Searching for crossmatch to source {}".format(label))
-        print("Producing data for %s (SB%s)"%(field_name, SBID))
+        if not QUIET:
+            print("Searching for crossmatch to source {}".format(label))
+        # print("Producing data for %s (SB%s)"%(field_name, SBID))
         outfile = "{}_{}_{}.fits".format(outfile_prefix, field_name, label)
-        
+
         source = Source(field_name,SBID,tiles=args.use_tiles, stokesv=args.stokesv)
-        image = Image(source.imgpath)
         src_coord = field_src_coords[i]
         source.make_postagestamp(image.data, image.hdu, image.wcs, src_coord, imsize, outfile)
         source.extract_source(src_coord, crossmatch_radius, args.stokesv)
@@ -429,27 +445,29 @@ for uf in uniq_fields:
             if args.reg:
                 source.write_reg(outfile)
         else:
-            print("Selavy failed! No region or annotation files will be made if requested.")
+            if not QUIET:
+                print("Selavy failed! No region or annotation files will be made if requested.")
         if args.create_png:
             source.make_png(src_coord, imsize, args.png_selavy_overlay, args.png_use_zscale, args.png_zscale_contrast, 
                 outfile, args.png_colorbar, args.png_ellipse_pa_corr, no_islands=args.png_no_island_labels, label=label)
         if not crossmatch_output_check:
             crossmatch_output = source.selavy_info
+            crossmatch_output.index = [indexes[i]]
             crossmatch_output_check = True
         else:
+            temp_crossmatch_output = source.selavy_info
+            temp_crossmatch_output.index = [indexes[i]]
             crossmatch_output = crossmatch_output.append(source.selavy_info)
-        print("-------------------------------------------------------------")
+        if not QUIET:
+            print("-------------------------------------------------------------")
 
-
+print("-------------------------------------------------------------")
 print("Summary")
 print("-------------------------------------------------------------")
 print("Number of sources searched for: {}".format(len(catalog.index)))
 print("Number of sources in RACS: {}".format(len(src_fields.index)))
 print("Number of sources with matches < {} arcsec: {}".format(crossmatch_radius.arcsec, len(crossmatch_output[~crossmatch_output["island_id"].isna()].index)))
 #Create and write final crossmatch csv
-crossmatch_output.index = src_fields.index
-print(crossmatch_output.index)
-print(src_fields.index)
 final = src_fields.join(crossmatch_output)
 output_crossmatch_name = "{}_racs_crossmatch.csv".format(outfile_prefix)
 final.to_csv(output_crossmatch_name, index=False)
