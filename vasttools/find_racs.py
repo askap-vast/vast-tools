@@ -313,6 +313,7 @@ if " " not in args.coords:
         sys.exit()
     try:
         catalog = pd.read_csv(user_file, comment="#")
+        catalog.columns = map(str.lower, catalog.columns)
     except:
         print("Pandas reading of {} failed!".format(args.coords))
         print("Check format!")
