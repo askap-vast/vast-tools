@@ -26,7 +26,8 @@ Currently RACSv2 is being used. This does not include selavy catalogues for late
 * pandas
 * astropy
 * matplotlib
-Latest versions recommended.
+
+Latest versions of above recommended.
 
 * Access to RACS images and selavy outputs.
 
@@ -113,37 +114,56 @@ optional arguments:
 
 The scipt take one main input which is coordinates, either direct in the command line or using an input csv file.
 
-1. **Command line: Single Coordinate**
+#### Command line: Single Coordinate
 Here the format can be either in Hours or decimal degrees: 
 * `"HH:MM:SS.ss +/-DD:MM:SS.ss"`
 * `"DDD.ddd +/-DD.ddd"`
 Note the space between the coodinates and the quotation marks.
 
-E.g. ```python find_racs.py "22:37:5.6000 +34:24:31.90"```
-```python find_racs.py "339.2733333 34.4088611"```
+E.g.
+```
+python find_racs.py "22:37:5.6000 +34:24:31.90"
+```
+```
+python find_racs.py "339.2733333 34.4088611"
+```
 
 It's recommended to provide a source name using the option `--source-names`, e.g.
-```python find_racs.py "22:37:5.6000 +34:24:31.90" --source-names "SN 2014C"```
+```
+python find_racs.py "22:37:5.6000 +34:24:31.90" --source-names "SN 2014C"
+```
 
 
-2. **Command line: Multiple Coordinates**
+####Command line: Multiple Coordinates
 Same format as above but now separate coodinates with `,`: 
 * `"HH:MM:SS.ss +/-DD:MM:SS.ss,HH:MM:SS.ss +/-DD:MM:SS.ss,HH:MM:SS.ss +/-DD:MM:SS.ss"`
 * `"DDD.ddd +/-DD.ddd,DDD.ddd +/-DD.ddd,DDD.ddd +/-DD.ddd"`
+
 Note there is no space between the commas.
 
-E.g. ```python find_racs.py "22:37:5.6000 +34:24:31.90,22:37:5.6000 -34:24:31.90,13:37:5.6000 -84:24:31.90"```
-```python find_racs.py "339.2733333 34.4088611,154.2733333 -34.4088611,20.2733333 -54.4088611"```
+E.g. 
+```
+python find_racs.py "22:37:5.6000 +34:24:31.90,22:37:5.6000 -34:24:31.90,13:37:5.6000 -84:24:31.90"
+```
+```
+python find_racs.py "339.2733333 34.4088611,154.2733333 -34.4088611,20.2733333 -54.4088611"
+```
 
 Source names can still be defined using the option `--source-names` with the same comma notation e.g.
-```python find_racs.py "22:37:5.6000 +34:24:31.90,22:37:5.6000 -34:24:31.90,13:37:5.6000 -84:24:31.90" --source-names "SN 2014C,SN 2012C,SN2019B"```
 
-3. **Input CSV file**
+```
+python find_racs.py "22:37:5.6000 +34:24:31.90,22:37:5.6000 -34:24:31.90,13:37:5.6000 -84:24:31.90" --source-names "SN 2014C,SN 2012C,SN2019B"
+```
+
+#### Input CSV file
 To crossmatch many coordinates it's recommended to use a csv. Instead of entering coordaintes enter the name of the csv. The `--source-names` options is not used with CSV files.
 
-E.g. ```python find_racs.py my_coords.csv```
+E.g. 
+```
+python find_racs.py my_coords.csv
+```
 
-The columns `ra` and `dec` are required and can be in either of the formats shown in options 1 and 2. `name` is also accepted and is recommended. E.g.
+The columns `ra` and `dec` are required and can be in either of the formats shown in the command line options. `name` is also accepted and is recommended. E.g.
 ```
 ra,dec,name
 123.45,-67.89,source name
