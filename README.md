@@ -63,7 +63,7 @@ optional arguments:
   -h, --help            show this help message and exit
   --imsize IMSIZE       Edge size of the postagestamp in arcmin (default:
                         30.0)
-  --maxsep MAXSEP       Maximum separation of source from beam centre
+  --maxsep MAXSEP       Maximum separation of source from beam centre in degrees
                         (default: 1.0)
   --out-folder OUT_FOLDER
                         Name of the output directory to place all results in.
