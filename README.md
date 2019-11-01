@@ -64,7 +64,7 @@ optional arguments:
   -h, --help            show this help message and exit
   --imsize IMSIZE       Edge size of the postagestamp in arcmin (default:
                         30.0)
-  --maxsep MAXSEP       Maximum separation of source from beam centre in degrees
+  --maxsep MAXSEP       Maximum separation of source from beam centre
                         (default: 1.0)
   --out-folder OUT_FOLDER
                         Name of the output directory to place all results in.
@@ -134,7 +134,7 @@ python find_racs.py "22:37:5.6000 +34:24:31.90" --source-names "SN 2014C"
 ```
 
 
-####Command line: Multiple Coordinates
+#### Command line: Multiple Coordinates
 Same format as above but now separate coodinates with `,`: 
 * `"HH:MM:SS.ss +/-DD:MM:SS.ss,HH:MM:SS.ss +/-DD:MM:SS.ss,HH:MM:SS.ss +/-DD:MM:SS.ss"`
 * `"DDD.ddd +/-DD.ddd,DDD.ddd +/-DD.ddd,DDD.ddd +/-DD.ddd"`
