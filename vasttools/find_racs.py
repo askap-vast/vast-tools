@@ -5,15 +5,16 @@
 # ./find_racs.py "16:16:00.22 +22:16:04.83" --create-png --imsize 5.0 --png-zscale-contrast 0.1 --png-selavy-overlay --use-combined
 
 import argparse, sys
+import numpy as np
+import os
+import datetime
+import pandas as pd
 from astropy.coordinates import Angle
 from astropy.coordinates import SkyCoord
 from astropy import units as u
-import numpy as np
-import os
-import pandas as pd
 from astropy.nddata.utils import Cutout2D
 from astropy.coordinates import SkyCoord
-from astropy.io import fits, ascii
+from astropy.io import fits
 from astropy.wcs import WCS
 from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
 import warnings
@@ -34,15 +35,15 @@ class Fields:
         # if len(src_dir) > 1:
         nearest_beams, seps, _d3d = src_dir.match_to_catalog_sky(self.direction)
         within_beam = seps.deg < max_sep
-        catalog["SBID"]=self.fields["SBID"].iloc[nearest_beams].values
-        catalog["FIELD_NAME"]=self.fields["FIELD_NAME"].iloc[nearest_beams].values
-        catalog["ORIGINAL_INDEX"]=catalog.index.values
+        catalog["sbid"]=self.fields["SBID"].iloc[nearest_beams].values
+        catalog["field_name"]=self.fields["FIELD_NAME"].iloc[nearest_beams].values
+        catalog["original_index"]=catalog.index.values
         new_catalog = catalog[within_beam].reset_index(drop=True)
         print("RACS field match found for {}/{} sources.".format(len(new_catalog.index),len(nearest_beams)))
         if len(new_catalog.index)-len(nearest_beams) != 0:
             print("No RACS field matches found for sources with index (or name):")
             for i in range(0, len(catalog.index)):
-                if i not in new_catalog["ORIGINAL_INDEX"]:
+                if i not in new_catalog["original_index"]:
                     if "name" in catalog.columns:
                         print(catalog["name"].iloc[i])
                     else:
@@ -275,7 +276,10 @@ class Source:
             print("Saved {}".format(outfile))
         plt.close()
 
+#Force nice
 os.nice(5)
+
+runstart = datetime.datetime.now()
 
 parser=argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
@@ -284,15 +288,18 @@ parser.add_argument('coords', metavar="\"HH:MM:SS [+/-]DD:MM:SS\" OR input.csv",
  enter coordinates using a .csv file. See example file for format.')
  
 parser.add_argument('--imsize', type=float, help='Edge size of the postagestamp in arcmin', default=30.)
-parser.add_argument('--maxsep', type=float, help='Maximum separation of source from beam centre')
-parser.add_argument('--outfile', type=str, help='Name of the output file (or prefix for multiple)')
+parser.add_argument('--maxsep', type=float, help='Maximum separation of source from beam centre', default=1.0)
+parser.add_argument('--out-folder', type=str, help='Name of the output directory to place all results in.', default="find_racs_output_{}".format(runstart.strftime("%Y%m%d_%H:%M:%S")))
+parser.add_argument('--source-names', type=str, help='Only for use when entering coordaintes via the command line.\
+ State the name of the source being searched. Use quote marks for names that contain a space. For multiple sources separate with a comma with no space, \
+ e.g. "SN 1994N,SN 2003D,SN 2019A"', default="")
 parser.add_argument('--crossmatch-radius', type=float, help='Crossmatch radius in arcseconds')
 parser.add_argument('--use-tiles', action="store_true", help='Use the individual tiles instead of combined mosaics.')
 parser.add_argument('--img-folder', type=str, help='Path to folder where images are stored')
 parser.add_argument('--cat-folder', type=str, help='Path to folder where selavy catalogues are stored')
 parser.add_argument('--create-png', action="store_true", help='Create a png of the fits cutout.')
 parser.add_argument('--png-selavy-overlay', action="store_true", help='Overlay selavy components onto the png image.')
-parser.add_argument('--png-use-zscale', action="store_true", help='Select ZScale normalisation (default is \'sqrt\').')
+parser.add_argument('--png-use-zscale', action="store_true", help='Select ZScale normalisation (default is \'linear\').')
 parser.add_argument('--png-zscale-contrast', type=float, default=0.1, help='Select contrast to use for zscale.')
 parser.add_argument('--png-colorbar', action="store_true", help='Add a colorbar to the png plot.')
 parser.add_argument('--png-no-island-labels', action="store_true", help='Disable island lables on the png.')
@@ -301,9 +308,21 @@ parser.add_argument('--ann', action="store_true", help='Create a kvis annotation
 parser.add_argument('--reg', action="store_true", help='Create a DS9 region file of the components.')
 parser.add_argument('--stokesv', action="store_true", help='Use Stokes V images and catalogues. Works with combined images only!')
 parser.add_argument('--quiet', action="store_true", help='Turn off non-essential terminal output.')
+parser.add_argument('--crossmatch-only', action="store_true", help='Only run crossmatch, do not generate any fits or png files.')
 
 
 args=parser.parse_args()
+
+# Sort out output directory
+output_name = args.out_folder
+if os.path.isdir(output_name):
+    print("Requested output directory '{}' already exists! Will not overwrite.".format(output_name))
+    print("Exiting.")
+    sys.exit()
+else:
+    print("Creating directory '{}'.".format(output_name))
+    os.mkdir(output_name)
+
 if " " not in args.coords:
     print("Loading file {}".format(args.coords))
     #Give explicit check to file existence
@@ -314,6 +333,12 @@ if " " not in args.coords:
     try:
         catalog = pd.read_csv(user_file, comment="#")
         catalog.columns = map(str.lower, catalog.columns)
+        if ("ra" not in catalog.columns) or ("dec" not in catalog.columns):
+            print("Cannot find one of 'ra' or 'dec' in input file.")
+            print("Please check column headers!")
+            sys.exit()
+        if "name" not in catalog.columns:
+            catalog["name"] = ["{}_{}".format(i,j) for i,j in zip(catalog['ra'], catalog['dec'])]
     except:
         print("Pandas reading of {} failed!".format(args.coords))
         print("Check format!")
@@ -325,25 +350,30 @@ else:
         ra_str, dec_str = i.split(" ")
         catalog_dict['ra'].append(ra_str)
         catalog_dict['dec'].append(dec_str)
+    
+    if args.source_names != "":
+        source_names = args.source_names.split(",")
+        if len(source_names) != len(catalog_dict['ra']):
+            print("All sources must be named when using '--source-names'.")
+            print("Please check inputs.")
+            sys.exit()
+    else:
+        source_names = ["{}_{}".format(i,j) for i,j in zip(catalog_dict['ra'], catalog_dict['dec'])]
+    
+    catalog_dict['name'] = source_names
+    
     catalog = pd.DataFrame.from_dict(catalog_dict)
         
 imsize = Angle(args.imsize, unit=u.arcmin)
   
 max_sep = args.maxsep
-if not max_sep:
-    max_sep = 1.0
 
-if not args.outfile:
-    outfile_prefix = '%s_%s'%(ra_str, dec_str)
-    if args.use_tiles:
-        outfile_prefix+="_tile"
-    else:
-        outfile_prefix+="_combined"
-        if args.stokesv:
-            outfile_prefix+="_stokesv"
-
+if args.use_tiles:
+    outfile_prefix="tile"
 else:
-    outfile_prefix = args.outfile.replace('.fits','')
+    outfile_prefix="combined"
+    if args.stokesv:
+        outfile_prefix+="_stokesv"
     
 if not args.crossmatch_radius:
     crossmatch_radius = Angle(15,unit=u.arcsec)
@@ -394,12 +424,13 @@ if hms:
 else:
     src_coords = SkyCoord(catalog['ra'], catalog['dec'], unit=(u.deg, u.deg))
 
+print("Finding RACS fields for sources...")
 fields = Fields("racs_test4.csv")
 src_fields, coords_mask = fields.find(src_coords, max_sep, catalog)
 
 src_coords = src_coords[coords_mask]
 
-uniq_fields = src_fields['FIELD_NAME'].unique().tolist()
+uniq_fields = src_fields['field_name'].unique().tolist()
 
 if len(uniq_fields) == 0:
     print("Source(s) not in RACS!")
@@ -415,32 +446,32 @@ for uf in uniq_fields:
         print("-------------------------------------------------------------")
         print("Starting Field {}".format(uf))
         print("-------------------------------------------------------------")
-    mask = src_fields["FIELD_NAME"]==uf
+    mask = src_fields["field_name"]==uf
     srcs = src_fields[mask]
     indexes = srcs.index
     srcs = srcs.reset_index()
     field_src_coords = src_coords[mask]
-    image = Image(srcs["SBID"].iloc[0], uf, tiles=args.use_tiles)
+    image = Image(srcs["sbid"].iloc[0], uf, tiles=args.use_tiles)
     
     for i,row in srcs.iterrows():
         field_name = uf
             
-        SBID = row['SBID']
+        SBID = row['sbid']
         
-        number = row["ORIGINAL_INDEX"]+1
+        number = row["original_index"]+1
         
-        if "name" in srcs.columns:
-            label = row["name"]
-        else:
-            label = "{:03d}".format(number)
+        label = row["name"]
+
         if not QUIET:
             print("Searching for crossmatch to source {}".format(label))
-        # print("Producing data for %s (SB%s)"%(field_name, SBID))
-        outfile = "{}_{}_{}.fits".format(label, field_name, outfile_prefix)
+
+        outfile = "{}_{}_{}.fits".format(label.replace(" ", "_"), field_name, outfile_prefix)
+        outfile = os.path.join(output_name, outfile)
 
         source = Source(field_name,SBID,tiles=args.use_tiles, stokesv=args.stokesv)
         src_coord = field_src_coords[i]
-        source.make_postagestamp(image.data, image.hdu, image.wcs, src_coord, imsize, outfile)
+        if not args.crossmatch_only:
+            source.make_postagestamp(image.data, image.hdu, image.wcs, src_coord, imsize, outfile)
         source.extract_source(src_coord, crossmatch_radius, args.stokesv)
         #not ideal but line below has to be run after those above
         if source.selavy_fail == False:
@@ -452,7 +483,7 @@ for uf in uniq_fields:
         else:
             if not QUIET:
                 print("Selavy failed! No region or annotation files will be made if requested.")
-        if args.create_png:
+        if args.create_png and not args.crossmatch_only:
             source.make_png(src_coord, imsize, args.png_selavy_overlay, args.png_use_zscale, args.png_zscale_contrast, 
                 outfile, args.png_colorbar, args.png_ellipse_pa_corr, no_islands=args.png_no_island_labels, label=label)
         if not crossmatch_output_check:
@@ -466,15 +497,20 @@ for uf in uniq_fields:
         if not QUIET:
             print("-------------------------------------------------------------")
 
+runend = datetime.datetime.now()
+runtime = runend-runstart
 print("-------------------------------------------------------------")
 print("Summary")
 print("-------------------------------------------------------------")
 print("Number of sources searched for: {}".format(len(catalog.index)))
 print("Number of sources in RACS: {}".format(len(src_fields.index)))
 print("Number of sources with matches < {} arcsec: {}".format(crossmatch_radius.arcsec, len(crossmatch_output[~crossmatch_output["island_id"].isna()].index)))
+print("Processing took {:.1f} minutes.".format(runtime.seconds/60.))
 #Create and write final crossmatch csv
 final = src_fields.join(crossmatch_output)
-output_crossmatch_name = "{}_racs_crossmatch.csv".format(outfile_prefix)
+output_crossmatch_name = "{}_racs_crossmatch.csv".format(output_name)
+output_crossmatch_name = os.path.join(output_name, output_crossmatch_name)
 final.to_csv(output_crossmatch_name, index=False)
-print("Written {}.".format("{}_racs_crossmatch.csv".format(outfile_prefix)))
+print("Written {}.".format(output_crossmatch_name))
+print("All results in {}.".format(output_name))
 
