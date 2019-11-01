@@ -309,6 +309,7 @@ parser.add_argument('--reg', action="store_true", help='Create a DS9 region file
 parser.add_argument('--stokesv', action="store_true", help='Use Stokes V images and catalogues. Works with combined images only!')
 parser.add_argument('--quiet', action="store_true", help='Turn off non-essential terminal output.')
 parser.add_argument('--crossmatch-only', action="store_true", help='Only run crossmatch, do not generate any fits or png files.')
+parser.add_argument('--selavy-simple', action="store_true", help='Only include flux density and uncertainty from selavy in returned table.')
 
 
 args=parser.parse_args()
@@ -504,7 +505,11 @@ print("Number of sources in RACS: {}".format(len(src_fields.index)))
 print("Number of sources with matches < {} arcsec: {}".format(crossmatch_radius.arcsec, len(crossmatch_output[~crossmatch_output["island_id"].isna()].index)))
 print("Processing took {:.1f} minutes.".format(runtime.seconds/60.))
 #Create and write final crossmatch csv
+if args.selavy_simple:
+  crossmatch_output = crossmatch_output.filter(items=["flux_int","rms_image"])
+  crossmatch_output = crossmatch_output.rename(columns={"flux_int":"S_int", "rms_image":"S_err"})
 final = src_fields.join(crossmatch_output)
+
 output_crossmatch_name = "{}_racs_crossmatch.csv".format(output_name)
 output_crossmatch_name = os.path.join(output_name, output_crossmatch_name)
 final.to_csv(output_crossmatch_name, index=False)
