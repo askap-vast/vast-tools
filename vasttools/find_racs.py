@@ -236,7 +236,7 @@ parser.add_argument('coord', metavar="\"HH:MM:SS [+/-]DD:MM:SS\"", type=str, hel
 parser.add_argument('--imsize', type=float, help='Edge size of the postagestamp in arcmin', default=30.)
 parser.add_argument('--maxsep', type=float, help='Maximum separation of source from beam centre')
 parser.add_argument('--outfile', type=str, help='Name of the output file (or prefix for multiple)')
-parser.add_argument('--crossmatch_radius', type=float, help='Crossmatch radius in arcseconds')
+parser.add_argument('--crossmatch_radius', type=float, help='Crossmatch radius in arcseconds', default=15.0)
 parser.add_argument('--use-combined', action="store_true", help='Use the combined mosaics instead.')
 parser.add_argument('--img_folder', type=float, help='Path to folder where images are stored')
 parser.add_argument('--cat_folder', type=float, help='Path to folder where selavy catalogues are stored')
@@ -263,8 +263,6 @@ else:
 imsize = Angle(args.imsize, unit=u.arcmin)
   
 max_sep = args.maxsep
-if not max_sep:
-    max_sep = 1.0
 
 if not args.outfile:
     outfile_prefix = '%s_%s'%(ra_str, dec_str)
@@ -277,10 +275,7 @@ if not args.outfile:
 else:
     outfile_prefix = args.outfile.replace('.fits','')
     
-if not args.crossmatch_radius:
-    crossmatch_radius = Angle(15,unit=u.arcsec)
-else:
-    crossmatch_radius = Angle(args.crossmatch_radius,unit=u.arcsec)
+crossmatch_radius = Angle(args.crossmatch_radius,unit=u.arcsec)
 
 if args.stokesv and not args.use_combined:
     print("Stokes V can only be used with combined mosaics at the moment.")
