@@ -288,7 +288,7 @@ parser.add_argument('coords', metavar="\"HH:MM:SS [+/-]DD:MM:SS\" OR input.csv",
  enter coordinates using a .csv file. See example file for format.')
  
 parser.add_argument('--imsize', type=float, help='Edge size of the postagestamp in arcmin', default=30.)
-parser.add_argument('--maxsep', type=float, help='Maximum separation of source from beam centre', default=1.0)
+parser.add_argument('--maxsep', type=float, help='Maximum separation of source from beam centre in degrees.', default=1.0)
 parser.add_argument('--out-folder', type=str, help='Name of the output directory to place all results in.', default="find_racs_output_{}".format(runstart.strftime("%Y%m%d_%H:%M:%S")))
 parser.add_argument('--source-names', type=str, help='Only for use when entering coordaintes via the command line.\
  State the name of the source being searched. Use quote marks for names that contain a space. For multiple sources separate with a comma with no space, \
