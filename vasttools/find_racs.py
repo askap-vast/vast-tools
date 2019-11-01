@@ -293,7 +293,7 @@ parser.add_argument('--out-folder', type=str, help='Name of the output directory
 parser.add_argument('--source-names', type=str, help='Only for use when entering coordaintes via the command line.\
  State the name of the source being searched. Use quote marks for names that contain a space. For multiple sources separate with a comma with no space, \
  e.g. "SN 1994N,SN 2003D,SN 2019A"', default="")
-parser.add_argument('--crossmatch-radius', type=float, help='Crossmatch radius in arcseconds')
+parser.add_argument('--crossmatch-radius', type=float, help='Crossmatch radius in arcseconds', default=15.0)
 parser.add_argument('--use-tiles', action="store_true", help='Use the individual tiles instead of combined mosaics.')
 parser.add_argument('--img-folder', type=str, help='Path to folder where images are stored')
 parser.add_argument('--cat-folder', type=str, help='Path to folder where selavy catalogues are stored')
@@ -374,11 +374,8 @@ else:
     outfile_prefix="combined"
     if args.stokesv:
         outfile_prefix+="_stokesv"
-    
-if not args.crossmatch_radius:
-    crossmatch_radius = Angle(15,unit=u.arcsec)
-else:
-    crossmatch_radius = Angle(args.crossmatch_radius,unit=u.arcsec)
+
+crossmatch_radius = Angle(args.crossmatch_radius,unit=u.arcsec)
 
 if args.stokesv and args.use_tiles:
     print("Stokes V can only be used with combined mosaics at the moment.")
