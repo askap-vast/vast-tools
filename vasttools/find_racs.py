@@ -26,6 +26,16 @@ from matplotlib.patches import Ellipse
 from matplotlib.collections import PatchCollection
 from astropy.visualization import ZScaleInterval,ImageNormalize, simple_norm
 
+import logging
+import logging.handlers
+import logging.config
+
+logger = logging.getLogger()
+s = logging.StreamHandler()
+logger.addHandler(s)
+
+logger.setLevel(logging.INFO)
+
 class Fields:
     def __init__(self, fname):
         self.fields = pd.read_csv(fname)
@@ -39,17 +49,17 @@ class Fields:
         catalog["field_name"]=self.fields["FIELD_NAME"].iloc[nearest_beams].values
         catalog["original_index"]=catalog.index.values
         new_catalog = catalog[within_beam].reset_index(drop=True)
-        print("RACS field match found for {}/{} sources.".format(len(new_catalog.index),len(nearest_beams)))
+        logger.info("RACS field match found for {}/{} sources.".format(len(new_catalog.index),len(nearest_beams)))
         if len(new_catalog.index)-len(nearest_beams) != 0:
-            print("No RACS field matches found for sources with index (or name):")
+            logger.warning("No RACS field matches found for sources with index (or name):")
             for i in range(0, len(catalog.index)):
                 if i not in new_catalog["original_index"]:
                     if "name" in catalog.columns:
-                        print(catalog["name"].iloc[i])
+                        logger.warning(catalog["name"].iloc[i])
                     else:
-                        print("{:03d}".format(i+1))
+                        logger.warning("{:03d}".format(i+1))
         else:
-            print("All sources found!")
+            logger.info("All sources found!")
             
         return new_catalog, within_beam
         
@@ -142,7 +152,7 @@ class Source:
                 
         except:
             if not QUIET:
-                print('Selavy image does not exist')
+                logger.warning('Selavy image does not exist')
             self.selavy_fail = True
             self.selavy_info = self._empty_selavy()
             return
@@ -160,10 +170,10 @@ class Source:
             selavy_iflux = self.selavy_info['flux_int'].iloc[0]
             selavy_iflux_err = self.selavy_info['flux_int_err'].iloc[0]
             if not QUIET:
-                print("Source in selavy catalogue %s %s, %s+/-%s mJy (%.0f arcsec offset) "%(selavy_ra, selavy_dec, selavy_iflux, selavy_iflux_err, match_sep.arcsec))
+                logger.info("Source in selavy catalogue %s %s, %s+/-%s mJy (%.0f arcsec offset) "%(selavy_ra, selavy_dec, selavy_iflux, selavy_iflux_err, match_sep.arcsec))
         else:
             if not QUIET:
-                print("No selavy catalogue match. Nearest source %.0f arcsec away."%(match_sep.arcsec))
+                logger.info("No selavy catalogue match. Nearest source %.0f arcsec away."%(match_sep.arcsec))
             self.selavy_info = self._empty_selavy()
         self.selavy_fail = False
             
@@ -190,7 +200,7 @@ class Source:
                     neg = False
                 
         if not QUIET:
-            print("Wrote annotation file {}.".format(outfile))
+            logger.info("Wrote annotation file {}.".format(outfile))
         
     def write_reg(self, outfile):
         outfile=outfile.replace(".fits", ".reg")
@@ -210,7 +220,7 @@ class Source:
                 f.write("text({} {} \"{}\") # color={}\n".format(ra, dec, self._remove_sbid(row["island_id"]), color))
                 
         if not QUIET:
-            print("Wrote region file {}.".format(outfile))
+            logger.info("Wrote region file {}.".format(outfile))
     
     def _remove_sbid(self, island):
         temp = island.split("_")
@@ -262,7 +272,7 @@ class Source:
                     ax.annotate(island_names[i], val.center, xycoords=ax.get_transform('world'), annotation_clip=True, color="C0", weight="bold")
         else:
             if not QUIET:
-                print("PNG: No selavy selected or selavy catalogue failed.")
+                logger.warning("PNG: No selavy selected or selavy catalogue failed.")
         ax.legend()
         lon = ax.coords[0]
         lat = ax.coords[1]
@@ -273,7 +283,7 @@ class Source:
             cbar.set_label('mJy')
         plt.savefig(outfile, bbox_inches="tight")
         if not QUIET:
-            print("Saved {}".format(outfile))
+            logger.info("Saved {}".format(outfile))
         plt.close()
 
 #Force nice
@@ -317,32 +327,32 @@ args=parser.parse_args()
 # Sort out output directory
 output_name = args.out_folder
 if os.path.isdir(output_name):
-    print("Requested output directory '{}' already exists! Will not overwrite.".format(output_name))
-    print("Exiting.")
+    logger.critical("Requested output directory '{}' already exists! Will not overwrite.".format(output_name))
+    logger.critical("Exiting.")
     sys.exit()
 else:
-    print("Creating directory '{}'.".format(output_name))
+    logger.info("Creating directory '{}'.".format(output_name))
     os.mkdir(output_name)
 
 if " " not in args.coords:
-    print("Loading file {}".format(args.coords))
+    logger.info("Loading file {}".format(args.coords))
     #Give explicit check to file existence
     user_file = os.path.abspath(args.coords)
     if not os.path.isfile(user_file):
-        print("{} not found!")
+        logger.critical("{} not found!")
         sys.exit()
     try:
         catalog = pd.read_csv(user_file, comment="#")
         catalog.columns = map(str.lower, catalog.columns)
         if ("ra" not in catalog.columns) or ("dec" not in catalog.columns):
-            print("Cannot find one of 'ra' or 'dec' in input file.")
-            print("Please check column headers!")
+            logger.critical("Cannot find one of 'ra' or 'dec' in input file.")
+            logger.critical("Please check column headers!")
             sys.exit()
         if "name" not in catalog.columns:
             catalog["name"] = ["{}_{}".format(i,j) for i,j in zip(catalog['ra'], catalog['dec'])]
     except:
-        print("Pandas reading of {} failed!".format(args.coords))
-        print("Check format!")
+        logger.critical("Pandas reading of {} failed!".format(args.coords))
+        logger.critical("Check format!")
         sys.exit()
 else:
     catalog_dict = {'ra':[], 'dec':[]}
@@ -355,8 +365,8 @@ else:
     if args.source_names != "":
         source_names = args.source_names.split(",")
         if len(source_names) != len(catalog_dict['ra']):
-            print("All sources must be named when using '--source-names'.")
-            print("Please check inputs.")
+            logger.critical("All sources must be named when using '--source-names'.")
+            logger.critical("Please check inputs.")
             sys.exit()
     else:
         source_names = ["{}_{}".format(i,j) for i,j in zip(catalog_dict['ra'], catalog_dict['dec'])]
@@ -379,8 +389,8 @@ else:
 crossmatch_radius = Angle(args.crossmatch_radius,unit=u.arcsec)
 
 if args.stokesv and args.use_tiles:
-    print("Stokes V can only be used with combined mosaics at the moment.")
-    print ("Run again but remove the option '--use-tiles'.")
+    logger.critical("Stokes V can only be used with combined mosaics at the moment.")
+    logger.critical ("Run again but remove the option '--use-tiles'.")
     sys.exit()
 
 QUIET = args.quiet
@@ -422,7 +432,7 @@ if hms:
 else:
     src_coords = SkyCoord(catalog['ra'], catalog['dec'], unit=(u.deg, u.deg))
 
-print("Finding RACS fields for sources...")
+logger.info("Finding RACS fields for sources...")
 fields = Fields("racs_test4.csv")
 src_fields, coords_mask = fields.find(src_coords, max_sep, catalog)
 
@@ -431,19 +441,19 @@ src_coords = src_coords[coords_mask]
 uniq_fields = src_fields['field_name'].unique().tolist()
 
 if len(uniq_fields) == 0:
-    print("Source(s) not in RACS!")
+    logger.error("Source(s) not in RACS!")
     sys.exit()
 
 crossmatch_output_check = False
 
 if QUIET:
-    print("Performing crossmatching for sources, please wait...")
+    logger.info("Performing crossmatching for sources, please wait...")
 
 for uf in uniq_fields:
     if not QUIET:
-        print("-------------------------------------------------------------")
-        print("Starting Field {}".format(uf))
-        print("-------------------------------------------------------------")
+        logger.info("-------------------------------------------------------------")
+        logger.info("Starting Field {}".format(uf))
+        logger.info("-------------------------------------------------------------")
     mask = src_fields["field_name"]==uf
     srcs = src_fields[mask]
     indexes = srcs.index
@@ -461,7 +471,7 @@ for uf in uniq_fields:
         label = row["name"]
 
         if not QUIET:
-            print("Searching for crossmatch to source {}".format(label))
+            logger.info("Searching for crossmatch to source {}".format(label))
 
         outfile = "{}_{}_{}.fits".format(label.replace(" ", "_"), field_name, outfile_prefix)
         outfile = os.path.join(output_name, outfile)
@@ -480,7 +490,7 @@ for uf in uniq_fields:
                 source.write_reg(outfile)
         else:
             if not QUIET:
-                print("Selavy failed! No region or annotation files will be made if requested.")
+                logger.error("Selavy failed! No region or annotation files will be made if requested.")
         if args.create_png and not args.crossmatch_only:
             source.make_png(src_coord, imsize, args.png_selavy_overlay, args.png_use_zscale, args.png_zscale_contrast, 
                 outfile, args.png_colorbar, args.png_ellipse_pa_corr, no_islands=args.png_no_island_labels, label=label)
@@ -493,17 +503,17 @@ for uf in uniq_fields:
             temp_crossmatch_output.index = [indexes[i]]
             crossmatch_output = crossmatch_output.append(source.selavy_info)
         if not QUIET:
-            print("-------------------------------------------------------------")
+            logger.info("-------------------------------------------------------------")
 
 runend = datetime.datetime.now()
 runtime = runend-runstart
-print("-------------------------------------------------------------")
-print("Summary")
-print("-------------------------------------------------------------")
-print("Number of sources searched for: {}".format(len(catalog.index)))
-print("Number of sources in RACS: {}".format(len(src_fields.index)))
-print("Number of sources with matches < {} arcsec: {}".format(crossmatch_radius.arcsec, len(crossmatch_output[~crossmatch_output["island_id"].isna()].index)))
-print("Processing took {:.1f} minutes.".format(runtime.seconds/60.))
+logger.info("-------------------------------------------------------------")
+logger.info("Summary")
+logger.info("-------------------------------------------------------------")
+logger.info("Number of sources searched for: {}".format(len(catalog.index)))
+logger.info("Number of sources in RACS: {}".format(len(src_fields.index)))
+logger.info("Number of sources with matches < {} arcsec: {}".format(crossmatch_radius.arcsec, len(crossmatch_output[~crossmatch_output["island_id"].isna()].index)))
+logger.info("Processing took {:.1f} minutes.".format(runtime.seconds/60.))
 #Create and write final crossmatch csv
 if args.selavy_simple:
   crossmatch_output = crossmatch_output.filter(items=["flux_int","rms_image"])
@@ -513,6 +523,6 @@ final = src_fields.join(crossmatch_output)
 output_crossmatch_name = "{}_racs_crossmatch.csv".format(output_name)
 output_crossmatch_name = os.path.join(output_name, output_crossmatch_name)
 final.to_csv(output_crossmatch_name, index=False)
-print("Written {}.".format(output_crossmatch_name))
-print("All results in {}.".format(output_name))
+logger.info("Written {}.".format(output_crossmatch_name))
+logger.info("All results in {}.".format(output_name))
 
