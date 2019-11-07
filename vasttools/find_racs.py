@@ -128,22 +128,10 @@ class Source:
     
     def extract_source(self, src_coord, crossmatch_radius, stokesv):
         try:
-            with open(self.selavypath, "r") as f:
-                lines=f.readlines()
-
-            columns=lines[0].split()[1:-1]
-            data=[i.split() for i in lines[2:]]
-
-            self.selavy_cat=pd.DataFrame(data, columns=columns)
+            self.selavy_cat=pd.read_fwf(self.selavypath, skiprows=[1,])
             
-            if stokesv:
-                with open(self.nselavypath, "r") as f:
-                    lines=f.readlines()
-
-                columns=lines[0].split()[1:-1]
-                data=[i.split() for i in lines[2:]]
-                
-                nselavy_cat=pd.DataFrame(data, columns=columns)
+            if stokesv:                
+                nselavy_cat=pd.read_fwf(self.nselavypath, skiprows=[1,])
                 
                 nselavy_cat["island_id"]=["n{}".format(i) for i in nselavy_cat["island_id"]]
                 nselavy_cat["component_id"]=["n{}".format(i) for i in nselavy_cat["component_id"]]
