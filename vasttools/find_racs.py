@@ -30,11 +30,11 @@ import logging
 import logging.handlers
 import logging.config
 
-logger = logging.getLogger()
-s = logging.StreamHandler()
-logger.addHandler(s)
-
-logger.setLevel(logging.INFO)
+try:
+    import colorlog
+    use_colorlog=True
+except ImportError:
+    use_colorlog=False
 
 class Fields:
     def __init__(self, fname):
@@ -308,9 +308,41 @@ parser.add_argument('--stokesv', action="store_true", help='Use Stokes V images 
 parser.add_argument('--quiet', action="store_true", help='Turn off non-essential terminal output.')
 parser.add_argument('--crossmatch-only', action="store_true", help='Only run crossmatch, do not generate any fits or png files.')
 parser.add_argument('--selavy-simple', action="store_true", help='Only include flux density and uncertainty from selavy in returned table.')
+parser.add_argument('--debug', action="store_true", help='Turn on debug output.')
 
 
 args=parser.parse_args()
+
+logger = logging.getLogger()
+s = logging.StreamHandler()
+logformat='[%(asctime)s] - %(levelname)s - %(message)s'
+
+if use_colorlog:
+    formatter = colorlog.ColoredFormatter(
+        # "%(log_color)s%(levelname)-8s%(reset)s %(blue)s%(message)s",
+        "%(log_color)s[%(asctime)s] - %(levelname)s - %(blue)s%(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        reset=True,
+        log_colors={
+        'DEBUG':    'cyan',
+        'INFO':     'green',
+        'WARNING':  'yellow',
+        'ERROR':    'red',
+        'CRITICAL': 'red,bg_white',
+        },
+        secondary_log_colors={},
+        style='%'
+    )
+else:
+    formatter = logging.Formatter(logformat, datefmt="%Y-%m-%d %H:%M:%S")
+
+s.setFormatter(formatter)
+logger.addHandler(s)
+
+if args.debug:
+    logger.setLevel(logging.DEBUG)
+else:
+    logger.setLevel(logging.INFO)
 
 # Sort out output directory
 output_name = args.out_folder
