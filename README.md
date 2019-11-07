@@ -26,6 +26,7 @@ Currently RACSv2 is being used. This does not include selavy catalogues for late
 * pandas
 * astropy
 * matplotlib
+* colorlog (optional)
 
 Latest versions of above recommended.
 
