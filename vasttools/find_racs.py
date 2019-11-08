@@ -320,6 +320,7 @@ parser.add_argument('--stokesv', action="store_true", help='Use Stokes V images 
 parser.add_argument('--quiet', action="store_true", help='Turn off non-essential terminal output.')
 parser.add_argument('--crossmatch-only', action="store_true", help='Only run crossmatch, do not generate any fits or png files.')
 parser.add_argument('--selavy-simple', action="store_true", help='Only include flux density and uncertainty from selavy in returned table.')
+parser.add_argument('--process-matches', action="store_true", help='Only produce data products for sources that have a match from selavy.')
 
 
 args=parser.parse_args()
@@ -477,13 +478,20 @@ for uf in uniq_fields:
         outfile = os.path.join(output_name, outfile)
 
         source = Source(field_name,SBID,tiles=args.use_tiles, stokesv=args.stokesv)
+        
         src_coord = field_src_coords[i]
         if not args.crossmatch_only:
             source.make_postagestamp(image.data, image.hdu, image.wcs, src_coord, imsize, outfile)
         source.extract_source(src_coord, crossmatch_radius, args.stokesv)
+        
         #not ideal but line below has to be run after those above
         if source.selavy_fail == False:
             source.filter_selavy_components(src_coord, imsize)
+            no_match = np.isnan(source.selavy_info["flux_int"][0])
+            if no_match and args.process_matches:
+                crossmatch_output = source.selavy_info
+                logger.info("Source does not have a selavy match, not continuing processing")
+                continue
             if args.ann:
                 source.write_ann(outfile)
             if args.reg:
