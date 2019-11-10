@@ -24,7 +24,10 @@ warnings.filterwarnings('ignore', category=AstropyDeprecationWarning, append=Tru
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
 from matplotlib.collections import PatchCollection
-from astropy.visualization import ZScaleInterval,ImageNormalize, simple_norm
+from astropy.visualization import ZScaleInterval, ImageNormalize, PercentileInterval, AsymmetricPercentileInterval
+from astropy.visualization import LinearStretch
+import matplotlib.axes as maxes
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 import logging
 import logging.handlers
@@ -158,7 +161,7 @@ class Source:
             selavy_iflux = self.selavy_info['flux_int'].iloc[0]
             selavy_iflux_err = self.selavy_info['flux_int_err'].iloc[0]
             if not QUIET:
-                logger.info("Source in selavy catalogue %s %s, %s+/-%s mJy (%.0f arcsec offset) "%(selavy_ra, selavy_dec, selavy_iflux, selavy_iflux_err, match_sep.arcsec))
+                logger.info("Source in selavy catalogue {} {}, {:.3f}+/-{:.3f} mJy ({:.3f} arcsec offset)".format(selavy_ra, selavy_dec, selavy_iflux, selavy_iflux_err, match_sep[0].arcsec))
         else:
             if not QUIET:
                 logger.info("No selavy catalogue match. Nearest source %.0f arcsec away."%(match_sep.arcsec))
@@ -224,7 +227,7 @@ class Source:
         #drop the ones we don't need
         self.selavy_cat_cut = self.selavy_cat[mask].reset_index(drop=True)
     
-    def make_png(self, src_coord, imsize, selavy, zscale, contrast, outfile, colorbar, pa_corr, no_islands=False, label="Source"):
+    def make_png(self, src_coord, imsize, selavy, percentile, zscale, contrast, outfile, pa_corr, no_islands=False, label="Source", no_colorbar=False):
         #image has already been loaded to get the fits
         outfile = outfile.replace(".fits", ".png")
         #convert data to mJy in case colorbar is used.
@@ -236,7 +239,7 @@ class Source:
         if zscale:
             self.img_norms = ImageNormalize(cutout_data, interval=ZScaleInterval(contrast=contrast))
         else:
-            self.img_norms = simple_norm(cutout_data, 'linear')
+            self.img_norms = ImageNormalize(cutout_data, interval=PercentileInterval(percentile), stretch=LinearStretch())
         im = ax.imshow(cutout_data, norm=self.img_norms, cmap="gray_r")
         ax.scatter([src_coord.ra.deg], [src_coord.dec.deg], transform=ax.get_transform('world'), marker="x", color="r", zorder=10, label=label)
         if selavy and self.selavy_fail == False:
@@ -266,9 +269,11 @@ class Source:
         lat = ax.coords[1]
         lon.set_axislabel("Right Ascension (J2000)")
         lat.set_axislabel("Declination (J2000)")
-        if colorbar:
-            cbar = fig.colorbar(im)
-            cbar.set_label('mJy')
+        if not no_colorbar:
+            divider = make_axes_locatable(ax)
+            cax = divider.append_axes("right", size="3%", pad=0.1, axes_class=maxes.Axes)
+            cb = fig.colorbar(im, cax=cax)
+            cb.set_label("mJy/beam")
         plt.savefig(outfile, bbox_inches="tight")
         if not QUIET:
             logger.info("Saved {}".format(outfile))
@@ -297,11 +302,12 @@ parser.add_argument('--img-folder', type=str, help='Path to folder where images 
 parser.add_argument('--cat-folder', type=str, help='Path to folder where selavy catalogues are stored')
 parser.add_argument('--create-png', action="store_true", help='Create a png of the fits cutout.')
 parser.add_argument('--png-selavy-overlay', action="store_true", help='Overlay selavy components onto the png image.')
+parser.add_argument('--png-linear-percentile', type=float, default=99.9, help='Choose the percentile level for the png normalisation.')
 parser.add_argument('--png-use-zscale', action="store_true", help='Select ZScale normalisation (default is \'linear\').')
 parser.add_argument('--png-zscale-contrast', type=float, default=0.1, help='Select contrast to use for zscale.')
-parser.add_argument('--png-colorbar', action="store_true", help='Add a colorbar to the png plot.')
 parser.add_argument('--png-no-island-labels', action="store_true", help='Disable island lables on the png.')
 parser.add_argument('--png-ellipse-pa-corr', type=float, help='Correction to apply to ellipse position angle if needed (in deg). Angle is from x-axis from left to right.', default=0.0)
+parser.add_argument('--png-no-colorbar', action="store_true", help='Do not show the colorbar on the png.')
 parser.add_argument('--ann', action="store_true", help='Create a kvis annotation file of the components.')
 parser.add_argument('--reg', action="store_true", help='Create a DS9 region file of the components.')
 parser.add_argument('--stokesv', action="store_true", help='Use Stokes V images and catalogues. Works with combined images only!')
@@ -512,8 +518,8 @@ for uf in uniq_fields:
             if not QUIET:
                 logger.error("Selavy failed! No region or annotation files will be made if requested.")
         if args.create_png and not args.crossmatch_only:
-            source.make_png(src_coord, imsize, args.png_selavy_overlay, args.png_use_zscale, args.png_zscale_contrast, 
-                outfile, args.png_colorbar, args.png_ellipse_pa_corr, no_islands=args.png_no_island_labels, label=label)
+            source.make_png(src_coord, imsize, args.png_selavy_overlay, args.png_linear_percentile, args.png_use_zscale, 
+                args.png_zscale_contrast, outfile, args.png_ellipse_pa_corr, no_islands=args.png_no_island_labels, label=label, no_colorbar=args.png_no_colorbar)
         if not crossmatch_output_check:
             crossmatch_output = source.selavy_info
             crossmatch_output.index = [indexes[i]]
