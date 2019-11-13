@@ -481,14 +481,15 @@ for uf in uniq_fields:
         source = Source(field_name,SBID,tiles=args.use_tiles, stokesv=args.stokesv)
         
         src_coord = field_src_coords[i]
-        if not args.crossmatch_only:
-            source.make_postagestamp(image.data, image.hdu, image.wcs, src_coord, imsize, outfile)
         source.extract_source(src_coord, crossmatch_radius, args.stokesv)
         
         if args.process_matches and not source.has_match:
             crossmatch_output = source.selavy_info
             logger.info("Source does not have a selavy match, not continuing processing")
             continue
+        
+        if not args.crossmatch_only:
+            source.make_postagestamp(image.data, image.hdu, image.wcs, src_coord, imsize, outfile)
         
         #not ideal but line below has to be run after those above
         if source.selavy_fail == False:
