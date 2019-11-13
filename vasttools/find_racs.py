@@ -69,6 +69,9 @@ class Fields:
 
 class Image:
     def __init__(self, sbid, field, tiles=False):
+        self.sbid = sbid
+        self.field = field
+        
         if tiles:
             self.imgname = 'image.i.SB%s.cont.%s.linmos.taylor.0.restored.fits'%(sbid, field)            
         else:
@@ -83,6 +86,19 @@ class Image:
             self.data = self.hdu.data[0,0,:,:]
         except:
             self.data = self.hdu.data
+            
+    def get_rms_img(self, sbid, field, tiles=False):
+        self.rmsname = self.imgname.replace('.fits','_rms.fits')
+
+        self.rmspath = os.path.join(BANE_FOLDER, self.rmsname)
+        
+        self.rms_hdu = fits.open(self.rmspath)[0]
+        self.rms_wcs = WCS(self.rms_hdu.header, naxis=2)
+        
+        try:
+            self.rms_data = self.rms_hdu.data[0,0,:,:]
+        except:
+            self.rms_data = self.rms_hdu.data
 
 class Source:
     def __init__(self, field, sbid, tiles=False, stokesv=False):
