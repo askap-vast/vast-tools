@@ -98,8 +98,6 @@ class Source:
         
     
     def make_postagestamp(self, img_data, hdu, wcs, src_coord, size, outfile):
-
-        
         self.cutout = Cutout2D(img_data, position=src_coord, size=size, wcs=wcs)
         
         # Put the cutout image in the FITS HDU
@@ -155,6 +153,7 @@ class Source:
                 logger.warning('Selavy image does not exist')
             self.selavy_fail = True
             self.selavy_info = self._empty_selavy()
+            self.has_match = False
             return
         
         self.selavy_sc = SkyCoord(self.selavy_cat['ra_deg_cont'], self.selavy_cat['dec_deg_cont'], unit=(u.deg, u.deg))
@@ -162,6 +161,7 @@ class Source:
         match_id, match_sep, _dist = src_coord.match_to_catalog_sky(self.selavy_sc)
         
         if match_sep < crossmatch_radius:
+            self.has_match = True
             self.selavy_info = self.selavy_cat[self.selavy_cat.index.isin([match_id])]
             
             selavy_ra = self.selavy_info['ra_hms_cont'].iloc[0]
@@ -174,6 +174,7 @@ class Source:
         else:
             if not QUIET:
                 logger.info("No selavy catalogue match. Nearest source %.0f arcsec away."%(match_sep.arcsec))
+            self.has_match = True
             self.selavy_info = self._empty_selavy()
         self.selavy_fail = False
             
@@ -484,14 +485,14 @@ for uf in uniq_fields:
             source.make_postagestamp(image.data, image.hdu, image.wcs, src_coord, imsize, outfile)
         source.extract_source(src_coord, crossmatch_radius, args.stokesv)
         
+        if args.process_matches and not source.has_match:
+            crossmatch_output = source.selavy_info
+            logger.info("Source does not have a selavy match, not continuing processing")
+            continue
+        
         #not ideal but line below has to be run after those above
         if source.selavy_fail == False:
             source.filter_selavy_components(src_coord, imsize)
-            no_match = np.isnan(source.selavy_info["flux_int"][0])
-            if no_match and args.process_matches:
-                crossmatch_output = source.selavy_info
-                logger.info("Source does not have a selavy match, not continuing processing")
-                continue
             if args.ann:
                 source.write_ann(outfile)
             if args.reg:
