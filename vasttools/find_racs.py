@@ -89,6 +89,16 @@ class Fields:
         
 
 class Image:
+    '''
+    Store image data for a RACS field
+    
+    :param sbid: SBID of the field
+    :type sbid: str
+    :param field: Name of the field
+    :type field: str
+    :param tiles: Use RACS tiles instead of mosaiced images, defaults to False
+    :param tiles: bool, optional
+    '''
     def __init__(self, sbid, field, tiles=False):
         if tiles:
             self.imgname = 'image.i.SB%s.cont.%s.linmos.taylor.0.restored.fits'%(sbid, field)            
