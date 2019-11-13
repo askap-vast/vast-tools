@@ -299,6 +299,7 @@ parser.add_argument('--source-names', type=str, help='Only for use when entering
 parser.add_argument('--crossmatch-radius', type=float, help='Crossmatch radius in arcseconds', default=15.0)
 parser.add_argument('--use-tiles', action="store_true", help='Use the individual tiles instead of combined mosaics.')
 parser.add_argument('--img-folder', type=str, help='Path to folder where images are stored')
+parser.add_argument('--rms-folder', type=str, help='Path to folder where image RMS estimates are stored')
 parser.add_argument('--cat-folder', type=str, help='Path to folder where selavy catalogues are stored')
 parser.add_argument('--create-png', action="store_true", help='Create a png of the fits cutout.')
 parser.add_argument('--png-selavy-overlay', action="store_true", help='Overlay selavy components onto the png image.')
@@ -441,6 +442,16 @@ if not SELAVY_FOLDER:
             SELAVY_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/racs_catv/'
         else:
             SELAVY_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/racs_cat/'
+            
+BANE_FOLDER = arcs.rms_folder
+if not BANE_FOLDER:
+    if args.use_tiles:
+        BANE_FOLDER = '/import/ada2/ddob1600/RACS_BANE/I_mosaic_1.0_BANE/' #Note: Should run BANE on tile images!!
+    else:
+        if args.stokesv:
+            BANE_FOLDER = '/import/ada2/ddob1600/RACS_BANE/V_mosaic_1.0_BANE/'
+        else:
+            BANE_FOLDER = '/import/ada2/ddob1600/RACS_BANE/I_mosaic_1.0_BANE/'
 
 if catalog['ra'].dtype == np.float64:
     hms = False
