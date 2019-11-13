@@ -40,12 +40,33 @@ except ImportError:
     use_colorlog=False
 
 class Fields:
+    '''
+    Store the coordinates of all RACS fields
+    
+    :param fname: The name of the csv file containing the list of all RACS fields
+    :type fname: str
+    '''
+
     def __init__(self, fname):
+        '''Constructor method
+        '''
         self.fields = pd.read_csv(fname)
         self.direction = SkyCoord(Angle(self.fields["RA_HMS"], unit=u.hourangle), Angle(self.fields["DEC_DMS"], unit=u.deg))
 
     def find(self, src_dir, max_sep, catalog):
-        # if len(src_dir) > 1:
+        '''
+        Find which field each source in the catalogue is in.
+        
+        :param src_dir: Coordinates of sources to find fields for
+        :type src_dir: `astropy.coordinates.sky_coordinate.SkyCoord`
+        :param max_sep: Maximum allowable separation between source and beam centre in degrees
+        :type max_sep: float
+        :param catalog: Catalogue of sources to find fields for
+        :type catalog: `pandas.core.frame.DataFrame`
+        
+        :returns: An updated catalogue with nearest field data for each source, and a boolean array corresponding to whether the source is within max_sep
+        :rtype: `pandas.core.frame.DataFrame`, `numpy.ndarray`
+        '''
         nearest_beams, seps, _d3d = src_dir.match_to_catalog_sky(self.direction)
         within_beam = seps.deg < max_sep
         catalog["sbid"]=self.fields["SBID"].iloc[nearest_beams].values
@@ -461,6 +482,9 @@ else:
 logger.info("Finding RACS fields for sources...")
 fields = Fields("racs_test4.csv")
 src_fields, coords_mask = fields.find(src_coords, max_sep, catalog)
+
+print(type(src_coords), type(max_sep), type(catalog), type(src_fields), type(coords_mask))
+exit()
 
 src_coords = src_coords[coords_mask]
 
