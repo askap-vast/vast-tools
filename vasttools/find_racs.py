@@ -121,8 +121,6 @@ class Source:
         
     
     def make_postagestamp(self, img_data, hdu, wcs, src_coord, size, outfile):
-
-        
         self.cutout = Cutout2D(img_data, position=src_coord, size=size, wcs=wcs)
         
         # Put the cutout image in the FITS HDU
@@ -166,6 +164,8 @@ class Source:
                 logger.warning('Selavy image does not exist')
             self.selavy_fail = True
             self.selavy_info = self._empty_selavy()
+            self.selavy_info["has_match"] = False
+            self.has_match = False
             return
         
         self.selavy_sc = SkyCoord(self.selavy_cat['ra_deg_cont'], self.selavy_cat['dec_deg_cont'], unit=(u.deg, u.deg))
@@ -173,6 +173,7 @@ class Source:
         match_id, match_sep, _dist = src_coord.match_to_catalog_sky(self.selavy_sc)
         
         if match_sep < crossmatch_radius:
+            self.has_match = True
             self.selavy_info = self.selavy_cat[self.selavy_cat.index.isin([match_id])]
             
             selavy_ra = self.selavy_info['ra_hms_cont'].iloc[0]
@@ -185,8 +186,11 @@ class Source:
         else:
             if not QUIET:
                 logger.info("No selavy catalogue match. Nearest source %.0f arcsec away."%(match_sep.arcsec))
+            self.has_match = False
             self.selavy_info = self._empty_selavy()
+            
         self.selavy_fail = False
+        self.selavy_info["has_match"] = self.has_match
             
         
     def write_ann(self, outfile):
@@ -344,6 +348,7 @@ parser.add_argument('--stokesv', action="store_true", help='Use Stokes V images 
 parser.add_argument('--quiet', action="store_true", help='Turn off non-essential terminal output.')
 parser.add_argument('--crossmatch-only', action="store_true", help='Only run crossmatch, do not generate any fits or png files.')
 parser.add_argument('--selavy-simple', action="store_true", help='Only include flux density and uncertainty from selavy in returned table.')
+parser.add_argument('--process-matches', action="store_true", help='Only produce data products for sources that have a match from selavy.')
 parser.add_argument('--debug', action="store_true", help='Turn on debug output.')
 parser.add_argument('--no-background-rms', action="store_true", help='Do not estimate the background RMS around each source.')
 
@@ -549,27 +554,33 @@ for uf in uniq_fields:
         outfile = os.path.join(output_name, outfile)
 
         source = Source(field_name,SBID,tiles=args.use_tiles, stokesv=args.stokesv)
-        src_coord = field_src_coords[i]
-        if not args.crossmatch_only:
-            source.make_postagestamp(image.data, image.hdu, image.wcs, src_coord, imsize, outfile)
-              
-        source.extract_source(src_coord, crossmatch_radius, args.stokesv)
-        if not args.no_background_rms:
-            source.get_background_rms(image.rms_data, image.rms_wcs, src_coord)
         
-        #not ideal but line below has to be run after those above
-        if source.selavy_fail == False:
-            source.filter_selavy_components(src_coord, imsize)
-            if args.ann:
-                source.write_ann(outfile)
-            if args.reg:
-                source.write_reg(outfile)
+        src_coord = field_src_coords[i]
+        
+        source.extract_source(src_coord, crossmatch_radius, args.stokesv)
+        
+        if args.process_matches and not source.has_match:
+            crossmatch_output = source.selavy_info
+            logger.info("Source does not have a selavy match, not continuing processing")
+            
         else:
-            if not QUIET:
-                logger.error("Selavy failed! No region or annotation files will be made if requested.")
-        if args.create_png and not args.crossmatch_only:
-            source.make_png(src_coord, imsize, args.png_selavy_overlay, args.png_linear_percentile, args.png_use_zscale, 
-                args.png_zscale_contrast, outfile, args.png_ellipse_pa_corr, no_islands=args.png_no_island_labels, label=label, no_colorbar=args.png_no_colorbar)
+            if not args.crossmatch_only:
+                source.make_postagestamp(image.data, image.hdu, image.wcs, src_coord, imsize, outfile)
+            
+            #not ideal but line below has to be run after those above
+            if source.selavy_fail == False:
+                source.filter_selavy_components(src_coord, imsize)
+                if args.ann:
+                    source.write_ann(outfile)
+                if args.reg:
+                    source.write_reg(outfile)
+            else:
+                if not QUIET:
+                    logger.error("Selavy failed! No region or annotation files will be made if requested.")
+            if args.create_png and not args.crossmatch_only:
+                source.make_png(src_coord, imsize, args.png_selavy_overlay, args.png_use_zscale, args.png_zscale_contrast, 
+                    outfile, args.png_colorbar, args.png_ellipse_pa_corr, no_islands=args.png_no_island_labels, label=label)
+                
         if not crossmatch_output_check:
             crossmatch_output = source.selavy_info
             crossmatch_output.index = [indexes[i]]
