@@ -459,8 +459,16 @@ if hms:
 else:
     src_coords = SkyCoord(catalog['ra'], catalog['dec'], unit=(u.deg, u.deg))
 
+if args.vast_pilot:
+    fields_file = "vast1_survey_status.csv"
+    survey = "vast_pilot"
+else:
+    fields_file = "racs_test4.csv"
+    survey = "racs"
+    
+
 logger.info("Finding RACS fields for sources...")
-fields = Fields("racs_test4.csv")
+fields = Fields(fields_file)
 src_fields, coords_mask = fields.find(src_coords, max_sep, catalog)
 
 src_coords = src_coords[coords_mask]
@@ -547,7 +555,7 @@ if args.selavy_simple:
   crossmatch_output = crossmatch_output.rename(columns={"flux_int":"S_int", "rms_image":"S_err"})
 final = src_fields.join(crossmatch_output)
 
-output_crossmatch_name = "{}_racs_crossmatch.csv".format(output_name)
+output_crossmatch_name = "{}_{}_crossmatch.csv".format(output_name, survey)
 output_crossmatch_name = os.path.join(output_name, output_crossmatch_name)
 final.to_csv(output_crossmatch_name, index=False)
 logger.info("Written {}.".format(output_crossmatch_name))
