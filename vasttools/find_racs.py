@@ -486,24 +486,24 @@ for uf in uniq_fields:
         if args.process_matches and not source.has_match:
             crossmatch_output = source.selavy_info
             logger.info("Source does not have a selavy match, not continuing processing")
-            continue
-        
-        if not args.crossmatch_only:
-            source.make_postagestamp(image.data, image.hdu, image.wcs, src_coord, imsize, outfile)
-        
-        #not ideal but line below has to be run after those above
-        if source.selavy_fail == False:
-            source.filter_selavy_components(src_coord, imsize)
-            if args.ann:
-                source.write_ann(outfile)
-            if args.reg:
-                source.write_reg(outfile)
+            
         else:
-            if not QUIET:
-                logger.error("Selavy failed! No region or annotation files will be made if requested.")
-        if args.create_png and not args.crossmatch_only:
-            source.make_png(src_coord, imsize, args.png_selavy_overlay, args.png_use_zscale, args.png_zscale_contrast, 
-                outfile, args.png_colorbar, args.png_ellipse_pa_corr, no_islands=args.png_no_island_labels, label=label)
+          if not args.crossmatch_only:
+              source.make_postagestamp(image.data, image.hdu, image.wcs, src_coord, imsize, outfile)
+          
+          #not ideal but line below has to be run after those above
+          if source.selavy_fail == False:
+              source.filter_selavy_components(src_coord, imsize)
+              if args.ann:
+                  source.write_ann(outfile)
+              if args.reg:
+                  source.write_reg(outfile)
+          else:
+              if not QUIET:
+                  logger.error("Selavy failed! No region or annotation files will be made if requested.")
+          if args.create_png and not args.crossmatch_only:
+              source.make_png(src_coord, imsize, args.png_selavy_overlay, args.png_use_zscale, args.png_zscale_contrast, 
+                  outfile, args.png_colorbar, args.png_ellipse_pa_corr, no_islands=args.png_no_island_labels, label=label)
         if not crossmatch_output_check:
             crossmatch_output = source.selavy_info
             crossmatch_output.index = [indexes[i]]
