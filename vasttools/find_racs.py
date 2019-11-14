@@ -16,6 +16,7 @@ from astropy.nddata.utils import Cutout2D
 from astropy.coordinates import SkyCoord
 from astropy.io import fits
 from astropy.wcs import WCS
+from astropy.wcs.utils import skycoord_to_pixel
 from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
 import warnings
 warnings.filterwarnings('ignore', category=AstropyWarning, append=True)
@@ -24,17 +25,20 @@ warnings.filterwarnings('ignore', category=AstropyDeprecationWarning, append=Tru
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
 from matplotlib.collections import PatchCollection
-from astropy.visualization import ZScaleInterval,ImageNormalize, simple_norm
+from astropy.visualization import ZScaleInterval, ImageNormalize, PercentileInterval, AsymmetricPercentileInterval
+from astropy.visualization import LinearStretch
+import matplotlib.axes as maxes
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 import logging
 import logging.handlers
 import logging.config
 
-logger = logging.getLogger()
-s = logging.StreamHandler()
-logger.addHandler(s)
-
-logger.setLevel(logging.INFO)
+try:
+    import colorlog
+    use_colorlog=True
+except ImportError:
+    use_colorlog=False
 
 class Fields:
     def __init__(self, fname):
@@ -66,6 +70,9 @@ class Fields:
 
 class Image:
     def __init__(self, sbid, field, tiles=False):
+        self.sbid = sbid
+        self.field = field
+        
         if tiles:
             self.imgname = 'image.i.SB%s.cont.%s.linmos.taylor.0.restored.fits'%(sbid, field)            
         else:
@@ -80,6 +87,22 @@ class Image:
             self.data = self.hdu.data[0,0,:,:]
         except:
             self.data = self.hdu.data
+            
+    def get_rms_img(self):
+        '''
+        Load the BANE noisemap corresponding to the image
+        '''
+        self.rmsname = self.imgname.replace('.fits','_rms.fits')
+
+        self.rmspath = os.path.join(BANE_FOLDER, self.rmsname)
+        
+        self.rms_hdu = fits.open(self.rmspath)[0]
+        self.rms_wcs = WCS(self.rms_hdu.header, naxis=2)
+        
+        try:
+            self.rms_data = self.rms_hdu.data[0,0,:,:]
+        except:
+            self.rms_data = self.rms_hdu.data
 
 class Source:
     def __init__(self, field, sbid, tiles=False, stokesv=False):
@@ -126,22 +149,10 @@ class Source:
     
     def extract_source(self, src_coord, crossmatch_radius, stokesv):
         try:
-            with open(self.selavypath, "r") as f:
-                lines=f.readlines()
-
-            columns=lines[0].split()[1:-1]
-            data=[i.split() for i in lines[2:]]
-
-            self.selavy_cat=pd.DataFrame(data, columns=columns)
+            self.selavy_cat=pd.read_fwf(self.selavypath, skiprows=[1,])
             
-            if stokesv:
-                with open(self.nselavypath, "r") as f:
-                    lines=f.readlines()
-
-                columns=lines[0].split()[1:-1]
-                data=[i.split() for i in lines[2:]]
-                
-                nselavy_cat=pd.DataFrame(data, columns=columns)
+            if stokesv:                
+                nselavy_cat=pd.read_fwf(self.nselavypath, skiprows=[1,])
                 
                 nselavy_cat["island_id"]=["n{}".format(i) for i in nselavy_cat["island_id"]]
                 nselavy_cat["component_id"]=["n{}".format(i) for i in nselavy_cat["component_id"]]
@@ -171,7 +182,7 @@ class Source:
             selavy_iflux = self.selavy_info['flux_int'].iloc[0]
             selavy_iflux_err = self.selavy_info['flux_int_err'].iloc[0]
             if not QUIET:
-                logger.info("Source in selavy catalogue %s %s, %s+/-%s mJy (%.0f arcsec offset) "%(selavy_ra, selavy_dec, selavy_iflux, selavy_iflux_err, match_sep.arcsec))
+                logger.info("Source in selavy catalogue {} {}, {:.3f}+/-{:.3f} mJy ({:.3f} arcsec offset)".format(selavy_ra, selavy_dec, selavy_iflux, selavy_iflux_err, match_sep[0].arcsec))
         else:
             if not QUIET:
                 logger.info("No selavy catalogue match. Nearest source %.0f arcsec away."%(match_sep.arcsec))
@@ -240,7 +251,7 @@ class Source:
         #drop the ones we don't need
         self.selavy_cat_cut = self.selavy_cat[mask].reset_index(drop=True)
     
-    def make_png(self, src_coord, imsize, selavy, zscale, contrast, outfile, colorbar, pa_corr, no_islands=False, label="Source"):
+    def make_png(self, src_coord, imsize, selavy, percentile, zscale, contrast, outfile, pa_corr, no_islands=False, label="Source", no_colorbar=False):
         #image has already been loaded to get the fits
         outfile = outfile.replace(".fits", ".png")
         #convert data to mJy in case colorbar is used.
@@ -252,7 +263,7 @@ class Source:
         if zscale:
             self.img_norms = ImageNormalize(cutout_data, interval=ZScaleInterval(contrast=contrast))
         else:
-            self.img_norms = simple_norm(cutout_data, 'linear')
+            self.img_norms = ImageNormalize(cutout_data, interval=PercentileInterval(percentile), stretch=LinearStretch())
         im = ax.imshow(cutout_data, norm=self.img_norms, cmap="gray_r")
         ax.scatter([src_coord.ra.deg], [src_coord.dec.deg], transform=ax.get_transform('world'), marker="x", color="r", zorder=10, label=label)
         if selavy and self.selavy_fail == False:
@@ -282,13 +293,24 @@ class Source:
         lat = ax.coords[1]
         lon.set_axislabel("Right Ascension (J2000)")
         lat.set_axislabel("Declination (J2000)")
-        if colorbar:
-            cbar = fig.colorbar(im)
-            cbar.set_label('mJy')
+        if not no_colorbar:
+            divider = make_axes_locatable(ax)
+            cax = divider.append_axes("right", size="3%", pad=0.1, axes_class=maxes.Axes)
+            cb = fig.colorbar(im, cax=cax)
+            cb.set_label("mJy/beam")
         plt.savefig(outfile, bbox_inches="tight")
         if not QUIET:
             logger.info("Saved {}".format(outfile))
         plt.close()
+        
+    def get_background_rms(self, rms_img_data, rms_wcs, src_coord):
+        pix_coord = np.rint(skycoord_to_pixel(src_coord, rms_wcs)).astype(int)
+        rms_val = rms_img_data[pix_coord[0],pix_coord[1]]
+        try:
+          self.selavy_info['BANE_rms'] = rms_val
+        except:
+          self.selavy_info = self._empty_selavy()
+          self.selavy_info['BANE_rms'] = rms_val
 
 #Force nice
 os.nice(5)
@@ -310,14 +332,16 @@ parser.add_argument('--source-names', type=str, help='Only for use when entering
 parser.add_argument('--crossmatch-radius', type=float, help='Crossmatch radius in arcseconds', default=15.0)
 parser.add_argument('--use-tiles', action="store_true", help='Use the individual tiles instead of combined mosaics.')
 parser.add_argument('--img-folder', type=str, help='Path to folder where images are stored')
+parser.add_argument('--rms-folder', type=str, help='Path to folder where image RMS estimates are stored')
 parser.add_argument('--cat-folder', type=str, help='Path to folder where selavy catalogues are stored')
 parser.add_argument('--create-png', action="store_true", help='Create a png of the fits cutout.')
 parser.add_argument('--png-selavy-overlay', action="store_true", help='Overlay selavy components onto the png image.')
+parser.add_argument('--png-linear-percentile', type=float, default=99.9, help='Choose the percentile level for the png normalisation.')
 parser.add_argument('--png-use-zscale', action="store_true", help='Select ZScale normalisation (default is \'linear\').')
 parser.add_argument('--png-zscale-contrast', type=float, default=0.1, help='Select contrast to use for zscale.')
-parser.add_argument('--png-colorbar', action="store_true", help='Add a colorbar to the png plot.')
 parser.add_argument('--png-no-island-labels', action="store_true", help='Disable island lables on the png.')
 parser.add_argument('--png-ellipse-pa-corr', type=float, help='Correction to apply to ellipse position angle if needed (in deg). Angle is from x-axis from left to right.', default=0.0)
+parser.add_argument('--png-no-colorbar', action="store_true", help='Do not show the colorbar on the png.')
 parser.add_argument('--ann', action="store_true", help='Create a kvis annotation file of the components.')
 parser.add_argument('--reg', action="store_true", help='Create a DS9 region file of the components.')
 parser.add_argument('--stokesv', action="store_true", help='Use Stokes V images and catalogues. Works with combined images only!')
@@ -325,9 +349,42 @@ parser.add_argument('--quiet', action="store_true", help='Turn off non-essential
 parser.add_argument('--crossmatch-only', action="store_true", help='Only run crossmatch, do not generate any fits or png files.')
 parser.add_argument('--selavy-simple', action="store_true", help='Only include flux density and uncertainty from selavy in returned table.')
 parser.add_argument('--process-matches', action="store_true", help='Only produce data products for sources that have a match from selavy.')
+parser.add_argument('--debug', action="store_true", help='Turn on debug output.')
+parser.add_argument('--no-background-rms', action="store_true", help='Do not estimate the background RMS around each source.')
 
 
 args=parser.parse_args()
+
+logger = logging.getLogger()
+s = logging.StreamHandler()
+logformat='[%(asctime)s] - %(levelname)s - %(message)s'
+
+if use_colorlog:
+    formatter = colorlog.ColoredFormatter(
+        # "%(log_color)s%(levelname)-8s%(reset)s %(blue)s%(message)s",
+        "%(log_color)s[%(asctime)s] - %(levelname)s - %(blue)s%(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        reset=True,
+        log_colors={
+        'DEBUG':    'cyan',
+        'INFO':     'green',
+        'WARNING':  'yellow',
+        'ERROR':    'red',
+        'CRITICAL': 'red,bg_white',
+        },
+        secondary_log_colors={},
+        style='%'
+    )
+else:
+    formatter = logging.Formatter(logformat, datefmt="%Y-%m-%d %H:%M:%S")
+
+s.setFormatter(formatter)
+logger.addHandler(s)
+
+if args.debug:
+    logger.setLevel(logging.DEBUG)
+else:
+    logger.setLevel(logging.INFO)
 
 # Sort out output directory
 output_name = args.out_folder
@@ -420,6 +477,16 @@ if not SELAVY_FOLDER:
             SELAVY_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/racs_catv/'
         else:
             SELAVY_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/racs_cat/'
+            
+BANE_FOLDER = args.rms_folder
+if not BANE_FOLDER:
+    if args.use_tiles:
+        BANE_FOLDER = '/import/ada2/ddob1600/RACS_BANE/I_mosaic_1.0_BANE/' #Note: Should run BANE on tile images!!
+    else:
+        if args.stokesv:
+            BANE_FOLDER = '/import/ada2/ddob1600/RACS_BANE/V_mosaic_1.0_BANE/'
+        else:
+            BANE_FOLDER = '/import/ada2/ddob1600/RACS_BANE/I_mosaic_1.0_BANE/'
 
 if catalog['ra'].dtype == np.float64:
     hms = False
@@ -466,6 +533,9 @@ for uf in uniq_fields:
     field_src_coords = src_coords[mask]
     image = Image(srcs["sbid"].iloc[0], uf, tiles=args.use_tiles)
     
+    if not args.no_background_rms:
+      image.get_rms_img()
+    
     for i,row in srcs.iterrows():
         field_name = uf
             
@@ -484,6 +554,7 @@ for uf in uniq_fields:
         source = Source(field_name,SBID,tiles=args.use_tiles, stokesv=args.stokesv)
         
         src_coord = field_src_coords[i]
+        
         source.extract_source(src_coord, crossmatch_radius, args.stokesv)
         
         if args.process_matches and not source.has_match:
@@ -507,6 +578,7 @@ for uf in uniq_fields:
             if args.create_png and not args.crossmatch_only:
                 source.make_png(src_coord, imsize, args.png_selavy_overlay, args.png_use_zscale, args.png_zscale_contrast, 
                     outfile, args.png_colorbar, args.png_ellipse_pa_corr, no_islands=args.png_no_island_labels, label=label)
+                
         if not crossmatch_output_check:
             crossmatch_output = source.selavy_info
             crossmatch_output.index = [indexes[i]]
@@ -529,7 +601,7 @@ logger.info("Number of sources with matches < {} arcsec: {}".format(crossmatch_r
 logger.info("Processing took {:.1f} minutes.".format(runtime.seconds/60.))
 #Create and write final crossmatch csv
 if args.selavy_simple:
-  crossmatch_output = crossmatch_output.filter(items=["flux_int","rms_image"])
+  crossmatch_output = crossmatch_output.filter(items=["flux_int","rms_image","BANE_rms"])
   crossmatch_output = crossmatch_output.rename(columns={"flux_int":"S_int", "rms_image":"S_err"})
 final = src_fields.join(crossmatch_output)
 

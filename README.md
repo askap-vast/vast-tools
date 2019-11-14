@@ -26,6 +26,7 @@ Currently RACSv2 is being used. This does not include selavy catalogues for late
 * pandas
 * astropy
 * matplotlib
+* colorlog (optional)
 
 Latest versions of above recommended.
 
@@ -43,11 +44,14 @@ usage: find_racs.py [-h] [--imsize IMSIZE] [--maxsep MAXSEP]
                     [--out-folder OUT_FOLDER] [--source-names SOURCE_NAMES]
                     [--crossmatch-radius CROSSMATCH_RADIUS] [--use-tiles]
                     [--img-folder IMG_FOLDER] [--cat-folder CAT_FOLDER]
-                    [--create-png] [--png-selavy-overlay] [--png-use-zscale]
+                    [--create-png] [--png-selavy-overlay]
+                    [--png-linear-percentile PNG_LINEAR_PERCENTILE]
+                    [--png-use-zscale]
                     [--png-zscale-contrast PNG_ZSCALE_CONTRAST]
-                    [--png-colorbar] [--png-no-island-labels]
-                    [--png-ellipse-pa-corr PNG_ELLIPSE_PA_CORR] [--ann]
-                    [--reg] [--stokesv] [--quiet] [--crossmatch-only]
+                    [--png-no-island-labels]
+                    [--png-ellipse-pa-corr PNG_ELLIPSE_PA_CORR]
+                    [--png-no-colorbar] [--ann] [--reg] [--stokesv] [--quiet]
+                    [--crossmatch-only] [--selavy-simple] [--debug]
                     "HH:MM:SS [+/-]DD:MM:SS" OR input.csv
 
 positional arguments:
@@ -64,11 +68,11 @@ optional arguments:
   -h, --help            show this help message and exit
   --imsize IMSIZE       Edge size of the postagestamp in arcmin (default:
                         30.0)
-  --maxsep MAXSEP       Maximum separation of source from beam centre
-                        (default: 1.0)
+  --maxsep MAXSEP       Maximum separation of source from beam centre in
+                        degrees. (default: 1.0)
   --out-folder OUT_FOLDER
                         Name of the output directory to place all results in.
-                        (default: find_racs_output_20191101_11:32:10)
+                        (default: find_racs_output_20191108_17:01:53)
   --source-names SOURCE_NAMES
                         Only for use when entering coordaintes via the command
                         line. State the name of the source being searched. Use
@@ -76,7 +80,7 @@ optional arguments:
                         multiple sources separate with a comma with no space,
                         e.g. "SN 1994N,SN 2003D,SN 2019A" (default: )
   --crossmatch-radius CROSSMATCH_RADIUS
-                        Crossmatch radius in arcseconds (default: None)
+                        Crossmatch radius in arcseconds (default: 15.0)
   --use-tiles           Use the individual tiles instead of combined mosaics.
                         (default: False)
   --img-folder IMG_FOLDER
@@ -87,17 +91,20 @@ optional arguments:
   --create-png          Create a png of the fits cutout. (default: False)
   --png-selavy-overlay  Overlay selavy components onto the png image.
                         (default: False)
+  --png-linear-percentile PNG_LINEAR_PERCENTILE
+                        Choose the percentile level for the png normalisation.
+                        (default: 99.9)
   --png-use-zscale      Select ZScale normalisation (default is 'linear').
                         (default: False)
   --png-zscale-contrast PNG_ZSCALE_CONTRAST
                         Select contrast to use for zscale. (default: 0.1)
-  --png-colorbar        Add a colorbar to the png plot. (default: False)
   --png-no-island-labels
                         Disable island lables on the png. (default: False)
   --png-ellipse-pa-corr PNG_ELLIPSE_PA_CORR
                         Correction to apply to ellipse position angle if
                         needed (in deg). Angle is from x-axis from left to
                         right. (default: 0.0)
+  --png-no-colorbar     Do not show the colorbar on the png. (default: False)
   --ann                 Create a kvis annotation file of the components.
                         (default: False)
   --reg                 Create a DS9 region file of the components. (default:
@@ -108,6 +115,9 @@ optional arguments:
                         False)
   --crossmatch-only     Only run crossmatch, do not generate any fits or png
                         files. (default: False)
+  --selavy-simple       Only include flux density and uncertainty from selavy
+                        in returned table. (default: False)
+  --debug               Turn on debug output. (default: False)
 ```
 
 ### Inputs
