@@ -587,7 +587,7 @@ logger.info("Number of sources with matches < {} arcsec: {}".format(crossmatch_r
 logger.info("Processing took {:.1f} minutes.".format(runtime.seconds/60.))
 #Create and write final crossmatch csv
 if args.selavy_simple:
-  crossmatch_output = crossmatch_output.filter(items=["flux_int","rms_image"])
+  crossmatch_output = crossmatch_output.filter(items=["flux_int","rms_image","BANE_rms"])
   crossmatch_output = crossmatch_output.rename(columns={"flux_int":"S_int", "rms_image":"S_err"})
 final = src_fields.join(crossmatch_output)
 
