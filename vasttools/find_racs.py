@@ -89,6 +89,9 @@ class Image:
             self.data = self.hdu.data
             
     def get_rms_img(self):
+        '''
+        Load the BANE noisemap corresponding to the image
+        '''
         self.rmsname = self.imgname.replace('.fits','_rms.fits')
 
         self.rmspath = os.path.join(BANE_FOLDER, self.rmsname)
