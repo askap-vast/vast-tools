@@ -366,9 +366,6 @@ class Source:
         :type no_colorbar: bool, optional
         '''
         
-        print(type(args.png_selavy_overlay), type(args.png_linear_percentile), type(args.png_use_zscale), type(args.png_zscale_contrast), type(args.png_ellipse_pa_corr))
-            exit()
-        
         #image has already been loaded to get the fits
         outfile = outfile.replace(".fits", ".png")
         #convert data to mJy in case colorbar is used.
