@@ -431,6 +431,8 @@ else:
     catalog_dict['name'] = source_names
     
     catalog = pd.DataFrame.from_dict(catalog_dict)
+    
+catalog['name'] = catalog['name'].astype(str)
         
 imsize = Angle(args.imsize, unit=u.arcmin)
   
