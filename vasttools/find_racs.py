@@ -315,6 +315,7 @@ parser.add_argument('--quiet', action="store_true", help='Turn off non-essential
 parser.add_argument('--crossmatch-only', action="store_true", help='Only run crossmatch, do not generate any fits or png files.')
 parser.add_argument('--selavy-simple', action="store_true", help='Only include flux density and uncertainty from selavy in returned table.')
 parser.add_argument('--debug', action="store_true", help='Turn on debug output.')
+parser.add_argument('--vast-pilot', action="store_true", help='Query the VAST Pilot instead of RACS')
 
 
 args=parser.parse_args()
