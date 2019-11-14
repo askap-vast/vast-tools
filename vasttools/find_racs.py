@@ -16,6 +16,7 @@ from astropy.nddata.utils import Cutout2D
 from astropy.coordinates import SkyCoord
 from astropy.io import fits
 from astropy.wcs import WCS
+from astropy.wcs.utils import skycoord_to_pixel
 from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
 import warnings
 warnings.filterwarnings('ignore', category=AstropyWarning, append=True)
@@ -69,6 +70,9 @@ class Fields:
 
 class Image:
     def __init__(self, sbid, field, tiles=False):
+        self.sbid = sbid
+        self.field = field
+        
         if tiles:
             self.imgname = 'image.i.SB%s.cont.%s.linmos.taylor.0.restored.fits'%(sbid, field)            
         else:
@@ -83,6 +87,22 @@ class Image:
             self.data = self.hdu.data[0,0,:,:]
         except:
             self.data = self.hdu.data
+            
+    def get_rms_img(self):
+        '''
+        Load the BANE noisemap corresponding to the image
+        '''
+        self.rmsname = self.imgname.replace('.fits','_rms.fits')
+
+        self.rmspath = os.path.join(BANE_FOLDER, self.rmsname)
+        
+        self.rms_hdu = fits.open(self.rmspath)[0]
+        self.rms_wcs = WCS(self.rms_hdu.header, naxis=2)
+        
+        try:
+            self.rms_data = self.rms_hdu.data[0,0,:,:]
+        except:
+            self.rms_data = self.rms_hdu.data
 
 class Source:
     def __init__(self, field, sbid, tiles=False, stokesv=False):
@@ -278,6 +298,15 @@ class Source:
         if not QUIET:
             logger.info("Saved {}".format(outfile))
         plt.close()
+        
+    def get_background_rms(self, rms_img_data, rms_wcs, src_coord):
+        pix_coord = np.rint(skycoord_to_pixel(src_coord, rms_wcs)).astype(int)
+        rms_val = rms_img_data[pix_coord[0],pix_coord[1]]
+        try:
+          self.selavy_info['BANE_rms'] = rms_val
+        except:
+          self.selavy_info = self._empty_selavy()
+          self.selavy_info['BANE_rms'] = rms_val
 
 #Force nice
 os.nice(5)
@@ -299,6 +328,7 @@ parser.add_argument('--source-names', type=str, help='Only for use when entering
 parser.add_argument('--crossmatch-radius', type=float, help='Crossmatch radius in arcseconds', default=15.0)
 parser.add_argument('--use-tiles', action="store_true", help='Use the individual tiles instead of combined mosaics.')
 parser.add_argument('--img-folder', type=str, help='Path to folder where images are stored')
+parser.add_argument('--rms-folder', type=str, help='Path to folder where image RMS estimates are stored')
 parser.add_argument('--cat-folder', type=str, help='Path to folder where selavy catalogues are stored')
 parser.add_argument('--create-png', action="store_true", help='Create a png of the fits cutout.')
 parser.add_argument('--png-selavy-overlay', action="store_true", help='Overlay selavy components onto the png image.')
@@ -315,6 +345,7 @@ parser.add_argument('--quiet', action="store_true", help='Turn off non-essential
 parser.add_argument('--crossmatch-only', action="store_true", help='Only run crossmatch, do not generate any fits or png files.')
 parser.add_argument('--selavy-simple', action="store_true", help='Only include flux density and uncertainty from selavy in returned table.')
 parser.add_argument('--debug', action="store_true", help='Turn on debug output.')
+parser.add_argument('--no-background-rms', action="store_true", help='Do not estimate the background RMS around each source.')
 
 
 args=parser.parse_args()
@@ -441,6 +472,16 @@ if not SELAVY_FOLDER:
             SELAVY_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/racs_catv/'
         else:
             SELAVY_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/racs_cat/'
+            
+BANE_FOLDER = args.rms_folder
+if not BANE_FOLDER:
+    if args.use_tiles:
+        BANE_FOLDER = '/import/ada2/ddob1600/RACS_BANE/I_mosaic_1.0_BANE/' #Note: Should run BANE on tile images!!
+    else:
+        if args.stokesv:
+            BANE_FOLDER = '/import/ada2/ddob1600/RACS_BANE/V_mosaic_1.0_BANE/'
+        else:
+            BANE_FOLDER = '/import/ada2/ddob1600/RACS_BANE/I_mosaic_1.0_BANE/'
 
 if catalog['ra'].dtype == np.float64:
     hms = False
@@ -487,6 +528,9 @@ for uf in uniq_fields:
     field_src_coords = src_coords[mask]
     image = Image(srcs["sbid"].iloc[0], uf, tiles=args.use_tiles)
     
+    if not args.no_background_rms:
+      image.get_rms_img()
+    
     for i,row in srcs.iterrows():
         field_name = uf
             
@@ -506,7 +550,11 @@ for uf in uniq_fields:
         src_coord = field_src_coords[i]
         if not args.crossmatch_only:
             source.make_postagestamp(image.data, image.hdu, image.wcs, src_coord, imsize, outfile)
+              
         source.extract_source(src_coord, crossmatch_radius, args.stokesv)
+        if not args.no_background_rms:
+            source.get_background_rms(image.rms_data, image.rms_wcs, src_coord)
+        
         #not ideal but line below has to be run after those above
         if source.selavy_fail == False:
             source.filter_selavy_components(src_coord, imsize)
@@ -542,7 +590,7 @@ logger.info("Number of sources with matches < {} arcsec: {}".format(crossmatch_r
 logger.info("Processing took {:.1f} minutes.".format(runtime.seconds/60.))
 #Create and write final crossmatch csv
 if args.selavy_simple:
-  crossmatch_output = crossmatch_output.filter(items=["flux_int","rms_image"])
+  crossmatch_output = crossmatch_output.filter(items=["flux_int","rms_image","BANE_rms"])
   crossmatch_output = crossmatch_output.rename(columns={"flux_int":"S_int", "rms_image":"S_err"})
 final = src_fields.join(crossmatch_output)
 
