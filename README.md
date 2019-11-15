@@ -24,11 +24,18 @@ Currently RACSv2 is being used. This does not include selavy catalogues for late
 ### Requirements
 * Python 3
 * pandas
+* numpy
 * astropy
 * matplotlib
+* scipy
 * colorlog (optional)
 
 Latest versions of above recommended.
+
+There is a requirements.txt included in the repository that you can use to install the dependancies using
+```
+pip install -r requirements.txt
+````
 
 * Access to RACS images and selavy outputs.
 
@@ -43,15 +50,17 @@ Can be run in either Stokes I or Stokes V, not both at once.
 usage: find_racs.py [-h] [--imsize IMSIZE] [--maxsep MAXSEP]
                     [--out-folder OUT_FOLDER] [--source-names SOURCE_NAMES]
                     [--crossmatch-radius CROSSMATCH_RADIUS] [--use-tiles]
-                    [--img-folder IMG_FOLDER] [--cat-folder CAT_FOLDER]
-                    [--create-png] [--png-selavy-overlay]
+                    [--img-folder IMG_FOLDER] [--rms-folder RMS_FOLDER]
+                    [--cat-folder CAT_FOLDER] [--create-png]
+                    [--png-selavy-overlay]
                     [--png-linear-percentile PNG_LINEAR_PERCENTILE]
                     [--png-use-zscale]
                     [--png-zscale-contrast PNG_ZSCALE_CONTRAST]
                     [--png-no-island-labels]
                     [--png-ellipse-pa-corr PNG_ELLIPSE_PA_CORR]
                     [--png-no-colorbar] [--ann] [--reg] [--stokesv] [--quiet]
-                    [--crossmatch-only] [--selavy-simple] [--debug]
+                    [--crossmatch-only] [--selavy-simple] [--process-matches]
+                    [--debug] [--no-background-rms] [--find-fields]
                     "HH:MM:SS [+/-]DD:MM:SS" OR input.csv
 
 positional arguments:
@@ -72,7 +81,7 @@ optional arguments:
                         degrees. (default: 1.0)
   --out-folder OUT_FOLDER
                         Name of the output directory to place all results in.
-                        (default: find_racs_output_20191108_17:01:53)
+                        (default: find_racs_output_20191115_18:33:09)
   --source-names SOURCE_NAMES
                         Only for use when entering coordaintes via the command
                         line. State the name of the source being searched. Use
@@ -85,6 +94,9 @@ optional arguments:
                         (default: False)
   --img-folder IMG_FOLDER
                         Path to folder where images are stored (default: None)
+  --rms-folder RMS_FOLDER
+                        Path to folder where image RMS estimates are stored
+                        (default: None)
   --cat-folder CAT_FOLDER
                         Path to folder where selavy catalogues are stored
                         (default: None)
@@ -117,7 +129,13 @@ optional arguments:
                         files. (default: False)
   --selavy-simple       Only include flux density and uncertainty from selavy
                         in returned table. (default: False)
+  --process-matches     Only produce data products for sources that have a
+                        match from selavy. (default: False)
   --debug               Turn on debug output. (default: False)
+  --no-background-rms   Do not estimate the background RMS around each source.
+                        (default: False)
+  --find-fields         Only return the associated field for each source.
+                        (default: False)
 ```
 
 ### Inputs
