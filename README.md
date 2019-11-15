@@ -24,11 +24,18 @@ Currently RACSv2 is being used. This does not include selavy catalogues for late
 ### Requirements
 * Python 3
 * pandas
+* numpy
 * astropy
 * matplotlib
+* scipy
 * colorlog (optional)
 
 Latest versions of above recommended.
+
+There is a requirements.txt included in the repository that you can use to install the dependancies using
+```
+pip install -r requirements.txt
+````
 
 * Access to RACS images and selavy outputs.
 
