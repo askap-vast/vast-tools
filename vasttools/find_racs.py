@@ -477,7 +477,9 @@ if not SELAVY_FOLDER:
 BANE_FOLDER = args.rms_folder
 if not BANE_FOLDER:
     if args.use_tiles:
-        BANE_FOLDER = '/import/ada2/ddob1600/RACS_BANE/I_mosaic_1.0_BANE/' #Note: Should run BANE on tile images!!
+        logger.warning("Background noise estimates are not supported for tiles.")
+        logger.warning("Estimating background from mosaics instead.")
+        BANE_FOLDER = '/import/ada2/ddob1600/RACS_BANE/I_mosaic_1.0_BANE/'
     else:
         if args.stokesv:
             BANE_FOLDER = '/import/ada2/ddob1600/RACS_BANE/V_mosaic_1.0_BANE/'
