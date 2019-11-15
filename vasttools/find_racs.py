@@ -64,8 +64,22 @@ class Fields:
                         logger.warning("{:03d}".format(i+1))
         else:
             logger.info("All sources found!")
-            
+        
+        self.field_cat = new_catalog
+        
         return new_catalog, within_beam
+        
+    def write_fields_cat(self, outfile):
+        '''
+        Write the source-fields catalogue to file
+        
+        :param outfile: Name of the file to write to
+        :type outfile: str
+        '''
+        
+        self.field_cat.drop(["original_index"], axis=1).to_csv(outfile, index=False)
+        logger.info("Written field catalogue to {}.".format(outfile))
+        
         
 
 class Image:
@@ -351,6 +365,7 @@ parser.add_argument('--selavy-simple', action="store_true", help='Only include f
 parser.add_argument('--process-matches', action="store_true", help='Only produce data products for sources that have a match from selavy.')
 parser.add_argument('--debug', action="store_true", help='Turn on debug output.')
 parser.add_argument('--no-background-rms', action="store_true", help='Do not estimate the background RMS around each source.')
+parser.add_argument('--find-fields', action="store_true", help='Only return the associated field for each source.')
 
 
 args=parser.parse_args()
@@ -516,6 +531,13 @@ uniq_fields = src_fields['field_name'].unique().tolist()
 
 if len(uniq_fields) == 0:
     logger.error("Source(s) not in RACS!")
+    sys.exit()
+    
+if args.find_fields:
+    logger.info("find-fields selected, only outputting field catalogue")
+    fields_cat_file = "{}_racs_fields.csv".format(output_name)
+    fields_cat_file = os.path.join(output_name, fields_cat_file)
+    fields.write_fields_cat(fields_cat_file)
     sys.exit()
 
 crossmatch_output_check = False
