@@ -174,8 +174,7 @@ class Source:
                 self.selavy_cat = self.selavy_cat.append(nselavy_cat, ignore_index=True)
                 
         except:
-            if not QUIET:
-                logger.warning('Selavy image does not exist')
+            logger.warning('Selavy image does not exist')
             self.selavy_fail = True
             self.selavy_info = self._empty_selavy()
             self.selavy_info["has_match"] = False
@@ -195,11 +194,9 @@ class Source:
             
             selavy_iflux = self.selavy_info['flux_int'].iloc[0]
             selavy_iflux_err = self.selavy_info['flux_int_err'].iloc[0]
-            if not QUIET:
-                logger.info("Source in selavy catalogue {} {}, {:.3f}+/-{:.3f} mJy ({:.3f} arcsec offset)".format(selavy_ra, selavy_dec, selavy_iflux, selavy_iflux_err, match_sep[0].arcsec))
+            logger.info("Source in selavy catalogue {} {}, {:.3f}+/-{:.3f} mJy ({:.3f} arcsec offset)".format(selavy_ra, selavy_dec, selavy_iflux, selavy_iflux_err, match_sep[0].arcsec))
         else:
-            if not QUIET:
-                logger.info("No selavy catalogue match. Nearest source %.0f arcsec away."%(match_sep.arcsec))
+            logger.info("No selavy catalogue match. Nearest source %.0f arcsec away."%(match_sep.arcsec))
             self.has_match = False
             self.selavy_info = self._empty_selavy()
             
@@ -228,8 +225,7 @@ class Source:
                     f.write("COLOR GREEN\n")
                     neg = False
                 
-        if not QUIET:
-            logger.info("Wrote annotation file {}.".format(outfile))
+        logger.info("Wrote annotation file {}.".format(outfile))
         
     def write_reg(self, outfile):
         outfile=outfile.replace(".fits", ".reg")
@@ -248,8 +244,7 @@ class Source:
                 float(row["maj_axis"])/3600./2., float(row["min_axis"])/3600./2., float(row["pos_ang"])+90., color))
                 f.write("text({} {} \"{}\") # color={}\n".format(ra, dec, self._remove_sbid(row["island_id"]), color))
                 
-        if not QUIET:
-            logger.info("Wrote region file {}.".format(outfile))
+        logger.info("Wrote region file {}.".format(outfile))
     
     def _remove_sbid(self, island):
         temp = island.split("_")
@@ -300,8 +295,7 @@ class Source:
                 for i,val in enumerate(patches):
                     ax.annotate(island_names[i], val.center, xycoords=ax.get_transform('world'), annotation_clip=True, color="C0", weight="bold")
         else:
-            if not QUIET:
-                logger.warning("PNG: No selavy selected or selavy catalogue failed.")
+            logger.warning("PNG: No selavy selected or selavy catalogue failed.")
         ax.legend()
         lon = ax.coords[0]
         lat = ax.coords[1]
@@ -313,8 +307,7 @@ class Source:
             cb = fig.colorbar(im, cax=cax)
             cb.set_label("mJy/beam")
         plt.savefig(outfile, bbox_inches="tight")
-        if not QUIET:
-            logger.info("Saved {}".format(outfile))
+        logger.info("Saved {}".format(outfile))
         plt.close()
         
     def get_background_rms(self, rms_img_data, rms_wcs, src_coord):
@@ -399,7 +392,10 @@ logger.addHandler(s)
 if args.debug:
     logger.setLevel(logging.DEBUG)
 else:
-    logger.setLevel(logging.INFO)
+    if args.quiet:
+        logger.setLevel(logging.WARNING)
+    else:
+        logger.setLevel(logging.INFO)
 
 # Sort out output directory
 output_name = args.out_folder
@@ -471,8 +467,6 @@ if args.stokesv and args.use_tiles:
     logger.critical("Stokes V can only be used with combined mosaics at the moment.")
     logger.critical("Run again but remove the option '--use-tiles'.")
     sys.exit()
-
-QUIET = args.quiet
 
 FIND_FIELDS = args.find_fields
 if FIND_FIELDS:
@@ -557,14 +551,11 @@ if FIND_FIELDS:
 
 crossmatch_output_check = False
 
-if QUIET:
-    logger.info("Performing crossmatching for sources, please wait...")
+logger.info("Performing crossmatching for sources, please wait...")
 
 for uf in uniq_fields:
-    if not QUIET:
-        logger.info("-------------------------------------------------------------")
-        logger.info("Starting Field {}".format(uf))
-        logger.info("-------------------------------------------------------------")
+    logger.info("-------------------------------------------------------------")
+    
     mask = src_fields["field_name"]==uf
     srcs = src_fields[mask]
     indexes = srcs.index
@@ -584,8 +575,7 @@ for uf in uniq_fields:
         
         label = row["name"]
 
-        if not QUIET:
-            logger.info("Searching for crossmatch to source {}".format(label))
+        logger.info("Searching for crossmatch to source {}".format(label))
 
         outfile = "{}_{}_{}.fits".format(label.replace(" ", "_"), field_name, outfile_prefix)
         outfile = os.path.join(output_name, outfile)
@@ -612,8 +602,7 @@ for uf in uniq_fields:
                 if args.reg:
                     source.write_reg(outfile)
             else:
-                if not QUIET:
-                    logger.error("Selavy failed! No region or annotation files will be made if requested.")
+                logger.error("Selavy failed! No region or annotation files will be made if requested.")
             if args.create_png and not args.crossmatch_only:
                 source.make_png(src_coord, imsize, args.png_selavy_overlay, args.png_use_zscale, args.png_zscale_contrast, 
                     outfile, args.png_colorbar, args.png_ellipse_pa_corr, no_islands=args.png_no_island_labels, label=label)
@@ -626,8 +615,7 @@ for uf in uniq_fields:
             temp_crossmatch_output = source.selavy_info
             temp_crossmatch_output.index = [indexes[i]]
             crossmatch_output = crossmatch_output.append(source.selavy_info)
-        if not QUIET:
-            logger.info("-------------------------------------------------------------")
+        logger.info("-------------------------------------------------------------")
 
 runend = datetime.datetime.now()
 runtime = runend-runstart
