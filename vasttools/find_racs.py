@@ -469,10 +469,14 @@ crossmatch_radius = Angle(args.crossmatch_radius,unit=u.arcsec)
 
 if args.stokesv and args.use_tiles:
     logger.critical("Stokes V can only be used with combined mosaics at the moment.")
-    logger.critical ("Run again but remove the option '--use-tiles'.")
+    logger.critical("Run again but remove the option '--use-tiles'.")
     sys.exit()
 
 QUIET = args.quiet
+
+FIND_FIELDS = args.find_fields
+if FIND_FIELDS:
+    logger.info("find-fields selected, only outputting field catalogue")
 
 IMAGE_FOLDER = args.img_folder
 if not IMAGE_FOLDER:
@@ -484,6 +488,10 @@ if not IMAGE_FOLDER:
         else:
             IMAGE_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/I_mosaic_1.0/'
 
+if not os.path.isdir(IMAGE_FOLDER):
+    logger.critical("{} does not exist. Only finding fields".format(IMAGE_FOLDER))
+    FIND_FIELDS = True
+    
 
 SELAVY_FOLDER = args.cat_folder
 if not SELAVY_FOLDER:
@@ -495,6 +503,10 @@ if not SELAVY_FOLDER:
         else:
             SELAVY_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/racs_cat/'
             
+if not os.path.isdir(SELAVY_FOLDER):
+    logger.critical("{} does not exist. Only finding fields".format(SELAVY_FOLDER))
+    FIND_FIELDS = True
+            
 BANE_FOLDER = args.rms_folder
 if not BANE_FOLDER:
     if args.use_tiles:
@@ -504,6 +516,10 @@ if not BANE_FOLDER:
             BANE_FOLDER = '/import/ada2/ddob1600/RACS_BANE/V_mosaic_1.0_BANE/'
         else:
             BANE_FOLDER = '/import/ada2/ddob1600/RACS_BANE/I_mosaic_1.0_BANE/'
+
+if not os.path.isdir(BANE_FOLDER):
+    logger.critical("{} does not exist. Only finding fields".format(BANE_FOLDER))
+    FIND_FIELDS = True
 
 if catalog['ra'].dtype == np.float64:
     hms = False
@@ -533,8 +549,7 @@ if len(uniq_fields) == 0:
     logger.error("Source(s) not in RACS!")
     sys.exit()
     
-if args.find_fields:
-    logger.info("find-fields selected, only outputting field catalogue")
+if FIND_FIELDS:
     fields_cat_file = "{}_racs_fields.csv".format(output_name)
     fields_cat_file = os.path.join(output_name, fields_cat_file)
     fields.write_fields_cat(fields_cat_file)
