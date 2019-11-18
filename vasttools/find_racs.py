@@ -41,12 +41,33 @@ except ImportError:
     use_colorlog=False
 
 class Fields:
+    '''
+    Store the coordinates of all RACS fields
+    
+    :param fname: The name of the csv file containing the list of all RACS fields
+    :type fname: str
+    '''
+
     def __init__(self, fname):
+        '''Constructor method
+        '''
         self.fields = pd.read_csv(fname)
         self.direction = SkyCoord(Angle(self.fields["RA_HMS"], unit=u.hourangle), Angle(self.fields["DEC_DMS"], unit=u.deg))
 
     def find(self, src_dir, max_sep, catalog):
-        # if len(src_dir) > 1:
+        '''
+        Find which field each source in the catalogue is in.
+        
+        :param src_dir: Coordinates of sources to find fields for
+        :type src_dir: `astropy.coordinates.sky_coordinate.SkyCoord`
+        :param max_sep: Maximum allowable separation between source and beam centre in degrees
+        :type max_sep: float
+        :param catalog: Catalogue of sources to find fields for
+        :type catalog: `pandas.core.frame.DataFrame`
+        
+        :returns: An updated catalogue with nearest field data for each source, and a boolean array corresponding to whether the source is within max_sep
+        :rtype: `pandas.core.frame.DataFrame`, `numpy.ndarray`
+        '''
         nearest_beams, seps, _d3d = src_dir.match_to_catalog_sky(self.direction)
         within_beam = seps.deg < max_sep
         catalog["sbid"]=self.fields["SBID"].iloc[nearest_beams].values
@@ -83,7 +104,21 @@ class Fields:
         
 
 class Image:
+    '''
+    Store image data for a RACS field
+    
+    :param sbid: SBID of the field
+    :type sbid: str
+    :param field: Name of the field
+    :type field: str
+    :param tiles: Use RACS tiles instead of mosaiced images, defaults to `False`
+    :param tiles: bool, optional
+    '''
+    
     def __init__(self, sbid, field, tiles=False):
+        '''Constructor method
+        '''
+        
         self.sbid = sbid
         self.field = field
         
@@ -119,7 +154,22 @@ class Image:
             self.rms_data = self.rms_hdu.data
 
 class Source:
+    '''
+    This is a class representation of a catalogued source (or technically, a position)
+    
+    :param field: Name of the field containing the source
+    :type field: str
+    :param sbid: SBID of the field containing the source
+    :type sbid: str
+    :param tiles: `True` if image tiles should be used, `False` for mosaiced images, defaults to `False`
+    :type tiles: bool, optional
+    :param stokesv: `True` if Stokes V information is requested, `False` for Stokes I, defaults to `False`
+    :type stokesv: bool, optional
+    '''
+    
     def __init__(self, field, sbid, tiles=False, stokesv=False):
+        '''Constructor method
+        '''
         self.field = field
         self.sbid = sbid
         
@@ -135,6 +185,23 @@ class Source:
         
     
     def make_postagestamp(self, img_data, hdu, wcs, src_coord, size, outfile):
+        '''
+        Make a FITS postagestamp of the region around the source and write to file
+        
+        :param img_data: Numpy array containing the image data to make a cutout from
+        :type img_data: `numpy.ndarray`
+        :param hdu: FITS header data units of the image
+        :type hdu: `astropy.io.fits.hdu.image.PrimaryHDU`
+        :param wcs: World Coordinate System of the image
+        :type wcs: `astropy.wcs.wcs.WCS`
+        :param src_coord: Centre coordinates of the postagestamp
+        :type src_coord: `astropy.coordinates.sky_coordinate.SkyCoord`
+        :param size: Size of the cutout array along each axis
+        :type size: `astropy.coordinates.angles.Angle` or tuple of two `Angle` objects
+        :param outfile: Name of output FITS file
+        :type outfile: str
+        '''
+  
         self.cutout = Cutout2D(img_data, position=src_coord, size=size, wcs=wcs)
         
         # Put the cutout image in the FITS HDU
@@ -149,6 +216,13 @@ class Source:
         hdu_stamp.writeto(outfile, overwrite=True)
         
     def _empty_selavy(self):
+        '''
+        Create an empty `DataFrame` for sources that have no selavy match
+        
+        :returns: `DataFrame` with column names corresponding to selavy columns
+        :rtype: `pandas.core.frame.DataFrame`
+        '''
+        
         columns = ['island_id', 'component_id', 'component_name', 'ra_hms_cont',
                'dec_dms_cont', 'ra_deg_cont', 'dec_deg_cont', 'ra_err', 'dec_err',
                'freq', 'flux_peak', 'flux_peak_err', 'flux_int', 'flux_int_err',
@@ -162,6 +236,17 @@ class Source:
         return pd.DataFrame(np.array([[np.nan for i in range(len(columns))]]), columns=columns)
     
     def extract_source(self, src_coord, crossmatch_radius, stokesv):
+        '''
+        Search for catalogued selavy sources within `crossmatch_radius` of `src_coord` and store information of best match
+        
+        :param src_coord: Coordinate of the source of interest
+        :type src_coord: `astropy.coordinates.sky_coordinate.SkyCoord`
+        :param crossmatch_radius: Crossmatch radius to use
+        :type crossmatch_radius: `astropy.coordinates.angles.Angle`
+        :param stokesv: `True` to crossmatch with Stokes V image, `False` to match with Stokes I image, defaults to `False`
+        :type stokesv: bool, optional
+        '''
+        
         try:
             self.selavy_cat=pd.read_fwf(self.selavypath, skiprows=[1,])
             
@@ -205,6 +290,13 @@ class Source:
             
         
     def write_ann(self, outfile):
+        '''
+        Write a kvis annotation file containing all selavy sources within the image
+        
+        :param outfile: Name of the file to write
+        :type outfile: str
+        '''
+        
         outfile=outfile.replace(".fits", ".ann")
         neg = False
         with open(outfile, 'w') as f:
@@ -228,6 +320,13 @@ class Source:
         logger.info("Wrote annotation file {}.".format(outfile))
         
     def write_reg(self, outfile):
+        '''
+        Write a DS9 region file containing all selavy sources within the image
+        
+        :param outfile: Name of the file to write
+        :type outfile: str
+        '''
+        
         outfile=outfile.replace(".fits", ".reg")
         with open(outfile, 'w') as f:
             f.write("# Region file format: DS9 version 4.0\n")
@@ -247,6 +346,17 @@ class Source:
         logger.info("Wrote region file {}.".format(outfile))
     
     def _remove_sbid(self, island):
+        '''
+        Removes the SBID component of the island name. Takes into account negative 'n' label for
+        negative sources.
+        
+        :param island: island name.
+        :type island: str
+        
+        :returns: truncated island name.
+        :rtype: str
+        '''
+        
         temp = island.split("_")
         new_val = "_".join(temp[-2:])
         if temp[0].startswith("n"):
@@ -254,13 +364,45 @@ class Source:
         return new_val
     
     def filter_selavy_components(self, src_coord, imsize):
-        #Filter out selavy components outside field of image
+        '''
+        Create a shortened catalogue by filtering out selavy components outside of the image
+        
+        :param src_coord: Coordinates of the source of interest 
+        :type src_coord: `astropy.coordinates.sky_coordinate.SkyCoord`
+        :param imsize: Size of the image along each axis
+        :type imsize: `astropy.coordinates.angles.Angle` or tuple of two `Angle` objects
+        '''
+        
         seps = src_coord.separation(self.selavy_sc)
-        mask = seps <= imsize/1.4 #I think cutout2d angle means the width of the image, not a radius hence /2
-        #drop the ones we don't need
+        mask = seps <= imsize/1.4
         self.selavy_cat_cut = self.selavy_cat[mask].reset_index(drop=True)
     
-    def make_png(self, src_coord, imsize, selavy, percentile, zscale, contrast, outfile, pa_corr, no_islands=False, label="Source", no_colorbar=False):
+    def make_png(self, src_coord, selavy, percentile, zscale, contrast, outfile, pa_corr, no_islands=False, label="Source", no_colorbar=False):
+        '''
+        Save a PNG of the image postagestamp
+        
+        :param src_coord: Centre coordinates of the postagestamp
+        :type src_coord: `astropy.coordinates.sky_coordinate.SkyCoord`
+        :param selavy: `True` to overlay selavy components, `False` otherwise
+        :type selavy: bool
+        :param percentile: Percentile level for normalisation.
+        :type percentile: float
+        :param zscale: Use ZScale normalisation instead of linear
+        :type zscale: bool
+        :param contrast: ZScale contrast to use
+        :type contrast: float
+        :param outfile: Name of the file to write to, or the name of the FITS file
+        :type outfile: str
+        :param pa_corr: Correction to apply to ellipse position angle if needed (in deg). Angle is from x-axis from left to right.
+        :type pa_corr: float
+        :param no_islands: Disable island lables on the png, defaults to `False`
+        :type no_islands: bool, optional
+        :param label: Figure title (usually the name of the source of interest), defaults to "Source"
+        :type label: str, optional
+        :param no_colorbar: If `True`, do not show the colorbar on the png, defaults to `False`
+        :type no_colorbar: bool, optional
+        '''
+        
         #image has already been loaded to get the fits
         outfile = outfile.replace(".fits", ".png")
         #convert data to mJy in case colorbar is used.
@@ -605,6 +747,7 @@ for uf in uniq_fields:
                     source.write_reg(outfile)
             else:
                 logger.error("Selavy failed! No region or annotation files will be made if requested.")
+                
             if args.create_png and not args.crossmatch_only:
                 source.make_png(src_coord, imsize, args.png_selavy_overlay, args.png_use_zscale, args.png_zscale_contrast, 
                     outfile, args.png_colorbar, args.png_ellipse_pa_corr, no_islands=args.png_no_island_labels, label=label)
