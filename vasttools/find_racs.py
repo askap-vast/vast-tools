@@ -311,13 +311,14 @@ class Source:
     
     def _remove_sbid(self, island):
         '''
-        Adam, not sure what this function does, please add description
+        Removes the SBID component of the island name. Takes into account negative 'n' label for
+        negative sources.
         
-        :param island:
-        :type island:
+        :param island: island name.
+        :type island: str
         
-        :returns:
-        :rtype:
+        :returns: truncated island name.
+        :rtype: str
         '''
         
         temp = island.split("_")
