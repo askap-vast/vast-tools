@@ -16,6 +16,7 @@ from astropy.nddata.utils import Cutout2D
 from astropy.coordinates import SkyCoord
 from astropy.io import fits
 from astropy.wcs import WCS
+from astropy.wcs.utils import skycoord_to_pixel
 from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
 import warnings
 warnings.filterwarnings('ignore', category=AstropyWarning, append=True)
@@ -84,8 +85,22 @@ class Fields:
                         logger.warning("{:03d}".format(i+1))
         else:
             logger.info("All sources found!")
-            
+        
+        self.field_cat = new_catalog
+        
         return new_catalog, within_beam
+        
+    def write_fields_cat(self, outfile):
+        '''
+        Write the source-fields catalogue to file
+        
+        :param outfile: Name of the file to write to
+        :type outfile: str
+        '''
+        
+        self.field_cat.drop(["original_index"], axis=1).to_csv(outfile, index=False)
+        logger.info("Written field catalogue to {}.".format(outfile))
+        
         
 
 class Image:
@@ -103,6 +118,10 @@ class Image:
     def __init__(self, sbid, field, tiles=False):
         '''Constructor method
         '''
+        
+        self.sbid = sbid
+        self.field = field
+        
         if tiles:
             self.imgname = 'image.i.SB%s.cont.%s.linmos.taylor.0.restored.fits'%(sbid, field)            
         else:
@@ -117,6 +136,22 @@ class Image:
             self.data = self.hdu.data[0,0,:,:]
         except:
             self.data = self.hdu.data
+            
+    def get_rms_img(self):
+        '''
+        Load the BANE noisemap corresponding to the image
+        '''
+        self.rmsname = self.imgname.replace('.fits','_rms.fits')
+
+        self.rmspath = os.path.join(BANE_FOLDER, self.rmsname)
+        
+        self.rms_hdu = fits.open(self.rmspath)[0]
+        self.rms_wcs = WCS(self.rms_hdu.header, naxis=2)
+        
+        try:
+            self.rms_data = self.rms_hdu.data[0,0,:,:]
+        except:
+            self.rms_data = self.rms_hdu.data
 
 class Source:
     '''
@@ -166,7 +201,7 @@ class Source:
         :param outfile: Name of output FITS file
         :type outfile: str
         '''
-        
+  
         self.cutout = Cutout2D(img_data, position=src_coord, size=size, wcs=wcs)
         
         # Put the cutout image in the FITS HDU
@@ -224,10 +259,11 @@ class Source:
                 self.selavy_cat = self.selavy_cat.append(nselavy_cat, ignore_index=True)
                 
         except:
-            if not QUIET:
-                logger.warning('Selavy image does not exist')
+            logger.warning('Selavy image does not exist')
             self.selavy_fail = True
             self.selavy_info = self._empty_selavy()
+            self.selavy_info["has_match"] = False
+            self.has_match = False
             return
         
         self.selavy_sc = SkyCoord(self.selavy_cat['ra_deg_cont'], self.selavy_cat['dec_deg_cont'], unit=(u.deg, u.deg))
@@ -235,6 +271,7 @@ class Source:
         match_id, match_sep, _dist = src_coord.match_to_catalog_sky(self.selavy_sc)
         
         if match_sep < crossmatch_radius:
+            self.has_match = True
             self.selavy_info = self.selavy_cat[self.selavy_cat.index.isin([match_id])]
             
             selavy_ra = self.selavy_info['ra_hms_cont'].iloc[0]
@@ -242,13 +279,14 @@ class Source:
             
             selavy_iflux = self.selavy_info['flux_int'].iloc[0]
             selavy_iflux_err = self.selavy_info['flux_int_err'].iloc[0]
-            if not QUIET:
-                logger.info("Source in selavy catalogue {} {}, {:.3f}+/-{:.3f} mJy ({:.3f} arcsec offset)".format(selavy_ra, selavy_dec, selavy_iflux, selavy_iflux_err, match_sep[0].arcsec))
+            logger.info("Source in selavy catalogue {} {}, {:.3f}+/-{:.3f} mJy ({:.3f} arcsec offset)".format(selavy_ra, selavy_dec, selavy_iflux, selavy_iflux_err, match_sep[0].arcsec))
         else:
-            if not QUIET:
-                logger.info("No selavy catalogue match. Nearest source %.0f arcsec away."%(match_sep.arcsec))
+            logger.info("No selavy catalogue match. Nearest source %.0f arcsec away."%(match_sep.arcsec))
+            self.has_match = False
             self.selavy_info = self._empty_selavy()
+            
         self.selavy_fail = False
+        self.selavy_info["has_match"] = self.has_match
             
         
     def write_ann(self, outfile):
@@ -279,8 +317,7 @@ class Source:
                     f.write("COLOR GREEN\n")
                     neg = False
                 
-        if not QUIET:
-            logger.info("Wrote annotation file {}.".format(outfile))
+        logger.info("Wrote annotation file {}.".format(outfile))
         
     def write_reg(self, outfile):
         '''
@@ -306,8 +343,7 @@ class Source:
                 float(row["maj_axis"])/3600./2., float(row["min_axis"])/3600./2., float(row["pos_ang"])+90., color))
                 f.write("text({} {} \"{}\") # color={}\n".format(ra, dec, self._remove_sbid(row["island_id"]), color))
                 
-        if not QUIET:
-            logger.info("Wrote region file {}.".format(outfile))
+        logger.info("Wrote region file {}.".format(outfile))
     
     def _remove_sbid(self, island):
         '''
@@ -401,8 +437,7 @@ class Source:
                 for i,val in enumerate(patches):
                     ax.annotate(island_names[i], val.center, xycoords=ax.get_transform('world'), annotation_clip=True, color="C0", weight="bold")
         else:
-            if not QUIET:
-                logger.warning("PNG: No selavy selected or selavy catalogue failed.")
+            logger.warning("PNG: No selavy selected or selavy catalogue failed.")
         ax.legend()
         lon = ax.coords[0]
         lat = ax.coords[1]
@@ -414,9 +449,17 @@ class Source:
             cb = fig.colorbar(im, cax=cax)
             cb.set_label("mJy/beam")
         plt.savefig(outfile, bbox_inches="tight")
-        if not QUIET:
-            logger.info("Saved {}".format(outfile))
+        logger.info("Saved {}".format(outfile))
         plt.close()
+        
+    def get_background_rms(self, rms_img_data, rms_wcs, src_coord):
+        pix_coord = np.rint(skycoord_to_pixel(src_coord, rms_wcs)).astype(int)
+        rms_val = rms_img_data[pix_coord[0],pix_coord[1]]
+        try:
+          self.selavy_info['BANE_rms'] = rms_val
+        except:
+          self.selavy_info = self._empty_selavy()
+          self.selavy_info['BANE_rms'] = rms_val
 
 #Force nice
 os.nice(5)
@@ -438,6 +481,7 @@ parser.add_argument('--source-names', type=str, help='Only for use when entering
 parser.add_argument('--crossmatch-radius', type=float, help='Crossmatch radius in arcseconds', default=15.0)
 parser.add_argument('--use-tiles', action="store_true", help='Use the individual tiles instead of combined mosaics.')
 parser.add_argument('--img-folder', type=str, help='Path to folder where images are stored')
+parser.add_argument('--rms-folder', type=str, help='Path to folder where image RMS estimates are stored')
 parser.add_argument('--cat-folder', type=str, help='Path to folder where selavy catalogues are stored')
 parser.add_argument('--create-png', action="store_true", help='Create a png of the fits cutout.')
 parser.add_argument('--png-selavy-overlay', action="store_true", help='Overlay selavy components onto the png image.')
@@ -453,7 +497,10 @@ parser.add_argument('--stokesv', action="store_true", help='Use Stokes V images 
 parser.add_argument('--quiet', action="store_true", help='Turn off non-essential terminal output.')
 parser.add_argument('--crossmatch-only', action="store_true", help='Only run crossmatch, do not generate any fits or png files.')
 parser.add_argument('--selavy-simple', action="store_true", help='Only include flux density and uncertainty from selavy in returned table.')
+parser.add_argument('--process-matches', action="store_true", help='Only produce data products for sources that have a match from selavy.')
 parser.add_argument('--debug', action="store_true", help='Turn on debug output.')
+parser.add_argument('--no-background-rms', action="store_true", help='Do not estimate the background RMS around each source.')
+parser.add_argument('--find-fields', action="store_true", help='Only return the associated field for each source.')
 
 
 args=parser.parse_args()
@@ -487,7 +534,10 @@ logger.addHandler(s)
 if args.debug:
     logger.setLevel(logging.DEBUG)
 else:
-    logger.setLevel(logging.INFO)
+    if args.quiet:
+        logger.setLevel(logging.WARNING)
+    else:
+        logger.setLevel(logging.INFO)
 
 # Sort out output directory
 output_name = args.out_folder
@@ -539,6 +589,8 @@ else:
     catalog_dict['name'] = source_names
     
     catalog = pd.DataFrame.from_dict(catalog_dict)
+    
+catalog['name'] = catalog['name'].astype(str)
         
 imsize = Angle(args.imsize, unit=u.arcmin)
   
@@ -555,10 +607,12 @@ crossmatch_radius = Angle(args.crossmatch_radius,unit=u.arcsec)
 
 if args.stokesv and args.use_tiles:
     logger.critical("Stokes V can only be used with combined mosaics at the moment.")
-    logger.critical ("Run again but remove the option '--use-tiles'.")
+    logger.critical("Run again but remove the option '--use-tiles'.")
     sys.exit()
 
-QUIET = args.quiet
+FIND_FIELDS = args.find_fields
+if FIND_FIELDS:
+    logger.info("find-fields selected, only outputting field catalogue")
 
 IMAGE_FOLDER = args.img_folder
 if not IMAGE_FOLDER:
@@ -570,6 +624,10 @@ if not IMAGE_FOLDER:
         else:
             IMAGE_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/I_mosaic_1.0/'
 
+if not os.path.isdir(IMAGE_FOLDER):
+    logger.critical("{} does not exist. Only finding fields".format(IMAGE_FOLDER))
+    FIND_FIELDS = True
+    
 
 SELAVY_FOLDER = args.cat_folder
 if not SELAVY_FOLDER:
@@ -580,6 +638,26 @@ if not SELAVY_FOLDER:
             SELAVY_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/racs_catv/'
         else:
             SELAVY_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/racs_cat/'
+            
+if not os.path.isdir(SELAVY_FOLDER):
+    logger.critical("{} does not exist. Only finding fields".format(SELAVY_FOLDER))
+    FIND_FIELDS = True
+            
+BANE_FOLDER = args.rms_folder
+if not BANE_FOLDER:
+    if args.use_tiles:
+        logger.warning("Background noise estimates are not supported for tiles.")
+        logger.warning("Estimating background from mosaics instead.")
+        BANE_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/I_mosaic_1.0_BANE/'
+    else:
+        if args.stokesv:
+            BANE_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/V_mosaic_1.0_BANE/'
+        else:
+            BANE_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/I_mosaic_1.0_BANE/'
+
+if not os.path.isdir(BANE_FOLDER):
+    logger.critical("{} does not exist. Only finding fields".format(BANE_FOLDER))
+    FIND_FIELDS = True
 
 if catalog['ra'].dtype == np.float64:
     hms = False
@@ -608,23 +686,29 @@ uniq_fields = src_fields['field_name'].unique().tolist()
 if len(uniq_fields) == 0:
     logger.error("Source(s) not in RACS!")
     sys.exit()
+    
+if FIND_FIELDS:
+    fields_cat_file = "{}_racs_fields.csv".format(output_name)
+    fields_cat_file = os.path.join(output_name, fields_cat_file)
+    fields.write_fields_cat(fields_cat_file)
+    sys.exit()
 
 crossmatch_output_check = False
 
-if QUIET:
-    logger.info("Performing crossmatching for sources, please wait...")
+logger.info("Performing crossmatching for sources, please wait...")
 
 for uf in uniq_fields:
-    if not QUIET:
-        logger.info("-------------------------------------------------------------")
-        logger.info("Starting Field {}".format(uf))
-        logger.info("-------------------------------------------------------------")
+    logger.info("-------------------------------------------------------------")
+    
     mask = src_fields["field_name"]==uf
     srcs = src_fields[mask]
     indexes = srcs.index
     srcs = srcs.reset_index()
     field_src_coords = src_coords[mask]
     image = Image(srcs["sbid"].iloc[0], uf, tiles=args.use_tiles)
+    
+    if not args.no_background_rms:
+      image.get_rms_img()
     
     for i,row in srcs.iterrows():
         field_name = uf
@@ -635,31 +719,38 @@ for uf in uniq_fields:
         
         label = row["name"]
 
-        if not QUIET:
-            logger.info("Searching for crossmatch to source {}".format(label))
+        logger.info("Searching for crossmatch to source {}".format(label))
 
         outfile = "{}_{}_{}.fits".format(label.replace(" ", "_"), field_name, outfile_prefix)
         outfile = os.path.join(output_name, outfile)
 
         source = Source(field_name,SBID,tiles=args.use_tiles, stokesv=args.stokesv)
+        
         src_coord = field_src_coords[i]
         
-        if not args.crossmatch_only:
-            source.make_postagestamp(image.data, image.hdu, image.wcs, src_coord, imsize, outfile)
         source.extract_source(src_coord, crossmatch_radius, args.stokesv)
-        #not ideal but line below has to be run after those above
-        if source.selavy_fail == False:
-            source.filter_selavy_components(src_coord, imsize)
-            if args.ann:
-                source.write_ann(outfile)
-            if args.reg:
-                source.write_reg(outfile)
+        
+        if args.process_matches and not source.has_match:
+            crossmatch_output = source.selavy_info
+            logger.info("Source does not have a selavy match, not continuing processing")
+            
         else:
-            if not QUIET:
+            if not args.crossmatch_only:
+                source.make_postagestamp(image.data, image.hdu, image.wcs, src_coord, imsize, outfile)
+            
+            #not ideal but line below has to be run after those above
+            if source.selavy_fail == False:
+                source.filter_selavy_components(src_coord, imsize)
+                if args.ann:
+                    source.write_ann(outfile)
+                if args.reg:
+                    source.write_reg(outfile)
+            else:
                 logger.error("Selavy failed! No region or annotation files will be made if requested.")
-        if args.create_png and not args.crossmatch_only:
-            source.make_png(src_coord, args.png_selavy_overlay, args.png_linear_percentile, args.png_use_zscale, 
-                args.png_zscale_contrast, outfile, args.png_ellipse_pa_corr, no_islands=args.png_no_island_labels, label=label, no_colorbar=args.png_no_colorbar)
+                
+            if args.create_png and not args.crossmatch_only:
+                source.make_png(src_coord, imsize, args.png_selavy_overlay, args.png_use_zscale, args.png_zscale_contrast, 
+                    outfile, args.png_colorbar, args.png_ellipse_pa_corr, no_islands=args.png_no_island_labels, label=label)
                 
         if not crossmatch_output_check:
             crossmatch_output = source.selavy_info
@@ -669,8 +760,7 @@ for uf in uniq_fields:
             temp_crossmatch_output = source.selavy_info
             temp_crossmatch_output.index = [indexes[i]]
             crossmatch_output = crossmatch_output.append(source.selavy_info)
-        if not QUIET:
-            logger.info("-------------------------------------------------------------")
+        logger.info("-------------------------------------------------------------")
 
 runend = datetime.datetime.now()
 runtime = runend-runstart
@@ -683,7 +773,7 @@ logger.info("Number of sources with matches < {} arcsec: {}".format(crossmatch_r
 logger.info("Processing took {:.1f} minutes.".format(runtime.seconds/60.))
 #Create and write final crossmatch csv
 if args.selavy_simple:
-  crossmatch_output = crossmatch_output.filter(items=["flux_int","rms_image"])
+  crossmatch_output = crossmatch_output.filter(items=["flux_int","rms_image","BANE_rms"])
   crossmatch_output = crossmatch_output.rename(columns={"flux_int":"S_int", "rms_image":"S_err"})
 final = src_fields.join(crossmatch_output)
 
