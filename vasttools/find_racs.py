@@ -506,12 +506,12 @@ if not BANE_FOLDER:
     if args.use_tiles:
         logger.warning("Background noise estimates are not supported for tiles.")
         logger.warning("Estimating background from mosaics instead.")
-        BANE_FOLDER = '/import/ada2/ddob1600/RACS_BANE/I_mosaic_1.0_BANE/'
+        BANE_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/I_mosaic_1.0_BANE/'
     else:
         if args.stokesv:
-            BANE_FOLDER = '/import/ada2/ddob1600/RACS_BANE/V_mosaic_1.0_BANE/'
+            BANE_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/V_mosaic_1.0_BANE/'
         else:
-            BANE_FOLDER = '/import/ada2/ddob1600/RACS_BANE/I_mosaic_1.0_BANE/'
+            BANE_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/I_mosaic_1.0_BANE/'
 
 if not os.path.isdir(BANE_FOLDER):
     logger.critical("{} does not exist. Only finding fields".format(BANE_FOLDER))
