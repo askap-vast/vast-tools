@@ -118,7 +118,6 @@ class Image:
     def __init__(self, sbid, field, tiles=False):
         '''Constructor method
         '''
-        
         self.sbid = sbid
         self.field = field
         
@@ -502,7 +501,6 @@ parser.add_argument('--debug', action="store_true", help='Turn on debug output.'
 parser.add_argument('--no-background-rms', action="store_true", help='Do not estimate the background RMS around each source.')
 parser.add_argument('--find-fields', action="store_true", help='Only return the associated field for each source.')
 
-
 args=parser.parse_args()
 
 logger = logging.getLogger()
@@ -638,16 +636,18 @@ if not SELAVY_FOLDER:
             SELAVY_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/racs_catv/'
         else:
             SELAVY_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/racs_cat/'
-            
+
 if not os.path.isdir(SELAVY_FOLDER):
     logger.critical("{} does not exist. Only finding fields".format(SELAVY_FOLDER))
     FIND_FIELDS = True
-            
-BANE_FOLDER = args.rms_folder
+    
+
+    BANE_FOLDER = args.rms_folder
 if not BANE_FOLDER:
     if args.use_tiles:
         logger.warning("Background noise estimates are not supported for tiles.")
         logger.warning("Estimating background from mosaics instead.")
+        
         BANE_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/I_mosaic_1.0_BANE/'
     else:
         if args.stokesv:
@@ -727,13 +727,25 @@ for uf in uniq_fields:
         source = Source(field_name,SBID,tiles=args.use_tiles, stokesv=args.stokesv)
         
         src_coord = field_src_coords[i]
-        
+
+        if not args.crossmatch_only:
+            source.make_postagestamp(image.data, image.hdu, image.wcs, src_coord, imsize, outfile)
+              
         source.extract_source(src_coord, crossmatch_radius, args.stokesv)
+        if not args.no_background_rms:
+            source.get_background_rms(image.rms_data, image.rms_wcs, src_coord)
         
+        #not ideal but line below has to be run after those above
+        if source.selavy_fail == False:
+            source.filter_selavy_components(src_coord, imsize)
+            if args.ann:
+                source.write_ann(outfile)
+            if args.reg:
+                source.write_reg(outfile)
+                
         if args.process_matches and not source.has_match:
-            crossmatch_output = source.selavy_info
             logger.info("Source does not have a selavy match, not continuing processing")
-            
+            continue
         else:
             if not args.crossmatch_only:
                 source.make_postagestamp(image.data, image.hdu, image.wcs, src_coord, imsize, outfile)
