@@ -646,8 +646,6 @@ if not IMAGE_FOLDER:
             stokes_dir = "{}_mosaic_1.0".format(stokes_param)
 
     IMAGE_FOLDER = os.path.join(default_base_folder, survey_folder, image_dir, stokes_dir)
-    logger.info(default_base_folder)
-    logger.info(IMAGE_FOLDER)
 
 if not os.path.isdir(IMAGE_FOLDER):
     logger.critical("{} does not exist. Only finding fields".format(IMAGE_FOLDER))
@@ -729,7 +727,6 @@ crossmatch_output_check = False
 logger.info("Performing crossmatching for sources, please wait...")
 
 for uf in uniq_fields:
-    logger.info(uf)
     logger.info("-------------------------------------------------------------")
     
     mask = src_fields["field_name"]==uf
@@ -815,7 +812,7 @@ if args.selavy_simple:
   crossmatch_output = crossmatch_output.rename(columns={"flux_int":"S_int", "rms_image":"S_err"})
 final = src_fields.join(crossmatch_output)
 
-output_crossmatch_name = "{}_racs_crossmatch.csv".format(output_name)
+output_crossmatch_name = "{}_crossmatch.csv".format(output_name)
 output_crossmatch_name = os.path.join(output_name, output_crossmatch_name)
 final.to_csv(output_crossmatch_name, index=False)
 logger.info("Written {}.".format(output_crossmatch_name))
