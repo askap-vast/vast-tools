@@ -799,7 +799,7 @@ for uf in uniq_fields:
         outfile = "{}_{}_{}.fits".format(label.replace(" ", "_"), fieldname, outfile_prefix)
         outfile = os.path.join(output_name, outfile)
         
-        source = Source(field_name,SBID,tiles=args.use_tiles, stokesv=args.stokesv)
+        source = Source(fieldname,SBID,tiles=args.use_tiles, stokesv=args.stokesv)
         
         src_coord = field_src_coords[i]
 
