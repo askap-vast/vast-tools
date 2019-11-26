@@ -106,19 +106,20 @@ class Fields:
 class Image:
     '''
     Store image data for a survey field
+    Store image data for a RACS field
     
     :param sbid: SBID of the field
     :type sbid: str
     :param field: Name of the field
     :type field: str
     :param tiles: Use image tiles instead of mosaiced images, defaults to `False`
+    :param tiles: Use RACS tiles instead of mosaiced images, defaults to `False`
     :param tiles: bool, optional
     '''
     
     def __init__(self, sbid, field, tiles=False):
         '''Constructor method
         '''
-        
         self.sbid = sbid
         self.field = field
         
@@ -641,6 +642,10 @@ else:
 
 default_base_folder = "/import/ada1/askap/"
 
+FIND_FIELDS = args.find_fields
+if FIND_FIELDS:
+    logger.info("find-fields selected, only outputting field catalogue")
+
 IMAGE_FOLDER = args.img_folder
 if not IMAGE_FOLDER:
     if args.use_tiles:
@@ -697,6 +702,28 @@ if not os.path.isdir(BANE_FOLDER):
     logger.critical("{} does not exist. Only finding fields".format(BANE_FOLDER))
     FIND_FIELDS = True
 
+if not os.path.isdir(SELAVY_FOLDER):
+    logger.critical("{} does not exist. Only finding fields".format(SELAVY_FOLDER))
+    FIND_FIELDS = True
+    
+
+    BANE_FOLDER = args.rms_folder
+if not BANE_FOLDER:
+    if args.use_tiles:
+        logger.warning("Background noise estimates are not supported for tiles.")
+        logger.warning("Estimating background from mosaics instead.")
+        
+        BANE_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/I_mosaic_1.0_BANE/'
+    else:
+        if args.stokesv:
+            BANE_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/V_mosaic_1.0_BANE/'
+        else:
+            BANE_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/I_mosaic_1.0_BANE/'
+
+if not os.path.isdir(BANE_FOLDER):
+    logger.critical("{} does not exist. Only finding fields".format(BANE_FOLDER))
+    FIND_FIELDS = True
+
 if catalog['ra'].dtype == np.float64:
     hms = False
     deg = True
@@ -730,6 +757,12 @@ if FIND_FIELDS:
     fields_cat_file = os.path.join(output_name, fields_cat_file)
     fields.write_fields_cat(fields_cat_file)
     sys.exit()
+    
+if FIND_FIELDS:
+    fields_cat_file = "{}_racs_fields.csv".format(output_name)
+    fields_cat_file = os.path.join(output_name, fields_cat_file)
+    fields.write_fields_cat(fields_cat_file)
+    sys.exit()
 
 crossmatch_output_check = False
 
@@ -743,7 +776,7 @@ for uf in uniq_fields:
     indexes = srcs.index
     srcs = srcs.reset_index()
     field_src_coords = src_coords[mask]
-    
+
     if args.vast_pilot:
         fieldname = "{}.{}.{}".format(uf,epoch_str,stokes_param)
     else:
@@ -765,17 +798,29 @@ for uf in uniq_fields:
 
         outfile = "{}_{}_{}.fits".format(label.replace(" ", "_"), fieldname, outfile_prefix)
         outfile = os.path.join(output_name, outfile)
-
-        source = Source(fieldname,SBID,tiles=args.use_tiles, stokesv=args.stokesv)
+        
+        source = Source(field_name,SBID,tiles=args.use_tiles, stokesv=args.stokesv)
         
         src_coord = field_src_coords[i]
-        
+
+        if not args.crossmatch_only:
+            source.make_postagestamp(image.data, image.hdu, image.wcs, src_coord, imsize, outfile)
+              
         source.extract_source(src_coord, crossmatch_radius, args.stokesv)
+        if not args.no_background_rms:
+            source.get_background_rms(image.rms_data, image.rms_wcs, src_coord)
         
+        #not ideal but line below has to be run after those above
+        if source.selavy_fail == False:
+            source.filter_selavy_components(src_coord, imsize)
+            if args.ann:
+                source.write_ann(outfile)
+            if args.reg:
+                source.write_reg(outfile)
+                
         if args.process_matches and not source.has_match:
-            crossmatch_output = source.selavy_info
             logger.info("Source does not have a selavy match, not continuing processing")
-            
+            continue
         else:
             if not args.crossmatch_only:
                 source.make_postagestamp(image.data, image.hdu, image.wcs, src_coord, imsize, outfile)
