@@ -167,7 +167,7 @@ class Source:
     :type stokesv: bool, optional
     '''
     
-    def __init__(self, field, sbid, tiles=False, stokesv=False):
+    def __init__(self, field, sbid, pilot_data=False, tiles=False, stokesv=False):
         '''Constructor method
         '''
         self.field = field
@@ -176,7 +176,10 @@ class Source:
         if tiles:
             self.selavyname = 'selavy-image.i.SB%s.cont.%s.linmos.taylor.0.restored.components.txt'%(self.sbid, self.field)
         else:
-            self.selavyname = '%s-selavy.components.txt'%(self.field)
+            if args.vast_pilot:
+                self.selavyname = '%s.selavy.components.txt'%(self.field)
+            else:
+                self.selavyname = '%s-selavy.components.txt'%(self.field)
             if args.stokesv:
                 self.nselavyname = 'n%s-selavy.components.txt'%(self.field)
         self.selavypath = os.path.join(SELAVY_FOLDER, self.selavyname)
@@ -259,7 +262,7 @@ class Source:
                 self.selavy_cat = self.selavy_cat.append(nselavy_cat, ignore_index=True)
                 
         except:
-            logger.warning('Selavy image does not exist')
+            logger.warning('{} does not exist'.format(self.selavypath))
             self.selavy_fail = True
             self.selavy_info = self._empty_selavy()
             self.selavy_info["has_match"] = False
@@ -596,6 +599,8 @@ imsize = Angle(args.imsize, unit=u.arcmin)
   
 max_sep = args.maxsep
 
+latest_pilot_epoch = 2
+
 if args.use_tiles:
     outfile_prefix="tile"
 else:
@@ -621,7 +626,11 @@ if FIND_FIELDS:
 
 if args.vast_pilot:
     pilot_epoch = args.vast_pilot
-    fields_file = "vast{}_survey_status.csv".format(pilot_epoch)
+    if pilot_epoch > latest_pilot_epoch:
+        logger.critical("Epoch {} of the VAST Pilot Survey does not exist")
+        sys.exit()
+    
+    fields_file = "VAST_epoch1.csv"#.format(pilot_epoch)  #This currently works, but we should include a csv for each epoch to ensure complete correctness
     survey = "vast_pilot"
     epoch_str = "EPOCH{:02}".format(pilot_epoch)
     survey_folder = "PILOT/release/{}".format(epoch_str)
@@ -745,9 +754,7 @@ for uf in uniq_fields:
     if not args.no_background_rms:
       image.get_rms_img()
     
-    for i,row in srcs.iterrows():
-        field_name = uf
-            
+    for i,row in srcs.iterrows():            
         SBID = row['sbid']
         
         number = row["original_index"]+1
@@ -756,10 +763,10 @@ for uf in uniq_fields:
 
         logger.info("Searching for crossmatch to source {}".format(label))
 
-        outfile = "{}_{}_{}.fits".format(label.replace(" ", "_"), field_name, outfile_prefix)
+        outfile = "{}_{}_{}.fits".format(label.replace(" ", "_"), fieldname, outfile_prefix)
         outfile = os.path.join(output_name, outfile)
 
-        source = Source(field_name,SBID,tiles=args.use_tiles, stokesv=args.stokesv)
+        source = Source(fieldname,SBID,tiles=args.use_tiles, stokesv=args.stokesv)
         
         src_coord = field_src_coords[i]
         
