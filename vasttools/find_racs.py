@@ -624,18 +624,19 @@ if args.vast_pilot:
     pilot_epoch = args.vast_pilot
     fields_file = "vast{}_survey_status.csv".format(pilot_epoch)
     survey = "vast_pilot"
-    survey_folder = "/PILOT/release/EPOCH{}".format(pilot_epoch)
+    epoch_str = "EPOCH{:02}".format(pilot_epoch)
+    survey_folder = "PILOT/release/{}".format(epoch_str)
 else:
     fields_file = "racs_test4.csv"
     survey = "racs"
-    survey_folder = "/RACS/aug2019_reprocessing"
+    survey_folder = "RACS/aug2019_reprocessing"
 
 default_base_folder = "/import/ada1/askap/"
 
 IMAGE_FOLDER = args.img_folder
 if not IMAGE_FOLDER:
     if args.use_tiles:
-        image_dir = "/FLD_IMAGES/"
+        image_dir = "FLD_IMAGES/"
         stokes_dir = "stokesI"
     else:
         if args.vast_pilot:
@@ -646,6 +647,8 @@ if not IMAGE_FOLDER:
             stokes_dir = "{}_mosaic_1.0".format(stokes_param)
 
     IMAGE_FOLDER = os.path.join(default_base_folder, survey_folder, image_dir, stokes_dir)
+    logger.info(default_base_folder)
+    logger.info(IMAGE_FOLDER)
 
 if not os.path.isdir(IMAGE_FOLDER):
     logger.critical("{} does not exist. Only finding fields".format(IMAGE_FOLDER))
@@ -666,7 +669,7 @@ if not SELAVY_FOLDER:
             if args.stokesv:
                 selavy_dir += "v"
                 
-    IMAGE_FOLDER = os.path.join(default_base_folder, survey_folder, image_dir, selavy_dir)
+    SELAVY_FOLDER = os.path.join(default_base_folder, survey_folder, image_dir, selavy_dir)
             
 if not os.path.isdir(SELAVY_FOLDER):
     logger.critical("{} does not exist. Only finding fields".format(SELAVY_FOLDER))
@@ -705,7 +708,7 @@ else:
     src_coords = SkyCoord(catalog['ra'], catalog['dec'], unit=(u.deg, u.deg))
 
 logger.info("Finding RACS fields for sources...")
-fields = Fields("racs_test4.csv")
+fields = Fields(fields_file)
 src_fields, coords_mask = fields.find(src_coords, max_sep, catalog)
 
 src_coords = src_coords[coords_mask]
@@ -713,7 +716,7 @@ src_coords = src_coords[coords_mask]
 uniq_fields = src_fields['field_name'].unique().tolist()
 
 if len(uniq_fields) == 0:
-    logger.error("Source(s) not in RACS!")
+    logger.error("Source(s) not in Survey!")
     sys.exit()
     
 if FIND_FIELDS:
@@ -727,6 +730,7 @@ crossmatch_output_check = False
 logger.info("Performing crossmatching for sources, please wait...")
 
 for uf in uniq_fields:
+    logger.info(uf)
     logger.info("-------------------------------------------------------------")
     
     mask = src_fields["field_name"]==uf
@@ -734,7 +738,13 @@ for uf in uniq_fields:
     indexes = srcs.index
     srcs = srcs.reset_index()
     field_src_coords = src_coords[mask]
-    image = Image(srcs["sbid"].iloc[0], uf, tiles=args.use_tiles)
+    
+    if args.vast_pilot:
+        fieldname = "{}.{}.{}".format(uf,epoch_str,stokes_param)
+    else:
+        fieldname = uf
+    
+    image = Image(srcs["sbid"].iloc[0], fieldname, tiles=args.use_tiles)
     
     if not args.no_background_rms:
       image.get_rms_img()
