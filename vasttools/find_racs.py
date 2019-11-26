@@ -42,9 +42,9 @@ except ImportError:
 
 class Fields:
     '''
-    Store the coordinates of all RACS fields
+    Store the coordinates of all survey fields
     
-    :param fname: The name of the csv file containing the list of all RACS fields
+    :param fname: The name of the csv file containing the list of all survey fields
     :type fname: str
     '''
 
@@ -74,9 +74,9 @@ class Fields:
         catalog["field_name"]=self.fields["FIELD_NAME"].iloc[nearest_beams].values
         catalog["original_index"]=catalog.index.values
         new_catalog = catalog[within_beam].reset_index(drop=True)
-        logger.info("RACS field match found for {}/{} sources.".format(len(new_catalog.index),len(nearest_beams)))
+        logger.info("Field match found for {}/{} sources.".format(len(new_catalog.index),len(nearest_beams)))
         if len(new_catalog.index)-len(nearest_beams) != 0:
-            logger.warning("No RACS field matches found for sources with index (or name):")
+            logger.warning("No field matches found for sources with index (or name):")
             for i in range(0, len(catalog.index)):
                 if i not in new_catalog["original_index"]:
                     if "name" in catalog.columns:
@@ -105,13 +105,13 @@ class Fields:
 
 class Image:
     '''
-    Store image data for a RACS field
+    Store image data for a survey field
     
     :param sbid: SBID of the field
     :type sbid: str
     :param field: Name of the field
     :type field: str
-    :param tiles: Use RACS tiles instead of mosaiced images, defaults to `False`
+    :param tiles: Use image tiles instead of mosaiced images, defaults to `False`
     :param tiles: bool, optional
     '''
     
@@ -503,7 +503,6 @@ parser.add_argument('--no-background-rms', action="store_true", help='Do not est
 parser.add_argument('--find-fields', action="store_true", help='Only return the associated field for each source.')
 parser.add_argument('--vast-pilot', type=int, help='Query the VAST Pilot instead of RACS')
 
-
 args=parser.parse_args()
 
 logger = logging.getLogger()
@@ -707,7 +706,7 @@ if hms:
 else:
     src_coords = SkyCoord(catalog['ra'], catalog['dec'], unit=(u.deg, u.deg))
 
-logger.info("Finding RACS fields for sources...")
+logger.info("Finding fields for sources...")
 fields = Fields(fields_file)
 src_fields, coords_mask = fields.find(src_coords, max_sep, catalog)
 
@@ -789,7 +788,7 @@ for uf in uniq_fields:
                 
             if args.create_png and not args.crossmatch_only:
                 source.make_png(src_coord, imsize, args.png_selavy_overlay, args.png_use_zscale, args.png_zscale_contrast, 
-                    outfile, args.png_colorbar, args.png_ellipse_pa_corr, no_islands=args.png_no_island_labels, label=label)
+                    outfile, args.png_ellipse_pa_corr, no_islands=args.png_no_island_labels, label=label, no_colorbar=args.png_no_colorbar)
                 
         if not crossmatch_output_check:
             crossmatch_output = source.selavy_info
@@ -807,7 +806,7 @@ logger.info("-------------------------------------------------------------")
 logger.info("Summary")
 logger.info("-------------------------------------------------------------")
 logger.info("Number of sources searched for: {}".format(len(catalog.index)))
-logger.info("Number of sources in RACS: {}".format(len(src_fields.index)))
+logger.info("Number of sources in survey: {}".format(len(src_fields.index)))
 logger.info("Number of sources with matches < {} arcsec: {}".format(crossmatch_radius.arcsec, len(crossmatch_output[~crossmatch_output["island_id"].isna()].index)))
 logger.info("Processing took {:.1f} minutes.".format(runtime.seconds/60.))
 #Create and write final crossmatch csv
