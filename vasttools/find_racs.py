@@ -511,6 +511,8 @@ args=parser.parse_args()
 
 logger = logging.getLogger()
 s = logging.StreamHandler()
+fh = logging.FileHandler("find_racs_{}.log".format(runstart.strftime("%Y%m%d_%H:%M:%S")))
+fh.setLevel(logging.DEBUG)
 logformat='[%(asctime)s] - %(levelname)s - %(message)s'
 
 if use_colorlog:
@@ -533,15 +535,19 @@ else:
     formatter = logging.Formatter(logformat, datefmt="%Y-%m-%d %H:%M:%S")
 
 s.setFormatter(formatter)
-logger.addHandler(s)
+fh.setFormatter(formatter)
 
 if args.debug:
-    logger.setLevel(logging.DEBUG)
+    s.setLevel(logging.DEBUG)
 else:
     if args.quiet:
-        logger.setLevel(logging.WARNING)
+        s.setLevel(logging.WARNING)
     else:
-        logger.setLevel(logging.INFO)
+        s.setLevel(logging.INFO)
+
+logger.addHandler(s)
+logger.addHandler(fh)
+logger.setLevel(logging.DEBUG)
 
 # Sort out output directory
 output_name = args.out_folder
