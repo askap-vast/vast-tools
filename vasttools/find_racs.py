@@ -822,7 +822,7 @@ for uf in uniq_fields:
                 logger.error("Selavy failed! No region or annotation files will be made if requested.")
                 
             if args.create_png and not args.crossmatch_only:
-                source.make_png(src_coord, imsize, args.png_selavy_overlay, args.png_use_zscale, args.png_zscale_contrast, 
+                source.make_png(src_coord, args.png_selavy_overlay, args.png_linear_percentile, args.png_use_zscale, args.png_zscale_contrast, 
                     outfile, args.png_ellipse_pa_corr, no_islands=args.png_no_island_labels, label=label, no_colorbar=args.png_no_colorbar)
                 
         if not crossmatch_output_check:
