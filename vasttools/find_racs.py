@@ -222,7 +222,7 @@ class Source:
         :rtype: `pandas.core.frame.DataFrame`
         '''
         
-        columns = ['island_id', 'component_id', 'component_name', 'ra_hms_cont',
+        columns = ['#','island_id', 'component_id', 'component_name', 'ra_hms_cont',
                'dec_dms_cont', 'ra_deg_cont', 'dec_deg_cont', 'ra_err', 'dec_err',
                'freq', 'flux_peak', 'flux_peak_err', 'flux_int', 'flux_int_err',
                'maj_axis', 'min_axis', 'pos_ang', 'maj_axis_err', 'min_axis_err',
@@ -231,7 +231,7 @@ class Source:
                'chi_squared_fit', 'rms_fit_gauss', 'spectral_index',
                'spectral_curvature', 'spectral_index_err', 'spectral_curvature_err',
                'rms_image', 'has_siblings', 'fit_is_estimate',
-               'spectral_index_from_TT', 'flag_c4']
+               'spectral_index_from_TT', 'flag_c4', 'comment']
         return pd.DataFrame(np.array([[np.nan for i in range(len(columns))]]), columns=columns)
     
     def extract_source(self, src_coord, crossmatch_radius, stokesv):
@@ -255,7 +255,7 @@ class Source:
                 nselavy_cat["island_id"]=["n{}".format(i) for i in nselavy_cat["island_id"]]
                 nselavy_cat["component_id"]=["n{}".format(i) for i in nselavy_cat["component_id"]]
 
-                self.selavy_cat = self.selavy_cat.append(nselavy_cat, ignore_index=True)
+                self.selavy_cat = self.selavy_cat.append(nselavy_cat, ignore_index=True, sort=False)
                 
         except:
             logger.warning('Selavy image does not exist')
@@ -271,7 +271,7 @@ class Source:
         
         if match_sep < crossmatch_radius:
             self.has_match = True
-            self.selavy_info = self.selavy_cat[self.selavy_cat.index.isin([match_id])]
+            self.selavy_info = self.selavy_cat[self.selavy_cat.index.isin([match_id])].copy()
             
             selavy_ra = self.selavy_info['ra_hms_cont'].iloc[0]
             selavy_dec = self.selavy_info['dec_dms_cont'].iloc[0]
@@ -642,7 +642,7 @@ if not os.path.isdir(SELAVY_FOLDER):
     FIND_FIELDS = True
     
 
-    BANE_FOLDER = args.rms_folder
+BANE_FOLDER = args.rms_folder
 if not BANE_FOLDER:
     if args.use_tiles:
         logger.warning("Background noise estimates are not supported for tiles.")
@@ -771,7 +771,9 @@ for uf in uniq_fields:
         else:
             temp_crossmatch_output = source.selavy_info
             temp_crossmatch_output.index = [indexes[i]]
-            crossmatch_output = crossmatch_output.append(source.selavy_info)
+            logger.debug(crossmatch_output.info())
+            logger.debug(source.selavy_info.info())
+            crossmatch_output = crossmatch_output.append(source.selavy_info, sort=False)
         logger.info("-------------------------------------------------------------")
 
 runend = datetime.datetime.now()
