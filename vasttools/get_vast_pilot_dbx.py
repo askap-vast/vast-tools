@@ -200,13 +200,6 @@ elif args.download_epoch != 0:
             os.makedirs(os.path.join(output_dir, folder[1:]))
         logger.info("Downloading files for {}...".format(epoch_string))
         download_files(files_list, os.getcwd(), output_dir, dbx, shared_url, password)
-        # for vast_file in files_list:
-        #     pwd = os.getcwd()
-        #     download_path = os.path.join(pwd, output_dir, vast_file[1:])
-        #     dropbox_path = "{}".format(vast_file)
-        #     print(download_path)
-        #     print("Downloading {}...".format(dropbox_path))
-        #     dbx.sharing_get_shared_link_file_to_file(download_path, shared_url, path=dropbox_path, link_password=password)
 
 elif args.files_list!="":
     if not check_file(args.files_list):

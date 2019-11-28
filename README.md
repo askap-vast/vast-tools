@@ -23,6 +23,8 @@ pip install -r requirements.txt
 ## Current Scripts
 The current avaialble scripts are:
 
-* **find\_racs.py** - A tool to swiftly search RACS data at chosen coordaintes. See [FINDRACS.md](FINDRACS.md) for full instructions.
-* **get\_vast\_pilot\_dbx.py** - A script to allow simpler downloading of the VAST Pilot survey from Dropbox. See [VASTDROPBOX](VASTDROPBOX.md) for full instructions.
+* **find\_racs.py** - A tool to swiftly search RACS data at chosen coordaintes.
+    - See [FINDRACS.md](FINDRACS.md) for full instructions.
+* **get\_vast\_pilot\_dbx.py** - A script to allow simpler downloading of the VAST Pilot survey from Dropbox.
+    - See [VASTDROPBOX.md](VASTDROPBOX.md) for full instructions.
 
