@@ -11,6 +11,7 @@ Currently these are scripts that can just be copied and run, not a module instal
 * astropy
 * matplotlib
 * scipy
+* dropbox
 * colorlog (optional)
 
 Latest versions of above recommended.
