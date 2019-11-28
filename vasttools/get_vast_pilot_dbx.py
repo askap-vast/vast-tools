@@ -78,12 +78,12 @@ parser=argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpForm
 parser.add_argument('dropbox_config_file', type=str, help='Dropbox config file to be read in containing the shared url, password and access token.')
 
 parser.add_argument('--output', type=str, help='Name of the local output directory where files will be saved', default="vast_dropbox")
-parser.add_argument('--available-epochs', action="store_true", help='Print out what Epochs are available.', default="")
+parser.add_argument('--available-epochs', action="store_true", help='Print out what Epochs are available.')
 parser.add_argument('--available-files', action="store_true", help='Print out a list of available files on the shared folder.', default="")
-parser.add_argument('--download-epoch', type=int, help='Select to download an entire Epoch directory', default=0)
+parser.add_argument('--download-epoch', type=int, help='Select to download an entire Epoch directory. Enter as an integer.', default=0)
 parser.add_argument('--files-list', type=str, help='Input of files to fetch.', default="")
-parser.add_argument('--debug', action="store_true", help='Set logging level to debug.', default="")
-parser.add_argument('--write-config', action="store_true", help='Create a template dropbox config file.', default="")
+parser.add_argument('--debug', action="store_true", help='Set logging level to debug.')
+parser.add_argument('--write-config', action="store_true", help='Create a template dropbox config file.')
 # parser.add_argument('--combined-only', action="store_true", help='Only return combined products.', default="")
 # parser.add_argument('--tiles-only', action="store_true", help='Only return tiles products.', default="")
 

@@ -35,16 +35,17 @@ optional arguments:
   -h, --help            show this help message and exit
   --output OUTPUT       Name of the local output directory where files will be
                         saved (default: vast_dropbox)
-  --available-epochs    Print out what Epochs are available. (default: )
+  --available-epochs    Print out what Epochs are available. (default: False)
   --available-files     Print out a list of available files on the shared
                         folder. (default: )
   --download-epoch DOWNLOAD_EPOCH
-                        Select to download an entire Epoch directory (default:
-                        0)
+                        Select to download an entire Epoch directory. Enter as
+                        an integer. (default: 0)
   --files-list FILES_LIST
                         Input of files to fetch. (default: )
-  --debug               Set logging level to debug. (default: )
-  --write-config        Create a template dropbox config file. (default: )
+  --debug               Set logging level to debug. (default: False)
+  --write-config        Create a template dropbox config file. (default:
+                        False)
 ```
 
 As seen above the script takes in one positional argument which is the Dropbox configuration file. Create a text file in the following format and enter the respective values:
@@ -67,6 +68,8 @@ There are 4 different ways the script can be used:
 2. `--available-files` will generate a complete list of all the files avaialble. This is helpful in order to build your own list of files you wish to fetch. Nothing will be downloaded.
 3. `--download-epoch` will download an entire Epoch directory of your choosing.
 4. `--files-list` defines a text file that contains the files you wish to download. Help on this is below.
+
+Modes 2, 3 and 4 will all place results in an output directory. The name of the directory can be set with `--output`.
 
 #### User Files List
 When supplying a list of files it needs to follow the directory structure of the Dropbox. It also needs to explictly state the files - i.e. you **cannot use wildcards** (sorry it's the limitations of using Dropbox this way).
