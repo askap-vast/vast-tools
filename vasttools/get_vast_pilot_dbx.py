@@ -79,9 +79,9 @@ parser.add_argument('dropbox_config_file', type=str, help='Dropbox config file t
 
 parser.add_argument('--output', type=str, help='Name of the local output directory where files will be saved', default="vast_dropbox")
 parser.add_argument('--available-epochs', action="store_true", help='Print out what Epochs are available.')
-parser.add_argument('--available-files', action="store_true", help='Print out a list of available files on the shared folder.', default="")
+parser.add_argument('--available-files', action="store_true", help='Print out a list of available files on the shared folder.')
 parser.add_argument('--download-epoch', type=int, help='Select to download an entire Epoch directory. Enter as an integer.', default=0)
-parser.add_argument('--files-list', type=str, help='Input of files to fetch.', default="")
+parser.add_argument('--files-list', type=str, help='Input of files to fetch.', default=None)
 parser.add_argument('--debug', action="store_true", help='Set logging level to debug.')
 parser.add_argument('--write-config', action="store_true", help='Create a template dropbox config file.')
 # parser.add_argument('--combined-only', action="store_true", help='Only return combined products.', default="")
@@ -201,7 +201,7 @@ elif args.download_epoch != 0:
         logger.info("Downloading files for {}...".format(epoch_string))
         download_files(files_list, os.getcwd(), output_dir, dbx, shared_url, password)
 
-elif args.files_list!="":
+elif args.files_list!=None:
     if not check_file(args.files_list):
         logger.error("Supplied file '{}' not found!".format(args.files_list))
         sys.exit()

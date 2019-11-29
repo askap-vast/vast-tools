@@ -37,12 +37,12 @@ optional arguments:
                         saved (default: vast_dropbox)
   --available-epochs    Print out what Epochs are available. (default: False)
   --available-files     Print out a list of available files on the shared
-                        folder. (default: )
+                        folder. (default: False)
   --download-epoch DOWNLOAD_EPOCH
                         Select to download an entire Epoch directory. Enter as
                         an integer. (default: 0)
   --files-list FILES_LIST
-                        Input of files to fetch. (default: )
+                        Input of files to fetch. (default: None)
   --debug               Set logging level to debug. (default: False)
   --write-config        Create a template dropbox config file. (default:
                         False)
