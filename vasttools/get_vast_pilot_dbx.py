@@ -20,8 +20,20 @@ except ImportError:
     use_colorlog=False
 
 def recursive_build_files(base_file_list, dbx, preappend=""):
-    #Very annoyingling recursive file lists do not work on shared folders.
-    #Hence this function is to fetch every single file available.
+    '''
+    Very annoyingling recursive file lists do not work on shared folders. Hence this function is to fetch every single file available.
+    
+    :param base_file_list: a list of files in the root dropbox folder
+    :type base_file_list:
+    :param dbx: 
+    :type dbx:
+    :param preappend: defaults to an empty str
+    :type preappend: str, optional
+    
+    :returns: lists of all folders files in the dropbox
+    :rtype: list, list
+    '''
+    
     folders=[]
     searched_folders=[]
     files=[]
@@ -65,6 +77,25 @@ def recursive_build_files(base_file_list, dbx, preappend=""):
     return files, folders
 
 def download_files(files_list, pwd, output_dir, dbx, shared_url, password, overwrite=False):
+    '''
+    Iterate over a list of files and download them from the dropbox folder
+    
+    :param files_list:
+    :type files_list:
+    :param pwd:
+    :type pwd:
+    :param output_dir:
+    :type output_dir:
+    :param dbx:
+    :type dbx:
+    :param shared_url:
+    :type shared_url:
+    :param password:
+    :type password:
+    :param overwrite: whether to overwrite existing files, defaults to False
+    :type overwrite: bool, optional
+    '''
+    
     for vast_file in files_list:
         # pwd = os.getcwd()
         download_path = os.path.join(pwd, output_dir, vast_file[1:])
@@ -80,9 +111,29 @@ def download_files(files_list, pwd, output_dir, dbx, shared_url, password, overw
     
 
 def check_dir(directory):
+    '''
+    Wrapper for os.path.isdir()
+    
+    :param directory: path to directory we're checking the existence of
+    :type directory: str
+    
+    :returns: True if the specified path is an existing directory, False otherwise
+    :rtype: bool
+    '''
+    
     return os.path.isdir(directory)
     
 def check_file(file_to_check):
+    '''
+    Wrapper for os.path.isfile()
+    
+    :param file_to_check: path to file we're checking the existence of
+    :type file_to_check: str
+    
+    :returns: True if the specified path is an existing file, False otherwise
+    :rtype: bool
+    '''
+    
     return os.path.isfile(file_to_check)
 
 parser=argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
