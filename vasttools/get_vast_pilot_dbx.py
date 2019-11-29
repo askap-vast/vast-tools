@@ -7,6 +7,7 @@ import sys
 import datetime
 import configparser
 import numpy as np
+import itertools
 
 import logging
 import logging.handlers
@@ -38,6 +39,10 @@ def recursive_build_files(base_file_list, dbx, preappend=""):
 
     while folders != searched_folders:
         for i in folders:
+            if logger.level!=10:
+                sys.stdout.write(next(spinner))   # write the next character
+                sys.stdout.flush()                # flush stdout buffer (actual character display)
+                sys.stdout.write('\b')
             if i not in searched_folders:
                 these_files = dbx.files_list_folder("/{}".format(i), shared_link=shared_link)
                 for j in these_files.entries:
@@ -52,15 +57,22 @@ def recursive_build_files(base_file_list, dbx, preappend=""):
                         else:
                             files.append("/{}/{}/{}".format(preappend, i, j.name))
                 searched_folders.append(i)
-                logger.info("Searched {}".format(i))
+                logger.debug("Searched {}".format(i))
                 logger.debug("Folders: {}".format(folders))
                 logger.debug("Searched Folders: {}".format(searched_folders))
+    sys.stdout.flush()                # flush stdout buffer (actual character display)
+    logger.info("Finished!")
     return files, folders
 
-def download_files(files_list, pwd, output_dir, dbx, shared_url, password):
+def download_files(files_list, pwd, output_dir, dbx, shared_url, password, overwrite=False):
     for vast_file in files_list:
         # pwd = os.getcwd()
         download_path = os.path.join(pwd, output_dir, vast_file[1:])
+        if not overwrite:
+            if os.path.isfile(download_path):
+                logger.error("{} already exists and overwrite is set to {}.".format(download_path, overwrite))
+                logger.info("Skipping file.")
+                continue
         dropbox_path = "{}".format(vast_file)
         logger.debug("Download path: {}".format(download_path))
         logger.info("Downloading {}...".format(dropbox_path))
@@ -75,19 +87,23 @@ def check_file(file_to_check):
 
 parser=argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-parser.add_argument('dropbox_config_file', type=str, help='Dropbox config file to be read in containing the shared url, password and access token.')
-
 parser.add_argument('--output', type=str, help='Name of the local output directory where files will be saved', default="vast_dropbox")
 parser.add_argument('--available-epochs', action="store_true", help='Print out what Epochs are available.')
 parser.add_argument('--available-files', action="store_true", help='Print out a list of available files on the shared folder.')
 parser.add_argument('--download-epoch', type=int, help='Select to download an entire Epoch directory. Enter as an integer.', default=0)
 parser.add_argument('--files-list', type=str, help='Input of files to fetch.', default=None)
+parser.add_argument('--overwrite', action="store_true", help='Overwrite any files that already exist in the output directory.')
 parser.add_argument('--debug', action="store_true", help='Set logging level to debug.')
-parser.add_argument('--write-config', action="store_true", help='Create a template dropbox config file.')
+parser.add_argument('--dropbox-config', type=str, help='Dropbox config file to be read in containing the shared url, password and access token. A template \
+can be generated using --write-template-dropbox-config.', default="dropbox.cfg")
+parser.add_argument('--write-template-dropbox-config', action="store_true", help='Create a template dropbox config file.')
 # parser.add_argument('--combined-only', action="store_true", help='Only return combined products.', default="")
 # parser.add_argument('--tiles-only', action="store_true", help='Only return tiles products.', default="")
 
 args=parser.parse_args()
+
+now = datetime.datetime.now()
+now_str = now.strftime("%Y%m%d_%H:%M:%S")
 
 logger = logging.getLogger()
 s = logging.StreamHandler()
@@ -115,12 +131,19 @@ else:
 s.setFormatter(formatter)
 logger.addHandler(s)
 
+logfilename = "get_vast_pilot_dbx_{}.log".format(now_str)
+fileHandler = logging.FileHandler(logfilename)
+fileHandler.setFormatter(logging.Formatter(logformat, datefmt="%Y-%m-%d %H:%M:%S"))
+logger.addHandler(fileHandler)
+
 if args.debug:
     logger.setLevel(logging.DEBUG)
 else:
     logger.setLevel(logging.INFO)
+    
+logging.getLogger("dropbox").setLevel(logging.WARNING)
 
-if args.write_config:
+if args.write_template_dropbox_config:
     config_file = "dropbox.cfg"
     with open(config_file, "w") as f:
         f.write("""[dropbox]
@@ -131,29 +154,29 @@ access_token = ENTER_ACCESS_TOKEN
     logger.info("Writen an example dropbox config file to '{}'.".format(config_file))
     sys.exit()
 
-if not check_file(args.dropbox_config_file):
-    logger.critical("Cannot find dropbox config file '{}!".format(args.dropbox_config_file))
+if not check_file(args.dropbox_config):
+    logger.critical("Cannot find dropbox config file '{}!".format(args.dropbox_config))
+    logger.info("A template dropbox file can be generated using 'python get_vast_pilot_dbx.py --write-template-dropbox-config'")
     sys.exit()
 
 config = configparser.ConfigParser()
-config.read(args.dropbox_config_file)
+config.read(args.dropbox_config)
 
 shared_url = config["dropbox"]["shared_url"]
 password = config["dropbox"]["password"]
 access_token = config["dropbox"]["access_token"]
 
-logger.debug(shared_url)
-logger.debug(password)
-logger.debug(access_token)
+logger.debug("Shared URL: {}".format(shared_url))
+logger.debug("Password: {}".format(password))
+logger.debug("Access Token: {}".format(access_token))
 
 output_dir = args.output
 
 #check dir
-if not args.available_epochs:
+if not args.available_epochs and not args.available_files:
     if check_dir(output_dir):
         logger.warning("Output directory '{}' already exists!".format(output_dir))
-        logger.warning("Will not overwrite.")
-        sys.exit()
+        logger.warning("Files may get overwritten!")
     else:
         os.mkdir(output_dir)
     
@@ -163,6 +186,8 @@ dbx = dropbox.Dropbox(access_token)
 shared_link = dropbox.files.SharedLink(url=shared_url, password=password)
 
 base_file_list = dbx.files_list_folder("", shared_link=shared_link)
+
+spinner = itertools.cycle(['-', '/', '|', '\\'])
 
 if args.available_epochs:
     logger.info("The following epochs are available:")
@@ -174,10 +199,11 @@ elif args.available_files:
     logger.info("Gathering a list of files - this will take a moment...")
     files_list, folders_list = recursive_build_files(base_file_list, dbx)
     logger.info("Found {} files.".format(len(files_list)))
-    with open(os.path.join(output_dir, "vast_dbx_file_list.txt"), "w") as f:
-        f.write("# File list on VAST Pilot survey dropbox as of {}\n".format(datetime.datetime.now()))
+    vast_list_file_name = "vast_dbx_file_list_{}.txt".format(now_str)
+    with open(vast_list_file_name, "w") as f:
+        f.write("# File list on VAST Pilot survey dropbox as of {}\n".format(now))
         [f.write(i+"\n") for i in files_list]
-    logger.info("All available files written to {}".format(os.path.join(output_dir, "vast_dbx_file_list.txt")))
+    logger.info("All available files written to {}".format(vast_list_file_name))
     
 elif args.download_epoch != 0:
     epochs = []
@@ -197,7 +223,7 @@ elif args.download_epoch != 0:
         # epoch_output_dir = os.path.join(output_dir, epoch_string)
         # os.mkdir(epoch_output_dir)
         for folder in folders_list:
-            os.makedirs(os.path.join(output_dir, folder[1:]))
+            os.makedirs(os.path.join(output_dir, folder[1:]), exist_ok=True)
         logger.info("Downloading files for {}...".format(epoch_string))
         download_files(files_list, os.getcwd(), output_dir, dbx, shared_url, password)
 
@@ -225,14 +251,22 @@ elif args.files_list!=None:
     for i in dirs_to_create:
         if i=="":
             continue
-        os.makedirs(os.path.join(output_dir, i))
+        os.makedirs(os.path.join(output_dir, i), exist_ok=True)
     
     logger.info("Downloading {} files from '{}'...".format(len(files_to_download), args.files_list))
-    download_files(files_to_download, os.getcwd(), output_dir, dbx, shared_url, password)
+    download_files(files_to_download, os.getcwd(), output_dir, dbx, shared_url, password, overwrite=args.overwrite)
 
 else:
     logger.info("Nothing to be done!")
-    
+ 
+end = datetime.datetime.now()
+
+runtime = end-now
+
+logger.info("Ran for {:.1f} minutes.".format(runtime.seconds/60.))
+
+logger.info("Log file written to {}".format(logfilename))
+   
 logger.info("All done!")
     
             
