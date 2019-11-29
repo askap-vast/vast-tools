@@ -91,6 +91,12 @@ I recommened you run `python get_vast_pilot_dbx.py dropbox.cfg --available-files
 
 ### Examples
 
+#### Obtaining a List of all available files
+```
+python get_vast_pilot_dbx.py dropbox.cfg --available-files --output vast_files_list
+```
+This will generate a list of available files and place the list in the directory `vast_files_list`.
+
 #### Downloading an entire epoch (01)
 
 ```
