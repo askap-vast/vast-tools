@@ -130,6 +130,14 @@ class Image:
 
         self.imgpath = os.path.join(IMAGE_FOLDER, self.imgname)
         
+        if os.path.isfile(self.imgpath):
+            self.image_fail = False
+        else:
+            self.image_fail = True
+            logger.error("{} does not exist! Unable to create postagestamp images".format(self.imgpath))
+            return
+        
+            
         self.hdu = fits.open(self.imgpath)[0]
         self.wcs = WCS(self.hdu.header, naxis=2)
         
@@ -145,6 +153,13 @@ class Image:
         self.rmsname = self.imgname.replace('.fits','_rms.fits')
 
         self.rmspath = os.path.join(BANE_FOLDER, self.rmsname)
+        
+        if os.path.isfile(self.rmspath):
+            self.rms_fail = False
+        else:
+            self.rms_fail = True
+            logger.error("{} does not exist! Unable to create postagestamp images".format(self.rmspath))
+            return
         
         self.rms_hdu = fits.open(self.rmspath)[0]
         self.rms_wcs = WCS(self.rms_hdu.header, naxis=2)
@@ -788,12 +803,9 @@ for uf in uniq_fields:
         source = Source(fieldname,SBID,tiles=args.use_tiles, stokesv=args.stokesv)
         
         src_coord = field_src_coords[i]
-
-        if not args.crossmatch_only:
-            source.make_postagestamp(image.data, image.hdu, image.wcs, src_coord, imsize, outfile)
               
         source.extract_source(src_coord, crossmatch_radius, args.stokesv)
-        if not args.no_background_rms:
+        if not args.no_background_rms and not image.rms_fail:
             source.get_background_rms(image.rms_data, image.rms_wcs, src_coord)
         
         #not ideal but line below has to be run after those above
@@ -808,7 +820,7 @@ for uf in uniq_fields:
             logger.info("Source does not have a selavy match, not continuing processing")
             continue
         else:
-            if not args.crossmatch_only:
+            if not args.crossmatch_only and not image.image_fail:
                 source.make_postagestamp(image.data, image.hdu, image.wcs, src_coord, imsize, outfile)
             
             #not ideal but line below has to be run after those above
@@ -821,7 +833,7 @@ for uf in uniq_fields:
             else:
                 logger.error("Selavy failed! No region or annotation files will be made if requested.")
                 
-            if args.create_png and not args.crossmatch_only:
+            if args.create_png and not args.crossmatch_only and not image.image_fail:
                 source.make_png(src_coord, args.png_selavy_overlay, args.png_linear_percentile, args.png_use_zscale, args.png_zscale_contrast, 
                     outfile, args.png_ellipse_pa_corr, no_islands=args.png_no_island_labels, label=label, no_colorbar=args.png_no_colorbar)
                 
