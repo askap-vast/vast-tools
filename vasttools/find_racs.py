@@ -505,7 +505,7 @@ parser.add_argument('--process-matches', action="store_true", help='Only produce
 parser.add_argument('--debug', action="store_true", help='Turn on debug output.')
 parser.add_argument('--no-background-rms', action="store_true", help='Do not estimate the background RMS around each source.')
 parser.add_argument('--find-fields', action="store_true", help='Only return the associated field for each source.')
-parser.add_argument('--vast-pilot', type=int, help='Query the VAST Pilot instead of RACS')
+parser.add_argument('--vast-pilot', type=int, help='Query the VAST Pilot instead of RACS. Input is the epoch number of the VAST pilot.')
 
 args=parser.parse_args()
 
