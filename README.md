@@ -6,7 +6,7 @@ Currently these are scripts that can just be copied and run, not a module instal
 
 ## find_racs.py
 
-This script allows you to quickly query RACS data on provided coordiantes, either through the command line or using a csv list.
+This script allows you to quickly query data from the RACS and VAST Pilot surveys on provided coordinates, either through the command line or using a csv list.
 
 This includes Stokes I and Stokes V (negative sources included).
 
@@ -16,10 +16,15 @@ The outputs are/can be:
 * Figure png plots of postage stamp, with overlaid selavy sources.
 * Crossmatch output file containing information on the nearest matched component.
 
-By default the script is set up for use on the ada machine. RACS data is required if want to run elsewhere (will change in the future once RACS becomes publically available).
+### Running on your own machine
+By default the script is set up for use on the ada machine. Copies of the survey data is required to run elsewhere (will change in the future once RACS becomes publicly available).
+
+The script assumes that VAST Pilot data are in the same directory structure as that used in the dropbox folder. If you are running `find_racs.py` on your own machine we recommend first using the `--find-fields` flag, downloading the relevant fields to an appropriate base directory and then re-running the script as normal.
 
 ### Warning!
-Currently RACSv2 is being used. This does not include selavy catalogues for latest observations, mainly the southern polar cap.
+* Currently RACSv2 is being used. This does not include selavy catalogues for latest observations, mainly the southern polar cap.
+* Some VAST Pilot fields are undergoing reprocessing or will need to be reobserved in the future.
+
 
 ### Requirements
 * Python 3
@@ -37,7 +42,7 @@ There is a requirements.txt included in the repository that you can use to insta
 pip install -r requirements.txt
 ````
 
-* Access to RACS images and selavy outputs.
+* Access to survey images and associated selavy outputs.
 
 ### Usage
 
@@ -136,6 +141,8 @@ optional arguments:
                         (default: False)
   --find-fields         Only return the associated field for each source.
                         (default: False)
+  --vast-pilot          Query the VAST Pilot instead of RACS. Input is the
+                        epoch number of the VAST pilot. (default: None)
 ```
 
 ### Inputs
