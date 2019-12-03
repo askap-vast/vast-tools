@@ -113,8 +113,7 @@ class Image:
     :param field: Name of the field
     :type field: str
     :param tiles: Use image tiles instead of mosaiced images, defaults to `False`
-    :param tiles: Use RACS tiles instead of mosaiced images, defaults to `False`
-    :param tiles: bool, optional
+    :type tiles: bool, optional
     '''
     
     def __init__(self, sbid, field, tiles=False):
