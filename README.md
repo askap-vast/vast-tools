@@ -4,9 +4,9 @@ A space to share your hacky scripts that others may find useful.
 
 Currently these are scripts that can just be copied and run, not a module installation yet (soon).
 
-## find_racs.py
+## find_sources.py
 
-This script allows you to quickly query RACS data on provided coordiantes, either through the command line or using a csv list.
+This script allows you to quickly query data from the RACS and VAST Pilot surveys on provided coordinates, either through the command line or using a csv list.
 
 This includes Stokes I and Stokes V (negative sources included).
 
@@ -16,10 +16,15 @@ The outputs are/can be:
 * Figure png plots of postage stamp, with overlaid selavy sources.
 * Crossmatch output file containing information on the nearest matched component.
 
-By default the script is set up for use on the ada machine. RACS data is required if want to run elsewhere (will change in the future once RACS becomes publically available).
+### Running on your own machine
+By default the script is set up for use on the ada machine. Copies of the survey data is required to run elsewhere (will change in the future once RACS becomes publicly available).
+
+The script assumes that VAST Pilot data are in the same directory structure as that used in the dropbox folder. If you are running `find_sources.py` on your own machine we recommend first using the `--find-fields` flag, downloading the relevant fields to an appropriate base directory and then re-running the script as normal.
 
 ### Warning!
-Currently RACSv2 is being used. This does not include selavy catalogues for latest observations, mainly the southern polar cap.
+* Currently RACSv2 is being used. This does not include selavy catalogues for latest observations, mainly the southern polar cap.
+* Some VAST Pilot fields are undergoing reprocessing or will need to be reobserved in the future.
+
 
 ### Requirements
 * Python 3
@@ -37,7 +42,7 @@ There is a requirements.txt included in the repository that you can use to insta
 pip install -r requirements.txt
 ````
 
-* Access to RACS images and selavy outputs.
+* Access to survey images and associated selavy outputs.
 
 ### Usage
 
@@ -47,7 +52,7 @@ All output is placed in an output directory of which the name can be set with th
 
 Can be run in either Stokes I or Stokes V, not both at once.
 ```
-usage: find_racs.py [-h] [--imsize IMSIZE] [--maxsep MAXSEP]
+usage: find_sources.py [-h] [--imsize IMSIZE] [--maxsep MAXSEP]
                     [--out-folder OUT_FOLDER] [--source-names SOURCE_NAMES]
                     [--crossmatch-radius CROSSMATCH_RADIUS] [--use-tiles]
                     [--img-folder IMG_FOLDER] [--rms-folder RMS_FOLDER]
@@ -81,7 +86,7 @@ optional arguments:
                         degrees. (default: 1.0)
   --out-folder OUT_FOLDER
                         Name of the output directory to place all results in.
-                        (default: find_racs_output_20191115_18:33:09)
+                        (default: find_sources_output_20191115_18:33:09)
   --source-names SOURCE_NAMES
                         Only for use when entering coordaintes via the command
                         line. State the name of the source being searched. Use
@@ -136,6 +141,8 @@ optional arguments:
                         (default: False)
   --find-fields         Only return the associated field for each source.
                         (default: False)
+  --vast-pilot          Query the VAST Pilot instead of RACS. Input is the
+                        epoch number of the VAST pilot. (default: None)
 ```
 
 ### Inputs
@@ -150,15 +157,15 @@ Note the space between the coodinates and the quotation marks.
 
 E.g.
 ```
-python find_racs.py "22:37:5.6000 +34:24:31.90"
+python find_sources.py "22:37:5.6000 +34:24:31.90"
 ```
 ```
-python find_racs.py "339.2733333 34.4088611"
+python find_sources.py "339.2733333 34.4088611"
 ```
 
 It's recommended to provide a source name using the option `--source-names`, e.g.
 ```
-python find_racs.py "22:37:5.6000 +34:24:31.90" --source-names "SN 2014C"
+python find_sources.py "22:37:5.6000 +34:24:31.90" --source-names "SN 2014C"
 ```
 
 
@@ -171,16 +178,16 @@ Note there is no space between the commas.
 
 E.g. 
 ```
-python find_racs.py "22:37:5.6000 +34:24:31.90,22:37:5.6000 -34:24:31.90,13:37:5.6000 -84:24:31.90"
+python find_sources.py "22:37:5.6000 +34:24:31.90,22:37:5.6000 -34:24:31.90,13:37:5.6000 -84:24:31.90"
 ```
 ```
-python find_racs.py "339.2733333 34.4088611,154.2733333 -34.4088611,20.2733333 -54.4088611"
+python find_sources.py "339.2733333 34.4088611,154.2733333 -34.4088611,20.2733333 -54.4088611"
 ```
 
 Source names can still be defined using the option `--source-names` with the same comma notation e.g.
 
 ```
-python find_racs.py "22:37:5.6000 +34:24:31.90,22:37:5.6000 -34:24:31.90,13:37:5.6000 -84:24:31.90" --source-names "SN 2014C,SN 2012C,SN2019B"
+python find_sources.py "22:37:5.6000 +34:24:31.90,22:37:5.6000 -34:24:31.90,13:37:5.6000 -84:24:31.90" --source-names "SN 2014C,SN 2012C,SN2019B"
 ```
 
 #### Input CSV file
@@ -188,7 +195,7 @@ To crossmatch many coordinates it's recommended to use a csv. Instead of enterin
 
 E.g. 
 ```
-python find_racs.py my_coords.csv
+python find_sources.py my_coords.csv
 ```
 
 The columns `ra` and `dec` are required and can be in either of the formats shown in the command line options. `name` is also accepted and is recommended. E.g.
@@ -204,19 +211,19 @@ See `input_example.csv`.
 Search for a match to one source and create a FITS postage stamp of 5 arcminutes across. Will place the output in `example_source`.
 
 ```
-find_racs.py "22:37:5.6000 +34:24:31.90" --imsize 5.0 --source-names "SN 2014C" --out-folder example_source
+find_sources.py "22:37:5.6000 +34:24:31.90" --imsize 5.0 --source-names "SN 2014C" --out-folder example_source
 ```
 
 To include a png output with selavy overlay:
 
 ```
-find_racs.py "22:37:5.6000 +34:24:31.90" --imsize 5.0 --source-names "SN 2014C" --out-folder example_source --create-png --png-selavy-overlay
+find_sources.py "22:37:5.6000 +34:24:31.90" --imsize 5.0 --source-names "SN 2014C" --out-folder example_source --create-png --png-selavy-overlay
 ```
 Now search in Stokes V to a different directory and also include a kvis annotation file and an extra coodinate:
 ```
-find_racs.py "22:37:5.6000 +34:24:31.90,22:37:5.6000 +44:24:31.90" --imsize 5.0 --source-names "SN 2014C,SN 2019I" --out-folder example_source_stokesv_ --create-png --png-selavy-overlay --stokesv --ann
+find_sources.py "22:37:5.6000 +34:24:31.90,22:37:5.6000 +44:24:31.90" --imsize 5.0 --source-names "SN 2014C,SN 2019I" --out-folder example_source_stokesv_ --create-png --png-selavy-overlay --stokesv --ann
 ```
 Search through a csv of coordinates, make pngs, use zscale with a contrast of 0.2, create annotation and region files.:
 ```
-find_racs.py my_coords.csv --imsize 5.0  --out-folder example_source --create-png --png-selavy-overlay --png-use-zscale --png-zscale-contrast 0.2 --ann --reg
+find_sources.py my_coords.csv --imsize 5.0  --out-folder example_source --create-png --png-selavy-overlay --png-use-zscale --png-zscale-contrast 0.2 --ann --reg
 ```
