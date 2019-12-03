@@ -2,7 +2,7 @@
 
 #Example command:
 
-# ./find_racs.py "16:16:00.22 +22:16:04.83" --create-png --imsize 5.0 --png-zscale-contrast 0.1 --png-selavy-overlay --use-combined
+# ./find_sources.py "16:16:00.22 +22:16:04.83" --create-png --imsize 5.0 --png-zscale-contrast 0.1 --png-selavy-overlay --use-combined
 
 import argparse, sys
 import numpy as np
@@ -493,7 +493,7 @@ parser.add_argument('coords', metavar="\"HH:MM:SS [+/-]DD:MM:SS\" OR input.csv",
  
 parser.add_argument('--imsize', type=float, help='Edge size of the postagestamp in arcmin', default=30.)
 parser.add_argument('--maxsep', type=float, help='Maximum separation of source from beam centre in degrees.', default=1.0)
-parser.add_argument('--out-folder', type=str, help='Name of the output directory to place all results in.', default="find_racs_output_{}".format(runstart.strftime("%Y%m%d_%H:%M:%S")))
+parser.add_argument('--out-folder', type=str, help='Name of the output directory to place all results in.', default="find_sources_output_{}".format(runstart.strftime("%Y%m%d_%H:%M:%S")))
 parser.add_argument('--source-names', type=str, help='Only for use when entering coordaintes via the command line.\
  State the name of the source being searched. Use quote marks for names that contain a space. For multiple sources separate with a comma with no space, \
  e.g. "SN 1994N,SN 2003D,SN 2019A"', default="")
@@ -526,7 +526,7 @@ args=parser.parse_args()
 
 logger = logging.getLogger()
 s = logging.StreamHandler()
-fh = logging.FileHandler("find_racs_{}.log".format(runstart.strftime("%Y%m%d_%H:%M:%S")))
+fh = logging.FileHandler("find_sources_{}.log".format(runstart.strftime("%Y%m%d_%H:%M:%S")))
 fh.setLevel(logging.DEBUG)
 logformat='[%(asctime)s] - %(levelname)s - %(message)s'
 
