@@ -218,8 +218,7 @@ password = config["dropbox"]["password"]
 access_token = config["dropbox"]["access_token"]
 
 logger.debug("Shared URL: {}".format(shared_url))
-logger.debug("Password: {}".format(password))
-logger.debug("Access Token: {}".format(access_token))
+logger.debug("Password: {}".format(password != ""))
 
 output_dir = args.output
 
