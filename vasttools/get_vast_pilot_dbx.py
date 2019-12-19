@@ -246,7 +246,7 @@ if args.available_epochs:
             logger.info(i.name)
 
 elif args.available_files:
-    logger.info("Gathering a list of files - this will take a moment...")
+    logger.info("Gathering a list of files - this will take approximately 4 minutes per epoch.")
     files_list, folders_list = recursive_build_files(base_file_list, dbx)
     logger.info("Found {} files.".format(len(files_list)))
     vast_list_file_name = "vast_dbx_file_list_{}.txt".format(now_str)
