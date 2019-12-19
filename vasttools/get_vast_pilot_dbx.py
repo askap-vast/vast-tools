@@ -21,7 +21,9 @@ except ImportError:
 
 def recursive_build_files(base_file_list, dbx, preappend=""):
     '''
-    Very annoyingling recursive file lists do not work on shared folders. Hence this function is to fetch every single file available.
+    Very annoyingling recursive file lists do not work on shared folders. 
+    This function is to fetch every single file available by iterating over all folders found
+    to build up a unique file list. It's a recursive file builder.
     
     :param base_file_list: a list of files in the root dropbox folder
     :type base_file_list:
@@ -97,7 +99,6 @@ def download_files(files_list, pwd, output_dir, dbx, shared_url, password, overw
     '''
     
     for vast_file in files_list:
-        # pwd = os.getcwd()
         download_path = os.path.join(pwd, output_dir, vast_file[1:])
         if not overwrite:
             if os.path.isfile(download_path):
@@ -148,8 +149,6 @@ parser.add_argument('--debug', action="store_true", help='Set logging level to d
 parser.add_argument('--dropbox-config', type=str, help='Dropbox config file to be read in containing the shared url, password and access token. A template \
 can be generated using --write-template-dropbox-config.', default="dropbox.cfg")
 parser.add_argument('--write-template-dropbox-config', action="store_true", help='Create a template dropbox config file.')
-# parser.add_argument('--combined-only', action="store_true", help='Only return combined products.', default="")
-# parser.add_argument('--tiles-only', action="store_true", help='Only return tiles products.', default="")
 
 args=parser.parse_args()
 
@@ -162,7 +161,6 @@ logformat='[%(asctime)s] - %(levelname)s - %(message)s'
 
 if use_colorlog:
     formatter = colorlog.ColoredFormatter(
-        # "%(log_color)s%(levelname)-8s%(reset)s %(blue)s%(message)s",
         "%(log_color)s[%(asctime)s] - %(levelname)s - %(blue)s%(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
         reset=True,
@@ -197,11 +195,11 @@ logging.getLogger("dropbox").setLevel(logging.WARNING)
 if args.write_template_dropbox_config:
     config_file = "dropbox.cfg"
     with open(config_file, "w") as f:
-        f.write("""[dropbox]
-shared_url = ENTER_URL
-password = ENTER_PASSWORD
-access_token = ENTER_ACCESS_TOKEN
-""")
+        f.write("[dropbox]\n")
+        f.write("shared_url = ENTER_URL\n")
+        f.write("password = ENTER_PASSWORD\n")
+        f.write("access_token = ENTER_ACCESS_TOKEN\n")
+        
     logger.info("Writen an example dropbox config file to '{}'.".format(config_file))
     sys.exit()
 
@@ -269,9 +267,7 @@ elif args.download_epoch != 0:
         logger.info("Gathering {} files to download, please wait...".format(epoch_string))
         files_list, folders_list = recursive_build_files(epoch_file_list, dbx, preappend=epoch_string)
         logger.info("{} files to download".format(len(files_list)))
-        #Mimic the directory structure locally
-        # epoch_output_dir = os.path.join(output_dir, epoch_string)
-        # os.mkdir(epoch_output_dir)
+        
         for folder in folders_list:
             os.makedirs(os.path.join(output_dir, folder[1:]), exist_ok=True)
         logger.info("Downloading files for {}...".format(epoch_string))
