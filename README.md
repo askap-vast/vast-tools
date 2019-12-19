@@ -28,4 +28,3 @@ The current avaialble scripts are:
     - See [FINDRACS.md](FINDRACS.md) for full instructions.
 * **get\_vast\_pilot\_dbx.py** - A script to allow simpler downloading of the VAST Pilot survey from Dropbox.
     - See [VASTDROPBOX.md](VASTDROPBOX.md) for full instructions.
-
