@@ -4,8 +4,11 @@ from timeit import default_timer
 os.nice(5)
 
 IMAGE_FOLDERS = [
-    '/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/V_mosaic_1.0/',
-    '/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/I_mosaic_1.0/']
+    ('/import/ada1/askap/RACS/aug2019_reprocessing/'
+        'COMBINED_MOSAICS/V_mosaic_1.0/'),
+    ('/import/ada1/askap/RACS/aug2019_reprocessing/'
+        'COMBINED_MOSAICS/I_mosaic_1.0/')]
+
 BANE_BASE = '/import/ada2/ddob1600/RACS_BANE'
 
 for image_folder in IMAGE_FOLDERS:
