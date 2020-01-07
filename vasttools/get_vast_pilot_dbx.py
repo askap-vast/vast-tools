@@ -23,8 +23,8 @@ except ImportError:
 def recursive_build_files(base_file_list, dbx, preappend=""):
     '''
     Very annoyingling recursive file lists do not work on shared folders.
-    This function is to fetch every single file available by iterating over all folders found
-    to build up a unique file list. It's a recursive file builder.
+    This function is to fetch every single file available by iterating over
+    all folders found to build up a unique file list.
 
     :param base_file_list: a list of files in the root dropbox folder
     :type base_file_list:
@@ -55,8 +55,10 @@ def recursive_build_files(base_file_list, dbx, preappend=""):
     while folders != searched_folders:
         for i in folders:
             if logger.level != 10:
-                sys.stdout.write(next(spinner))   # write the next character
-                sys.stdout.flush()                # flush stdout buffer (actual character display)
+                # write the next character
+                sys.stdout.write(next(spinner))
+                # flush stdout buffer (actual character display)
+                sys.stdout.flush()
                 sys.stdout.write('\b')
             if i not in searched_folders:
                 these_files = dbx.files_list_folder(
@@ -80,7 +82,8 @@ def recursive_build_files(base_file_list, dbx, preappend=""):
                 logger.debug("Searched {}".format(i))
                 logger.debug("Folders: {}".format(folders))
                 logger.debug("Searched Folders: {}".format(searched_folders))
-    sys.stdout.flush()                # flush stdout buffer (actual character display)
+    # flush stdout buffer (actual character display)
+    sys.stdout.flush()
     logger.info("Finished!")
     return files, folders
 
@@ -125,7 +128,8 @@ def download_files(
         logger.debug("Download path: {}".format(download_path))
         logger.info("Downloading {}...".format(dropbox_path))
         dbx.sharing_get_shared_link_file_to_file(
-            download_path, shared_url, path=dropbox_path, link_password=password)
+            download_path, shared_url, path=dropbox_path,
+            link_password=password)
 
 
 def check_dir(directory):
@@ -135,7 +139,7 @@ def check_dir(directory):
     :param directory: path to directory we're checking the existence of
     :type directory: str
 
-    :returns: True if the specified path is an existing directory, False otherwise
+    :returns: True if the directory exists, False otherwise
     :rtype: bool
     '''
 
@@ -164,38 +168,47 @@ parser.add_argument(
     type=str,
     help='Name of the local output directory where files will be saved',
     default="vast_dropbox")
+
 parser.add_argument(
     '--available-epochs',
     action="store_true",
     help='Print out what Epochs are available.')
+
 parser.add_argument(
     '--available-files',
     action="store_true",
     help='Print out a list of available files on the shared folder.')
+
 parser.add_argument(
     '--download-epoch',
     type=int,
     help='Select to download an entire Epoch directory. Enter as an integer.',
     default=0)
+
 parser.add_argument(
     '--files-list',
     type=str,
     help='Input of files to fetch.',
     default=None)
+
 parser.add_argument(
     '--overwrite',
     action="store_true",
     help='Overwrite any files that already exist in the output directory.')
+
 parser.add_argument(
     '--debug',
     action="store_true",
     help='Set logging level to debug.')
+
 parser.add_argument(
     '--dropbox-config',
     type=str,
-    help='Dropbox config file to be read in containing the shared url, password and access token. A template \
-can be generated using --write-template-dropbox-config.',
+    help='Dropbox config file to be read in containing the shared url, \
+password and access token. A template can be generated using \
+--write-template-dropbox-config.',
     default="dropbox.cfg")
+
 parser.add_argument(
     '--write-template-dropbox-config',
     action="store_true",
@@ -263,7 +276,9 @@ if not check_file(args.dropbox_config):
         "Cannot find dropbox config file '{}!".format(
             args.dropbox_config))
     logger.info(
-        "A template dropbox file can be generated using 'python get_vast_pilot_dbx.py --write-template-dropbox-config'")
+        "A template dropbox file can be generated using \
+'python get_vast_pilot_dbx.py --write-template-dropbox-config'")
+
     sys.exit()
 
 config = configparser.ConfigParser()
@@ -304,13 +319,18 @@ if args.available_epochs:
 
 elif args.available_files:
     logger.info(
-        "Gathering a list of files - this will take approximately 4 minutes per epoch.")
+        "Gathering a list of files - this will take \
+        approximately 4 minutes per epoch.")
+
     files_list, folders_list = recursive_build_files(base_file_list, dbx)
     logger.info("Found {} files.".format(len(files_list)))
     vast_list_file_name = "vast_dbx_file_list_{}.txt".format(now_str)
+
     with open(vast_list_file_name, "w") as f:
-        f.write("# File list on VAST Pilot survey dropbox as of {}\n".format(now))
+        f.write("# File list on VAST Pilot survey dropbox as of {}\n".format(
+            now))
         [f.write(i + "\n") for i in files_list]
+
     logger.info("All available files written to {}".format(
         vast_list_file_name))
 
@@ -329,7 +349,7 @@ elif args.download_epoch != 0:
         epoch_file_list = dbx.files_list_folder(
             "/{}".format(epoch_string), shared_link=shared_link)
         logger.info(
-            "Gathering {} files to download, please wait...".format(epoch_string))
+            "Gathering {} files to download...".format(epoch_string))
         files_list, folders_list = recursive_build_files(
             epoch_file_list, dbx, preappend=epoch_string)
         logger.info("{} files to download".format(len(files_list)))

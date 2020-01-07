@@ -87,7 +87,9 @@ class Fields:
         catalog["original_index"] = catalog.index.values
         new_catalog = catalog[within_beam].reset_index(drop=True)
         logger.info(
-            "Field match found for {}/{} sources.".format(len(new_catalog.index), len(nearest_beams)))
+            "Field match found for {}/{} sources.".format(
+                len(new_catalog.index), len(nearest_beams)))
+
         if len(new_catalog.index) - len(nearest_beams) ! =  0:
             logger.warning(
                 "No field matches found for sources with index (or name):")
