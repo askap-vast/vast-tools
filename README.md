@@ -8,13 +8,13 @@ Currently these are scripts that can just be copied and run, not a module instal
 * Python 3
 * pandas
 * numpy
-* astropy
+* astropy (<4.0)
 * matplotlib
 * scipy
 * dropbox
 * colorlog (optional)
 
-Latest versions of above recommended.
+Latest versions of above recommended unless stated.
 
 There is a requirements.txt included in the repository that you can use to install the dependancies using
 ```
