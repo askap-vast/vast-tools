@@ -61,8 +61,8 @@ def recursive_build_files(base_file_list, dbx, preappend="", legacy=False):
                 # flush stdout buffer (actual character display)
                 sys.stdout.flush()
                 sys.stdout.write('\b')
-            #Ignore legacy directory when searching unless specified by user.
-            if i == "LEGACY" and legacy == False:
+            # Ignore legacy folder when searching unless specified by user.
+            if i == "LEGACY" and legacy is False:
                 searched_folders.append(i)
                 continue
             if i not in searched_folders:
