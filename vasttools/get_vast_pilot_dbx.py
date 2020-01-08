@@ -164,21 +164,6 @@ def check_file(file_to_check):
 
     return os.path.isfile(file_to_check)
 
-<<<<<<< HEAD
-parser.add_argument('--output', type=str, help='Name of the local output directory where files will be saved', default="vast_dropbox")
-parser.add_argument('--available-epochs', action="store_true", help='Print out what Epochs are available.')
-parser.add_argument('--available-files', action="store_true", help='Print out a list of available files on the shared folder.')
-parser.add_argument('--download-epoch', type=int, help='Select to download an entire Epoch directory. Enter as an integer.', default=0)
-parser.add_argument('--files-list', type=str, help='Input of files to fetch.', default=None)
-parser.add_argument('--overwrite', action="store_true", help='Overwrite any files that already exist in the output directory.')
-parser.add_argument('--debug', action="store_true", help='Set logging level to debug.')
-parser.add_argument('--dropbox-config', type=str, help='Dropbox config file to be read in containing the shared url, password and access token. A template \
-can be generated using --write-template-dropbox-config.', default="dropbox.cfg")
-parser.add_argument('--write-template-dropbox-config', action="store_true", help='Create a template dropbox config file.')
-parser.add_argument('--include-legacy', action="store_true", help="Include the 'LEGACY' directory when searching through files. \
-Only valid when using the '--available-files' option.")
-=======
->>>>>>> upstream/master
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -233,6 +218,12 @@ parser.add_argument(
     '--write-template-dropbox-config',
     action="store_true",
     help='Create a template dropbox config file.')
+
+parser.add_argument(
+    '--include-legacy',
+    action="store_true",
+    help="Include the 'LEGACY' directory when searching through files. \
+Only valid when using the '--available-files' option.")
 
 args = parser.parse_args()
 
@@ -338,16 +329,11 @@ if args.available_epochs:
             logger.info(i.name)
 
 elif args.available_files:
-<<<<<<< HEAD
-    logger.info("Gathering a list of files - this will take approximately 4 minutes per epoch.")
-    files_list, folders_list = recursive_build_files(base_file_list, dbx, legacy=args.include_legacy)
-=======
     logger.info(
         "Gathering a list of files - this will take \
         approximately 4 minutes per epoch.")
 
     files_list, folders_list = recursive_build_files(base_file_list, dbx)
->>>>>>> upstream/master
     logger.info("Found {} files.".format(len(files_list)))
     vast_list_file_name = "vast_dbx_file_list_{}.txt".format(now_str)
 
