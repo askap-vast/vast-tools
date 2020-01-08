@@ -713,7 +713,7 @@ if not BANE_FOLDER:
         logger.warning("Estimating background from mosaics instead.")
     if args.vast_pilot:
         image_dir = "COMBINED"
-        bane_dir = "STOKES{}_BANE_RMSMAPS".format(stokes_param)
+        bane_dir = "STOKES{}_RMSMAPS".format(stokes_param)
     else:
         image_dir = "COMBINED_MOSAICS"
         bane_dir = "{}_mosaic_1.0_BANE".format(stokes_param)

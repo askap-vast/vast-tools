@@ -19,7 +19,7 @@ try:
 except ImportError:
     use_colorlog=False
 
-def recursive_build_files(base_file_list, dbx, preappend=""):
+def recursive_build_files(base_file_list, dbx, preappend="", legacy=False):
     '''
     Very annoyingling recursive file lists do not work on shared folders. 
     This function is to fetch every single file available by iterating over all folders found
@@ -27,10 +27,12 @@ def recursive_build_files(base_file_list, dbx, preappend=""):
     
     :param base_file_list: a list of files in the root dropbox folder
     :type base_file_list:
-    :param dbx: 
-    :type dbx:
+    :param dbx: the dropbpx connection
+    :type dbx: A dropbox.Dropbox object.
     :param preappend: defaults to an empty str
     :type preappend: str, optional
+    :param legacy: Whether to read legacy directoy, defaults to False
+    :type preappend: bool, optional
     
     :returns: lists of all folders files in the dropbox
     :rtype: list, list
@@ -57,6 +59,10 @@ def recursive_build_files(base_file_list, dbx, preappend=""):
                 sys.stdout.write(next(spinner))   # write the next character
                 sys.stdout.flush()                # flush stdout buffer (actual character display)
                 sys.stdout.write('\b')
+            #Ignore legacy directory when searching unless specified by user.
+            if i == "LEGACY" and legacy == False:
+                searched_folders.append(i)
+                continue
             if i not in searched_folders:
                 these_files = dbx.files_list_folder("/{}".format(i), shared_link=shared_link)
                 for j in these_files.entries:
@@ -149,6 +155,8 @@ parser.add_argument('--debug', action="store_true", help='Set logging level to d
 parser.add_argument('--dropbox-config', type=str, help='Dropbox config file to be read in containing the shared url, password and access token. A template \
 can be generated using --write-template-dropbox-config.', default="dropbox.cfg")
 parser.add_argument('--write-template-dropbox-config', action="store_true", help='Create a template dropbox config file.')
+parser.add_argument('--include-legacy', action="store_true", help="Include the 'LEGACY' directory when searching through files. \
+Only valid when using the '--available-files' option.")
 
 args=parser.parse_args()
 
@@ -245,7 +253,7 @@ if args.available_epochs:
 
 elif args.available_files:
     logger.info("Gathering a list of files - this will take approximately 4 minutes per epoch.")
-    files_list, folders_list = recursive_build_files(base_file_list, dbx)
+    files_list, folders_list = recursive_build_files(base_file_list, dbx, legacy=args.include_legacy)
     logger.info("Found {} files.".format(len(files_list)))
     vast_list_file_name = "vast_dbx_file_list_{}.txt".format(now_str)
     with open(vast_list_file_name, "w") as f:

@@ -26,6 +26,7 @@ usage: get_vast_pilot_dbx.py [-h] [--output OUTPUT] [--available-epochs]
                              [--files-list FILES_LIST] [--overwrite] [--debug]
                              [--dropbox-config DROPBOX_CONFIG]
                              [--write-template-dropbox-config]
+                             [--include-legacy]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -50,6 +51,9 @@ optional arguments:
   --write-template-dropbox-config
                         Create a template dropbox config file. (default:
                         False)
+  --include-legacy      Include the 'LEGACY' directory when searching through files.
+                        Only valid when using the '--available-files' option.
+                        (default: False)
 
 ```
 
@@ -98,6 +102,8 @@ For example if I wanted to download a set of STOKES I COMBINED images from EPOCH
 Note the leading `/` which is also needed.
 
 I recommened you run `python get_vast_pilot_dbx.py dropbox.cfg --available-files` and use this output to build your request.
+
+**LEGACY DIRECTORY**: The Dropbox directory also includes the `LEGACY` folder which contains old verisons of Epoch releases that are no longer considered as part of the official release. To include this directory in the results of available files use the `--include-legacy` option.
 
 ### Examples
 
