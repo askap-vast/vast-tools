@@ -31,7 +31,7 @@ from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
 
 from matplotlib.patches import Ellipse
 from matplotlib.collections import PatchCollection
-from astropy.visualization import ZScaleInterval, ImageNormalize,
+from astropy.visualization import ZScaleInterval, ImageNormalize
 from astropy.visualization import PercentileInterval
 from astropy.visualization import AsymmetricPercentileInterval
 from astropy.visualization import LinearStretch
@@ -71,26 +71,30 @@ class Fields:
 
         :param src_dir: Coordinates of sources to find fields for
         :type src_dir: `astropy.coordinates.sky_coordinate.SkyCoord`
-        :param max_sep: Maximum allowable separation between source and beam centre in degrees
+        :param max_sep: Maximum allowable separation between source \
+        and beam centre in degrees
         :type max_sep: float
         :param catalog: Catalogue of sources to find fields for
         :type catalog: `pandas.core.frame.DataFrame`
 
-        :returns: An updated catalogue with nearest field data for each source, and a boolean array corresponding to whether the source is within max_sep
+        :returns: An updated catalogue with nearest field data for each \
+        source, and a boolean array corresponding to whether the source \
+        is within max_sep
         :rtype: `pandas.core.frame.DataFrame`, `numpy.ndarray`
         '''
         nearest_beams, seps, _d3d = src_dir.match_to_catalog_sky(
             self.direction)
         within_beam = seps.deg < max_sep
         catalog["sbid"] = self.fields["SBID"].iloc[nearest_beams].values
-        catalog["field_name"] = self.fields["FIELD_NAME"].iloc[nearest_beams].values
+        nearest_fields = self.fields["FIELD_NAME"].iloc[nearest_beams]
+        catalog["field_name"] = nearest_fields.values
         catalog["original_index"] = catalog.index.values
         new_catalog = catalog[within_beam].reset_index(drop=True)
         logger.info(
             "Field match found for {}/{} sources.".format(
                 len(new_catalog.index), len(nearest_beams)))
 
-        if len(new_catalog.index) - len(nearest_beams) ! =  0:
+        if len(new_catalog.index) - len(nearest_beams) != 0:
             logger.warning(
                 "No field matches found for sources with index (or name):")
             for i in range(0, len(catalog.index)):
@@ -131,7 +135,7 @@ class Image:
     :type sbid: str
     :param field: Name of the field
     :type field: str
-    :param tiles: Use image tiles instead of mosaiced images, defaults to `False`
+    :param tiles: Use image tiles instead of mosaics, defaults to `False`
     :type tiles: bool, optional
     '''
 
@@ -142,8 +146,8 @@ class Image:
         self.field = field
 
         if tiles:
-            self.imgname = 'image.i.SB{}.cont.{}.linmos.taylor.0.restored.fits'.format(
-                sbid, field)
+            img_template = 'image.i.SB{}.cont.{}.linmos.taylor.0.restored.fits'
+            self.imgname = img_template.format(sbid, field)
         else:
             self.imgname = '{}.fits'.format(field)
 
@@ -154,7 +158,7 @@ class Image:
         else:
             self.image_fail = True
             logger.error(
-                "{} does not exist! Unable to create postagestamp images".format(
+                "{} does not exist! Unable to create postagestamps".format(
                     self.imgpath))
             return
 
@@ -179,7 +183,7 @@ class Image:
         else:
             self.rms_fail = True
             logger.error(
-                "{} does not exist! Unable to create postagestamp images".format(
+                "{} does not exist! Unable to create postagestamps".format(
                     self.rmspath))
             return
 
@@ -194,15 +198,17 @@ class Image:
 
 class Source:
     '''
-    This is a class representation of a catalogued source (or technically, a position)
+    This is a class representation of a catalogued source position
 
     :param field: Name of the field containing the source
     :type field: str
     :param sbid: SBID of the field containing the source
     :type sbid: str
-    :param tiles: `True` if image tiles should be used, `False` for mosaiced images, defaults to `False`
+    :param tiles: `True` if image tiles should be used, \
+    `False` for mosaiced images, defaults to `False`
     :type tiles: bool, optional
-    :param stokesv: `True` if Stokes V information is requested, `False` for Stokes I, defaults to `False`
+    :param stokesv: `True` if Stokes V information is requested, \
+    `False` for Stokes I, defaults to `False`
     :type stokesv: bool, optional
     '''
 
@@ -219,8 +225,9 @@ class Source:
         self.sbid = sbid
 
         if tiles:
-            self.selavyname = 'selavy-image.i.SB{}.cont.{}.linmos.taylor.0.restored.components.txt'.format(
-                self.sbid, self.field)
+            selavyname_template = 'selavy-image.i.SB{}.cont.{}.' \
+                'linmos.taylor.0.restored.components.txt'
+            self.selavyname = selavyname_template.format(self.sbid, self.field)
         else:
             if args.vast_pilot:
                 self.selavyname = '{}.selavy.components.txt'.format(self.field)
@@ -235,9 +242,9 @@ class Source:
 
     def make_postagestamp(self, img_data, hdu, wcs, src_coord, size, outfile):
         '''
-        Make a FITS postagestamp of the region around the source and write to file
+        Make a FITS postagestamp of the source region and write to file
 
-        :param img_data: Numpy array containing the image data to make a cutout from
+        :param img_data: Numpy array containing the image data
         :type img_data: `numpy.ndarray`
         :param hdu: FITS header data units of the image
         :type hdu: `astropy.io.fits.hdu.image.PrimaryHDU`
@@ -246,7 +253,8 @@ class Source:
         :param src_coord: Centre coordinates of the postagestamp
         :type src_coord: `astropy.coordinates.sky_coordinate.SkyCoord`
         :param size: Size of the cutout array along each axis
-        :type size: `astropy.coordinates.angles.Angle` or tuple of two `Angle` objects
+        :type size: `astropy.coordinates.angles.Angle` \
+        or tuple of two `Angle` objects
         :param outfile: Name of output FITS file
         :type outfile: str
         '''
@@ -321,13 +329,15 @@ class Source:
 
     def extract_source(self, src_coord, crossmatch_radius, stokesv):
         '''
-        Search for catalogued selavy sources within `crossmatch_radius` of `src_coord` and store information of best match
+        Search for catalogued selavy sources within `crossmatch_radius` of
+        `src_coord` and store information of best match
 
         :param src_coord: Coordinate of the source of interest
         :type src_coord: `astropy.coordinates.sky_coordinate.SkyCoord`
         :param crossmatch_radius: Crossmatch radius to use
         :type crossmatch_radius: `astropy.coordinates.angles.Angle`
-        :param stokesv: `True` to crossmatch with Stokes V image, `False` to match with Stokes I image, defaults to `False`
+        :param stokesv: `True` to crossmatch with Stokes V image, \
+        `False` to match with Stokes I image, defaults to `False`
         :type stokesv: bool, optional
         '''
 
@@ -365,8 +375,8 @@ class Source:
 
         if match_sep < crossmatch_radius:
             self.has_match = True
-            self.selavy_info = self.selavy_cat[self.selavy_cat.index.isin([
-                                                                          match_id])].copy()
+            selavy_index = self.selavy_cat.index.isin([match_id])
+            self.selavy_info = self.selavy_cat[selavy_index].copy()
 
             selavy_ra = self.selavy_info['ra_hms_cont'].iloc[0]
             selavy_dec = self.selavy_info['dec_dms_cont'].iloc[0]
@@ -374,16 +384,17 @@ class Source:
             selavy_iflux = self.selavy_info['flux_int'].iloc[0]
             selavy_iflux_err = self.selavy_info['flux_int_err'].iloc[0]
             logger.info(
-                "Source in selavy catalogue {} {}, {:.3f}+/-{:.3f} mJy ({:.3f} arcsec offset)".format(
+                "Source in selavy catalogue {} {}, {:.3f}+/-{:.3f} mJy \
+                ({:.3f} arcsec offset)".format(
                     selavy_ra,
                     selavy_dec,
                     selavy_iflux,
                     selavy_iflux_err,
                     match_sep[0].arcsec))
         else:
+            print(match_sep.arcsec)
             logger.info(
-                "No selavy catalogue match. Nearest source {.0f} arcsec away.".format(
-                    match_sep.arcsec))
+                "No selavy catalogue match. Nearest source {.0f} arcsec away.".format(match_sep.arcsec))
             self.has_match = False
             self.selavy_info = self._empty_selavy()
 
@@ -392,7 +403,8 @@ class Source:
 
     def write_ann(self, outfile):
         '''
-        Write a kvis annotation file containing all selavy sources within the image
+        Write a kvis annotation file containing all selavy sources
+        within the image.
 
         :param outfile: Name of the file to write
         :type outfile: str
@@ -446,7 +458,9 @@ class Source:
         outfile = outfile.replace(".fits", ".reg")
         with open(outfile, 'w') as f:
             f.write("# Region file format: DS9 version 4.0\n")
-            f.write("global color = green font = \"helvetica 10 normal\" select = 1 highlite = 1 edit = 1 move = 1 delete = 1 include = 1 fixed = 0 source = 1\n")
+            f.write("global color = green font = \"helvetica 10 normal\" \
+            select = 1 highlite = 1 edit = 1 move = 1 delete = 1 include = 1 \
+            fixed = 0 source = 1\n")
             f.write("fk5\n")
             for i, row in self.selavy_cat_cut.iterrows():
                 if row["island_id"].startswith("n"):
@@ -480,8 +494,8 @@ class Source:
 
     def _remove_sbid(self, island):
         '''
-        Removes the SBID component of the island name. Takes into account negative 'n' label for
-        negative sources.
+        Removes the SBID component of the island name. Takes into account
+        negative 'n' label for negative sources.
 
         :param island: island name.
         :type island: str
@@ -498,16 +512,18 @@ class Source:
 
     def filter_selavy_components(self, src_coord, imsize):
         '''
-        Create a shortened catalogue by filtering out selavy components outside of the image
+        Create a shortened catalogue by filtering out selavy components
+        outside of the image
 
         :param src_coord: Coordinates of the source of interest
         :type src_coord: `astropy.coordinates.sky_coordinate.SkyCoord`
         :param imsize: Size of the image along each axis
-        :type imsize: `astropy.coordinates.angles.Angle` or tuple of two `Angle` objects
+        :type imsize: `astropy.coordinates.angles.Angle` or tuple of two \
+        `Angle` objects
         '''
 
         seps = src_coord.separation(self.selavy_sc)
-        mask = seps < =  imsize / 1.4
+        mask = seps <= imsize / 1.4
         self.selavy_cat_cut = self.selavy_cat[mask].reset_index(drop=True)
 
     def make_png(
@@ -535,15 +551,20 @@ class Source:
         :type zscale: bool
         :param contrast: ZScale contrast to use
         :type contrast: float
-        :param outfile: Name of the file to write to, or the name of the FITS file
+        :param outfile: Name of the file to write to, or the name of the FITS \
+        file
         :type outfile: str
-        :param pa_corr: Correction to apply to ellipse position angle if needed (in deg). Angle is from x-axis from left to right.
+        :param pa_corr: Correction to apply to ellipse position angle if \
+        needed (in deg). Angle is from x-axis from left to right.
         :type pa_corr: float
-        :param no_islands: Disable island lables on the png, defaults to `False`
+        :param no_islands: Disable island lables on the png, defaults to \
+        `False`
         :type no_islands: bool, optional
-        :param label: Figure title (usually the name of the source of interest), defaults to "Source"
+        :param label: Figure title (usually the name of the source of \
+        interest), defaults to "Source"
         :type label: str, optional
-        :param no_colorbar: If `True`, do not show the colorbar on the png, defaults to `False`
+        :param no_colorbar: If `True`, do not show the colorbar on the png, \
+        defaults to `False`
         :type no_colorbar: bool, optional
         '''
 
@@ -565,9 +586,10 @@ class Source:
                 interval=PercentileInterval(percentile),
                 stretch=LinearStretch())
         im = ax.imshow(cutout_data, norm=self.img_norms, cmap="gray_r")
-        ax.scatter([src_coord.ra.deg], [src_coord.dec.deg], transform=ax.get_transform(
-            'world'), marker="x", color="r", zorder=10, label=label)
-        if selavy and self.selavy_fail = =  False:
+        ax.scatter([src_coord.ra.deg], [src_coord.dec.deg],
+                   transform=ax.get_transform('world'), marker="x",
+                   color="r", zorder=10, label=label)
+        if selavy and self.selavy_fail is False:
             ax.set_autoscale_on(False)
             # define ellipse properties for clarity, selavy cut will have
             # already been created.
@@ -648,9 +670,11 @@ parser.add_argument(
     'coords',
     metavar="\"HH:MM:SS [+/-]DD:MM:SS\" OR input.csv",
     type=str,
-    help='Right Ascension and Declination in formnat "HH:MM:SS [+/-]DD:MM:SS", in quotes. E.g. "12:00:00 -20:00:00".\
- Degrees is also acceptable, e.g. "12.123 -20.123". Multiple coordinates are supported by separating with a comma (no space) e.g. "12.231 -56.56,123.4 +21.3. Finally you can also\
- enter coordinates using a .csv file. See example file for format.')
+    help='Right Ascension and Declination in format "HH:MM:SS [+/-]DD:MM:SS", \
+    in quotes. E.g. "12:00:00 -20:00:00". Degrees is also acceptable, e.g. \
+    "12.123 -20.123". Multiple coordinates are supported by separating with \
+    a comma (no space) e.g. "12.231 -56.56,123.4 +21.3. Finally you can also \
+    enter coordinates using a .csv file. See example file for format.')
 
 parser.add_argument(
     '--imsize',
@@ -672,8 +696,9 @@ parser.add_argument(
     '--source-names',
     type=str,
     help='Only for use when entering coordaintes via the command line.\
- State the name of the source being searched. Use quote marks for names that contain a space. For multiple sources separate with a comma with no space, \
- e.g. "SN 1994N,SN 2003D,SN 2019A"',
+    State the name of the source being searched. Use quote marks for names \
+    that contain a space. For multiple sources separate with a comma with no \
+    space, e.g. "SN 1994N,SN 2003D,SN 2019A"',
     default="")
 parser.add_argument(
     '--crossmatch-radius',
@@ -725,7 +750,8 @@ parser.add_argument(
 parser.add_argument(
     '--png-ellipse-pa-corr',
     type=float,
-    help='Correction to apply to ellipse position angle if needed (in deg). Angle is from x-axis from left to right.',
+    help='Correction to apply to ellipse position angle if needed (in deg). \
+    Angle is from x-axis from left to right.',
     default=0.0)
 parser.add_argument(
     '--png-no-colorbar',
@@ -742,7 +768,7 @@ parser.add_argument(
 parser.add_argument(
     '--stokesv',
     action="store_true",
-    help='Use Stokes V images and catalogues. Works with combined images only!')
+    help='Use Stokes V images and catalogues if available.')
 parser.add_argument(
     '--quiet',
     action="store_true",
@@ -754,11 +780,11 @@ parser.add_argument(
 parser.add_argument(
     '--selavy-simple',
     action="store_true",
-    help='Only include flux density and uncertainty from selavy in returned table.')
+    help='Only include flux density and uncertainty in returned table.')
 parser.add_argument(
     '--process-matches',
     action="store_true",
-    help='Only produce data products for sources that have a match from selavy.')
+    help='Only produce data products for sources that have a selavy match.')
 parser.add_argument(
     '--debug',
     action="store_true",
@@ -774,7 +800,8 @@ parser.add_argument(
 parser.add_argument(
     '--vast-pilot',
     type=int,
-    help='Query the VAST Pilot instead of RACS. Input is the epoch number of the VAST pilot.')
+    help='Query the VAST Pilot instead of RACS. \
+    Input is the epoch number of the VAST pilot.')
 
 args = parser.parse_args()
 
@@ -823,7 +850,8 @@ logger.setLevel(logging.DEBUG)
 output_name = args.out_folder
 if os.path.isdir(output_name):
     logger.critical(
-        "Requested output directory '{}' already exists! Will not overwrite.".format(output_name))
+        "Requested output directory '{}' already exists! \
+        Will not overwrite.".format(output_name))
     logger.critical("Exiting.")
     sys.exit()
 else:
@@ -861,9 +889,9 @@ else:
         catalog_dict['ra'].append(ra_str)
         catalog_dict['dec'].append(dec_str)
 
-    if args.source_names ! =  "":
+    if args.source_names != "":
         source_names = args.source_names.split(",")
-        if len(source_names) ! =  len(catalog_dict['ra']):
+        if len(source_names) != len(catalog_dict['ra']):
             logger.critical(
                 "All sources must be named when using '--source-names'.")
             logger.critical("Please check inputs.")
@@ -961,7 +989,8 @@ if not os.path.isdir(IMAGE_FOLDER):
 SELAVY_FOLDER = args.cat_folder
 if not SELAVY_FOLDER:
     if args.use_tiles:
-        SELAVY_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/SELAVY_OUTPUT/stokesI_cat/'
+        SELAVY_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/\
+        SELAVY_OUTPUT/stokesI_cat/'
     else:
         if args.vast_pilot:
             image_dir = "COMBINED"
@@ -970,7 +999,7 @@ if not SELAVY_FOLDER:
             image_dir = "COMBINED_MOSAICS"
             selavy_dir = "racs_cat"
             if args.stokesv:
-                selavy_dir + =  "v"
+                selavy_dir += "v"
 
     SELAVY_FOLDER = os.path.join(
         default_base_folder,
@@ -1007,7 +1036,7 @@ if not os.path.isdir(BANE_FOLDER):
         "{} does not exist. Only finding fields".format(BANE_FOLDER))
     FIND_FIELDS = True
 
-if catalog['ra'].dtype = =  np.float64:
+if catalog['ra'].dtype == np.float64:
     hms = False
     deg = True
 
@@ -1036,7 +1065,7 @@ src_coords = src_coords[coords_mask]
 
 uniq_fields = src_fields['field_name'].unique().tolist()
 
-if len(uniq_fields) = =  0:
+if len(uniq_fields) == 0:
     logger.error("Source(s) not in Survey!")
     sys.exit()
 
@@ -1057,7 +1086,7 @@ crossmatch_output_check = False
 logger.info("Performing crossmatching for sources, please wait...")
 
 for uf in uniq_fields:
-    logger.info("-------------------------------------------------------------")
+    logger.info("-----------------------------------------------------------")
 
     mask = src_fields["field_name"] == uf
     srcs = src_fields[mask]
@@ -1101,8 +1130,8 @@ for uf in uniq_fields:
             source.get_background_rms(image.rms_data, image.rms_wcs, src_coord)
 
         if args.process_matches and not source.has_match:
-            logger.info(
-                "Source does not have a selavy match, not continuing processing")
+            logger.info("Source does not have a selavy match, not \
+            continuing processing")
             continue
         else:
             if not args.crossmatch_only and not image.image_fail:
@@ -1115,7 +1144,7 @@ for uf in uniq_fields:
                     outfile)
 
             # not ideal but line below has to be run after those above
-            if source.selavy_fail = =  False:
+            if source.selavy_fail is False:
                 source.filter_selavy_components(src_coord, imsize)
                 if args.ann:
                     source.write_ann(outfile)
@@ -1123,20 +1152,22 @@ for uf in uniq_fields:
                     source.write_reg(outfile)
             else:
                 logger.error(
-                    "Selavy failed! No region or annotation files will be made if requested.")
+                    "Selavy failed! No region or annotation files\
+                     will be made if requested.")
 
-            if args.create_png and not args.crossmatch_only and not image.image_fail:
-                source.make_png(
-                    src_coord,
-                    args.png_selavy_overlay,
-                    args.png_linear_percentile,
-                    args.png_use_zscale,
-                    args.png_zscale_contrast,
-                    outfile,
-                    args.png_ellipse_pa_corr,
-                    no_islands=args.png_no_island_labels,
-                    label=label,
-                    no_colorbar=args.png_no_colorbar)
+            if args.create_png:
+                if not args.crossmatch_only and not image.image_fail:
+                    source.make_png(
+                        src_coord,
+                        args.png_selavy_overlay,
+                        args.png_linear_percentile,
+                        args.png_use_zscale,
+                        args.png_zscale_contrast,
+                        outfile,
+                        args.png_ellipse_pa_corr,
+                        no_islands=args.png_no_island_labels,
+                        label=label,
+                        no_colorbar=args.png_no_colorbar)
 
         if not crossmatch_output_check:
             crossmatch_output = source.selavy_info
@@ -1150,18 +1181,20 @@ for uf in uniq_fields:
             crossmatch_output = crossmatch_output.append(
                 source.selavy_info, sort=False)
         logger.info(
-            "-------------------------------------------------------------")
+            "-----------------------------------------------------------")
 
 runend = datetime.datetime.now()
 runtime = runend - runstart
 
-logger.info("-------------------------------------------------------------")
+logger.info("-----------------------------------------------------------")
 logger.info("Summary")
-logger.info("-------------------------------------------------------------")
+logger.info("-----------------------------------------------------------")
 logger.info("Number of sources searched for: {}".format(len(catalog.index)))
 logger.info("Number of sources in survey: {}".format(len(src_fields.index)))
 logger.info("Number of sources with matches < {} arcsec: {}".format(
-    crossmatch_radius.arcsec, len(crossmatch_output[~crossmatch_output["island_id"].isna()].index)))
+    crossmatch_radius.arcsec,
+    len(crossmatch_output[~crossmatch_output["island_id"].isna()].index)))
+
 logger.info("Processing took {:.1f} minutes.".format(runtime.seconds / 60.))
 
 # Create and write final crossmatch csv
