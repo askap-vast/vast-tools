@@ -912,7 +912,7 @@ imsize = Angle(args.imsize, unit=u.arcmin)
 
 max_sep = args.maxsep
 
-latest_pilot_epoch = 2
+latest_pilot_epoch = 99
 
 if args.use_tiles:
     outfile_prefix = "tile"
