@@ -569,7 +569,7 @@ class Source:
         :type no_colorbar: bool, optional
         :param title: String to set as title, \
         defaults to `` where no title will be used.
-        :type no_colorbar: str, optional
+        :type title: str, optional
         '''
 
         # image has already been loaded to get the fits
