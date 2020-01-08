@@ -1151,8 +1151,8 @@ for uf in uniq_fields:
                     source.write_reg(outfile)
             else:
                 logger.error(
-                    "Selavy failed! No region or annotation files\
-                     will be made if requested.")
+                    "Selavy failed! No region or annotation files \
+                    will be made if requested.")
 
             if args.create_png:
                 if not args.crossmatch_only and not image.image_fail:
@@ -1202,7 +1202,8 @@ if args.selavy_simple:
         items=["flux_int", "rms_image", "BANE_rms"])
     crossmatch_output = crossmatch_output.rename(
         columns={"flux_int": "S_int", "rms_image": "S_err"})
-    final = src_fields.join(crossmatch_output)
+
+final = src_fields.join(crossmatch_output)
 
 output_crossmatch_name = "{}_crossmatch.csv".format(output_name)
 output_crossmatch_name = os.path.join(output_name, output_crossmatch_name)
