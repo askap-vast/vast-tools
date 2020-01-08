@@ -1164,7 +1164,10 @@ for uf in uniq_fields:
             if args.create_png:
                 if not args.crossmatch_only and not image.image_fail:
                     if survey == "racs":
-                        png_title = "{} RACS {}".format(label, uf.split("_")[-1])
+                        png_title = "{} RACS {}".format(
+                            label, 
+                            uf.split("_")[-1]
+                        )
                     else:
                         png_title = "{} VAST Pilot {} Epoch {:02d}".format(
                             label,
