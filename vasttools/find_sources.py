@@ -862,7 +862,7 @@ if os.path.isdir(output_name):
         logger.warning(("Directory {} already exists "
                         "but clobber selected. "
                         "Removing current directory."
-                        ).format(output_name)
+                        ).format(output_name))
         subprocess.call(["rm", "-r", output_name])
     else:
         logger.critical(
