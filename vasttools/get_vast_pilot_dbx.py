@@ -216,7 +216,7 @@ parser.add_argument(
     type=str,
     help=(
         "Dropbox config file to be read in containing the shared url, "
-        "password and access token. A template can be generated using " 
+        "password and access token. A template can be generated using "
         "'--write-template-dropbox-config'."
         ),
     default="dropbox.cfg")

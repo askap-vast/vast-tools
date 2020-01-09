@@ -393,10 +393,9 @@ class Source:
                     match_sep[0].arcsec))
         else:
             logger.info(
-                ("No selavy catalogue match. "
-                "Nearest source {:.0f} arcsec away."
-                ).format(match_sep[0].arcsec)
-            )
+                        ("No selavy catalogue match. "
+                        "Nearest source {:.0f} arcsec away."
+                        ).format(match_sep[0].arcsec))
             self.has_match = False
             self.selavy_info = self._empty_selavy()
 
@@ -461,8 +460,8 @@ class Source:
         with open(outfile, 'w') as f:
             f.write("# Region file format: DS9 version 4.0\n")
             f.write("global color = green font = \"helvetica 10 normal\" "
-            "select = 1 highlite = 1 edit = 1 move = 1 delete = 1 include = 1 "
-            "fixed = 0 source = 1\n")
+                    "select = 1 highlite = 1 edit = 1 move = 1 delete = 1 include = 1 "
+                    "fixed = 0 source = 1\n")
             f.write("fk5\n")
             for i, row in self.selavy_cat_cut.iterrows():
                 if row["island_id"].startswith("n"):
@@ -673,10 +672,12 @@ parser.add_argument(
     metavar="\"HH:MM:SS [+/-]DD:MM:SS\" OR input.csv",
     type=str,
     help=("Right Ascension and Declination in format \"HH:MM:SS [+/-]DD:MM:SS\", "
-    "in quotes. E.g. \"12:00:00 -20:00:00\". Degrees is also acceptable, e.g. "
-    "\"12.123 -20.123\". Multiple coordinates are supported by separating with "
-    "a comma (no space) e.g. \"12.231 -56.56,123.4 +21.3\". Finally you can also "
-    "enter coordinates using a .csv file. See example file for format."))
+          "in quotes. E.g. \"12:00:00 -20:00:00\". Degrees is also acceptable, "
+          "e.g. \"12.123 -20.123\". Multiple coordinates are supported "
+          "by separating with a comma (no space) e.g. "
+          "\"12.231 -56.56,123.4 +21.3\"."
+          " Finally you can also enter coordinates using a .csv file."
+          " See example file for format."))
 
 parser.add_argument(
     '--imsize',
@@ -698,9 +699,9 @@ parser.add_argument(
     '--source-names',
     type=str,
     help=("Only for use when entering coordaintes via the command line. "
-    "State the name of the source being searched. Use quote marks for names "
-    "that contain a space. For multiple sources separate with a comma with no "
-    "space, e.g. \"SN 1994N,SN 2003D,SN 2019A\"."),
+          "State the name of the source being searched. Use quote marks for names "
+          "that contain a space. For multiple sources separate with a comma with no "
+          "space, e.g. \"SN 1994N,SN 2003D,SN 2019A\"."),
     default="")
 parser.add_argument(
     '--crossmatch-radius',
@@ -753,7 +754,7 @@ parser.add_argument(
     '--png-ellipse-pa-corr',
     type=float,
     help=("Correction to apply to ellipse position angle if needed (in deg). "
-    "Angle is from x-axis from left to right."),
+          "Angle is from x-axis from left to right."),
     default=0.0)
 parser.add_argument(
     '--png-no-colorbar',
@@ -803,7 +804,7 @@ parser.add_argument(
     '--vast-pilot',
     type=int,
     help=("Query the VAST Pilot instead of RACS. "
-    "Input is the epoch number of the VAST pilot."))
+          "Input is the epoch number of the VAST pilot."))
 
 args = parser.parse_args()
 
@@ -853,7 +854,7 @@ output_name = args.out_folder
 if os.path.isdir(output_name):
     logger.critical(
         ("Requested output directory '{}' already exists! "
-        "Will not overwrite.").format(output_name))
+         "Will not overwrite.").format(output_name))
     logger.critical("Exiting.")
     sys.exit()
 else:
@@ -992,7 +993,7 @@ SELAVY_FOLDER = args.cat_folder
 if not SELAVY_FOLDER:
     if args.use_tiles:
         SELAVY_FOLDER = ("/import/ada1/askap/RACS/aug2019_reprocessing/"
-                        "SELAVY_OUTPUT/stokesI_cat/")
+                         "SELAVY_OUTPUT/stokesI_cat/")
     else:
         if args.vast_pilot:
             image_dir = "COMBINED"
@@ -1133,7 +1134,7 @@ for uf in uniq_fields:
 
         if args.process_matches and not source.has_match:
             logger.info("Source does not have a selavy match, not "
-            "continuing processing")
+                        "continuing processing")
             continue
         else:
             if not args.crossmatch_only and not image.image_fail:
