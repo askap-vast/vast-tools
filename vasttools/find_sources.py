@@ -538,8 +538,7 @@ class Source:
             pa_corr,
             no_islands=False,
             label="Source",
-            no_colorbar=False,
-            title=""):
+            no_colorbar=False):
         '''
         Save a PNG of the image postagestamp
 
@@ -568,9 +567,6 @@ class Source:
         :param no_colorbar: If `True`, do not show the colorbar on the png, \
         defaults to `False`
         :type no_colorbar: bool, optional
-        :param title: String to set as title, \
-        defaults to `` where no title will be used.
-        :type title: str, optional
         '''
 
         # image has already been loaded to get the fits
@@ -649,8 +645,6 @@ class Source:
                 "right", size="3%", pad=0.1, axes_class=maxes.Axes)
             cb = fig.colorbar(im, cax=cax)
             cb.set_label("mJy/beam")
-        if title != "":
-            ax.set_title(title)
         plt.savefig(outfile, bbox_inches="tight")
         logger.info("Saved {}".format(outfile))
         plt.close()
@@ -813,6 +807,10 @@ parser.add_argument(
     type=int,
     help=("Query the VAST Pilot instead of RACS. "
           "Input is the epoch number of the VAST pilot."))
+parser.add_argument(
+    '--clobber',
+    action="store_true",
+    help=("Overwrite the output directory if it already exists."))
 
 args = parser.parse_args()
 
@@ -860,14 +858,21 @@ logger.setLevel(logging.DEBUG)
 # Sort out output directory
 output_name = args.out_folder
 if os.path.isdir(output_name):
-    logger.critical(
-        ("Requested output directory '{}' already exists! "
-         "Will not overwrite.").format(output_name))
-    logger.critical("Exiting.")
-    sys.exit()
-else:
-    logger.info("Creating directory '{}'.".format(output_name))
-    os.mkdir(output_name)
+    if args.clobber:
+        logger.warning(("Directory {} already exists "
+                        "but clobber selected. "
+                        "Removing current directory."
+                        ).format(output_name)
+        subprocess.call(["rm", "-r", output_name])
+    else:
+        logger.critical(
+            ("Requested output directory '{}' already exists! "
+             "Will not overwrite.").format(output_name))
+        logger.critical("Exiting.")
+        sys.exit()
+
+logger.info("Creating directory '{}'.".format(output_name))
+os.mkdir(output_name)
 
 if " " not in args.coords:
     logger.info("Loading file {}".format(args.coords))
@@ -1168,17 +1173,6 @@ for uf in uniq_fields:
 
             if args.create_png:
                 if not args.crossmatch_only and not image.image_fail:
-                    if survey == "racs":
-                        png_title = "{} RACS {}".format(
-                            label,
-                            uf.split("_")[-1]
-                        )
-                    else:
-                        png_title = "{} VAST Pilot {} Epoch {:02d}".format(
-                            label,
-                            uf.split("_")[-1],
-                            pilot_epoch
-                        )
                     source.make_png(
                         src_coord,
                         args.png_selavy_overlay,
@@ -1189,8 +1183,7 @@ for uf in uniq_fields:
                         args.png_ellipse_pa_corr,
                         no_islands=args.png_no_island_labels,
                         label=label,
-                        no_colorbar=args.png_no_colorbar,
-                        title=png_title)
+                        no_colorbar=args.png_no_colorbar)
 
         if not crossmatch_output_check:
             crossmatch_output = source.selavy_info
