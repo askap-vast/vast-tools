@@ -5,16 +5,16 @@ A space to share your hacky scripts that others may find useful.
 Currently these are scripts that can just be copied and run, not a module installation yet (soon).
 
 ## Requirements
-* Python 3
-* pandas
-* numpy
-* astropy
-* matplotlib
-* scipy
-* dropbox
-* colorlog (optional)
+* Python 3 (3.8.0)
+* pandas (0.25.3)
+* numpy (1.17.4)
+* astropy (<4.0)
+* matplotlib (3.1.2)
+* scipy (1.4.0)
+* dropbox (9.4.0)
+* colorlog (4.0.2 ;optional)
 
-Latest versions of above recommended.
+Recommended versions, which have been tested against, are stated in brackets.
 
 There is a requirements.txt included in the repository that you can use to install the dependancies using
 ```
