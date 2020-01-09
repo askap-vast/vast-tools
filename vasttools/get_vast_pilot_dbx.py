@@ -62,7 +62,12 @@ def recursive_build_files(base_file_list, dbx, preappend="", legacy=False):
                 sys.stdout.flush()
                 sys.stdout.write('\b')
             # Ignore legacy folder when searching unless specified by user.
-            if i == "LEGACY" and legacy is False:
+            logger.debug("Folder: {}".format(i))
+            if i == "/LEGACY" and legacy is False:
+                logger.debug(
+                    "Skipping LEGACY folder, "
+                    "include_legacy = {}".format(legacy)
+                    )
                 searched_folders.append(i)
                 continue
             if i not in searched_folders:
@@ -209,9 +214,11 @@ parser.add_argument(
 parser.add_argument(
     '--dropbox-config',
     type=str,
-    help='Dropbox config file to be read in containing the shared url, \
-password and access token. A template can be generated using \
---write-template-dropbox-config.',
+    help=(
+        "Dropbox config file to be read in containing the shared url, "
+        "password and access token. A template can be generated using " 
+        "'--write-template-dropbox-config'."
+        ),
     default="dropbox.cfg")
 
 parser.add_argument(
@@ -222,8 +229,11 @@ parser.add_argument(
 parser.add_argument(
     '--include-legacy',
     action="store_true",
-    help="Include the 'LEGACY' directory when searching through files. \
-Only valid when using the '--available-files' option.")
+    help=(
+        "Include the 'LEGACY' directory when searching through files. "
+        "Only valid when using the '--available-files' option."
+        )
+    )
 
 args = parser.parse_args()
 
@@ -287,8 +297,9 @@ if not check_file(args.dropbox_config):
         "Cannot find dropbox config file '{}!".format(
             args.dropbox_config))
     logger.info(
-        "A template dropbox file can be generated using \
-'python get_vast_pilot_dbx.py --write-template-dropbox-config'")
+        "A template dropbox file can be generated using "
+        "python get_vast_pilot_dbx.py '--write-template-dropbox-config'"
+        )
 
     sys.exit()
 
@@ -330,10 +341,14 @@ if args.available_epochs:
 
 elif args.available_files:
     logger.info(
-        "Gathering a list of files - this will take \
-        approximately 4 minutes per epoch.")
+        "Gathering a list of files - this will take "
+        "approximately 4 minutes per epoch."
+        )
 
-    files_list, folders_list = recursive_build_files(base_file_list, dbx)
+    files_list, folders_list = recursive_build_files(
+        base_file_list,
+        dbx,
+        legacy=args.include_legacy)
     logger.info("Found {} files.".format(len(files_list)))
     vast_list_file_name = "vast_dbx_file_list_{}.txt".format(now_str)
 
