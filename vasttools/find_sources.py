@@ -12,6 +12,7 @@ import os
 import datetime
 import pandas as pd
 import warnings
+import shutil
 
 import logging
 import logging.handlers
@@ -863,7 +864,7 @@ if os.path.isdir(output_name):
                         "but clobber selected. "
                         "Removing current directory."
                         ).format(output_name))
-        subprocess.call(["rm", "-r", output_name])
+        shutil.rmtree(output_name)
     else:
         logger.critical(
             ("Requested output directory '{}' already exists! "
