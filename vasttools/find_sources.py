@@ -394,8 +394,9 @@ class Source:
         else:
             logger.info(
                         ("No selavy catalogue match. "
-                        "Nearest source {:.0f} arcsec away."
-                        ).format(match_sep[0].arcsec))
+                         "Nearest source {:.0f} arcsec away."
+                        ).format(match_sep[0].arcsec)
+                        )
             self.has_match = False
             self.selavy_info = self._empty_selavy()
 
@@ -460,7 +461,8 @@ class Source:
         with open(outfile, 'w') as f:
             f.write("# Region file format: DS9 version 4.0\n")
             f.write("global color = green font = \"helvetica 10 normal\" "
-                    "select = 1 highlite = 1 edit = 1 move = 1 delete = 1 include = 1 "
+                    "select = 1 highlite = 1 edit = 1 "
+                    "move = 1 delete = 1 include = 1 "
                     "fixed = 0 source = 1\n")
             f.write("fk5\n")
             for i, row in self.selavy_cat_cut.iterrows():
@@ -671,8 +673,9 @@ parser.add_argument(
     'coords',
     metavar="\"HH:MM:SS [+/-]DD:MM:SS\" OR input.csv",
     type=str,
-    help=("Right Ascension and Declination in format \"HH:MM:SS [+/-]DD:MM:SS\", "
-          "in quotes. E.g. \"12:00:00 -20:00:00\". Degrees is also acceptable, "
+    help=("Right Ascension and Declination in format "
+          "\"HH:MM:SS [+/-]DD:MM:SS\", in quotes. "
+          "E.g. \"12:00:00 -20:00:00\". Degrees is also acceptable, "
           "e.g. \"12.123 -20.123\". Multiple coordinates are supported "
           "by separating with a comma (no space) e.g. "
           "\"12.231 -56.56,123.4 +21.3\"."
@@ -699,8 +702,9 @@ parser.add_argument(
     '--source-names',
     type=str,
     help=("Only for use when entering coordaintes via the command line. "
-          "State the name of the source being searched. Use quote marks for names "
-          "that contain a space. For multiple sources separate with a comma with no "
+          "State the name of the source being searched. "
+          "Use quote marks for names that contain a space. "
+          "For multiple sources separate with a comma with no "
           "space, e.g. \"SN 1994N,SN 2003D,SN 2019A\"."),
     default="")
 parser.add_argument(
