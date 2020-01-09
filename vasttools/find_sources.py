@@ -392,11 +392,9 @@ class Source:
                     selavy_iflux_err,
                     match_sep[0].arcsec))
         else:
-            logger.info(
-                        ("No selavy catalogue match. "
+            logger.info(("No selavy catalogue match. "
                          "Nearest source {:.0f} arcsec away."
-                        ).format(match_sep[0].arcsec)
-                        )
+                         ).format(match_sep[0].arcsec))
             self.has_match = False
             self.selavy_info = self._empty_selavy()
 
