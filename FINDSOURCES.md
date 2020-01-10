@@ -60,6 +60,7 @@ usage: find_sources.py [-h] [--imsize IMSIZE] [--maxsep MAXSEP]
                     [--png-no-colorbar] [--ann] [--reg] [--stokesv] [--quiet]
                     [--crossmatch-only] [--selavy-simple] [--process-matches]
                     [--debug] [--no-background-rms] [--find-fields]
+                    [--vast-pilot VAST_PILOT] [--clobber]
                     "HH:MM:SS [+/-]DD:MM:SS" OR input.csv
 
 positional arguments:
@@ -137,6 +138,8 @@ optional arguments:
                         (default: False)
   --vast-pilot          Query the VAST Pilot instead of RACS. Input is the
                         epoch number of the VAST pilot. (default: None)
+  --clobber             Overwrite the output directory if it already exists.
+                        (default: False)
 ```
 
 ## Inputs

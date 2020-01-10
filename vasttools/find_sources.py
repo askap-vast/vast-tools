@@ -12,6 +12,7 @@ import os
 import datetime
 import pandas as pd
 import warnings
+import shutil
 
 import logging
 import logging.handlers
@@ -392,9 +393,9 @@ class Source:
                     selavy_iflux_err,
                     match_sep[0].arcsec))
         else:
-            logger.info(
-                "No selavy catalogue match. Nearest source {:.0f} \
-                arcsec away.".format(match_sep[0].arcsec))
+            logger.info(("No selavy catalogue match. "
+                         "Nearest source {:.0f} arcsec away."
+                         ).format(match_sep[0].arcsec))
             self.has_match = False
             self.selavy_info = self._empty_selavy()
 
@@ -458,9 +459,10 @@ class Source:
         outfile = outfile.replace(".fits", ".reg")
         with open(outfile, 'w') as f:
             f.write("# Region file format: DS9 version 4.0\n")
-            f.write("global color = green font = \"helvetica 10 normal\" \
-            select = 1 highlite = 1 edit = 1 move = 1 delete = 1 include = 1 \
-            fixed = 0 source = 1\n")
+            f.write("global color = green font = \"helvetica 10 normal\" "
+                    "select = 1 highlite = 1 edit = 1 "
+                    "move = 1 delete = 1 include = 1 "
+                    "fixed = 0 source = 1\n")
             f.write("fk5\n")
             for i, row in self.selavy_cat_cut.iterrows():
                 if row["island_id"].startswith("n"):
@@ -537,7 +539,8 @@ class Source:
             pa_corr,
             no_islands=False,
             label="Source",
-            no_colorbar=False):
+            no_colorbar=False,
+            title=""):
         '''
         Save a PNG of the image postagestamp
 
@@ -566,6 +569,9 @@ class Source:
         :param no_colorbar: If `True`, do not show the colorbar on the png, \
         defaults to `False`
         :type no_colorbar: bool, optional
+        :param title: String to set as title, \
+        defaults to `` where no title will be used.
+        :type title: str, optional
         '''
 
         # image has already been loaded to get the fits
@@ -644,6 +650,8 @@ class Source:
                 "right", size="3%", pad=0.1, axes_class=maxes.Axes)
             cb = fig.colorbar(im, cax=cax)
             cb.set_label("mJy/beam")
+        if title != "":
+            ax.set_title(title)
         plt.savefig(outfile, bbox_inches="tight")
         logger.info("Saved {}".format(outfile))
         plt.close()
@@ -670,11 +678,14 @@ parser.add_argument(
     'coords',
     metavar="\"HH:MM:SS [+/-]DD:MM:SS\" OR input.csv",
     type=str,
-    help='Right Ascension and Declination in format "HH:MM:SS [+/-]DD:MM:SS", \
-    in quotes. E.g. "12:00:00 -20:00:00". Degrees is also acceptable, e.g. \
-    "12.123 -20.123". Multiple coordinates are supported by separating with \
-    a comma (no space) e.g. "12.231 -56.56,123.4 +21.3. Finally you can also \
-    enter coordinates using a .csv file. See example file for format.')
+    help=("Right Ascension and Declination in format "
+          "\"HH:MM:SS [+/-]DD:MM:SS\", in quotes. "
+          "E.g. \"12:00:00 -20:00:00\". Degrees is also acceptable, "
+          "e.g. \"12.123 -20.123\". Multiple coordinates are supported "
+          "by separating with a comma (no space) e.g. "
+          "\"12.231 -56.56,123.4 +21.3\"."
+          " Finally you can also enter coordinates using a .csv file."
+          " See example file for format."))
 
 parser.add_argument(
     '--imsize',
@@ -695,10 +706,11 @@ parser.add_argument(
 parser.add_argument(
     '--source-names',
     type=str,
-    help='Only for use when entering coordaintes via the command line.\
-    State the name of the source being searched. Use quote marks for names \
-    that contain a space. For multiple sources separate with a comma with no \
-    space, e.g. "SN 1994N,SN 2003D,SN 2019A"',
+    help=("Only for use when entering coordaintes via the command line. "
+          "State the name of the source being searched. "
+          "Use quote marks for names that contain a space. "
+          "For multiple sources separate with a comma with no "
+          "space, e.g. \"SN 1994N,SN 2003D,SN 2019A\"."),
     default="")
 parser.add_argument(
     '--crossmatch-radius',
@@ -750,8 +762,8 @@ parser.add_argument(
 parser.add_argument(
     '--png-ellipse-pa-corr',
     type=float,
-    help='Correction to apply to ellipse position angle if needed (in deg). \
-    Angle is from x-axis from left to right.',
+    help=("Correction to apply to ellipse position angle if needed (in deg). "
+          "Angle is from x-axis from left to right."),
     default=0.0)
 parser.add_argument(
     '--png-no-colorbar',
@@ -800,8 +812,12 @@ parser.add_argument(
 parser.add_argument(
     '--vast-pilot',
     type=int,
-    help='Query the VAST Pilot instead of RACS. \
-    Input is the epoch number of the VAST pilot.')
+    help=("Query the VAST Pilot instead of RACS. "
+          "Input is the epoch number of the VAST pilot."))
+parser.add_argument(
+    '--clobber',
+    action="store_true",
+    help=("Overwrite the output directory if it already exists."))
 
 args = parser.parse_args()
 
@@ -849,14 +865,21 @@ logger.setLevel(logging.DEBUG)
 # Sort out output directory
 output_name = args.out_folder
 if os.path.isdir(output_name):
-    logger.critical(
-        "Requested output directory '{}' already exists! \
-        Will not overwrite.".format(output_name))
-    logger.critical("Exiting.")
-    sys.exit()
-else:
-    logger.info("Creating directory '{}'.".format(output_name))
-    os.mkdir(output_name)
+    if args.clobber:
+        logger.warning(("Directory {} already exists "
+                        "but clobber selected. "
+                        "Removing current directory."
+                        ).format(output_name))
+        shutil.rmtree(output_name)
+    else:
+        logger.critical(
+            ("Requested output directory '{}' already exists! "
+             "Will not overwrite.").format(output_name))
+        logger.critical("Exiting.")
+        sys.exit()
+
+logger.info("Creating directory '{}'.".format(output_name))
+os.mkdir(output_name)
 
 if " " not in args.coords:
     logger.info("Loading file {}".format(args.coords))
@@ -912,7 +935,7 @@ imsize = Angle(args.imsize, unit=u.arcmin)
 
 max_sep = args.maxsep
 
-latest_pilot_epoch = 2
+latest_pilot_epoch = 99
 
 if args.use_tiles:
     outfile_prefix = "tile"
@@ -989,8 +1012,8 @@ if not os.path.isdir(IMAGE_FOLDER):
 SELAVY_FOLDER = args.cat_folder
 if not SELAVY_FOLDER:
     if args.use_tiles:
-        SELAVY_FOLDER = '/import/ada1/askap/RACS/aug2019_reprocessing/\
-        SELAVY_OUTPUT/stokesI_cat/'
+        SELAVY_FOLDER = ("/import/ada1/askap/RACS/aug2019_reprocessing/"
+                         "SELAVY_OUTPUT/stokesI_cat/")
     else:
         if args.vast_pilot:
             image_dir = "COMBINED"
@@ -1020,7 +1043,7 @@ if not BANE_FOLDER:
         logger.warning("Estimating background from mosaics instead.")
     if args.vast_pilot:
         image_dir = "COMBINED"
-        bane_dir = "STOKES{}_BANE_RMSMAPS".format(stokes_param)
+        bane_dir = "STOKES{}_RMSMAPS".format(stokes_param)
     else:
         image_dir = "COMBINED_MOSAICS"
         bane_dir = "{}_mosaic_1.0_BANE".format(stokes_param)
@@ -1130,8 +1153,8 @@ for uf in uniq_fields:
             source.get_background_rms(image.rms_data, image.rms_wcs, src_coord)
 
         if args.process_matches and not source.has_match:
-            logger.info("Source does not have a selavy match, not \
-            continuing processing")
+            logger.info("Source does not have a selavy match, not "
+                        "continuing processing")
             continue
         else:
             if not args.crossmatch_only and not image.image_fail:
@@ -1152,11 +1175,22 @@ for uf in uniq_fields:
                     source.write_reg(outfile)
             else:
                 logger.error(
-                    "Selavy failed! No region or annotation files \
-                    will be made if requested.")
+                    "Selavy failed! No region or annotation files "
+                    "will be made if requested.")
 
             if args.create_png:
                 if not args.crossmatch_only and not image.image_fail:
+                    if survey == "racs":
+                        png_title = "{} RACS {}".format(
+                            label,
+                            uf.split("_")[-1]
+                        )
+                    else:
+                        png_title = "{} VAST Pilot {} Epoch {:02d}".format(
+                            label,
+                            uf.split("_")[-1],
+                            pilot_epoch
+                        )
                     source.make_png(
                         src_coord,
                         args.png_selavy_overlay,
@@ -1167,7 +1201,8 @@ for uf in uniq_fields:
                         args.png_ellipse_pa_corr,
                         no_islands=args.png_no_island_labels,
                         label=label,
-                        no_colorbar=args.png_no_colorbar)
+                        no_colorbar=args.png_no_colorbar,
+                        title=png_title)
 
         if not crossmatch_output_check:
             crossmatch_output = source.selavy_info
