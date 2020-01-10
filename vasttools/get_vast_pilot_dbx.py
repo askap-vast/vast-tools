@@ -9,6 +9,8 @@ import configparser
 import numpy as np
 import itertools
 
+from vasttools.survey import Dropbox
+
 import logging
 import logging.handlers
 import logging.config
@@ -18,129 +20,6 @@ try:
     use_colorlog = True
 except ImportError:
     use_colorlog = False
-
-
-def recursive_build_files(base_file_list, dbx, preappend="", legacy=False):
-    '''
-    Very annoyingling recursive file lists do not work on shared folders.
-    This function is to fetch every single file available by iterating over
-    all folders found to build up a unique file list.
-
-    :param base_file_list: a list of files in the root dropbox folder
-    :type base_file_list:
-    :param dbx: the dropbpx connection
-    :type dbx: A dropbox.Dropbox object.
-    :param preappend: defaults to an empty str
-    :type preappend: str, optional
-    :param legacy: Whether to read legacy directoy, defaults to False
-    :type legacy: bool, optional
-    :returns: lists of all folders files in the dropbox
-    :rtype: list, list
-    '''
-
-    folders = []
-    searched_folders = []
-    files = []
-    for i in base_file_list.entries:
-        if isinstance(i, dropbox.files.FolderMetadata):
-            if preappend == "":
-                folders.append("/{}".format(i.name))
-            else:
-                folders.append("/{}/{}".format(preappend, i.name))
-        else:
-            if preappend == "":
-                files.append("/{}".format(i.name))
-            else:
-                files.append("/{}/{}".format(preappend, i.name))
-
-    while folders != searched_folders:
-        for i in folders:
-            if logger.level != 10:
-                # write the next character
-                sys.stdout.write(next(spinner))
-                # flush stdout buffer (actual character display)
-                sys.stdout.flush()
-                sys.stdout.write('\b')
-            # Ignore legacy folder when searching unless specified by user.
-            logger.debug("Folder: {}".format(i))
-            if i == "/LEGACY" and legacy is False:
-                logger.debug(
-                    "Skipping LEGACY folder, "
-                    "include_legacy = {}".format(legacy)
-                    )
-                searched_folders.append(i)
-                continue
-            if i not in searched_folders:
-                these_files = dbx.files_list_folder(
-                    "/{}".format(i), shared_link=shared_link)
-                for j in these_files.entries:
-                    if isinstance(j, dropbox.files.FolderMetadata):
-                        if preappend == "" or i.startswith(
-                                "/{}".format(preappend)):
-                            folders.append("{}/{}".format(i, j.name))
-                        else:
-                            folders.append(
-                                "/{}/{}/{}".format(preappend, i, j.name))
-                    else:
-                        if preappend == "" or i.startswith(
-                                "/{}".format(preappend)):
-                            files.append("{}/{}".format(i, j.name))
-                        else:
-                            files.append(
-                                "/{}/{}/{}".format(preappend, i, j.name))
-                searched_folders.append(i)
-                logger.debug("Searched {}".format(i))
-                logger.debug("Folders: {}".format(folders))
-                logger.debug("Searched Folders: {}".format(searched_folders))
-    # flush stdout buffer (actual character display)
-    sys.stdout.flush()
-    logger.info("Finished!")
-    return files, folders
-
-
-def download_files(
-        files_list,
-        pwd,
-        output_dir,
-        dbx,
-        shared_url,
-        password,
-        overwrite=False):
-    '''
-    Iterate over a list of files and download them from the dropbox folder
-
-    :param files_list:
-    :type files_list:
-    :param pwd:
-    :type pwd:
-    :param output_dir:
-    :type output_dir:
-    :param dbx:
-    :type dbx:
-    :param shared_url:
-    :type shared_url:
-    :param password:
-    :type password:
-    :param overwrite: whether to overwrite existing files, defaults to False
-    :type overwrite: bool, optional
-    '''
-
-    for vast_file in files_list:
-        download_path = os.path.join(pwd, output_dir, vast_file[1:])
-        if not overwrite:
-            if os.path.isfile(download_path):
-                logger.error(
-                    "{} already exists and overwrite is set to {}.".format(
-                        download_path, overwrite))
-                logger.info("Skipping file.")
-                continue
-        dropbox_path = "{}".format(vast_file)
-        logger.debug("Download path: {}".format(download_path))
-        logger.info("Downloading {}...".format(dropbox_path))
-        dbx.sharing_get_shared_link_file_to_file(
-            download_path, shared_url, path=dropbox_path,
-            link_password=password)
-
 
 def check_dir(directory):
     '''
@@ -345,9 +224,8 @@ elif args.available_files:
         "approximately 4 minutes per epoch."
         )
 
-    files_list, folders_list = recursive_build_files(
+    files_list, folders_list = Dropbox.recursive_build_files(
         base_file_list,
-        dbx,
         legacy=args.include_legacy)
     logger.info("Found {} files.".format(len(files_list)))
     vast_list_file_name = "vast_dbx_file_list_{}.txt".format(now_str)
