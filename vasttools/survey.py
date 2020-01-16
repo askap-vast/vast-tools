@@ -27,8 +27,11 @@ from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
 
 class Dropbox:
     '''
+    This is a class for downloading files from Dropbox.
+    See `get_vast_pilot_dbx.py` for a full implementation.
     
-    
+    :param dbx: a `Dropbox` object containing connection information
+    :type dbx: `dropbox.dropbox.Dropbox`
     '''
     
     def __init__(self, dbx):
