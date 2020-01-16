@@ -1,29 +1,24 @@
 # Functions and classes related to loading and searching survey data
 
-import argparse
 import sys
-import numpy as np
 import os
-import datetime
 import pandas as pd
 import warnings
-import shutil
 
 import logging
 import logging.handlers
 import logging.config
 
-import matplotlib.pyplot as plt
-
 from astropy.coordinates import Angle
-from astropy.coordinates import SkyCoord
 from astropy import units as u
-from astropy.nddata.utils import Cutout2D
 from astropy.coordinates import SkyCoord
 from astropy.io import fits
 from astropy.wcs import WCS
-from astropy.wcs.utils import skycoord_to_pixel
 from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
+
+warnings.filterwarnings('ignore', category=AstropyWarning, append=True)
+warnings.filterwarnings('ignore',
+                        category=AstropyDeprecationWarning, append=True)
 
 class Dropbox:
     '''
