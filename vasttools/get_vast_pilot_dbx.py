@@ -21,33 +21,6 @@ try:
 except ImportError:
     use_colorlog = False
 
-def check_dir(directory):
-    '''
-    Wrapper for os.path.isdir()
-
-    :param directory: path to directory we're checking the existence of
-    :type directory: str
-
-    :returns: True if the directory exists, False otherwise
-    :rtype: bool
-    '''
-
-    return os.path.isdir(directory)
-
-
-def check_file(file_to_check):
-    '''
-    Wrapper for os.path.isfile()
-
-    :param file_to_check: path to file we're checking the existence of
-    :type file_to_check: str
-
-    :returns: True if the specified path is an existing file, False otherwise
-    :rtype: bool
-    '''
-
-    return os.path.isfile(file_to_check)
-
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -171,7 +144,7 @@ if args.write_template_dropbox_config:
         "Writen an example dropbox config file to '{}'.".format(config_file))
     sys.exit()
 
-if not check_file(args.dropbox_config):
+if not os.path.isfile(args.dropbox_config):
     logger.critical(
         "Cannot find dropbox config file '{}!".format(
             args.dropbox_config))
@@ -196,7 +169,7 @@ output_dir = args.output
 
 # check dir
 if not args.available_epochs and not args.available_files:
-    if check_dir(output_dir):
+    if os.path.isdir(output_dir):
         logger.warning(
             "Output directory '{}' already exists!".format(output_dir))
         logger.warning("Files may get overwritten!")
@@ -270,7 +243,7 @@ elif args.download_epoch != 0:
             password)
 
 elif args.files_list is not None:
-    if not check_file(args.files_list):
+    if not os.path.isfile(args.files_list):
         logger.error("Supplied file '{}' not found!".format(args.files_list))
         sys.exit()
     with open(args.files_list, 'r') as f:
