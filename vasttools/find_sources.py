@@ -43,8 +43,8 @@ warnings.filterwarnings('ignore', category=AstropyWarning, append=True)
 warnings.filterwarnings('ignore',
                         category=AstropyDeprecationWarning, append=True)
                         
-from vasttools.survey import Fields, Image
-from vasttools.source import Source
+from survey import Fields, Image
+from source import Source
 
 try:
     import colorlog
@@ -501,7 +501,7 @@ for uf in uniq_fields:
     else:
         fieldname = uf
 
-    image = Image(srcs["sbid"].iloc[0], fieldname, tiles=args.use_tiles)
+    image = Image(srcs["sbid"].iloc[0], fieldname, IMAGE_FOLDER, tiles=args.use_tiles)
 
     if not args.no_background_rms:
         image.get_rms_img()
@@ -522,6 +522,7 @@ for uf in uniq_fields:
         source = Source(
             fieldname,
             SBID,
+            SELAVY_FOLDER
             tiles=args.use_tiles,
             stokesv=args.stokesv)
 
