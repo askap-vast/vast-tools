@@ -33,6 +33,9 @@ class Dropbox:
         '''Constructor method
         '''
         
+        self.logger = logging.getLogger('vasttools.survey.Dropbox')
+        self.logger.info('Created Dropbox instance')
+        
         self.dbx = dbx
         
     def recursive_build_files(base_file_list, preappend="", legacy=False):
@@ -68,16 +71,16 @@ class Dropbox:
 
         while folders != searched_folders:
             for i in folders:
-                if logger.level != 10:
+                if self.logger.level != 10:
                     # write the next character
                     sys.stdout.write(next(spinner))
                     # flush stdout buffer (actual character display)
                     sys.stdout.flush()
                     sys.stdout.write('\b')
                 # Ignore legacy folder when searching unless specified by user.
-                logger.debug("Folder: {}".format(i))
+                self.logger.debug("Folder: {}".format(i))
                 if i == "/LEGACY" and legacy is False:
-                    logger.debug(
+                    self.logger.debug(
                         "Skipping LEGACY folder, "
                         "include_legacy = {}".format(legacy)
                         )
@@ -102,12 +105,12 @@ class Dropbox:
                                 files.append(
                                     "/{}/{}/{}".format(preappend, i, j.name))
                     searched_folders.append(i)
-                    logger.debug("Searched {}".format(i))
-                    logger.debug("Folders: {}".format(folders))
-                    logger.debug("Searched Folders: {}".format(searched_folders))
+                    self.logger.debug("Searched {}".format(i))
+                    self.logger.debug("Folders: {}".format(folders))
+                    self.logger.debug("Searched Folders: {}".format(searched_folders))
         # flush stdout buffer (actual character display)
         sys.stdout.flush()
-        logger.info("Finished!")
+        self.logger.info("Finished!")
         return files, folders
 
 
@@ -139,14 +142,14 @@ class Dropbox:
             download_path = os.path.join(pwd, output_dir, vast_file[1:])
             if not overwrite:
                 if os.path.isfile(download_path):
-                    logger.error(
+                    self.logger.error(
                         "{} already exists and overwrite is set to {}.".format(
                             download_path, overwrite))
-                    logger.info("Skipping file.")
+                    self.logger.info("Skipping file.")
                     continue
             dropbox_path = "{}".format(vast_file)
-            logger.debug("Download path: {}".format(download_path))
-            logger.info("Downloading {}...".format(dropbox_path))
+            self.logger.debug("Download path: {}".format(download_path))
+            self.logger.info("Downloading {}...".format(dropbox_path))
             self.dbx.sharing_get_shared_link_file_to_file(
                 download_path, shared_url, path=dropbox_path,
                 link_password=password)
@@ -162,6 +165,10 @@ class Fields:
     def __init__(self, fname):
         '''Constructor method
         '''
+
+        self.logger = logging.getLogger('vasttools.survey.Fields')
+        self.logger.info('Created Fields instance')
+
         self.fields = pd.read_csv(fname)
         self.direction = SkyCoord(Angle(self.fields["RA_HMS"],
                                         unit=u.hourangle),
@@ -184,6 +191,7 @@ class Fields:
         is within max_sep
         :rtype: `pandas.core.frame.DataFrame`, `numpy.ndarray`
         '''
+
         nearest_beams, seps, _d3d = src_dir.match_to_catalog_sky(
             self.direction)
         within_beam = seps.deg < max_sep
@@ -192,21 +200,21 @@ class Fields:
         catalog["field_name"] = nearest_fields.values
         catalog["original_index"] = catalog.index.values
         new_catalog = catalog[within_beam].reset_index(drop=True)
-        logger.info(
+        self.logger.info(
             "Field match found for {}/{} sources.".format(
                 len(new_catalog.index), len(nearest_beams)))
 
         if len(new_catalog.index) - len(nearest_beams) != 0:
-            logger.warning(
+            self.logger.warning(
                 "No field matches found for sources with index (or name):")
             for i in range(0, len(catalog.index)):
                 if i not in new_catalog["original_index"]:
                     if "name" in catalog.columns:
-                        logger.warning(catalog["name"].iloc[i])
+                        self.logger.warning(catalog["name"].iloc[i])
                     else:
-                        logger.warning("{:03d}".format(i + 1))
+                        self.logger.warning("{:03d}".format(i + 1))
         else:
-            logger.info("All sources found!")
+            self.logger.info("All sources found!")
 
         self.field_cat = new_catalog
 
@@ -225,7 +233,7 @@ class Fields:
             axis=1).to_csv(
             outfile,
             index=False)
-        logger.info("Written field catalogue to {}.".format(outfile))
+        self.logger.info("Written field catalogue to {}.".format(outfile))
 
 
 class Image:
@@ -244,6 +252,10 @@ class Image:
     def __init__(self, sbid, field, tiles=False):
         '''Constructor method
         '''
+        
+        self.logger = logging.getLogger('vasttools.survey.Image')
+        self.logger.info('Created Image instance')
+        
         self.sbid = sbid
         self.field = field
 
@@ -259,7 +271,7 @@ class Image:
             self.image_fail = False
         else:
             self.image_fail = True
-            logger.error(
+            self.logger.error(
                 "{} does not exist! Unable to create postagestamps".format(
                     self.imgpath))
             return
@@ -284,7 +296,7 @@ class Image:
             self.rms_fail = False
         else:
             self.rms_fail = True
-            logger.error(
+            self.logger.error(
                 "{} does not exist! Unable to create postagestamps".format(
                     self.rmspath))
             return

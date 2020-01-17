@@ -52,6 +52,9 @@ class Source:
             stokesv=False):
         '''Constructor method
         '''
+        self.logger = logging.getLogger('vasttools.survey.Dropbox')
+        self.logger.info('Created Dropbox instance')
+        
         self.field = field
         self.sbid = sbid
 
@@ -187,7 +190,7 @@ class Source:
                     nselavy_cat, ignore_index=True, sort=False)
 
         except Exception as e:
-            logger.warning('{} does not exist'.format(self.selavypath))
+            self.logger.warning('{} does not exist'.format(self.selavypath))
             self.selavy_fail = True
             self.selavy_info = self._empty_selavy()
             self.selavy_info["has_match"] = False
@@ -214,7 +217,7 @@ class Source:
 
             selavy_iflux = self.selavy_info['flux_int'].iloc[0]
             selavy_iflux_err = self.selavy_info['flux_int_err'].iloc[0]
-            logger.info(
+            self.logger.info(
                 "Source in selavy catalogue {} {}, {:.3f}+/-{:.3f} mJy \
                 ({:.3f} arcsec offset)".format(
                     selavy_ra,
@@ -223,7 +226,7 @@ class Source:
                     selavy_iflux_err,
                     match_sep[0].arcsec))
         else:
-            logger.info(("No selavy catalogue match. "
+            self.logger.info(("No selavy catalogue match. "
                          "Nearest source {:.0f} arcsec away."
                          ).format(match_sep[0].arcsec))
             self.has_match = False
@@ -276,7 +279,7 @@ class Source:
                     f.write("COLOR GREEN\n")
                     neg = False
 
-        logger.info("Wrote annotation file {}.".format(outfile))
+        self.logger.info("Wrote annotation file {}.".format(outfile))
 
     def write_reg(self, outfile):
         '''
@@ -322,7 +325,7 @@ class Source:
                         ra, dec, self._remove_sbid(
                             row["island_id"]), color))
 
-        logger.info("Wrote region file {}.".format(outfile))
+        self.logger.info("Wrote region file {}.".format(outfile))
 
     def _remove_sbid(self, island):
         '''
@@ -467,7 +470,7 @@ class Source:
                         color="C0",
                         weight="bold")
         else:
-            logger.warning(
+            self.logger.warning(
                 "PNG: No selavy selected or selavy catalogue failed.")
         ax.legend()
         lon = ax.coords[0]
@@ -483,7 +486,7 @@ class Source:
         if title != "":
             ax.set_title(title)
         plt.savefig(outfile, bbox_inches="tight")
-        logger.info("Saved {}".format(outfile))
+        self.logger.info("Saved {}".format(outfile))
         plt.close()
 
     def get_background_rms(self, rms_img_data, rms_wcs, src_coord):
