@@ -53,7 +53,7 @@ class Source:
         '''Constructor method
         '''
         self.logger = logging.getLogger('vasttools.survey.Dropbox')
-        self.logger.info('Created Dropbox instance')
+        self.logger.info('Created Source instance')
         
         self.field = field
         self.sbid = sbid
