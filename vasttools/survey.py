@@ -4,6 +4,9 @@ import sys
 import os
 import pandas as pd
 import warnings
+import pkg_resources
+import dropbox
+import itertools
 
 import logging
 import logging.handlers
@@ -20,6 +23,15 @@ warnings.filterwarnings('ignore', category=AstropyWarning, append=True)
 warnings.filterwarnings('ignore',
                         category=AstropyDeprecationWarning, append=True)
 
+
+FIELD_FILES = {
+    0:pkg_resources.resource_filename(__name__, "./data/racs_info.csv"),
+    1:pkg_resources.resource_filename(__name__, "./data/vast_epoch01_info.csv"),
+    2:pkg_resources.resource_filename(__name__, "./data/vast_epoch02_info.csv"),
+    99:pkg_resources.resource_filename(__name__, "./data/vast_epoch03_info.csv")
+}
+
+
 class Dropbox:
     '''
     This is a class for downloading files from Dropbox.
@@ -29,16 +41,17 @@ class Dropbox:
     :type dbx: `dropbox.dropbox.Dropbox`
     '''
     
-    def __init__(self, dbx):
+    def __init__(self, dbx, shared_link):
         '''Constructor method
         '''
         
         self.logger = logging.getLogger('vasttools.survey.Dropbox')
-        self.logger.info('Created Dropbox instance')
+        self.logger.debug('Created Dropbox instance')
         
         self.dbx = dbx
+        self.shared_link = shared_link
         
-    def recursive_build_files(base_file_list, preappend="", legacy=False):
+    def recursive_build_files(self, base_file_list, preappend="", legacy=False):
         '''
         Very annoyingling recursive file lists do not work on shared folders.
         This function is to fetch every single file available by iterating over
@@ -57,6 +70,9 @@ class Dropbox:
         folders = []
         searched_folders = []
         files = []
+        
+        spinner = itertools.cycle(['-', '/', '|', '\\'])
+        
         for i in base_file_list.entries:
             if isinstance(i, dropbox.files.FolderMetadata):
                 if preappend == "":
@@ -88,7 +104,7 @@ class Dropbox:
                     continue
                 if i not in searched_folders:
                     these_files = self.dbx.files_list_folder(
-                        "/{}".format(i), shared_link=shared_link)
+                        "/{}".format(i), shared_link=self.shared_link)
                     for j in these_files.entries:
                         if isinstance(j, dropbox.files.FolderMetadata):
                             if preappend == "" or i.startswith(
@@ -115,6 +131,7 @@ class Dropbox:
 
 
     def download_files(
+            self,
             files_list,
             pwd,
             output_dir,
@@ -158,18 +175,23 @@ class Fields:
     '''
     Store the coordinates of all survey fields
 
-    :param fname: The name of the csv file containing the survey field list
-    :type fname: str
+    :param fname: The epoch number of fields to collect
+    :type fname: int
     '''
 
-    def __init__(self, fname):
+    def __init__(self, epoch):
         '''Constructor method
         '''
 
         self.logger = logging.getLogger('vasttools.survey.Fields')
-        self.logger.info('Created Fields instance')
+        self.logger.debug('Created Fields instance')
 
-        self.fields = pd.read_csv(fname)
+        self.fields = pd.read_csv(FIELD_FILES[epoch])
+        # Epoch 99 has some empty beam directions (processing failures)
+        # Drop them and any issue rows in the future.
+        self.fields.dropna(inplace=True)
+        self.fields.reset_index(drop=True, inplace=True)
+        
         self.direction = SkyCoord(Angle(self.fields["RA_HMS"],
                                         unit=u.hourangle),
                                   Angle(self.fields["DEC_DMS"], unit=u.deg))
@@ -249,20 +271,20 @@ class Image:
     :type tiles: bool, optional
     :param IMAGE_FOLDER: Path to image directory
     :type IMAGE_FOLDER: str
-    :param BANE_FOLDER: Path to RMS map directory
-    :type BANE_FOLDER: str
+    :param RMS_FOLDER: Path to RMS map directory
+    :type RMS_FOLDER: str
     '''
 
-    def __init__(self, sbid, field, IMAGE_FOLDER, BANE_FOLDER, tiles=False):
+    def __init__(self, sbid, field, IMAGE_FOLDER, RMS_FOLDER, tiles=False):
         '''Constructor method
         '''
         
         self.logger = logging.getLogger('vasttools.survey.Image')
-        self.logger.info('Created Image instance')
+        self.logger.debug('Created Image instance')
         
         self.sbid = sbid
         self.field = field
-        self.BANE_FOLDER = BANE_FOLDER
+        self.RMS_FOLDER = RMS_FOLDER
 
         if tiles:
             img_template = 'image.i.SB{}.cont.{}.linmos.taylor.0.restored.fits'
@@ -291,11 +313,11 @@ class Image:
 
     def get_rms_img(self):
         '''
-        Load the BANE noisemap corresponding to the image
+        Load the noisemap corresponding to the image
         '''
         self.rmsname = self.imgname.replace('.fits', '_rms.fits')
 
-        self.rmspath = os.path.join(self.BANE_FOLDER, self.rmsname)
+        self.rmspath = os.path.join(self.RMS_FOLDER, self.rmsname)
 
         if os.path.isfile(self.rmspath):
             self.rms_fail = False

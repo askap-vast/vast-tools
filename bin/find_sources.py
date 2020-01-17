@@ -4,7 +4,8 @@
 
 # ./find_sources.py "16:16:00.22 +22:16:04.83" --create-png --imsize 5.0
 # --png-zscale-contrast 0.1 --png-selavy-overlay --use-combined
-
+import matplotlib
+matplot.use("Agg")
 import argparse
 import sys
 import numpy as np
@@ -43,8 +44,8 @@ warnings.filterwarnings('ignore', category=AstropyWarning, append=True)
 warnings.filterwarnings('ignore',
                         category=AstropyDeprecationWarning, append=True)
                         
-from survey import Fields, Image
-from source import Source
+from vasttools.survey import Fields, Image
+from vasttools.source import Source
 
 try:
     import colorlog
@@ -73,6 +74,12 @@ parser.add_argument(
           " Finally you can also enter coordinates using a .csv file."
           " See example file for format."))
 
+parser.add_argument(
+    '--vast-pilot',
+    type=int,
+    help=("Select the VAST Pilot Epoch to query. "
+          "Epoch 0 is RACS."),
+    default=1)
 parser.add_argument(
     '--imsize',
     type=float,
@@ -196,11 +203,6 @@ parser.add_argument(
     action="store_true",
     help='Only return the associated field for each source.')
 parser.add_argument(
-    '--vast-pilot',
-    type=int,
-    help=("Query the VAST Pilot instead of RACS. "
-          "Input is the epoch number of the VAST pilot."))
-parser.add_argument(
     '--clobber',
     action="store_true",
     help=("Overwrite the output directory if it already exists."))
@@ -271,7 +273,8 @@ if " " not in args.coords:
     # Give explicit check to file existence
     user_file = os.path.abspath(args.coords)
     if not os.path.isfile(user_file):
-        logger.critical("{} not found!")
+        logger.critical("{} not found!".format(user_file))
+        logger.critical("Exiting.")
         sys.exit()
     try:
         catalog = pd.read_csv(user_file, comment="#")
@@ -354,20 +357,16 @@ if args.vast_pilot:
 
     # This currently works, but we should include a csv for each epoch to
     # ensure complete correctness
-    fields_file = "VAST_epoch1.csv"
     survey = "vast_pilot"
     epoch_str = "EPOCH{:02}".format(pilot_epoch)
     survey_folder = "PILOT/release/{}".format(epoch_str)
 else:
+    pilot_epoch = 0
     fields_file = "racs_test4.csv"
     survey = "racs"
     survey_folder = "RACS/aug2019_reprocessing"
 
 default_base_folder = "/import/ada1/askap/"
-
-FIND_FIELDS = args.find_fields
-if FIND_FIELDS:
-    logger.info("find-fields selected, only outputting field catalogue")
 
 IMAGE_FOLDER = args.img_folder
 if not IMAGE_FOLDER:
@@ -389,9 +388,10 @@ if not IMAGE_FOLDER:
         stokes_dir)
 
 if not os.path.isdir(IMAGE_FOLDER):
-    logger.critical(
-        "{} does not exist. Only finding fields".format(IMAGE_FOLDER))
-    FIND_FIELDS = True
+    if not FIND_FIELDS:
+        logger.critical(
+            "{} does not exist. Only finding fields".format(IMAGE_FOLDER))
+        FIND_FIELDS = True
 
 
 SELAVY_FOLDER = args.cat_folder
@@ -416,33 +416,35 @@ if not SELAVY_FOLDER:
         selavy_dir)
 
 if not os.path.isdir(SELAVY_FOLDER):
-    logger.critical(
-        "{} does not exist. Only finding fields".format(SELAVY_FOLDER))
-    FIND_FIELDS = True
+    if not FIND_FIELDS:
+        logger.critical(
+            "{} does not exist. Only finding fields".format(SELAVY_FOLDER))
+        FIND_FIELDS = True
 
-BANE_FOLDER = args.rms_folder
-if not BANE_FOLDER:
+RMS_FOLDER = args.rms_folder
+if not RMS_FOLDER:
     if args.use_tiles:
         logger.warning(
             "Background noise estimates are not supported for tiles.")
         logger.warning("Estimating background from mosaics instead.")
     if args.vast_pilot:
         image_dir = "COMBINED"
-        bane_dir = "STOKES{}_RMSMAPS".format(stokes_param)
+        rms_dir = "STOKES{}_RMSMAPS".format(stokes_param)
     else:
         image_dir = "COMBINED_MOSAICS"
-        bane_dir = "{}_mosaic_1.0_BANE".format(stokes_param)
+        rms_dir = "{}_mosaic_1.0_BANE".format(stokes_param)
 
-    BANE_FOLDER = os.path.join(
+    RMS_FOLDER = os.path.join(
         default_base_folder,
         survey_folder,
         image_dir,
-        bane_dir)
+        rms_dir)
 
-if not os.path.isdir(BANE_FOLDER):
-    logger.critical(
-        "{} does not exist. Only finding fields".format(BANE_FOLDER))
-    FIND_FIELDS = True
+if not os.path.isdir(RMS_FOLDER):
+    if not FIND_FIELDS:
+        logger.critical(
+            "{} does not exist. Only finding fields".format(RMS_FOLDER))
+        FIND_FIELDS = True
 
 if catalog['ra'].dtype == np.float64:
     hms = False
@@ -465,8 +467,8 @@ if hms:
 else:
     src_coords = SkyCoord(catalog['ra'], catalog['dec'], unit=(u.deg, u.deg))
 
-logger.info("Finding fields for sources...")
-fields = Fields(fields_file)
+logger.info("Finding fields for {} sources...".format(len(src_coords)))
+fields = Fields(pilot_epoch)
 src_fields, coords_mask = fields.find(src_coords, max_sep, catalog)
 
 src_coords = src_coords[coords_mask]
@@ -501,7 +503,7 @@ for uf in uniq_fields:
     else:
         fieldname = uf
 
-    image = Image(srcs["sbid"].iloc[0], fieldname, IMAGE_FOLDER, BANE_FOLDER, tiles=args.use_tiles)
+    image = Image(srcs["sbid"].iloc[0], fieldname, IMAGE_FOLDER, RMS_FOLDER, tiles=args.use_tiles)
 
     if not args.no_background_rms:
         image.get_rms_img()

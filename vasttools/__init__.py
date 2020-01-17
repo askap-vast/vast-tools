@@ -8,5 +8,5 @@ This module is a collection of useful scripts, functions and classes for use wit
 '''
 
 __author__ = 'Dougal Dobie, Adam Stewart'
-__version__ = 1.0.0
+__version__ = "0.4.0"
 
