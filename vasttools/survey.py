@@ -247,9 +247,11 @@ class Image:
     :type field: str
     :param tiles: Use image tiles instead of mosaics, defaults to `False`
     :type tiles: bool, optional
+    :param IMAGE_FOLDER: Path to image directory
+    :type IMAGE_FOLDER: str
     '''
 
-    def __init__(self, sbid, field, tiles=False):
+    def __init__(self, sbid, field, IMAGE_FOLDER, tiles=False):
         '''Constructor method
         '''
         
@@ -284,9 +286,12 @@ class Image:
         except Exception as e:
             self.data = self.hdu.data
 
-    def get_rms_img(self):
+    def get_rms_img(self, BANE_FOLDER):
         '''
         Load the BANE noisemap corresponding to the image
+        
+        :param BANE_FOLDER: Path to RMS map directory
+        :type BANE_FOLDER: str
         '''
         self.rmsname = self.imgname.replace('.fits', '_rms.fits')
 
