@@ -25,10 +25,14 @@ warnings.filterwarnings('ignore',
 
 
 FIELD_FILES = {
-    0:pkg_resources.resource_filename(__name__, "./data/racs_info.csv"),
-    1:pkg_resources.resource_filename(__name__, "./data/vast_epoch01_info.csv"),
-    2:pkg_resources.resource_filename(__name__, "./data/vast_epoch02_info.csv"),
-    99:pkg_resources.resource_filename(__name__, "./data/vast_epoch03_info.csv")
+    0 : pkg_resources.resource_filename(
+        __name__, "./data/racs_info.csv"),
+    1 : pkg_resources.resource_filename(
+        __name__, "./data/vast_epoch01_info.csv"),
+    2 : pkg_resources.resource_filename(
+        __name__, "./data/vast_epoch02_info.csv"),
+    99 : pkg_resources.resource_filename(
+        __name__, "./data/vast_epoch03_info.csv")
 }
 
 
@@ -51,7 +55,8 @@ class Dropbox:
         self.dbx = dbx
         self.shared_link = shared_link
         
-    def recursive_build_files(self, base_file_list, preappend="", legacy=False):
+    def recursive_build_files(
+        self, base_file_list, preappend="", legacy=False):
         '''
         Very annoyingling recursive file lists do not work on shared folders.
         This function is to fetch every single file available by iterating over
@@ -70,9 +75,9 @@ class Dropbox:
         folders = []
         searched_folders = []
         files = []
-        
+
         spinner = itertools.cycle(['-', '/', '|', '\\'])
-        
+
         for i in base_file_list.entries:
             if isinstance(i, dropbox.files.FolderMetadata):
                 if preappend == "":
@@ -191,7 +196,7 @@ class Fields:
         # Drop them and any issue rows in the future.
         self.fields.dropna(inplace=True)
         self.fields.reset_index(drop=True, inplace=True)
-        
+
         self.direction = SkyCoord(Angle(self.fields["RA_HMS"],
                                         unit=u.hourangle),
                                   Angle(self.fields["DEC_DMS"], unit=u.deg))

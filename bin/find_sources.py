@@ -40,12 +40,13 @@ from astropy.visualization import LinearStretch
 import matplotlib.axes as maxes
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
+from vasttools.survey import Fields, Image
+from vasttools.source import Source
+
 warnings.filterwarnings('ignore', category=AstropyWarning, append=True)
 warnings.filterwarnings('ignore',
                         category=AstropyDeprecationWarning, append=True)
-                        
-from vasttools.survey import Fields, Image
-from vasttools.source import Source
+
 
 try:
     import colorlog
@@ -503,7 +504,8 @@ for uf in uniq_fields:
     else:
         fieldname = uf
 
-    image = Image(srcs["sbid"].iloc[0], fieldname, IMAGE_FOLDER, RMS_FOLDER, tiles=args.use_tiles)
+    image = Image(srcs["sbid"].iloc[0], fieldname, 
+        IMAGE_FOLDER, RMS_FOLDER, tiles=args.use_tiles)
 
     if not args.no_background_rms:
         image.get_rms_img()
