@@ -57,8 +57,8 @@ class Dropbox:
         
     def recursive_build_files(
             self,
-            base_file_list, 
-            preappend="", 
+            base_file_list,
+            preappend="",
             legacy=False):
         '''
         Very annoyingling recursive file lists do not work on shared folders.
