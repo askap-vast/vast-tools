@@ -249,9 +249,11 @@ class Image:
     :type tiles: bool, optional
     :param IMAGE_FOLDER: Path to image directory
     :type IMAGE_FOLDER: str
+    :param BANE_FOLDER: Path to RMS map directory
+    :type BANE_FOLDER: str
     '''
 
-    def __init__(self, sbid, field, IMAGE_FOLDER, tiles=False):
+    def __init__(self, sbid, field, IMAGE_FOLDER, BANE_FOLDER, tiles=False):
         '''Constructor method
         '''
         
@@ -260,6 +262,7 @@ class Image:
         
         self.sbid = sbid
         self.field = field
+        self.BANE_FOLDER = BANE_FOLDER
 
         if tiles:
             img_template = 'image.i.SB{}.cont.{}.linmos.taylor.0.restored.fits'
@@ -286,16 +289,13 @@ class Image:
         except Exception as e:
             self.data = self.hdu.data
 
-    def get_rms_img(self, BANE_FOLDER):
+    def get_rms_img(self):
         '''
         Load the BANE noisemap corresponding to the image
-        
-        :param BANE_FOLDER: Path to RMS map directory
-        :type BANE_FOLDER: str
         '''
         self.rmsname = self.imgname.replace('.fits', '_rms.fits')
 
-        self.rmspath = os.path.join(BANE_FOLDER, self.rmsname)
+        self.rmspath = os.path.join(self.BANE_FOLDER, self.rmsname)
 
         if os.path.isfile(self.rmspath):
             self.rms_fail = False

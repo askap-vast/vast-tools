@@ -37,6 +37,8 @@ class Source:
     :type sbid: str
     :param SELAVY_FOLDER: Path to selavy directory
     :type SELAVY_FOLDER: str
+    :param vast_pilot: Survey epoch (if applicable)
+    :type vast_pilot: int or None
     :param tiles: `True` if image tiles should be used, \
     `False` for mosaiced images, defaults to `False`
     :type tiles: bool, optional
@@ -50,6 +52,7 @@ class Source:
             field,
             sbid,
             SELAVY_FOLDER,
+            vast_pilot=None,
             tiles=False,
             stokesv=False):
         '''Constructor method
@@ -65,15 +68,15 @@ class Source:
                 'linmos.taylor.0.restored.components.txt'
             self.selavyname = selavyname_template.format(self.sbid, self.field)
         else:
-            if args.vast_pilot:
+            if vast_pilot:
                 self.selavyname = '{}.selavy.components.txt'.format(self.field)
             else:
                 self.selavyname = '{}-selavy.components.txt'.format(self.field)
-            if args.stokesv:
+            if stokesv:
                 self.nselavyname = 'n{}-selavy.components.txt'.format(
                     self.field)
         self.selavypath = os.path.join(SELAVY_FOLDER, self.selavyname)
-        if args.stokesv:
+        if stokesv:
             self.nselavypath = os.path.join(SELAVY_FOLDER, self.nselavyname)
 
     def make_postagestamp(self, img_data, hdu, wcs, src_coord, size, outfile):
