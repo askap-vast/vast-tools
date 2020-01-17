@@ -4,8 +4,9 @@
 
 # ./find_sources.py "16:16:00.22 +22:16:04.83" --create-png --imsize 5.0
 # --png-zscale-contrast 0.1 --png-selavy-overlay --use-combined
-import matplotlib
-matplot.use("Agg")
+from vasttools.survey import Fields, Image
+from vasttools.source import Source
+
 import argparse
 import sys
 import numpy as np
@@ -39,9 +40,6 @@ from astropy.visualization import AsymmetricPercentileInterval
 from astropy.visualization import LinearStretch
 import matplotlib.axes as maxes
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-
-from vasttools.survey import Fields, Image
-from vasttools.source import Source
 
 warnings.filterwarnings('ignore', category=AstropyWarning, append=True)
 warnings.filterwarnings('ignore',
@@ -504,8 +502,8 @@ for uf in uniq_fields:
     else:
         fieldname = uf
 
-    image = Image(srcs["sbid"].iloc[0], fieldname, 
-        IMAGE_FOLDER, RMS_FOLDER, tiles=args.use_tiles)
+    image = Image(srcs["sbid"].iloc[0], fieldname,
+                  IMAGE_FOLDER, RMS_FOLDER, tiles=args.use_tiles)
 
     if not args.no_background_rms:
         image.get_rms_img()

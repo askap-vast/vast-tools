@@ -25,13 +25,13 @@ warnings.filterwarnings('ignore',
 
 
 FIELD_FILES = {
-    0 : pkg_resources.resource_filename(
+    0: pkg_resources.resource_filename(
         __name__, "./data/racs_info.csv"),
-    1 : pkg_resources.resource_filename(
+    1: pkg_resources.resource_filename(
         __name__, "./data/vast_epoch01_info.csv"),
-    2 : pkg_resources.resource_filename(
+    2: pkg_resources.resource_filename(
         __name__, "./data/vast_epoch02_info.csv"),
-    99 : pkg_resources.resource_filename(
+    99: pkg_resources.resource_filename(
         __name__, "./data/vast_epoch03_info.csv")
 }
 
@@ -56,7 +56,10 @@ class Dropbox:
         self.shared_link = shared_link
         
     def recursive_build_files(
-        self, base_file_list, preappend="", legacy=False):
+            self,
+            base_file_list, 
+            preappend="", 
+            legacy=False):
         '''
         Very annoyingling recursive file lists do not work on shared folders.
         This function is to fetch every single file available by iterating over
