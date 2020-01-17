@@ -501,7 +501,7 @@ for uf in uniq_fields:
     else:
         fieldname = uf
 
-    image = Image(srcs["sbid"].iloc[0], fieldname, IMAGE_FOLDER, tiles=args.use_tiles)
+    image = Image(srcs["sbid"].iloc[0], fieldname, IMAGE_FOLDER, BANE_FOLDER, tiles=args.use_tiles)
 
     if not args.no_background_rms:
         image.get_rms_img()
@@ -522,7 +522,8 @@ for uf in uniq_fields:
         source = Source(
             fieldname,
             SBID,
-            SELAVY_FOLDER
+            SELAVY_FOLDER,
+            vast_pilot=args.vast_pilot,
             tiles=args.use_tiles,
             stokesv=args.stokesv)
 
