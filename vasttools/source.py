@@ -35,6 +35,8 @@ class Source:
     :type field: str
     :param sbid: SBID of the field containing the source
     :type sbid: str
+    :param SELAVY_FOLDER: Path to selavy directory
+    :type SELAVY_FOLDER: str
     :param tiles: `True` if image tiles should be used, \
     `False` for mosaiced images, defaults to `False`
     :type tiles: bool, optional
@@ -47,7 +49,7 @@ class Source:
             self,
             field,
             sbid,
-            pilot_data=False,
+            SELAVY_FOLDER,
             tiles=False,
             stokesv=False):
         '''Constructor method
