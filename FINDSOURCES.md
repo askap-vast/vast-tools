@@ -11,7 +11,7 @@ The outputs are/can be:
 * Crossmatch output file containing information on the nearest matched component.
 
 # Running on your own machine
-By default the script is set up for use on the ada machine. **No local data is required to run the `--find-fields` option which will find which fields contain your sources of interest.** To create postage FITS files or PNG images, a copy of the survey data is required locally.
+By default the script is set up for use on the ada machine. **No local data is required to run the `--find-fields` option which will find which fields that contain your sources of interest.** To create postage FITS files or PNG images, a copy of the survey data is required locally.
 
 The script assumes that VAST Pilot data are in the same directory structure as that used in the Dropbox folder. If you are running `find_sources.py` on your own machine we recommend first using the `--find-fields` flag, downloading the relevant fields to an appropriate base directory and then re-running the script as normal.
 
