@@ -21,40 +21,35 @@ You also need to know the shared Dropbox URL of the Pilot survey and the passwor
 ## Usage
 ```
 usage: get_vast_pilot_dbx.py [-h] [--output OUTPUT] [--available-epochs]
-                             [--available-files]
-                             [--download-epoch DOWNLOAD_EPOCH]
+                             [--available-files] [--download-epoch DOWNLOAD_EPOCH]
                              [--files-list FILES_LIST] [--overwrite] [--debug]
                              [--dropbox-config DROPBOX_CONFIG]
-                             [--write-template-dropbox-config]
-                             [--include-legacy]
+                             [--write-template-dropbox-config] [--include-legacy]
 
 optional arguments:
   -h, --help            show this help message and exit
-  --output OUTPUT       Name of the local output directory where files will be
-                        saved (default: vast_dropbox)
+  --output OUTPUT       Name of the local output directory where files will be saved
+                        (default: vast_dropbox)
   --available-epochs    Print out what Epochs are available. (default: False)
-  --available-files     Print out a list of available files on the shared
-                        folder. (default: False)
+  --available-files     Print out a list of available files on the shared folder.
+                        (default: False)
   --download-epoch DOWNLOAD_EPOCH
-                        Select to download an entire Epoch directory. Enter as
-                        an integer. (default: 0)
+                        Select to download an entire Epoch directory. Enter as an
+                        integer. (default: 0)
   --files-list FILES_LIST
                         Input of files to fetch. (default: None)
   --overwrite           Overwrite any files that already exist in the output
                         directory. (default: False)
   --debug               Set logging level to debug. (default: False)
   --dropbox-config DROPBOX_CONFIG
-                        Dropbox config file to be read in containing the
-                        shared url, password and access token. A template can
-                        be generated using --write-template-dropbox-config.
-                        (default: dropbox.cfg)
+                        Dropbox config file to be read in containing the shared url,
+                        password and access token. A template can be generated using
+                        '--write-template-dropbox-config'. (default: dropbox.cfg)
   --write-template-dropbox-config
-                        Create a template dropbox config file. (default:
-                        False)
+                        Create a template dropbox config file. (default: False)
   --include-legacy      Include the 'LEGACY' directory when searching through files.
                         Only valid when using the '--available-files' option.
                         (default: False)
-
 ```
 
 To run the script needs a Dropbox configuration file, which by default is assumed to be named 'dropbox.cfg'. Create a text file in the following format and enter the respective values:
@@ -101,7 +96,7 @@ For example if I wanted to download a set of STOKES I COMBINED images from EPOCH
 ```
 Note the leading `/` which is also needed.
 
-I recommened you run `python get_vast_pilot_dbx.py dropbox.cfg --available-files` and use this output to build your request.
+I recommened you run `get_vast_pilot_dbx.py --available-files` and use this output to build your request.
 
 **LEGACY DIRECTORY**: The Dropbox directory also includes the `LEGACY` folder which contains old verisons of Epoch releases that are no longer considered as part of the official release. To include this directory in the results of available files use the `--include-legacy` option.
 
@@ -109,14 +104,14 @@ I recommened you run `python get_vast_pilot_dbx.py dropbox.cfg --available-files
 
 #### Obtaining a List of all available files
 ```
-python get_vast_pilot_dbx.py --available-files
+get_vast_pilot_dbx.py --available-files
 ```
 This will generate a text file containing a list of available files. It will be named with a timestamp.
 
 #### Downloading an entire epoch
 Using epoch 01 as an example:
 ```
-python get_vast_pilot_dbx.py --download-epoch 1 --output VAST_DOWNLOAD
+get_vast_pilot_dbx.py --download-epoch 1 --output VAST_DOWNLOAD
 ```
 This will place the EPOCH01 directory in `VAST_DOWNLOAD`.
 
@@ -135,7 +130,7 @@ This will place the EPOCH01 directory in `VAST_DOWNLOAD`.
 ```
 2. Then run with:
 ```
-python get_vast_pilot_dbx.py --files-list to_download.txt --output VAST_DOWNLOAD
+get_vast_pilot_dbx.py --files-list to_download.txt --output VAST_DOWNLOAD
 ```
 This will place these files in `VAST_DOWNLOAD`. The directory structure will be mimiced.
 

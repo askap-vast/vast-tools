@@ -7,7 +7,6 @@ import sys
 import datetime
 import configparser
 import numpy as np
-import itertools
 
 from vasttools.survey import Dropbox
 
@@ -183,7 +182,7 @@ shared_link = dropbox.files.SharedLink(url=shared_url, password=password)
 
 base_file_list = dbx.files_list_folder("", shared_link=shared_link)
 
-spinner = itertools.cycle(['-', '/', '|', '\\'])
+vast_dropbox = Dropbox(dbx, shared_link)
 
 if args.available_epochs:
     logger.info("The following epochs are available:")
@@ -197,7 +196,7 @@ elif args.available_files:
         "approximately 4 minutes per epoch."
         )
 
-    files_list, folders_list = Dropbox.recursive_build_files(
+    files_list, folders_list = vast_dropbox.recursive_build_files(
         base_file_list,
         legacy=args.include_legacy)
     logger.info("Found {} files.".format(len(files_list)))
@@ -227,18 +226,17 @@ elif args.download_epoch != 0:
             "/{}".format(epoch_string), shared_link=shared_link)
         logger.info(
             "Gathering {} files to download...".format(epoch_string))
-        files_list, folders_list = recursive_build_files(
+        files_list, folders_list = vast_dropbox.recursive_build_files(
             epoch_file_list, dbx, preappend=epoch_string)
         logger.info("{} files to download".format(len(files_list)))
 
         for folder in folders_list:
             os.makedirs(os.path.join(output_dir, folder[1:]), exist_ok=True)
         logger.info("Downloading files for {}...".format(epoch_string))
-        download_files(
+        vast_dropbox.download_files(
             files_list,
             os.getcwd(),
             output_dir,
-            dbx,
             shared_url,
             password)
 
@@ -273,11 +271,10 @@ elif args.files_list is not None:
         "Downloading {} files from '{}'...".format(
             len(files_to_download),
             args.files_list))
-    download_files(
+    vast_dropbox.download_files(
         files_to_download,
         os.getcwd(),
         output_dir,
-        dbx,
         shared_url,
         password,
         overwrite=args.overwrite)

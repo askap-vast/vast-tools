@@ -1,28 +1,28 @@
 # vast-tools
 
-A space to share your hacky scripts that others may find useful.
+A Python module to interact and obtain the VAST Pilot Survey data.
 
-Currently these are scripts that can just be copied and run, not a module installation yet (soon).
+## Prerequisites
 
-## Requirements
-* Python 3 (3.8.0)
-* pandas (0.25.3)
-* numpy (1.17.4)
-* astropy (<4.0)
-* matplotlib (3.1.2)
-* scipy (1.4.0)
-* dropbox (9.4.0)
-* colorlog (4.0.2 ;optional)
+Python 3 (3.8.0 tested).
 
-Recommended versions, which have been tested against, are stated in brackets.
+Recommended to use an environment created with conda or virtualenv.
 
-There is a requirements.txt included in the repository that you can use to install the dependancies using
+## Installation
+
+To install the module you can run
+```
+git clone https://github.com/askap-vast/vast-tools.git
+pip install ./vast-tools
+```
+
+There is a requirements.txt included in the repository that you can use to install the dependancies separately using
 ```
 pip install -r requirements.txt
 ````
 
 ## Current Scripts
-The current avaialble scripts are:
+As part of the installation the following scripts are made available in your path:
 
 * **find\_sources.py** - A tool to swiftly search RACS and VAST Pilot data at chosen coordaintes.
     - See [FINDSOURCES.md](FINDSOURCES.md) for full instructions.

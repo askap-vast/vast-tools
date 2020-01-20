@@ -1,5 +1,7 @@
 # Source class
 
+import matplotlib
+matplot.use("Agg")
 import numpy as np
 import os
 import pandas as pd
@@ -58,7 +60,7 @@ class Source:
         '''Constructor method
         '''
         self.logger = logging.getLogger('vasttools.survey.Dropbox')
-        self.logger.info('Created Source instance')
+        self.logger.debug('Created Source instance')
         
         self.field = field
         self.sbid = sbid
@@ -498,7 +500,7 @@ class Source:
         pix_coord = np.rint(skycoord_to_pixel(src_coord, rms_wcs)).astype(int)
         rms_val = rms_img_data[pix_coord[0], pix_coord[1]]
         try:
-            self.selavy_info['BANE_rms'] = rms_val
+            self.selavy_info['SELAVY_rms'] = rms_val
         except Exception as e:
             self.selavy_info = self._empty_selavy()
-            self.selavy_info['BANE_rms'] = rms_val
+            self.selavy_info['SELAVY_rms'] = rms_val
