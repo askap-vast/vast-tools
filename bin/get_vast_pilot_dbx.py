@@ -35,7 +35,7 @@ def download_cycle(
     times.
 
     :param files_list: the list of dropbox files to download
-    :type list:
+    :type files_list: list
     :param output_dir: The output directory where the downloads go
     :type output_dir: str
     :param shared_url: The Dropbox shared url.
@@ -46,7 +46,7 @@ def download_cycle(
     :type max_retries: int
     :param main_overwrite: The user requested overwrite variable
     :type main_overwrite: bool
-    :returns: list of failed downloads
+    :returns: list of files that have failed to download
     :rtype: list
     '''
     failures = ["FILLER"]
@@ -82,7 +82,7 @@ def download_cycle(
 
 def filter_files_list(
         files_list,
-        fields=[],
+        fields=None,
         stokesI_only=False,
         stokesV_only=False,
         skip_xml=False,
@@ -98,8 +98,8 @@ def filter_files_list(
     Filters the file_list to fetch by the users request.
 
     :param file_list: the list of dropbox files to filter
-    :type list:
-    :param fields: list of fields to filter, default none.
+    :type file_list: list
+    :param fields: list of fields to filter, default None.
     :type fields: list, optional
     :param stokesI_only: Stokes I only boolean
     :type stokesI_only: bool, optional
@@ -126,7 +126,8 @@ def filter_files_list(
     :returns: filtered list of dropbox files
     :rtype: list
     '''
-
+if fields is None:
+    fields = []
     filter_df = pd.DataFrame(data=files_list, columns=["file"])
 
     if stokesI_only is True and stokesV_only is True:
