@@ -1,5 +1,8 @@
 # Source class
 
+import matplotlib
+matplotlib.use("Agg")
+
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.axes as maxes
 from astropy.visualization import LinearStretch
@@ -22,8 +25,6 @@ import warnings
 import pandas as pd
 import os
 import numpy as np
-import matplotlib
-matplot.use("Agg")
 
 
 class Source:
