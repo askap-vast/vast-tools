@@ -79,6 +79,7 @@ def download_cycle(
 
     return complete_failures
 
+
 def filter_files_list(
         files_list,
         fields=[],
@@ -172,19 +173,19 @@ def filter_files_list(
         logger.debug("Filtering out island files.")
         filter_df = filter_df[~filter_df.file.str.contains(".islands.")]
         filter_df.reset_index(drop=True, inplace=True)
-        
+
     if not skip_all_images:
         if skip_field_images:
             logger.debug("Filtering out field fits files.")
             pattern = ".I.fits|.V.fits"
             filter_df = filter_df[~filter_df.file.str.contains(pattern)]
             filter_df.reset_index(drop=True, inplace=True)
-            
+
         if skip_bkg_images:
             logger.debug("Filtering out rms fits files.")
             filter_df = filter_df[~filter_df.file.str.endswith("_bkg.fits")]
             filter_df.reset_index(drop=True, inplace=True)
-            
+
         if skip_rms_images:
             logger.debug("Filtering out rms fits files.")
             filter_df = filter_df[~filter_df.file.str.endswith("_rms.fits")]
@@ -204,12 +205,12 @@ def filter_files_list(
         logger.debug("Filtering to tiles files only.")
         filter_df = filter_df[filter_df.file.str.contains("/TILES/")]
         filter_df.reset_index(drop=True, inplace=True)
-        
+
     if tile_only:
         logger.debug("Filtering to tiles files only.")
         filter_df = filter_df[filter_df.file.str.contains("/TILES/")]
         filter_df.reset_index(drop=True, inplace=True)
-        
+
     if tile_only:
         logger.debug("Filtering to tiles files only.")
         filter_df = filter_df[filter_df.file.str.contains("/TILES/")]
@@ -249,7 +250,7 @@ parser.add_argument(
     type=str,
     help="Input of fields to fetch (can be obtained from 'find_sources.py').",
     default=None)
-    
+
 parser.add_argument(
     '--find-fields-available-files-input',
     type=str,
@@ -260,7 +261,7 @@ parser.add_argument(
         " option. If not given the script will get the list of files"
         " from Dropbox."),
     default=None)
-    
+
 parser.add_argument(
     '--files-list',
     type=str,
@@ -321,7 +322,7 @@ parser.add_argument(
     '--skip-xml',
     action="store_true",
     help="Do not download XML files.")
-    
+
 parser.add_argument(
     '--skip-qc',
     action="store_true",
@@ -356,7 +357,7 @@ parser.add_argument(
     '--combined-only',
     action="store_true",
     help="Only download the combined products.")
-    
+
 parser.add_argument(
     '--tile-only',
     action="store_true",
@@ -589,8 +590,8 @@ elif args.find_fields_input is not None:
     for i in dirs_to_create:
         if i == "":
             continue
-        os.makedirs(os.path.join(output_dir, i), exist_ok=True)                        
-    
+        os.makedirs(os.path.join(output_dir, i), exist_ok=True)
+
     logger.info(
         "Downloading {} files for {} fields...".format(
             len(files_to_download), len(fields_to_fetch)))
@@ -606,7 +607,7 @@ elif args.find_fields_input is not None:
         for fail in complete_failures:
             logger.warning(fail)
         logger.warning("These files may be corrupted!")
-        
+
 elif args.files_list is not None:
     if not os.path.isfile(args.files_list):
         logger.error("Supplied file '{}' not found!".format(args.files_list))
