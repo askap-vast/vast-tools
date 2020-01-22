@@ -1,33 +1,30 @@
 # Source class
 
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+import matplotlib.axes as maxes
+from astropy.visualization import LinearStretch
+from astropy.visualization import AsymmetricPercentileInterval
+from astropy.visualization import PercentileInterval
+from astropy.visualization import ZScaleInterval, ImageNormalize
+from matplotlib.collections import PatchCollection
+from matplotlib.patches import Ellipse
+from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
+from astropy.wcs.utils import skycoord_to_pixel
+from astropy.io import fits
+from astropy.coordinates import SkyCoord
+from astropy.nddata.utils import Cutout2D
+from astropy import units as u
+import matplotlib.pyplot as plt
+import logging.config
+import logging.handlers
+import logging
+import warnings
+import pandas as pd
+import os
+import numpy as np
 import matplotlib
 matplot.use("Agg")
-import numpy as np
-import os
-import pandas as pd
-import warnings
 
-import logging
-import logging.handlers
-import logging.config
-
-import matplotlib.pyplot as plt
-
-from astropy import units as u
-from astropy.nddata.utils import Cutout2D
-from astropy.coordinates import SkyCoord
-from astropy.io import fits
-from astropy.wcs.utils import skycoord_to_pixel
-from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
-
-from matplotlib.patches import Ellipse
-from matplotlib.collections import PatchCollection
-from astropy.visualization import ZScaleInterval, ImageNormalize
-from astropy.visualization import PercentileInterval
-from astropy.visualization import AsymmetricPercentileInterval
-from astropy.visualization import LinearStretch
-import matplotlib.axes as maxes
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 class Source:
     '''
@@ -54,6 +51,7 @@ class Source:
     def __init__(
             self,
             field,
+            src_coord,
             sbid,
             SELAVY_FOLDER,
             vast_pilot=None,
@@ -63,7 +61,7 @@ class Source:
         '''
         self.logger = logging.getLogger('vasttools.survey.Dropbox')
         self.logger.debug('Created Source instance')
-        
+
         self.src_coord = src_coord
         self.field = field
         self.sbid = sbid
@@ -233,8 +231,8 @@ class Source:
                     match_sep[0].arcsec))
         else:
             self.logger.info(("No selavy catalogue match. "
-                         "Nearest source {:.0f} arcsec away."
-                         ).format(match_sep[0].arcsec))
+                              "Nearest source {:.0f} arcsec away."
+                              ).format(match_sep[0].arcsec))
             self.has_match = False
             self.selavy_info = self._empty_selavy()
 
@@ -493,14 +491,15 @@ class Source:
     def get_background_rms(self, rms_img_data, rms_wcs):
         '''
         Get the background noise from the RMS image
-        
+
         :param rms_img_data: Numpy array containing the RMS image data
         :type rms_img_data: `numpy.ndarray`
         :param rms_wcs: World Coordinate System of the image
         :type rms_wcs: `astropy.wcs.wcs.WCS`
         '''
-    
-        pix_coord = np.rint(skycoord_to_pixel(self.src_coord, rms_wcs)).astype(int)
+
+        pix_coord = np.rint(skycoord_to_pixel(
+            self.src_coord, rms_wcs)).astype(int)
         rms_val = rms_img_data[pix_coord[0], pix_coord[1]]
         try:
             self.selavy_info['SELAVY_rms'] = rms_val
