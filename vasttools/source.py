@@ -491,6 +491,15 @@ class Source:
         plt.close()
 
     def get_background_rms(self, rms_img_data, rms_wcs):
+        '''
+        Get the background noise from the RMS image
+        
+        :param rms_img_data: Numpy array containing the RMS image data
+        :type rms_img_data: `numpy.ndarray`
+        :param rms_wcs: World Coordinate System of the image
+        :type rms_wcs: `astropy.wcs.wcs.WCS`
+        '''
+    
         pix_coord = np.rint(skycoord_to_pixel(self.src_coord, rms_wcs)).astype(int)
         rms_val = rms_img_data[pix_coord[0], pix_coord[1]]
         try:
