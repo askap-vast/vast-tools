@@ -7,6 +7,7 @@ import warnings
 import pkg_resources
 import dropbox
 import itertools
+import hashlib
 
 import logging
 import logging.handlers
@@ -35,6 +36,7 @@ FIELD_FILES = {
         __name__, "./data/vast_epoch03_info.csv")
 }
 
+CHECKSUMS_FILE = pkg_resources.resource_filename( __name__, "./data/checksums.h5")
 
 class Dropbox:
     '''
@@ -44,7 +46,7 @@ class Dropbox:
     :param dbx: a `Dropbox` object containing connection information
     :type dbx: `dropbox.dropbox.Dropbox`
     '''
-    
+
     def __init__(self, dbx, shared_link):
         '''Constructor method
         '''
@@ -55,6 +57,11 @@ class Dropbox:
         self.dbx = dbx
         self.shared_link = shared_link
         
+    def load_checksums(self):
+        self._checksums_df = pd.read_hdf(CHECKSUMS_FILE)
+        self._checksums_df.set_index(
+            "file", inplace=True)
+
     def recursive_build_files(
             self,
             base_file_list,
@@ -137,6 +144,31 @@ class Dropbox:
         self.logger.info("Finished!")
         return files, folders
 
+    def _checksum_check(self, dropbox_file, local_file):
+        
+        try:
+            md5_correct = self._checksums_df.loc[dropbox_file].md5_checksum
+            self.logger.debug("Dropbox md5: {}".format(md5_correct))
+        except:
+            self.logger.warning("Checksum not known for {}!".format(dropbox_file))
+            self.logger.warning("Are you using the latest version of this module?")
+            self.logger.warning("No checksum check performed on {}".format(
+                dropbox_file))
+            return True
+
+        with open(local_file, 'rb') as file_to_check:
+            # read contents of the file
+            data = file_to_check.read()
+            # pipe contents of the file through
+            md5_returned = hashlib.md5(data).hexdigest()
+            self.logger.debug("Local md5: {}".format(md5_returned))
+            
+        if md5_returned == md5_correct:
+            self.logger.debug("Checksum check passed.")
+            return True
+        else:
+            self.logger.warning("Checksum check failed for {}!".format(local_file))
+            return False
 
     def download_files(
             self,
@@ -163,6 +195,10 @@ class Dropbox:
         :type overwrite: bool, optional
         '''
 
+        self.load_checksums()
+
+        failures = []
+
         for vast_file in files_list:
             download_path = os.path.join(pwd, output_dir, vast_file[1:])
             if not overwrite:
@@ -175,9 +211,32 @@ class Dropbox:
             dropbox_path = "{}".format(vast_file)
             self.logger.debug("Download path: {}".format(download_path))
             self.logger.info("Downloading {}...".format(dropbox_path))
-            self.dbx.sharing_get_shared_link_file_to_file(
-                download_path, shared_url, path=dropbox_path,
-                link_password=password)
+            try:
+                self.dbx.sharing_get_shared_link_file_to_file(
+                    download_path, shared_url, path=dropbox_path,
+                    link_password=password)
+                download_complete = True
+            except:
+                self.logger.warning("{} encountered a problem!".format(
+                    vast_file
+                ))
+                self.logger.warning("Will try again after main cycle.")
+                download_complete = False
+                failures.append(vast_file)
+
+            if download_complete:    
+                success = self._checksum_check(dropbox_path, download_path)
+                if not success:
+                    self.logger.warning("md5 checksum does"
+                        " not match for {}!".format(vast_file))
+                    failures.append(vast_file)
+                    self.logger.warning("Will try again after main cycle.")
+                else:
+                    self.logger.info("Integrity check passed for {}".format(
+                        vast_file
+                    ))
+
+        return failures
 
 class Fields:
     '''

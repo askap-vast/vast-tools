@@ -20,6 +20,40 @@ try:
 except ImportError:
     use_colorlog = False
 
+def download_cycle(
+        files_list,
+        output_dir,
+        shared_url,
+        password,
+        max_retries,
+        main_overwrite):
+    failures = ["FILLER"]
+    retry_count = 0
+    complete_failures = []
+    while len(failures) > 0:
+        if retry_count > max_retries:
+            complete_failures = files_list
+            failures = []
+        else:
+            if retry_count > 0:
+                logger.info("Retry attempt"
+                    " {}/{}".format(retry_count, max_retries))
+                logger.info("Reattempting to download"
+                    " {} files".format(len(files_list)))
+                overwrite = True
+            else:
+                overwrite = main_overwrite
+            failures = vast_dropbox.download_files(
+                files_list,
+                os.getcwd(),
+                output_dir,
+                shared_url,
+                password,
+                overwrite=overwrite)
+            files_list = failures
+            retry_count +=1
+
+    return complete_failures
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -85,6 +119,12 @@ parser.add_argument(
         "Only valid when using the '--available-files' option."
         )
     )
+
+parser.add_argument(
+    '--max-retries',
+    type=int,
+    help='How many times to attempt to retry a failed download',
+    default=2)
 
 args = parser.parse_args()
 
@@ -233,12 +273,17 @@ elif args.download_epoch != 0:
         for folder in folders_list:
             os.makedirs(os.path.join(output_dir, folder[1:]), exist_ok=True)
         logger.info("Downloading files for {}...".format(epoch_string))
-        vast_dropbox.download_files(
+        complete_failures = download_cycle(
             files_list,
-            os.getcwd(),
             output_dir,
             shared_url,
-            password)
+            password,
+            args.max_retries,
+            args.overwrite)
+        if len(complete_failures)>0:
+            logger.warning("The following files failed to download:")
+            for fail in complete_failures:
+                logger.warning(fail)
 
 elif args.files_list is not None:
     if not os.path.isfile(args.files_list):
@@ -271,13 +316,18 @@ elif args.files_list is not None:
         "Downloading {} files from '{}'...".format(
             len(files_to_download),
             args.files_list))
-    vast_dropbox.download_files(
+    complete_failures = download_cycle(
         files_to_download,
-        os.getcwd(),
         output_dir,
         shared_url,
         password,
-        overwrite=args.overwrite)
+        args.max_retries,
+        args.overwrite)
+    if len(complete_failures)>0:
+        logger.warning("The following files failed to download correctly:")
+        for fail in complete_failures:
+            logger.warning(fail)
+        logger.warning("These files may be corrupted!")
 
 else:
     logger.info("Nothing to be done!")
