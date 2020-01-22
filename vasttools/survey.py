@@ -311,13 +311,14 @@ class Image:
                     self.imgpath))
             return
 
-        self.hdu = fits.open(self.imgpath)[0]
-        self.wcs = WCS(self.hdu.header, naxis=2)
+        with fits.open(self.imgpath) as hdul:
+            self.header = hdul[0].header
+            self.wcs = WCS(self.header, naxis=2)
 
-        try:
-            self.data = self.hdu.data[0, 0, :, :]
-        except Exception as e:
-            self.data = self.hdu.data
+            try:
+                self.data = hdul[0].data[0, 0, :, :]
+            except Exception as e:
+                self.data = hdul[0].data
 
     def get_rms_img(self):
         '''
@@ -336,10 +337,11 @@ class Image:
                     self.rmspath))
             return
 
-        self.rms_hdu = fits.open(self.rmspath)[0]
-        self.rms_wcs = WCS(self.rms_hdu.header, naxis=2)
+        with fits.open(self.rmspath) as hdul:
+            self.rms_header = hdul[0].header
+            self.rms_wcs = WCS(self.rms_header, naxis=2)
 
-        try:
-            self.rms_data = self.rms_hdu.data[0, 0, :, :]
-        except Exception as e:
-            self.rms_data = self.rms_hdu.data
+            try:
+                self.rms_data = hdul[0].data[0, 0, :, :]
+            except Exception as e:
+                self.rms_data = hdul[0].rms_hdu.data
