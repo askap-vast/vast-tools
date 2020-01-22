@@ -1,33 +1,30 @@
 # Source class
 
 import matplotlib
-matplot.use("Agg")
-import numpy as np
-import os
-import pandas as pd
-import warnings
-
-import logging
-import logging.handlers
-import logging.config
-
-import matplotlib.pyplot as plt
-
-from astropy import units as u
-from astropy.nddata.utils import Cutout2D
-from astropy.coordinates import SkyCoord
-from astropy.io import fits
-from astropy.wcs.utils import skycoord_to_pixel
-from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
-
-from matplotlib.patches import Ellipse
-from matplotlib.collections import PatchCollection
-from astropy.visualization import ZScaleInterval, ImageNormalize
-from astropy.visualization import PercentileInterval
-from astropy.visualization import AsymmetricPercentileInterval
-from astropy.visualization import LinearStretch
-import matplotlib.axes as maxes
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+import matplotlib.axes as maxes
+from astropy.visualization import LinearStretch
+from astropy.visualization import AsymmetricPercentileInterval
+from astropy.visualization import PercentileInterval
+from astropy.visualization import ZScaleInterval, ImageNormalize
+from matplotlib.collections import PatchCollection
+from matplotlib.patches import Ellipse
+from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
+from astropy.wcs.utils import skycoord_to_pixel
+from astropy.io import fits
+from astropy.coordinates import SkyCoord
+from astropy.nddata.utils import Cutout2D
+from astropy import units as u
+import matplotlib.pyplot as plt
+import logging.config
+import logging.handlers
+import logging
+import warnings
+import pandas as pd
+import os
+import numpy as np
+
+matplotlib.pyplot.switch_backend('Agg')
 
 class Source:
     '''
@@ -35,6 +32,8 @@ class Source:
 
     :param field: Name of the field containing the source
     :type field: str
+    :param src_coord: Source coordinates
+    :type src_coord: `astropy.coordinates.sky_coordinate.SkyCoord`
     :param sbid: SBID of the field containing the source
     :type sbid: str
     :param SELAVY_FOLDER: Path to selavy directory
@@ -52,6 +51,7 @@ class Source:
     def __init__(
             self,
             field,
+            src_coord,
             sbid,
             SELAVY_FOLDER,
             vast_pilot=None,
@@ -61,7 +61,8 @@ class Source:
         '''
         self.logger = logging.getLogger('vasttools.survey.Dropbox')
         self.logger.debug('Created Source instance')
-        
+
+        self.src_coord = src_coord
         self.field = field
         self.sbid = sbid
 
@@ -81,7 +82,7 @@ class Source:
         if stokesv:
             self.nselavypath = os.path.join(SELAVY_FOLDER, self.nselavyname)
 
-    def make_postagestamp(self, img_data, hdu, wcs, src_coord, size, outfile):
+    def make_postagestamp(self, img_data, hdu, wcs, size, outfile):
         '''
         Make a FITS postagestamp of the source region and write to file
 
@@ -91,8 +92,6 @@ class Source:
         :type hdu: `astropy.io.fits.hdu.image.PrimaryHDU`
         :param wcs: World Coordinate System of the image
         :type wcs: `astropy.wcs.wcs.WCS`
-        :param src_coord: Centre coordinates of the postagestamp
-        :type src_coord: `astropy.coordinates.sky_coordinate.SkyCoord`
         :param size: Size of the cutout array along each axis
         :type size: `astropy.coordinates.angles.Angle` \
         or tuple of two `Angle` objects
@@ -102,7 +101,7 @@ class Source:
 
         self.cutout = Cutout2D(
             img_data,
-            position=src_coord,
+            position=self.src_coord,
             size=size,
             wcs=wcs)
 
@@ -168,13 +167,11 @@ class Source:
         return pd.DataFrame(
             np.array([[np.nan for i in range(len(columns))]]), columns=columns)
 
-    def extract_source(self, src_coord, crossmatch_radius, stokesv):
+    def extract_source(self, crossmatch_radius, stokesv):
         '''
         Search for catalogued selavy sources within `crossmatch_radius` of
-        `src_coord` and store information of best match
+        `self.src_coord` and store information of best match
 
-        :param src_coord: Coordinate of the source of interest
-        :type src_coord: `astropy.coordinates.sky_coordinate.SkyCoord`
         :param crossmatch_radius: Crossmatch radius to use
         :type crossmatch_radius: `astropy.coordinates.angles.Angle`
         :param stokesv: `True` to crossmatch with Stokes V image, \
@@ -211,7 +208,7 @@ class Source:
                 u.deg,
                 u.deg))
 
-        match_id, match_sep, _dist = src_coord.match_to_catalog_sky(
+        match_id, match_sep, _dist = self.src_coord.match_to_catalog_sky(
             self.selavy_sc)
 
         if match_sep < crossmatch_radius:
@@ -234,8 +231,8 @@ class Source:
                     match_sep[0].arcsec))
         else:
             self.logger.info(("No selavy catalogue match. "
-                         "Nearest source {:.0f} arcsec away."
-                         ).format(match_sep[0].arcsec))
+                              "Nearest source {:.0f} arcsec away."
+                              ).format(match_sep[0].arcsec))
             self.has_match = False
             self.selavy_info = self._empty_selavy()
 
@@ -352,25 +349,22 @@ class Source:
             new_val = "n" + new_val
         return new_val
 
-    def filter_selavy_components(self, src_coord, imsize):
+    def filter_selavy_components(self, imsize):
         '''
         Create a shortened catalogue by filtering out selavy components
         outside of the image
 
-        :param src_coord: Coordinates of the source of interest
-        :type src_coord: `astropy.coordinates.sky_coordinate.SkyCoord`
         :param imsize: Size of the image along each axis
         :type imsize: `astropy.coordinates.angles.Angle` or tuple of two \
         `Angle` objects
         '''
 
-        seps = src_coord.separation(self.selavy_sc)
+        seps = self.src_coord.separation(self.selavy_sc)
         mask = seps <= imsize / 1.4
         self.selavy_cat_cut = self.selavy_cat[mask].reset_index(drop=True)
 
     def make_png(
             self,
-            src_coord,
             selavy,
             percentile,
             zscale,
@@ -384,8 +378,6 @@ class Source:
         '''
         Save a PNG of the image postagestamp
 
-        :param src_coord: Centre coordinates of the postagestamp
-        :type src_coord: `astropy.coordinates.sky_coordinate.SkyCoord`
         :param selavy: `True` to overlay selavy components, `False` otherwise
         :type selavy: bool
         :param percentile: Percentile level for normalisation.
@@ -432,7 +424,7 @@ class Source:
                 interval=PercentileInterval(percentile),
                 stretch=LinearStretch())
         im = ax.imshow(cutout_data, norm=self.img_norms, cmap="gray_r")
-        ax.scatter([src_coord.ra.deg], [src_coord.dec.deg],
+        ax.scatter([self.src_coord.ra.deg], [self.src_coord.dec.deg],
                    transform=ax.get_transform('world'), marker="x",
                    color="r", zorder=10, label=label)
         if selavy and self.selavy_fail is False:
@@ -496,8 +488,18 @@ class Source:
         self.logger.info("Saved {}".format(outfile))
         plt.close()
 
-    def get_background_rms(self, rms_img_data, rms_wcs, src_coord):
-        pix_coord = np.rint(skycoord_to_pixel(src_coord, rms_wcs)).astype(int)
+    def get_background_rms(self, rms_img_data, rms_wcs):
+        '''
+        Get the background noise from the RMS image
+
+        :param rms_img_data: Numpy array containing the RMS image data
+        :type rms_img_data: `numpy.ndarray`
+        :param rms_wcs: World Coordinate System of the image
+        :type rms_wcs: `astropy.wcs.wcs.WCS`
+        '''
+
+        pix_coord = np.rint(skycoord_to_pixel(
+            self.src_coord, rms_wcs)).astype(int)
         rms_val = rms_img_data[pix_coord[0], pix_coord[1]]
         try:
             self.selavy_info['SELAVY_rms'] = rms_val

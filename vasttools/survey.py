@@ -204,12 +204,12 @@ class Fields:
                                         unit=u.hourangle),
                                   Angle(self.fields["DEC_DMS"], unit=u.deg))
 
-    def find(self, src_dir, max_sep, catalog):
+    def find(self, src_coord, max_sep, catalog):
         '''
         Find which field each source in the catalogue is in.
 
-        :param src_dir: Coordinates of sources to find fields for
-        :type src_dir: `astropy.coordinates.sky_coordinate.SkyCoord`
+        :param src_coord: Coordinates of sources to find fields for
+        :type src_coord: `astropy.coordinates.sky_coordinate.SkyCoord`
         :param max_sep: Maximum allowable separation between source \
         and beam centre in degrees
         :type max_sep: float
@@ -222,7 +222,7 @@ class Fields:
         :rtype: `pandas.core.frame.DataFrame`, `numpy.ndarray`
         '''
 
-        nearest_beams, seps, _d3d = src_dir.match_to_catalog_sky(
+        nearest_beams, seps, _d3d = src_coord.match_to_catalog_sky(
             self.direction)
         within_beam = seps.deg < max_sep
         catalog["sbid"] = self.fields["SBID"].iloc[nearest_beams].values

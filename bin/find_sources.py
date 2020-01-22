@@ -522,19 +522,20 @@ for uf in uniq_fields:
             label.replace(" ", "_"), fieldname, outfile_prefix)
         outfile = os.path.join(output_name, outfile)
 
+        src_coord = field_src_coords[i]
+
         source = Source(
             fieldname,
+            src_coord,
             SBID,
             SELAVY_FOLDER,
             vast_pilot=args.vast_pilot,
             tiles=args.use_tiles,
             stokesv=args.stokesv)
 
-        src_coord = field_src_coords[i]
-
-        source.extract_source(src_coord, crossmatch_radius, args.stokesv)
+        source.extract_source(crossmatch_radius, args.stokesv)
         if not args.no_background_rms and not image.rms_fail:
-            source.get_background_rms(image.rms_data, image.rms_wcs, src_coord)
+            source.get_background_rms(image.rms_data, image.rms_wcs)
 
         if args.process_matches and not source.has_match:
             logger.info("Source does not have a selavy match, not "
@@ -546,13 +547,12 @@ for uf in uniq_fields:
                     image.data,
                     image.hdu,
                     image.wcs,
-                    src_coord,
                     imsize,
                     outfile)
 
             # not ideal but line below has to be run after those above
             if source.selavy_fail is False:
-                source.filter_selavy_components(src_coord, imsize)
+                source.filter_selavy_components(imsize)
                 if args.ann:
                     source.write_ann(outfile)
                 if args.reg:
@@ -576,7 +576,6 @@ for uf in uniq_fields:
                             pilot_epoch
                         )
                     source.make_png(
-                        src_coord,
                         args.png_selavy_overlay,
                         args.png_linear_percentile,
                         args.png_use_zscale,
