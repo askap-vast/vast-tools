@@ -13,6 +13,7 @@ import datetime
 import pandas as pd
 import warnings
 import shutil
+import io
 
 import logging
 import logging.handlers
@@ -1211,8 +1212,14 @@ for uf in uniq_fields:
         else:
             temp_crossmatch_output = source.selavy_info
             temp_crossmatch_output.index = [indexes[i]]
-            logger.debug(crossmatch_output.info())
-            logger.debug(source.selavy_info.info())
+            buffer = io.StringIO()
+            crossmatch_output.info(buf=buffer)
+            df_info = buffer.getvalue()
+            logger.debug("Crossmatch df:\n{}".format(df_info))
+            buffer = io.StringIO()
+            source.selavy_info.info(buf=buffer)
+            df_info = buffer.getvalue()
+            logger.debug("Selavy info df:\n{}".format(df_info))
             crossmatch_output = crossmatch_output.append(
                 source.selavy_info, sort=False)
         logger.info(
