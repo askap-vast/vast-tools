@@ -20,6 +20,7 @@ try:
 except ImportError:
     use_colorlog = False
 
+
 def download_cycle(
         files_list,
         output_dir,
@@ -36,9 +37,11 @@ def download_cycle(
             failures = []
         else:
             if retry_count > 0:
-                logger.info("Retry attempt"
-                    " {}/{}".format(retry_count, max_retries))
-                logger.info("Reattempting to download"
+                logger.info(
+                    "Retry attempt {}/{}".format(
+                        retry_count, max_retries))
+                logger.info(
+                    "Reattempting to download"
                     " {} files".format(len(files_list)))
                 overwrite = True
             else:
@@ -51,9 +54,10 @@ def download_cycle(
                 password,
                 overwrite=overwrite)
             files_list = failures
-            retry_count +=1
+            retry_count += 1
 
     return complete_failures
+
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -280,10 +284,11 @@ elif args.download_epoch != 0:
             password,
             args.max_retries,
             args.overwrite)
-        if len(complete_failures)>0:
-            logger.warning("The following files failed to download:")
+        if len(complete_failures) > 0:
+            logger.warning("The following files failed to download correctly:")
             for fail in complete_failures:
                 logger.warning(fail)
+            logger.warning("These files may be corrupted!")
 
 elif args.files_list is not None:
     if not os.path.isfile(args.files_list):
@@ -323,7 +328,7 @@ elif args.files_list is not None:
         password,
         args.max_retries,
         args.overwrite)
-    if len(complete_failures)>0:
+    if len(complete_failures) > 0:
         logger.warning("The following files failed to download correctly:")
         for fail in complete_failures:
             logger.warning(fail)

@@ -36,7 +36,8 @@ FIELD_FILES = {
         __name__, "./data/vast_epoch03_info.csv")
 }
 
-CHECKSUMS_FILE = pkg_resources.resource_filename( __name__, "./data/checksums.h5")
+CHECKSUMS_FILE = pkg_resources.resource_filename(
+                    __name__, "./data/checksums.h5")
 
 class Dropbox:
     '''
@@ -145,15 +146,17 @@ class Dropbox:
         return files, folders
 
     def _checksum_check(self, dropbox_file, local_file):
-        
         try:
             md5_correct = self._checksums_df.loc[dropbox_file].md5_checksum
             self.logger.debug("Dropbox md5: {}".format(md5_correct))
-        except:
-            self.logger.warning("Checksum not known for {}!".format(dropbox_file))
-            self.logger.warning("Are you using the latest version of this module?")
-            self.logger.warning("No checksum check performed on {}".format(
-                dropbox_file))
+        except Exception as e:
+            self.logger.warning(
+                "Checksum not known for {}!".format(dropbox_file))
+            self.logger.warning(
+                "Are you using the latest version of this module?")
+            self.logger.warning(
+                "No checksum check performed on {}".format(
+                    dropbox_file))
             return True
 
         with open(local_file, 'rb') as file_to_check:
@@ -162,12 +165,13 @@ class Dropbox:
             # pipe contents of the file through
             md5_returned = hashlib.md5(data).hexdigest()
             self.logger.debug("Local md5: {}".format(md5_returned))
-            
+
         if md5_returned == md5_correct:
             self.logger.debug("Checksum check passed.")
             return True
         else:
-            self.logger.warning("Checksum check failed for {}!".format(local_file))
+            self.logger.warning(
+                "Checksum check failed for {}!".format(local_file))
             return False
 
     def download_files(
@@ -216,7 +220,7 @@ class Dropbox:
                     download_path, shared_url, path=dropbox_path,
                     link_password=password)
                 download_complete = True
-            except:
+            except Exception as e:
                 self.logger.warning("{} encountered a problem!".format(
                     vast_file
                 ))
@@ -224,10 +228,11 @@ class Dropbox:
                 download_complete = False
                 failures.append(vast_file)
 
-            if download_complete:    
+            if download_complete:
                 success = self._checksum_check(dropbox_path, download_path)
                 if not success:
-                    self.logger.warning("md5 checksum does"
+                    self.logger.warning(
+                        "md5 checksum does"
                         " not match for {}!".format(vast_file))
                     failures.append(vast_file)
                     self.logger.warning("Will try again after main cycle.")
