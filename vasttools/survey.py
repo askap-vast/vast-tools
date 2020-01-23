@@ -253,7 +253,8 @@ class Dropbox:
                     if not overwrite:
                         if os.path.isfile(download_path):
                             self.logger.error(
-                                "{} already exists and overwrite is set to {}.".format(
+                                "{} already exists and overwrite "
+                                "is set to {}.".format(
                                     download_path, overwrite))
                             self.logger.info("Skipping file.")
                             continue
