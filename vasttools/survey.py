@@ -57,6 +57,7 @@ class Dropbox:
         
         self.dbx = dbx
         self.shared_link = shared_link
+        self._checksums_df = None
         
     def load_checksums(self):
         self._checksums_df = pd.read_hdf(CHECKSUMS_FILE)
@@ -145,7 +146,23 @@ class Dropbox:
         self.logger.info("Finished!")
         return files, folders
 
+
     def _checksum_check(self, dropbox_file, local_file):
+        '''
+        Performs a checksum check on the Dropbox file downloaded.
+        The Dropbox checksums are included in an h5 file in the module
+        and returns True if they match and False if they do not.
+
+        :param dropbox_file: path of the Dropbox file to check (also
+            acts as the 'name')
+        :type dropbox_file: str
+        :param local_file: The path of the local file to check.
+        :type local_file: str
+        :returns: True if checksums match, False if they don't match.
+        :rtype: bool
+        '''
+        if self._checksums_df is None:
+            self.load_checksums()
         try:
             md5_correct = self._checksums_df.loc[dropbox_file].md5_checksum
             self.logger.debug("Dropbox md5: {}".format(md5_correct))
@@ -177,71 +194,137 @@ class Dropbox:
     def download_files(
             self,
             files_list,
-            pwd,
             output_dir,
             shared_url,
             password,
-            overwrite=False):
+            max_retries,
+            main_overwrite,
+            checksum_check=True):
         '''
-        Iterate over a list of files and download them from the dropbox folder
+        A function to download a list of files from Dropbox. 
+        If a file is not found or corrupted then it retries to 
+        a user requested number of times. It calls the
+        'download_file' function to perform the actual download.
 
-        :param files_list:
-        :type files_list:
-        :param pwd:
-        :type pwd:
-        :param output_dir:
-        :type output_dir:
-        :param shared_url:
-        :type shared_url:
-        :param password:
-        :type password:
-        :param overwrite: whether to overwrite existing files, defaults to False
-        :type overwrite: bool, optional
+        :param files_list: the list of dropbox files to download
+        :type files_list: list
+        :param output_dir: The output directory where the downloads go
+        :type output_dir: str
+        :param shared_url: The Dropbox shared url.
+        :type shared_url: str
+        :param password: Dropbox link password
+        :type password: str
+        :param max_retries: Number of times to attempt re-downloads.
+        :type max_retries: int
+        :param main_overwrite: The user requested overwrite variable
+        :type main_overwrite: bool
+        :param checksum_check: Select whether to check the checksum of
+            the file downloaded, defaults to True.
+        :type checksum_check: bool, optional
+        :returns: list of files that have failed to download
+        :rtype: list
         '''
-
-        self.load_checksums()
-
-        failures = []
-
-        for vast_file in files_list:
-            download_path = os.path.join(pwd, output_dir, vast_file[1:])
-            if not overwrite:
-                if os.path.isfile(download_path):
-                    self.logger.error(
-                        "{} already exists and overwrite is set to {}.".format(
-                            download_path, overwrite))
-                    self.logger.info("Skipping file.")
-                    continue
-            dropbox_path = "{}".format(vast_file)
-            self.logger.debug("Download path: {}".format(download_path))
-            self.logger.info("Downloading {}...".format(dropbox_path))
-            try:
-                self.dbx.sharing_get_shared_link_file_to_file(
-                    download_path, shared_url, path=dropbox_path,
-                    link_password=password)
-                download_complete = True
-            except Exception as e:
-                self.logger.warning("{} encountered a problem!".format(
-                    vast_file
-                ))
-                self.logger.warning("Will try again after main cycle.")
-                download_complete = False
-                failures.append(vast_file)
-
-            if download_complete:
-                success = self._checksum_check(dropbox_path, download_path)
-                if not success:
-                    self.logger.warning(
-                        "md5 checksum does"
-                        " not match for {}!".format(vast_file))
-                    failures.append(vast_file)
-                    self.logger.warning("Will try again after main cycle.")
+        print(max_retries)
+        failures = ["FILLER"]
+        retry_count = 0
+        complete_failures = []
+        pwd = os.getcwd()
+        while len(failures) > 0:
+            if retry_count > max_retries:
+                complete_failures = files_list
+            else:
+                if retry_count > 0:
+                    self.logger.info(
+                        "Retry attempt {}/{}".format(
+                            retry_count, max_retries))
+                    self.logger.info(
+                        "Reattempting to download"
+                        " {} files".format(len(files_list)))
+                    overwrite = True
                 else:
-                    self.logger.info("Integrity check passed for {}".format(
-                        vast_file
-                    ))
+                    overwrite = main_overwrite
 
-        return failures
+                failures = []
+
+                for vast_file in files_list:
+                    download_path = os.path.join(pwd, output_dir, vast_file[1:])
+                    if not overwrite:
+                        if os.path.isfile(download_path):
+                            self.logger.error(
+                                "{} already exists and overwrite is set to {}.".format(
+                                    download_path, overwrite))
+                            self.logger.info("Skipping file.")
+                            continue
+                    dropbox_path = "{}".format(vast_file)
+                    self.logger.debug("Download path: {}".format(download_path))
+                    download_success = self.download_file(
+                        download_path,
+                        dropbox_path,
+                        shared_url,
+                        password,
+                        checksum_check = checksum_check
+                    )
+                    if download_success is False:
+                        failures.append(vast_file)
+                files_list = failures
+                retry_count += 1
+
+        return complete_failures
+    
+    
+    def download_file(
+            self,
+            download_path,
+            dropbox_path,
+            shared_url,
+            password,
+            checksum_check=True):
+        '''
+        A function to download a single file from Dropbox. 
+
+        :param download_path: The path where to download the file to.
+        :type files_list: str
+        :param dropbox_path: The Dropbox path of the file to download.
+        :type dropbox_path: str
+        :param shared_url: The Dropbox shared url.
+        :type shared_url: str
+        :param password: Dropbox link password
+        :type password: str
+        :param checksum_check: Select whether to check the checksum of
+            the file downloaded, defaults to True.
+        :type checksum_check: bool, optional
+        :returns: True for successful download, False if it goes wrong.
+        :rtype: bool
+        '''
+        self.logger.info("Downloading {}...".format(dropbox_path))
+        try:
+            self.dbx.sharing_get_shared_link_file_to_file(
+                download_path, shared_url, path=dropbox_path,
+                link_password=password)
+            download_complete = True
+        except Exception as e:
+            self.logger.warning("{} encountered a problem!".format(
+                dropbox_path
+            ))
+            download_complete = False
+            return False
+
+        if download_complete and checksum_check:
+            success = self._checksum_check(dropbox_path, download_path)
+            if not success:
+                self.logger.warning(
+                    "md5 checksum does"
+                    " not match for {}!".format(dropbox_path))
+                failures.append(vast_file)
+                self.logger.warning("Will try again after main cycle.")
+                return False
+            else:
+                self.logger.info("Integrity check passed for {}".format(
+                    dropbox_path
+                ))
+
+        return True
+
 
 class Fields:
     '''

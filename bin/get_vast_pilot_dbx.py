@@ -22,64 +22,6 @@ except ImportError:
     use_colorlog = False
 
 
-def download_cycle(
-        files_list,
-        output_dir,
-        shared_url,
-        password,
-        max_retries,
-        main_overwrite):
-    '''
-    Downloads requested files from Dropbox. If a file is not found
-    or corrupted then it retries to a user requested number of
-    times.
-
-    :param files_list: the list of dropbox files to download
-    :type files_list: list
-    :param output_dir: The output directory where the downloads go
-    :type output_dir: str
-    :param shared_url: The Dropbox shared url.
-    :type shared_url: str, optional
-    :param password: Dropbox link password
-    :type password: str
-    :param max_retries: Number of times to attempt re-downloads.
-    :type max_retries: int
-    :param main_overwrite: The user requested overwrite variable
-    :type main_overwrite: bool
-    :returns: list of files that have failed to download
-    :rtype: list
-    '''
-    failures = ["FILLER"]
-    retry_count = 0
-    complete_failures = []
-    while len(failures) > 0:
-        if retry_count > max_retries:
-            complete_failures = files_list
-            failures = []
-        else:
-            if retry_count > 0:
-                logger.info(
-                    "Retry attempt {}/{}".format(
-                        retry_count, max_retries))
-                logger.info(
-                    "Reattempting to download"
-                    " {} files".format(len(files_list)))
-                overwrite = True
-            else:
-                overwrite = main_overwrite
-            failures = vast_dropbox.download_files(
-                files_list,
-                os.getcwd(),
-                output_dir,
-                shared_url,
-                password,
-                overwrite=overwrite)
-            files_list = failures
-            retry_count += 1
-
-    return complete_failures
-
-
 def filter_files_list(
         files_list,
         fields=None,
@@ -101,33 +43,40 @@ def filter_files_list(
     :type file_list: list
     :param fields: list of fields to filter, default None.
     :type fields: list, optional
-    :param stokesI_only: Stokes I only boolean
+    :param stokesI_only: Stokes I only boolean, defaults to False
     :type stokesI_only: bool, optional
-    :param stokesV_only: Stokes V only boolean
+    :param stokesV_only: Stokes V only boolean, defaults to False
     :type stokesV_only: bool, optional
-    :param skip_xml: Filter out .xml files
-    :type skip_xml: bool
-    :param skip_qc: Filter out QC files
-    :type skip_qc: bool
-    :param skip_islands: Filter out island selavy files
-    :type skip_islands: bool
-    :param skip_field_images: Filter out field fits files
-    :type skip_field_images: bool
-    :param skip_bkg_images: Filter out bkg fits files
-    :type skip_bkg_images: bool
-    :param skip_rms_images: Filter out rms fits files
-    :type skip_rms_images: bool
-    :param skip_all_images: Filter out .fits files
-    :type skip_all_images: bool
-    :param combined_only: Filter to only combined products
-    :type combined_only: bool
-    :param tile_only: Filter to only tiles products
-    :type tile_only: bool
+    :param skip_xml: Filter out .xml files, defaults to False
+    :type skip_xml: bool, optional
+    :param skip_qc: Filter out QC files, defaults to False
+    :type skip_qc: bool, optional
+    :param skip_islands: Filter out island selavy 
+        files, defaults to False
+    :type skip_islands: bool, optional
+    :param skip_field_images: Filter out field fits 
+        files, defaults to False
+    :type skip_field_images: bool, optional
+    :param skip_bkg_images: Filter out bkg fits files, defaults 
+        to False
+    :type skip_bkg_images: bool, optional
+    :param skip_rms_images: Filter out rms fits files, defaults 
+        to False
+    :type skip_rms_images: bool, optional
+    :param skip_all_images: Filter out .fits files, defaults 
+        to False
+    :type skip_all_images: bool, optional
+    :param combined_only: Filter to only combined products, 
+        defaults to False
+    :type combined_only: bool, optional
+    :param tile_only: Filter to only tiles products, defaults 
+        to False
+    :type tile_only: bool, optional
     :returns: filtered list of dropbox files
     :rtype: list
     '''
-if fields is None:
-    fields = []
+    if fields is None:
+        fields = []
     filter_df = pd.DataFrame(data=files_list, columns=["file"])
 
     if stokesI_only is True and stokesV_only is True:
@@ -529,7 +478,7 @@ elif args.download_epoch != 0:
         logger.info(
             "Downloading {} files for {}...".format(
                 len(files_to_download), epoch_string))
-        complete_failures = download_cycle(
+        complete_failures = vast_dropbox.download_files(
             files_to_download,
             output_dir,
             shared_url,
@@ -596,7 +545,7 @@ elif args.find_fields_input is not None:
     logger.info(
         "Downloading {} files for {} fields...".format(
             len(files_to_download), len(fields_to_fetch)))
-    complete_failures = download_cycle(
+    complete_failures = vast_dropbox.download_files(
         files_to_download,
         output_dir,
         shared_url,
@@ -655,7 +604,7 @@ elif args.files_list is not None:
         "Downloading {} files from '{}'...".format(
             len(files_to_download),
             args.files_list))
-    complete_failures = download_cycle(
+    complete_failures = vast_dropbox.download_files(
         files_to_download,
         output_dir,
         shared_url,
