@@ -82,14 +82,14 @@ class Source:
         if stokesv:
             self.nselavypath = os.path.join(SELAVY_FOLDER, self.nselavyname)
 
-    def make_postagestamp(self, img_data, hdu, wcs, size, outfile):
+    def make_postagestamp(self, img_data, header, wcs, size, outfile):
         '''
         Make a FITS postagestamp of the source region and write to file
 
         :param img_data: Numpy array containing the image data
         :type img_data: `numpy.ndarray`
-        :param hdu: FITS header data units of the image
-        :type hdu: `astropy.io.fits.hdu.image.PrimaryHDU`
+        :param header: FITS header data units of the image
+        :type header: `astropy.io.fits.hdu.image.PrimaryHDU`
         :param wcs: World Coordinate System of the image
         :type wcs: `astropy.wcs.wcs.WCS`
         :param size: Size of the cutout array along each axis
@@ -104,12 +104,12 @@ class Source:
             position=self.src_coord,
             size=size,
             wcs=wcs)
-
+        self.logger.debug(type(header))
         # Put the cutout image in the FITS HDU
 
         hdu_stamp = fits.PrimaryHDU(data=self.cutout.data)
 
-        hdu_stamp.header = hdu.header
+        hdu_stamp.header = header
         # Update the FITS header with the cutout WCS
         hdu_stamp.header.update(self.cutout.wcs.to_header())
 
