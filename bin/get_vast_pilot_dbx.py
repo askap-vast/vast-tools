@@ -41,7 +41,7 @@ def filter_files_list(
 
     :param file_list: the list of dropbox files to filter
     :type file_list: list
-    :param fields: list of fields to filter, default None.
+    :param fields: list of fields to filter, defaults to None.
     :type fields: list, optional
     :param stokesI_only: Stokes I only boolean, defaults to False
     :type stokesI_only: bool, optional
