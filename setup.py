@@ -18,7 +18,8 @@ setup(
         "astropy<4.0",
         "matplotlib>=3.1.2,<4.0",
         "colorlog>=4.0.2,<5.0",
-        "dropbox>=9.4.0,<9.5.0"
+        "dropbox>=9.4.0,<9.5.0",
+        "tables>=3.6.1,<3.7.0"
         ],
     scripts=[
         "bin/find_sources.py",
