@@ -64,6 +64,7 @@ class Dropbox:
         self._checksums_df = pd.read_hdf(CHECKSUMS_FILE)
         self._checksums_df.set_index(
             "file", inplace=True)
+        self._checksums_df.at["/EPOCH02/COMBINED/STOKESI_SELAVY/VAST_2256-56A.EPOCH02.I.selavy.components.txt", "md5_checksum"]="wobble"
 
     def recursive_build_files(
             self,
@@ -233,6 +234,7 @@ class Dropbox:
         while len(failures) > 0:
             if retry_count > max_retries:
                 complete_failures = files_list
+                failures = []
             else:
                 if retry_count > 0:
                     self.logger.info(
@@ -318,7 +320,6 @@ class Dropbox:
                 self.logger.warning(
                     "md5 checksum does"
                     " not match for {}!".format(dropbox_path))
-                failures.append(vast_file)
                 self.logger.warning("Will try again after main cycle.")
                 return False
             else:
