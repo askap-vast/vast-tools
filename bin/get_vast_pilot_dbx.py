@@ -51,25 +51,25 @@ def filter_files_list(
     :type skip_xml: bool, optional
     :param skip_qc: Filter out QC files, defaults to False
     :type skip_qc: bool, optional
-    :param skip_islands: Filter out island selavy 
+    :param skip_islands: Filter out island selavy
         files, defaults to False
     :type skip_islands: bool, optional
-    :param skip_field_images: Filter out field fits 
+    :param skip_field_images: Filter out field fits
         files, defaults to False
     :type skip_field_images: bool, optional
-    :param skip_bkg_images: Filter out bkg fits files, defaults 
+    :param skip_bkg_images: Filter out bkg fits files, defaults
         to False
     :type skip_bkg_images: bool, optional
-    :param skip_rms_images: Filter out rms fits files, defaults 
+    :param skip_rms_images: Filter out rms fits files, defaults
         to False
     :type skip_rms_images: bool, optional
-    :param skip_all_images: Filter out .fits files, defaults 
+    :param skip_all_images: Filter out .fits files, defaults
         to False
     :type skip_all_images: bool, optional
-    :param combined_only: Filter to only combined products, 
+    :param combined_only: Filter to only combined products,
         defaults to False
     :type combined_only: bool, optional
-    :param tile_only: Filter to only tiles products, defaults 
+    :param tile_only: Filter to only tiles products, defaults
         to False
     :type tile_only: bool, optional
     :returns: filtered list of dropbox files
@@ -170,6 +170,7 @@ def filter_files_list(
 
     return final_list
 
+
 parser = argparse.ArgumentParser(
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
@@ -235,7 +236,7 @@ parser.add_argument(
         "Dropbox config file to be read in containing the shared url, "
         "password and access token. A template can be generated using "
         "'--write-template-dropbox-config'."
-        ),
+    ),
     default="dropbox.cfg")
 
 parser.add_argument(
@@ -249,8 +250,8 @@ parser.add_argument(
     help=(
         "Include the 'LEGACY' directory when searching through files. "
         "Only valid when using the '--available-files' option."
-        )
     )
+)
 
 parser.add_argument(
     '--max-retries',
@@ -377,7 +378,7 @@ if not os.path.isfile(args.dropbox_config):
     logger.info(
         "A template dropbox file can be generated using "
         "python get_vast_pilot_dbx.py '--write-template-dropbox-config'"
-        )
+    )
 
     sys.exit()
 
@@ -421,7 +422,7 @@ elif args.available_files:
     logger.info(
         "Gathering a list of files - this will take "
         "approximately 4 minutes per epoch."
-        )
+    )
 
     files_list, folders_list = vast_dropbox.recursive_build_files(
         base_file_list,
@@ -461,19 +462,19 @@ elif args.download_epoch != 0:
             os.makedirs(os.path.join(output_dir, folder[1:]), exist_ok=True)
 
         files_to_download = filter_files_list(
-                                files_list,
-                                stokesI_only=args.stokesI_only,
-                                stokesV_only=args.stokesV_only,
-                                skip_xml=args.skip_xml,
-                                skip_qc=args.skip_qc,
-                                skip_islands=args.skip_islands,
-                                skip_field_images=args.skip_field_images,
-                                skip_bkg_images=args.skip_bkg_images,
-                                skip_rms_images=args.skip_rms_images,
-                                skip_all_images=args.skip_all_images,
-                                combined_only=args.combined_only,
-                                tile_only=args.tile_only
-                                )
+            files_list,
+            stokesI_only=args.stokesI_only,
+            stokesV_only=args.stokesV_only,
+            skip_xml=args.skip_xml,
+            skip_qc=args.skip_qc,
+            skip_islands=args.skip_islands,
+            skip_field_images=args.skip_field_images,
+            skip_bkg_images=args.skip_bkg_images,
+            skip_rms_images=args.skip_rms_images,
+            skip_all_images=args.skip_all_images,
+            combined_only=args.combined_only,
+            tile_only=args.tile_only
+        )
 
         logger.info(
             "Downloading {} files for {}...".format(
@@ -519,20 +520,20 @@ elif args.find_fields_input is not None:
             base_file_list,
             legacy=args.include_legacy)
     files_to_download = filter_files_list(
-                            files_list,
-                            fields=fields_to_fetch,
-                            stokesI_only=args.stokesI_only,
-                            stokesV_only=args.stokesV_only,
-                            skip_xml=args.skip_xml,
-                            skip_qc=args.skip_qc,
-                            skip_islands=args.skip_islands,
-                            skip_field_images=args.skip_field_images,
-                            skip_bkg_images=args.skip_bkg_images,
-                            skip_rms_images=args.skip_rms_images,
-                            skip_all_images=args.skip_all_images,
-                            combined_only=args.combined_only,
-                            tile_only=args.tile_only
-                            )
+        files_list,
+        fields=fields_to_fetch,
+        stokesI_only=args.stokesI_only,
+        stokesV_only=args.stokesV_only,
+        skip_xml=args.skip_xml,
+        skip_qc=args.skip_qc,
+        skip_islands=args.skip_islands,
+        skip_field_images=args.skip_field_images,
+        skip_bkg_images=args.skip_bkg_images,
+        skip_rms_images=args.skip_rms_images,
+        skip_all_images=args.skip_all_images,
+        combined_only=args.combined_only,
+        tile_only=args.tile_only
+    )
 
     dirs_to_create = np.unique(
         ["/".join(i.strip().split("/")[1:-1]) for i in files_to_download])
@@ -578,19 +579,19 @@ elif args.files_list is not None:
                 files_list.append("/{}".format(i.strip()))
 
     files_to_download = filter_files_list(
-                            files_list,
-                            stokesI_only=args.stokesI_only,
-                            stokesV_only=args.stokesV_only,
-                            skip_xml=args.skip_xml,
-                            skip_qc=args.skip_qc,
-                            skip_islands=args.skip_islands,
-                            skip_field_images=args.skip_field_images,
-                            skip_bkg_images=args.skip_bkg_images,
-                            skip_rms_images=args.skip_rms_images,
-                            skip_all_images=args.skip_all_images,
-                            combined_only=args.combined_only,
-                            tile_only=args.tile_only
-                            )
+        files_list,
+        stokesI_only=args.stokesI_only,
+        stokesV_only=args.stokesV_only,
+        skip_xml=args.skip_xml,
+        skip_qc=args.skip_qc,
+        skip_islands=args.skip_islands,
+        skip_field_images=args.skip_field_images,
+        skip_bkg_images=args.skip_bkg_images,
+        skip_rms_images=args.skip_rms_images,
+        skip_all_images=args.skip_all_images,
+        combined_only=args.combined_only,
+        tile_only=args.tile_only
+    )
 
     dirs_to_create = np.unique(
         ["/".join(i.strip().split("/")[1:-1]) for i in files_to_download])

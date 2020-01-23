@@ -37,13 +37,14 @@ FIELD_FILES = {
 }
 
 CHECKSUMS_FILE = pkg_resources.resource_filename(
-                    __name__, "./data/checksums.h5")
+    __name__, "./data/checksums.h5")
+
 
 class Dropbox:
     '''
     This is a class for downloading files from Dropbox.
     See `get_vast_pilot_dbx.py` for a full implementation.
-    
+
     :param dbx: a `Dropbox` object containing connection information
     :type dbx: `dropbox.dropbox.Dropbox`
     '''
@@ -51,14 +52,14 @@ class Dropbox:
     def __init__(self, dbx, shared_link):
         '''Constructor method
         '''
-        
+
         self.logger = logging.getLogger('vasttools.survey.Dropbox')
         self.logger.debug('Created Dropbox instance')
-        
+
         self.dbx = dbx
         self.shared_link = shared_link
         self._checksums_df = None
-        
+
     def load_checksums(self):
         self._checksums_df = pd.read_hdf(CHECKSUMS_FILE)
         self._checksums_df.set_index(
@@ -116,7 +117,7 @@ class Dropbox:
                     self.logger.debug(
                         "Skipping LEGACY folder, "
                         "include_legacy = {}".format(legacy)
-                        )
+                    )
                     searched_folders.append(i)
                     continue
                 if i not in searched_folders:
@@ -140,12 +141,12 @@ class Dropbox:
                     searched_folders.append(i)
                     self.logger.debug("Searched {}".format(i))
                     self.logger.debug("Folders: {}".format(folders))
-                    self.logger.debug("Searched Folders: {}".format(searched_folders))
+                    self.logger.debug(
+                        "Searched Folders: {}".format(searched_folders))
         # flush stdout buffer (actual character display)
         sys.stdout.flush()
         self.logger.info("Finished!")
         return files, folders
-
 
     def _checksum_check(self, dropbox_file, local_file):
         '''
@@ -201,8 +202,8 @@ class Dropbox:
             main_overwrite,
             checksum_check=True):
         '''
-        A function to download a list of files from Dropbox. 
-        If a file is not found or corrupted then it retries to 
+        A function to download a list of files from Dropbox.
+        If a file is not found or corrupted then it retries to
         a user requested number of times. It calls the
         'download_file' function to perform the actual download.
 
@@ -247,7 +248,8 @@ class Dropbox:
                 failures = []
 
                 for vast_file in files_list:
-                    download_path = os.path.join(pwd, output_dir, vast_file[1:])
+                    download_path = os.path.join(
+                        pwd, output_dir, vast_file[1:])
                     if not overwrite:
                         if os.path.isfile(download_path):
                             self.logger.error(
@@ -256,13 +258,14 @@ class Dropbox:
                             self.logger.info("Skipping file.")
                             continue
                     dropbox_path = "{}".format(vast_file)
-                    self.logger.debug("Download path: {}".format(download_path))
+                    self.logger.debug(
+                        "Download path: {}".format(download_path))
                     download_success = self.download_file(
                         download_path,
                         dropbox_path,
                         shared_url,
                         password,
-                        checksum_check = checksum_check
+                        checksum_check=checksum_check
                     )
                     if download_success is False:
                         failures.append(vast_file)
@@ -270,8 +273,7 @@ class Dropbox:
                 retry_count += 1
 
         return complete_failures
-    
-    
+
     def download_file(
             self,
             download_path,
@@ -280,7 +282,7 @@ class Dropbox:
             password,
             checksum_check=True):
         '''
-        A function to download a single file from Dropbox. 
+        A function to download a single file from Dropbox.
 
         :param download_path: The path where to download the file to.
         :type files_list: str
@@ -433,10 +435,10 @@ class Image:
     def __init__(self, sbid, field, IMAGE_FOLDER, RMS_FOLDER, tiles=False):
         '''Constructor method
         '''
-        
+
         self.logger = logging.getLogger('vasttools.survey.Image')
         self.logger.debug('Created Image instance')
-        
+
         self.sbid = sbid
         self.field = field
         self.RMS_FOLDER = RMS_FOLDER
