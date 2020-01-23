@@ -156,16 +156,6 @@ def filter_files_list(
         filter_df = filter_df[filter_df.file.str.contains("/TILES/")]
         filter_df.reset_index(drop=True, inplace=True)
 
-    if tile_only:
-        logger.debug("Filtering to tiles files only.")
-        filter_df = filter_df[filter_df.file.str.contains("/TILES/")]
-        filter_df.reset_index(drop=True, inplace=True)
-
-    if tile_only:
-        logger.debug("Filtering to tiles files only.")
-        filter_df = filter_df[filter_df.file.str.contains("/TILES/")]
-        filter_df.reset_index(drop=True, inplace=True)
-
     final_list = filter_df.file.tolist()
 
     return final_list
