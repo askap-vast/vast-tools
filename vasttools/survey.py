@@ -343,6 +343,7 @@ class Fields:
 
         self.logger = logging.getLogger('vasttools.survey.Fields')
         self.logger.debug('Created Fields instance')
+        self.logger.debug(FIELD_FILES[epoch])
 
         self.fields = pd.read_csv(FIELD_FILES[epoch])
         # Epoch 99 has some empty beam directions (processing failures)
@@ -371,12 +372,14 @@ class Fields:
         is within max_sep
         :rtype: `pandas.core.frame.DataFrame`, `numpy.ndarray`
         '''
-
+        self.logger.debug(src_coord)
         nearest_beams, seps, _d3d = src_coord.match_to_catalog_sky(
             self.direction)
+        self.logger.debug(seps.deg)
         within_beam = seps.deg < max_sep
         catalog["sbid"] = self.fields["SBID"].iloc[nearest_beams].values
         nearest_fields = self.fields["FIELD_NAME"].iloc[nearest_beams]
+        self.logger.debug(nearest_fields)
         catalog["field_name"] = nearest_fields.values
         catalog["original_index"] = catalog.index.values
         new_catalog = catalog[within_beam].reset_index(drop=True)
@@ -494,4 +497,4 @@ class Image:
             try:
                 self.rms_data = hdul[0].data[0, 0, :, :]
             except Exception as e:
-                self.rms_data = hdul[0].rms_hdu.data
+                self.rms_data = hdul[0].data

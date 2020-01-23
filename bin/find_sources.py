@@ -468,6 +468,7 @@ else:
     src_coords = SkyCoord(catalog['ra'], catalog['dec'], unit=(u.deg, u.deg))
 
 logger.info("Finding fields for {} sources...".format(len(src_coords)))
+logger.debug("Using epoch {}".format(pilot_epoch))
 fields = Fields(pilot_epoch)
 src_fields, coords_mask = fields.find(src_coords, max_sep, catalog)
 
@@ -480,7 +481,12 @@ if len(uniq_fields) == 0:
     sys.exit()
 
 if FIND_FIELDS:
-    fields_cat_file = "{}_racs_fields.csv".format(output_name)
+    if survey == "racs":
+        fields_cat_file = "{}_racs_fields.csv".format(output_name)
+    else:
+        fields_cat_file = "{}_VAST_{:02d}_fields.csv".format(
+            output_name, pilot_epoch)
+
     fields_cat_file = os.path.join(output_name, fields_cat_file)
     fields.write_fields_cat(fields_cat_file)
     sys.exit()
@@ -545,7 +551,7 @@ for uf in uniq_fields:
             if not args.crossmatch_only and not image.image_fail:
                 source.make_postagestamp(
                     image.data,
-                    image.hdu,
+                    image.header,
                     image.wcs,
                     imsize,
                     outfile)
