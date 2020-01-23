@@ -89,7 +89,7 @@ class Source:
         :param img_data: Numpy array containing the image data
         :type img_data: `numpy.ndarray`
         :param header: FITS header data units of the image
-        :type header: `astropy.io.fits.hdu.image.PrimaryHDU`
+        :type header: `astropy.io.fits.header.Header`
         :param wcs: World Coordinate System of the image
         :type wcs: `astropy.wcs.wcs.WCS`
         :param size: Size of the cutout array along each axis
