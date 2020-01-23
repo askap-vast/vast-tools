@@ -484,8 +484,9 @@ if FIND_FIELDS:
     if survey == "racs":
         fields_cat_file = "{}_racs_fields.csv".format(output_name)
     else:
-        fields_cat_file = "{}_VAST_{:02d}_fields.csv".format(output_name,pilot_epoch)
-    
+        fields_cat_file = "{}_VAST_{:02d}_fields.csv".format(
+            output_name, pilot_epoch)
+
     fields_cat_file = os.path.join(output_name, fields_cat_file)
     fields.write_fields_cat(fields_cat_file)
     sys.exit()
