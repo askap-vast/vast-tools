@@ -111,6 +111,11 @@ parser.add_argument(
     help='Crossmatch radius in arcseconds',
     default=15.0)
 parser.add_argument(
+    '--crossmatch-radius-overlay',
+    action="store_true",
+    help=('A circle is placed on all PNG and region/annotation'
+          ' files to represent the crossmatch radius.'))
+parser.add_argument(
     '--use-tiles',
     action="store_true",
     help='Use the individual tiles instead of combined mosaics.')
@@ -560,9 +565,11 @@ for uf in uniq_fields:
             if source.selavy_fail is False:
                 source.filter_selavy_components(imsize)
                 if args.ann:
-                    source.write_ann(outfile)
+                    source.write_ann(outfile,
+                        crossmatch_overlay=args.crossmatch_radius_overlay)
                 if args.reg:
-                    source.write_reg(outfile)
+                    source.write_reg(outfile, 
+                        crossmatch_overlay=args.crossmatch_radius_overlay)
             else:
                 logger.error(
                     "Selavy failed! No region or annotation files "
@@ -591,7 +598,8 @@ for uf in uniq_fields:
                         no_islands=args.png_no_island_labels,
                         label=label,
                         no_colorbar=args.png_no_colorbar,
-                        title=png_title)
+                        title=png_title,
+                        crossmatch_overlay=args.crossmatch_radius_overlay)
 
         if not crossmatch_output_check:
             crossmatch_output = source.selavy_info
