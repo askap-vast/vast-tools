@@ -29,6 +29,7 @@ import numpy as np
 
 matplotlib.pyplot.switch_backend('Agg')
 
+
 class Source:
     '''
     This is a class representation of a catalogued source position
