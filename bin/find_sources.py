@@ -565,10 +565,12 @@ for uf in uniq_fields:
             if source.selavy_fail is False:
                 source.filter_selavy_components(imsize)
                 if args.ann:
-                    source.write_ann(outfile,
+                    source.write_ann(
+                        outfile,
                         crossmatch_overlay=args.crossmatch_radius_overlay)
                 if args.reg:
-                    source.write_reg(outfile, 
+                    source.write_reg(
+                        outfile,
                         crossmatch_overlay=args.crossmatch_radius_overlay)
             else:
                 logger.error(
