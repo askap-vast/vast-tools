@@ -7,7 +7,10 @@ from astropy.visualization import LinearStretch
 from astropy.visualization import AsymmetricPercentileInterval
 from astropy.visualization import PercentileInterval
 from astropy.visualization import ZScaleInterval, ImageNormalize
+from astropy.visualization.wcsaxes import SphericalCircle
 from matplotlib.collections import PatchCollection
+from matplotlib.patches import Patch
+from matplotlib.lines import Line2D
 from matplotlib.patches import Ellipse
 from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
 from astropy.wcs.utils import skycoord_to_pixel
@@ -40,11 +43,11 @@ class Source:
     :type SELAVY_FOLDER: str
     :param vast_pilot: Survey epoch (if applicable)
     :type vast_pilot: int or None
-    :param tiles: `True` if image tiles should be used, \
-    `False` for mosaiced images, defaults to `False`
+    :param tiles: `True` if image tiles should be used,
+        `False` for mosaiced images, defaults to `False`
     :type tiles: bool, optional
-    :param stokesv: `True` if Stokes V information is requested, \
-    `False` for Stokes I, defaults to `False`
+    :param stokesv: `True` if Stokes V information is requested,
+        `False` for Stokes I, defaults to `False`
     :type stokesv: bool, optional
     '''
 
@@ -93,8 +96,8 @@ class Source:
         :param wcs: World Coordinate System of the image
         :type wcs: `astropy.wcs.wcs.WCS`
         :param size: Size of the cutout array along each axis
-        :type size: `astropy.coordinates.angles.Angle` \
-        or tuple of two `Angle` objects
+        :type size: `astropy.coordinates.angles.Angle`
+            or tuple of two `Angle` objects
         :param outfile: Name of output FITS file
         :type outfile: str
         '''
@@ -174,10 +177,12 @@ class Source:
 
         :param crossmatch_radius: Crossmatch radius to use
         :type crossmatch_radius: `astropy.coordinates.angles.Angle`
-        :param stokesv: `True` to crossmatch with Stokes V image, \
-        `False` to match with Stokes I image, defaults to `False`
+        :param stokesv: `True` to crossmatch with Stokes V image,
+            `False` to match with Stokes I image, defaults to `False`
         :type stokesv: bool, optional
         '''
+
+        self.crossmatch_radius = crossmatch_radius
 
         try:
             self.selavy_cat = pd.read_fwf(self.selavypath, skiprows=[1, ])
@@ -222,8 +227,8 @@ class Source:
             selavy_iflux = self.selavy_info['flux_int'].iloc[0]
             selavy_iflux_err = self.selavy_info['flux_int_err'].iloc[0]
             self.logger.info(
-                "Source in selavy catalogue {} {}, {:.3f}+/-{:.3f} mJy \
-                ({:.3f} arcsec offset)".format(
+                "Source in selavy catalogue {} {}, {:.3f}+/-{:.3f} mJy "
+                "({:.3f} arcsec offset)".format(
                     selavy_ra,
                     selavy_dec,
                     selavy_iflux,
@@ -239,13 +244,17 @@ class Source:
         self.selavy_fail = False
         self.selavy_info["has_match"] = self.has_match
 
-    def write_ann(self, outfile):
+    def write_ann(self, outfile, crossmatch_overlay=False):
         '''
         Write a kvis annotation file containing all selavy sources
         within the image.
 
         :param outfile: Name of the file to write
         :type outfile: str
+        :param crossmatch_overlay: If True, a circle is added to the
+            annotation file output denoting the crossmatch radius,
+            defaults to False.
+        :type crossmatch_overlay: bool, optional.
         '''
 
         outfile = outfile.replace(".fits", ".ann")
@@ -253,8 +262,25 @@ class Source:
         with open(outfile, 'w') as f:
             f.write("COORD W\n")
             f.write("PA SKY\n")
-            f.write("COLOR GREEN\n")
             f.write("FONT hershey14\n")
+            f.write("COLOR BLUE\n")
+            f.write("CROSS {0} {1} {2} {2}\n".format(
+                self.src_coord.ra.deg,
+                self.src_coord.dec.deg,
+                3./3600.
+            ))
+            if crossmatch_overlay:
+                try:
+                    f.write("CIRCLE {} {} {}\n".format(
+                        self.src_coord.ra.deg,
+                        self.src_coord.dec.deg,
+                        self.crossmatch_radius.deg
+                    ))
+                except Exception as e:
+                    self.logger.warning(
+                        "Crossmatch circle overlay failed!"
+                        " Has the source been crossmatched?")
+            f.write("COLOR GREEN\n")
             for i, row in self.selavy_cat_cut.iterrows():
                 if row["island_id"].startswith("n"):
                     neg = True
@@ -285,22 +311,41 @@ class Source:
 
         self.logger.info("Wrote annotation file {}.".format(outfile))
 
-    def write_reg(self, outfile):
+    def write_reg(self, outfile, crossmatch_overlay=False):
         '''
         Write a DS9 region file containing all selavy sources within the image
 
         :param outfile: Name of the file to write
         :type outfile: str
+        :param crossmatch_overlay: If True, a circle is added to the region
+            file output denoting the crossmatch radius, defaults to False.
+        :type crossmatch_overlay: bool, optional.
         '''
 
         outfile = outfile.replace(".fits", ".reg")
         with open(outfile, 'w') as f:
             f.write("# Region file format: DS9 version 4.0\n")
-            f.write("global color = green font = \"helvetica 10 normal\" "
-                    "select = 1 highlite = 1 edit = 1 "
-                    "move = 1 delete = 1 include = 1 "
-                    "fixed = 0 source = 1\n")
+            f.write("global color=green font=\"helvetica 10 normal\" "
+                    "select=1 highlite=1 edit=1 "
+                    "move=1 delete=1 include=1 "
+                    "fixed=0 source=1\n")
             f.write("fk5\n")
+            f.write(
+                "point({} {}) # point=x color=blue\n".format(
+                    self.src_coord.ra.deg,
+                    self.src_coord.dec.deg,
+                ))
+            if crossmatch_overlay:
+                try:
+                    f.write("circle({} {} {}) # color=blue\n".format(
+                        self.src_coord.ra.deg,
+                        self.src_coord.dec.deg,
+                        self.crossmatch_radius.deg
+                    ))
+                except Exception as e:
+                    self.logger.warning(
+                        "Crossmatch circle overlay failed!"
+                        " Has the source been crossmatched?")
             for i, row in self.selavy_cat_cut.iterrows():
                 if row["island_id"].startswith("n"):
                     color = "red"
@@ -309,7 +354,7 @@ class Source:
                 ra = row["ra_deg_cont"]
                 dec = row["dec_deg_cont"]
                 f.write(
-                    "ellipse({} {} {} {} {}) # color = {}\n".format(
+                    "ellipse({} {} {} {} {}) # color={}\n".format(
                         ra,
                         dec,
                         float(
@@ -325,8 +370,8 @@ class Source:
                         90.,
                         color))
                 f.write(
-                    "text({} {} \"{}\") # color = {}\n".format(
-                        ra, dec, self._remove_sbid(
+                    "text({} {} \"{}\") # color={}\n".format(
+                        ra-(10./3600.), dec, self._remove_sbid(
                             row["island_id"]), color))
 
         self.logger.info("Wrote region file {}.".format(outfile))
@@ -355,8 +400,8 @@ class Source:
         outside of the image
 
         :param imsize: Size of the image along each axis
-        :type imsize: `astropy.coordinates.angles.Angle` or tuple of two \
-        `Angle` objects
+        :type imsize: `astropy.coordinates.angles.Angle` or tuple of two
+            `Angle` objects
         '''
 
         seps = self.src_coord.separation(self.selavy_sc)
@@ -374,7 +419,8 @@ class Source:
             no_islands=False,
             label="Source",
             no_colorbar=False,
-            title=""):
+            title="",
+            crossmatch_overlay=False):
         '''
         Save a PNG of the image postagestamp
 
@@ -386,24 +432,27 @@ class Source:
         :type zscale: bool
         :param contrast: ZScale contrast to use
         :type contrast: float
-        :param outfile: Name of the file to write to, or the name of the FITS \
-        file
+        :param outfile: Name of the file to write to, or the name of the FITS
+            file
         :type outfile: str
-        :param pa_corr: Correction to apply to ellipse position angle if \
-        needed (in deg). Angle is from x-axis from left to right.
+        :param pa_corr: Correction to apply to ellipse position angle if
+            needed (in deg). Angle is from x-axis from left to right.
         :type pa_corr: float
-        :param no_islands: Disable island lables on the png, defaults to \
-        `False`
+        :param no_islands: Disable island lables on the png, defaults to
+            `False`
         :type no_islands: bool, optional
-        :param label: Figure title (usually the name of the source of \
-        interest), defaults to "Source"
+        :param label: Figure title (usually the name of the source of
+            interest), defaults to "Source"
         :type label: str, optional
-        :param no_colorbar: If `True`, do not show the colorbar on the png, \
-        defaults to `False`
+        :param no_colorbar: If `True`, do not show the colorbar on the png,
+            defaults to `False`
         :type no_colorbar: bool, optional
-        :param title: String to set as title, \
-        defaults to `` where no title will be used.
+        :param title: String to set as title,
+            defaults to `` where no title will be used.
         :type title: str, optional
+        :param crossmatch_overlay: If 'True' then a circle is added to the png
+            plot representing the crossmatch radius, defaults to `False`.
+        :type crossmatch_overlay: bool, optional
         '''
 
         # image has already been loaded to get the fits
@@ -426,7 +475,22 @@ class Source:
         im = ax.imshow(cutout_data, norm=self.img_norms, cmap="gray_r")
         ax.scatter([self.src_coord.ra.deg], [self.src_coord.dec.deg],
                    transform=ax.get_transform('world'), marker="x",
-                   color="r", zorder=10, label=label)
+                   color="C3", zorder=10, label=label)
+        if crossmatch_overlay:
+            try:
+                crossmatch_patch = SphericalCircle(
+                    (self.src_coord.ra, self.src_coord.dec),
+                    self.crossmatch_radius,
+                    transform=ax.get_transform('world'),
+                    label="Crossmatch radius ({:.1f} arcsec)".format(
+                        self.crossmatch_radius.arcsec
+                    ), edgecolor='C4', facecolor='none')
+                ax.add_patch(crossmatch_patch)
+            except Exception as e:
+                self.logger.warning(
+                    "Crossmatch circle png overlay failed!"
+                    " Has the source been crossmatched?")
+                crossmatch_overlay = False
         if selavy and self.selavy_fail is False:
             ax.set_autoscale_on(False)
             # define ellipse properties for clarity, selavy cut will have
@@ -453,8 +517,7 @@ class Source:
                 patches,
                 facecolors="None",
                 edgecolors=colors,
-                linestyle="--",
-                lw=2,
+                lw=1.5,
                 transform=ax.get_transform('world'))
             ax.add_collection(collection, autolim=False)
             # Add island labels, haven't found a better way other than looping
@@ -471,7 +534,23 @@ class Source:
         else:
             self.logger.warning(
                 "PNG: No selavy selected or selavy catalogue failed.")
-        ax.legend()
+        legend_elements = [
+            Line2D(
+                [0], [0], marker='x', color='C3', label=label,
+                markerfacecolor='g', ls="none", markersize=8),
+            Line2D(
+                [0], [0], marker='o', color='C1', label="Selavy Sources",
+                markerfacecolor='none', ls="none", markersize=10)]
+        if crossmatch_overlay:
+            legend_elements.append(
+                Line2D(
+                    [0], [0], marker='o', color='C4',
+                    label="Crossmatch radius ({:.1f} arcsec)".format(
+                        self.crossmatch_radius.arcsec),
+                    markerfacecolor='none', ls="none",
+                    markersize=10)
+            )
+        ax.legend(handles=legend_elements)
         lon = ax.coords[0]
         lat = ax.coords[1]
         lon.set_axislabel("Right Ascension (J2000)")
