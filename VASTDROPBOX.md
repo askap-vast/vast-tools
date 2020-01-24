@@ -105,12 +105,12 @@ Modes 3, 4 and 5 will all place results in an output directory. The name of the 
 
 Take note of the **overwrite** option. By default this is set to `False` such that it will skip files already present in the output directory. Using this option will download all files and overwrite any exisiting files if they are already present.
 
-#### File integrity and retries
+### File integrity and retries
 The script will check the downloaded file checksum against the correct checksum stored in it's own data file. It should also catch exceptions when downloads timeout or there are network issues. In each case if there is a problem the file will be remembered as failed, and when the main download loop has finished, it will attempt again to download any failed files. You can set how many times it retries using the `--max-retries` option.
 
 **Check the log output for any files that failed even after retries!**
 
-#### Filtering the data requested
+### Filtering the data requested
 Note the following options in the Dropbox script:
 ```
   --stokesI-only        Only download STOKES I products. (default: False)
@@ -127,7 +127,7 @@ Note the following options in the Dropbox script:
 ```
 You can use these flags to only obtain the bits of the data you like when you use modes 3, 4 and 5 (see [examples](#examples) below).
 
-#### User Files List
+### User Files List
 When supplying a list of files it needs to follow the directory structure of the Dropbox. It also needs to explictly state the files - i.e. you **cannot use wildcards** (sorry it's the limitations of using Dropbox this way).
 
 For example if I wanted to download a set of STOKES I COMBINED images from EPOCH01, the file would be:

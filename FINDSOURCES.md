@@ -32,6 +32,8 @@ The script assumes that VAST Pilot data are in the same directory structure as t
 ## Warning!
 * Currently the crossmatching matches against **components**. Check your results to see if the component is part of an island (`has_sibling` column will = 1) and query the island catalogue, using the `island_id` if you need further information on your source.
 
+* If you are running this script on ada you also have access to RACS data to search for sources. Remember that RACS is not a VAST data product and you must have explicit permission to obtain and use RACS data. The find-fields option will work for RACS regardless (use `--vast-pilot 0`). If you have previously been given access to RACS data we can help set up the data structure to use with this script.
+
 ## Usage
 
 Most options should be self explanatory. See examples below on how to run the script.
