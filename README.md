@@ -1,6 +1,6 @@
 # vast-tools
 
-A Python module to interact and obtain the VAST Pilot Survey data.
+A Python module to interact with and obtain the VAST Pilot Survey data.
 
 ## Prerequisites
 
