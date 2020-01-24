@@ -15,7 +15,7 @@ setup(
         "pandas>=0.25.3,<0.26",
         "numpy>=1.17.4,<1.18",
         "scipy>=1.4.0,<1.5.0",
-        "astropy<4.0",
+        "astropy>=3.2,<4.1",
         "matplotlib>=3.1.2,<4.0",
         "colorlog>=4.0.2,<5.0",
         "dropbox>=9.4.0,<9.5.0",

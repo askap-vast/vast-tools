@@ -20,36 +20,60 @@ You also need to know the shared Dropbox URL of the Pilot survey and the passwor
 
 ## Usage
 ```
-usage: get_vast_pilot_dbx.py [-h] [--output OUTPUT] [--available-epochs]
-                             [--available-files] [--download-epoch DOWNLOAD_EPOCH]
+usage: get_vast_pilot_dbx.py [-h] [--output OUTPUT] [--available-epochs] [--available-files]
+                             [--download-epoch DOWNLOAD_EPOCH]
+                             [--find-fields-input FIND_FIELDS_INPUT]
+                             [--find-fields-available-files-input FIND_FIELDS_AVAILABLE_FILES_INPUT]
                              [--files-list FILES_LIST] [--overwrite] [--debug]
-                             [--dropbox-config DROPBOX_CONFIG]
-                             [--write-template-dropbox-config] [--include-legacy]
+                             [--dropbox-config DROPBOX_CONFIG] [--write-template-dropbox-config]
+                             [--include-legacy] [--max-retries MAX_RETRIES] [--stokesI-only]
+                             [--stokesV-only] [--skip-xml] [--skip-qc] [--skip-islands]
+                             [--skip-field-images] [--skip-bkg-images] [--skip-rms-images]
+                             [--skip-all-images] [--combined-only] [--tile-only]
 
 optional arguments:
   -h, --help            show this help message and exit
-  --output OUTPUT       Name of the local output directory where files will be saved
-                        (default: vast_dropbox)
+  --output OUTPUT       Name of the local output directory where files will be saved (default:
+                        vast_dropbox)
   --available-epochs    Print out what Epochs are available. (default: False)
-  --available-files     Print out a list of available files on the shared folder.
-                        (default: False)
+  --available-files     Print out a list of available files on the shared folder. (default: False)
   --download-epoch DOWNLOAD_EPOCH
-                        Select to download an entire Epoch directory. Enter as an
-                        integer. (default: 0)
+                        Select to download an entire Epoch directory. Enter as an integer. (default:
+                        0)
+  --find-fields-input FIND_FIELDS_INPUT
+                        Input of fields to fetch (can be obtained from 'find_sources.py'). (default:
+                        None)
+  --find-fields-available-files-input FIND_FIELDS_AVAILABLE_FILES_INPUT
+                        Input already generated list of available files for the download fields
+                        function to save the script gathering all the files available again. I.e.
+                        the output of the '--available-files option. If not given the script will
+                        get the list of files from Dropbox. (default: None)
   --files-list FILES_LIST
                         Input of files to fetch. (default: None)
-  --overwrite           Overwrite any files that already exist in the output
-                        directory. (default: False)
+  --overwrite           Overwrite any files that already exist in the output directory. (default:
+                        False)
   --debug               Set logging level to debug. (default: False)
   --dropbox-config DROPBOX_CONFIG
-                        Dropbox config file to be read in containing the shared url,
-                        password and access token. A template can be generated using
-                        '--write-template-dropbox-config'. (default: dropbox.cfg)
+                        Dropbox config file to be read in containing the shared url, password and
+                        access token. A template can be generated using '--write-template-dropbox-
+                        config'. (default: dropbox.cfg)
   --write-template-dropbox-config
                         Create a template dropbox config file. (default: False)
-  --include-legacy      Include the 'LEGACY' directory when searching through files.
-                        Only valid when using the '--available-files' option.
-                        (default: False)
+  --include-legacy      Include the 'LEGACY' directory when searching through files. Only valid when
+                        using the '--available-files' option. (default: False)
+  --max-retries MAX_RETRIES
+                        How many times to attempt to retry a failed download (default: 2)
+  --stokesI-only        Only download STOKES I products. (default: False)
+  --stokesV-only        Only download STOKES V products. (default: False)
+  --skip-xml            Do not download XML files. (default: False)
+  --skip-qc             Do not download the QC plots. (default: False)
+  --skip-islands        Only download component selavy files. (default: False)
+  --skip-field-images   Do not download field images. (default: False)
+  --skip-bkg-images     Do not download background images. (default: False)
+  --skip-rms-images     Do not download background images. (default: False)
+  --skip-all-images     Only download non-image data products. (default: False)
+  --combined-only       Only download the combined products. (default: False)
+  --tile-only           Only download the combined products. (default: False)
 ```
 
 To run the script needs a Dropbox configuration file, which by default is assumed to be named 'dropbox.cfg'. Create a text file in the following format and enter the respective values:
@@ -69,16 +93,39 @@ A log file will be saved for every run of the script.
 
 ### Modes
 
-There are 4 different ways the script can be used:
+There are 5 different ways the script can be used:
 
 1. `--available-epochs` will only display the currently released epochs. Nothing will be downloaded.
 2. `--available-files` will generate a complete list of all the files avaialble. This is helpful in order to build your own list of files you wish to fetch. Nothing will be downloaded.
 3. `--download-epoch` will download an entire Epoch directory of your choosing.
-4. `--files-list` defines a text file that contains the files you wish to download. Help on this is below.
+4. `--find-fields-input` will download data of the fields you require, using the output from `find_sources.py --find-fields`.
+5. `--files-list` defines a text file that contains the files you wish to download. Help on this is below.
 
-Modes 3 and 4 will all place results in an output directory. The name of the directory can be set with `--output`.
+Modes 3, 4 and 5 will all place results in an output directory. The name of the directory can be set with `--output`.
 
 Take note of the **overwrite** option. By default this is set to `False` such that it will skip files already present in the output directory. Using this option will download all files and overwrite any exisiting files if they are already present.
+
+#### File integrity and retries
+The script will check the downloaded file checksum against the correct checksum stored in it's own data file. It should also catch exceptions when downloads timeout or there are network issues. In each case if there is a problem the file will be remembered as failed, and when the main download loop has finished, it will attempt again to download any failed files. You can set how many times it retries using the `--max-retries` option.
+
+**Check the log output for any files that failed even after retries!**
+
+#### Filtering the data requested
+Note the following options in the Dropbox script:
+```
+  --stokesI-only        Only download STOKES I products. (default: False)
+  --stokesV-only        Only download STOKES V products. (default: False)
+  --skip-xml            Do not download XML files. (default: False)
+  --skip-qc             Do not download the QC plots. (default: False)
+  --skip-islands        Only download component selavy files. (default: False)
+  --skip-field-images   Do not download field images. (default: False)
+  --skip-bkg-images     Do not download background images. (default: False)
+  --skip-rms-images     Do not download background images. (default: False)
+  --skip-all-images     Only download non-image data products. (default: False)
+  --combined-only       Only download the combined products. (default: False)
+  --tile-only           Only download the combined products. (default: False)
+```
+You can use these flags to only obtain the bits of the data you like when you use modes 3, 4 and 5 (see [examples](#examples) below).
 
 #### User Files List
 When supplying a list of files it needs to follow the directory structure of the Dropbox. It also needs to explictly state the files - i.e. you **cannot use wildcards** (sorry it's the limitations of using Dropbox this way).
@@ -114,6 +161,24 @@ Using epoch 01 as an example:
 get_vast_pilot_dbx.py --download-epoch 1 --output VAST_DOWNLOAD
 ```
 This will place the EPOCH01 directory in `VAST_DOWNLOAD`.
+
+#### Downloading fields required
+
+1. Run `find_sources.py` for your sources and you will obtain an output like so:
+    ```
+    ra,dec,name,sbid,field_name
+    321.749583333333,-44.2686111111111,Q 2123-4429B,9673,VAST_2112-43A
+    348.945,-59.0544444444444,ESO 148-IG02,9673,VAST_2256-56A
+    ```
+    **Tip**: The input here is only looking for the `field_name` column. So it's also possible to pass a CSV file with just that column header and the fields you want.
+
+2. Pass this output to `get_vast_pilot_dbx.py` to download only these fields. In addition, in this example we assume that we only want the combined Stokes I field, and rms images and the selavy component files (txt format only).
+
+    The command for this becomes:
+    ```
+    get_vast_pilot_dbx.py --find-fields-input find-fields-ouput.csv --output VAST_DOWNLOAD --stokesI-only --skip-xml --skip-bkg-images --skip-qc --skip-islands --combined-only
+    ```
+    **Tip**: If you've already run `--available-files` you can pass the output to the script in this mode using `--find-fields-available-files-input available_files.txt`. Then the script won't have to re-fetch all the available files.
 
 #### Downloading a user selected set of files
 
