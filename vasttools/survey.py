@@ -26,10 +26,10 @@ warnings.filterwarnings('ignore',
 
 
 RELEASED_EPOCHS = {
-    "1":"01",
-    "2":"02",
-    "3x":"03x",
-    "4x":"04x"
+    "1": "01",
+    "2": "02",
+    "3x": "03x",
+    "4x": "04x"
 }
 
 FIELD_FILES = {

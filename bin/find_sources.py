@@ -77,7 +77,7 @@ parser.add_argument(
 
 parser.add_argument(
     '--vast-pilot',
-    choices=["0",]+sorted(RELEASED_EPOCHS),
+    choices=["0", ]+sorted(RELEASED_EPOCHS),
     help=("Select the VAST Pilot Epoch to query. "
           "Epoch 0 is RACS."),
     default=1)
