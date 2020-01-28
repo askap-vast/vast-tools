@@ -9,6 +9,7 @@ import configparser
 import numpy as np
 import pandas as pd
 
+from vasttools.survey import RELEASED_EPOCHS
 from vasttools.survey import Dropbox
 
 import logging
@@ -182,9 +183,11 @@ parser.add_argument(
 
 parser.add_argument(
     '--download-epoch',
-    type=int,
-    help='Select to download an entire Epoch directory. Enter as an integer.',
-    default=0)
+    type=str,
+    choices=sorted(RELEASED_EPOCHS),
+    help=('Select to download an entire Epoch directory. '
+          'Enter as shown in choices.'),
+    default=None)
 
 parser.add_argument(
     '--find-fields-input',
@@ -428,18 +431,19 @@ elif args.available_files:
     logger.info("All available files written to {}".format(
         vast_list_file_name))
 
-elif args.download_epoch != 0:
+elif args.download_epoch is not None:
     epochs = []
     for i in base_file_list.entries:
         if isinstance(i, dropbox.files.FolderMetadata) and "EPOCH" in i.name:
             epochs.append(int(i.name.split('EPOCH')[-1]))
-    if args.download_epoch not in epochs:
+    dropbox_name = RELEASED_EPOCHS[args.download_epoch]
+    if dropbox_name not in epochs:
         logger.error(
-            "EPOCH{:02d} has not yet been released!".format(
-                args.download_epoch))
+            "EPOCH{} has not yet been released!".format(
+                dropbox_name))
         sys.exit()
     else:
-        epoch_string = "EPOCH{:02d}".format(args.download_epoch)
+        epoch_string = "EPOCH{}".format(dropbox_name)
         epoch_file_list = dbx.files_list_folder(
             "/{}".format(epoch_string), shared_link=shared_link)
         logger.info(
