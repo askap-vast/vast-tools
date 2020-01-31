@@ -5,6 +5,7 @@
 # ./find_sources.py "16:16:00.22 +22:16:04.83" --create-png --imsize 5.0
 # --png-zscale-contrast 0.1 --png-selavy-overlay --use-combined
 from vasttools.survey import Fields, Image
+from vasttools.survey import RELEASED_EPOCHS
 from vasttools.source import Source
 
 import argparse
@@ -77,10 +78,11 @@ def parse_args():
 
     parser.add_argument(
         '--vast-pilot',
-        type=int,
-        help=("Select the VAST Pilot Epoch to query. "
-              "Epoch 0 is RACS."),
-        default=1)
+        type=str,
+        help=("Select the VAST Pilot Epoch(s) to query. Multiple epochs are "
+              "supported by separating with a comma (no space) "
+              "e.g. \"0,1,2\". Epoch 0 is RACS."),
+        default="1")
     parser.add_argument(
         '--imsize',
         type=float,
@@ -281,6 +283,28 @@ def get_output_directory(args):
     os.mkdir(output_name)
     
     return output_name
+    
+def get_epochs(epoch_str):
+    available_epochs = RELEASED_EPOCHS.keys()
+    if "," in epoch_str:
+        epochs = []
+        for epoch in epoch_str.split(','):
+            if epoch in available_epochs:
+                epochs.append(epoch)
+            else:
+                logger.info("Epoch {} is not available. Ignoring.".format(epoch))
+        
+        if len(epochs) == 0:
+            logger.critical("No requested epochs available.")
+            sys.exit()
+    else:
+        if epoch_str in available_epochs:
+            epochs = [epoch_str]
+        else:
+            logger.critical("Epoch {} is not available.".format(epoch_str))
+            sys.exit()
+            
+    return epochs
 
 def get_catalog(args):
     if " " not in args.coords:
@@ -361,17 +385,15 @@ def get_directory_paths(args, pilot_epoch):
     if FIND_FIELDS:
         logger.info("find-fields selected, only outputting field catalogue")
 
-    if pilot_epoch > 0:
-        if pilot_epoch > latest_pilot_epoch:
-            logger.critical("Epoch {} of the VAST Pilot Survey does not exist")
-            sys.exit()
-        survey = "vast_pilot"
-        epoch_str = "EPOCH{:02}".format(pilot_epoch)
-        survey_folder = "PILOT/release/{}".format(epoch_str)
-    else:
+    if pilot_epoch == '0':
         fields_file = "racs_test4.csv"
         survey = "racs"
         survey_folder = "RACS/aug2019_reprocessing"
+    else:
+        survey = "vast_pilot"
+        logger.debug(pilot_epoch)
+        epoch_str = "EPOCH{}".format(RELEASED_EPOCHS[pilot_epoch])
+        survey_folder = "PILOT/release/{}".format(epoch_str)
 
     default_base_folder = "/import/ada1/askap/"
 
@@ -498,8 +520,8 @@ def run_epoch(args, catalog, src_coords, imsize, max_sep, crossmatch_radius, pil
         if survey == "racs":
             fields_cat_file = "{}_racs_fields.csv".format(output_name)
         else:
-            fields_cat_file = "{}_VAST_{:02d}_fields.csv".format(
-                output_name, pilot_epoch)
+            fields_cat_file = "{}_VAST_{}_fields.csv".format(
+                output_name, RELEASED_EPOCHS[pilot_epoch])
 
         fields_cat_file = os.path.join(output_name, fields_cat_file)
         fields.write_fields_cat(fields_cat_file)
@@ -594,10 +616,10 @@ def run_epoch(args, catalog, src_coords, imsize, max_sep, crossmatch_radius, pil
                                 uf.split("_")[-1]
                             )
                         else:
-                            png_title = "{} VAST Pilot {} Epoch {:02d}".format(
+                            png_title = "{} VAST Pilot {} Epoch {}".format(
                                 label,
                                 uf.split("_")[-1],
-                                pilot_epoch
+                                RELEASED_EPOCHS[pilot_epoch]
                             )
                         source.make_png(
                             args.png_selavy_overlay,
@@ -665,8 +687,10 @@ def run_epoch(args, catalog, src_coords, imsize, max_sep, crossmatch_radius, pil
 if __name__ == '__main__':    
     args = parse_args()
     logger = get_logger(args, use_colorlog)
+    logger.debug("Available epochs: {}".format(RELEASED_EPOCHS.keys()))
 
     output_name = get_output_directory(args)
+    epochs = get_epochs(args.vast_pilot)
     
     imsize = Angle(args.imsize, unit=u.arcmin)
     max_sep = args.maxsep
@@ -676,9 +700,7 @@ if __name__ == '__main__':
     src_coords = build_SkyCoord(catalog)
     logger.info("Finding fields for {} sources...".format(len(src_coords)))
     
-    pilot_epoch = args.vast_pilot
-    
-    for pilot_epoch in [0,1,2]:
+    for pilot_epoch in epochs:
         run_epoch(args, catalog, src_coords, imsize, max_sep, crossmatch_radius, pilot_epoch)
     
     

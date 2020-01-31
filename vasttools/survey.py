@@ -24,16 +24,25 @@ warnings.filterwarnings('ignore', category=AstropyWarning, append=True)
 warnings.filterwarnings('ignore',
                         category=AstropyDeprecationWarning, append=True)
 
+RELEASED_EPOCHS = {
+    "0": "RACS",
+    "1": "01",
+    "2": "02",
+    "3x": "03x",
+    "4x": "04x"
+}
 
 FIELD_FILES = {
-    0: pkg_resources.resource_filename(
+    "0": pkg_resources.resource_filename(
         __name__, "./data/racs_info.csv"),
-    1: pkg_resources.resource_filename(
+    "1": pkg_resources.resource_filename(
         __name__, "./data/vast_epoch01_info.csv"),
-    2: pkg_resources.resource_filename(
+    "2": pkg_resources.resource_filename(
         __name__, "./data/vast_epoch02_info.csv"),
-    99: pkg_resources.resource_filename(
-        __name__, "./data/vast_epoch03_info.csv")
+    "3x": pkg_resources.resource_filename(
+        __name__, "./data/vast_epoch03x_info.csv"),
+    "4x": pkg_resources.resource_filename(
+        __name__, "./data/vast_epoch04x_info.csv")
 }
 
 CHECKSUMS_FILE = pkg_resources.resource_filename(
