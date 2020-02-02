@@ -78,7 +78,7 @@ class Source:
             if vast_pilot:
                 self.selavyname = '{}.selavy.components.txt'.format(self.field)
             else:
-                self.selavyname = '{}-selavy.components.txt'.format(self.field)
+                self.selavyname = '{}.taylor.0.components.txt'.format(self.field)
             if stokesv:
                 self.nselavyname = 'n{}-selavy.components.txt'.format(
                     self.field)

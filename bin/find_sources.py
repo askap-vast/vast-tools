@@ -388,7 +388,7 @@ def get_directory_paths(args, pilot_epoch):
     if pilot_epoch == '0':
         fields_file = "racs_test4.csv"
         survey = "racs"
-        survey_folder = "RACS/aug2019_reprocessing"
+        survey_folder = "RACS/release/racs_v3/"
     else:
         survey = "vast_pilot"
         logger.debug(pilot_epoch)
@@ -475,7 +475,7 @@ def get_directory_paths(args, pilot_epoch):
                 "{} does not exist. Only finding fields".format(RMS_FOLDER))
             FIND_FIELDS = True
             
-    return FIND_FIELDS, IMAGE_FOLDER, SELAVY_FOLDER, RMS_FOLDER, survey
+    return FIND_FIELDS, IMAGE_FOLDER, SELAVY_FOLDER, RMS_FOLDER, survey, stokes_param, outfile_prefix
 
 def build_SkyCoord(catalog):
     if catalog['ra'].dtype == np.float64:
@@ -503,7 +503,7 @@ def build_SkyCoord(catalog):
 
 def run_epoch(args, catalog, src_coords, imsize, max_sep, crossmatch_radius, pilot_epoch):
     logger.info("Running epoch {}...".format(pilot_epoch))
-    FIND_FIELDS, IMAGE_FOLDER, SELAVY_FOLDER, RMS_FOLDER, survey = get_directory_paths(args, pilot_epoch)
+    FIND_FIELDS, IMAGE_FOLDER, SELAVY_FOLDER, RMS_FOLDER, survey, stokes_param, outfile_prefix = get_directory_paths(args, pilot_epoch)
     
     fields = Fields(pilot_epoch)
     src_fields, coords_mask = fields.find(src_coords, max_sep, catalog)
@@ -539,12 +539,13 @@ def run_epoch(args, catalog, src_coords, imsize, max_sep, crossmatch_radius, pil
         indexes = srcs.index
         srcs = srcs.reset_index()
         field_src_coords = src_coords[mask]
-
-        if args.vast_pilot:
-            fieldname = "{}.{}.{}".format(uf, epoch_str, stokes_param)
-        else:
+        
+        if survey == 'racs':
             fieldname = uf
-
+        else:
+            epoch_str = "EPOCH{}".format(RELEASED_EPOCHS[pilot_epoch])
+            fieldname = "{}.{}.{}".format(uf, epoch_str, stokes_param)
+        
         image = Image(srcs["sbid"].iloc[0], fieldname,
                       IMAGE_FOLDER, RMS_FOLDER, tiles=args.use_tiles)
 
@@ -565,7 +566,9 @@ def run_epoch(args, catalog, src_coords, imsize, max_sep, crossmatch_radius, pil
             outfile = os.path.join(output_name, outfile)
 
             src_coord = field_src_coords[i]
-
+            
+            if survey == 'racs':
+                args.vast_pilot = None
             source = Source(
                 fieldname,
                 src_coord,
