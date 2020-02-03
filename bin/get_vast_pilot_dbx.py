@@ -510,6 +510,7 @@ elif args.find_fields_input is not None:
         files_list = [i.strip() for i in lines]
     else:
         # We need to search all files so we need to make the main search
+        logger.info("Gathering list of available files, please wait...")
         files_list, folders_list = vast_dropbox.recursive_build_files(
             base_file_list,
             legacy=args.include_legacy)

@@ -234,7 +234,6 @@ class Dropbox:
         :returns: list of files that have failed to download
         :rtype: list
         '''
-        print(max_retries)
         failures = ["FILLER"]
         retry_count = 0
         complete_failures = []
