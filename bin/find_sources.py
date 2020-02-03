@@ -80,7 +80,7 @@ parser.add_argument(
     choices=["0", ]+sorted(RELEASED_EPOCHS),
     help=("Select the VAST Pilot Epoch to query. "
           "Epoch 0 is RACS."),
-    default=1)
+    default="1")
 parser.add_argument(
     '--imsize',
     type=float,
@@ -361,7 +361,7 @@ else:
     # This currently works, but we should include a csv for each epoch to
     # ensure complete correctness
     survey = "vast_pilot"
-    epoch_str = "EPOCH{}".format(pilot_epoch)
+    epoch_str = "EPOCH{}".format(RELEASED_EPOCHS[pilot_epoch])
     survey_folder = "PILOT/release/{}".format(epoch_str)
 
 default_base_folder = "/import/ada1/askap/"
