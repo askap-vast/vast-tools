@@ -26,6 +26,11 @@ For example:
 ```
 --img-folder /Users/askap/my-pilot-data/EPOCH01/COMBINED/STOKESI_IMAGES
 ```
+Alternatively, if your files follow the Dropbox directory structure you can simple specify the base folder for the epoch of interest, for example:
+```
+--base-folder /Users/askap/my-pilot-data/
+```
+which will automatically assign the appropriate values to `IMG_FOLDER`, `RMS_FOLDER` and `CAT_FOLDER`.
 
 The script assumes that VAST Pilot data are in the same directory structure as that used in the Dropbox folder. If you are running `find_sources.py` on your own machine we recommend first using the `--find-fields` flag, downloading the relevant fields to an appropriate base directory and then re-running the script as normal.
 
@@ -86,6 +91,8 @@ optional arguments:
                         represent the crossmatch radius. (default: False)
   --use-tiles           Use the individual tiles instead of combined mosaics. (default:
                         False)
+  --base-folder
+                        Path to base folder if using default directory structure')
   --img-folder IMG_FOLDER
                         Path to folder where images are stored (default: None)
   --rms-folder RMS_FOLDER
