@@ -373,7 +373,8 @@ if pilot_epoch == "0":
         survey_folder = "racs_v3"
 
     if stokes_param == "V":
-        logger.critical("Stokes V is currently unavailable for RACS V3. Using V2 instead")
+        logger.critical(
+            "Stokes V is currently unavailable for RACS V3. Using V2 instead")
         racsv = True
 else:
     survey = "vast_pilot"
@@ -403,9 +404,10 @@ if not IMAGE_FOLDER:
         survey_folder,
         image_dir,
         stokes_dir)
-    
+
     if racsv:
-        IMAGE_FOLDER = "/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/V_mosaic_1.0"
+        IMAGE_FOLDER = ("/import/ada1/askap/RACS/aug2019_reprocessing/"
+                        "COMBINED_MOSAICS/V_mosaic_1.0")
 
 if not os.path.isdir(IMAGE_FOLDER):
     if not FIND_FIELDS:
@@ -427,9 +429,10 @@ if not SELAVY_FOLDER:
     if args.use_tiles:
         SELAVY_FOLDER = ("/import/ada1/askap/RACS/aug2019_reprocessing/"
                          "SELAVY_OUTPUT/stokesI_cat/")
-    
+
     if racsv:
-        SELAVY_FOLDER = "/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/racs_catv"
+        SELAVY_FOLDER = ("/import/ada1/askap/RACS/aug2019_reprocessing/"
+                         "COMBINED_MOSAICS/racs_catv")
 
 if not os.path.isdir(SELAVY_FOLDER):
     if not FIND_FIELDS:
@@ -451,9 +454,10 @@ if not RMS_FOLDER:
         survey_folder,
         image_dir,
         rms_dir)
-    
+
     if racsv:
-        RMS_FOLDER = "/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/V_mosaic_1.0_BANE"
+        RMS_FOLDER = ("/import/ada1/askap/RACS/aug2019_reprocessing/"
+                      "COMBINED_MOSAICS/V_mosaic_1.0_BANE")
 
 if not os.path.isdir(RMS_FOLDER):
     if not FIND_FIELDS:
