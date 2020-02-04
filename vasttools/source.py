@@ -75,8 +75,8 @@ class Source:
                 'linmos.taylor.0.restored.components.txt'
             self.selavyname = selavyname_template.format(self.sbid, self.field)
         else:
-            if vast_pilot:
-                self.selavyname = '{}.selavy.components.txt'.format(self.field)
+            if vast_pilot == "0":
+                self.selavyname = '{}.taylor.0.components.txt'.format(self.field)
             else:
                 self.selavyname = '{}-selavy.components.txt'.format(self.field)
             if stokesv:
