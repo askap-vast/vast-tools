@@ -17,6 +17,7 @@ import pandas as pd
 import warnings
 import shutil
 import io
+import socket
 
 import logging
 import logging.handlers
@@ -56,6 +57,9 @@ except ImportError:
 
 # Force nice
 os.nice(5)
+
+HOST = socket.gethostname()
+HOST_ADA = 'ada.physics.usyd.edu.au'
 
 runstart = datetime.datetime.now()
 
@@ -357,19 +361,27 @@ FIND_FIELDS = args.find_fields
 if FIND_FIELDS:
     logger.info("find-fields selected, only outputting field catalogue")
 
+BASE_FOLDER = args.base_folder
+
 pilot_epoch = args.vast_pilot
 if pilot_epoch == "0":
     survey = "racs"
-    survey_folder = "RACS/aug2019_reprocessing"
+    if not BASE_FOLDER:
+        survey_folder = "RACS/release/racs_v3/"
+    else:
+        survey_folder = "racs_v3"
 else:
-    # This currently works, but we should include a csv for each epoch to
-    # ensure complete correctness
     survey = "vast_pilot"
     epoch_str = "EPOCH{}".format(RELEASED_EPOCHS[pilot_epoch])
-    survey_folder = "PILOT/release/{}".format(epoch_str)
+    if not BASE_FOLDER:
+        survey_folder = "PILOT/release/{}".format(epoch_str)
+    else:
+        survey_folder = epoch_str
 
-BASE_FOLDER = args.base_folder
 if not BASE_FOLDER:
+    if HOST != HOST_ADA:
+        logger.critical("Base folder must be specified if not running on ada")
+        sys.exit()
     BASE_FOLDER = "/import/ada1/askap/"
 
 IMAGE_FOLDER = args.img_folder
