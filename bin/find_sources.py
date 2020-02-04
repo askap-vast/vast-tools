@@ -390,12 +390,8 @@ if not IMAGE_FOLDER:
         image_dir = "FLD_IMAGES/"
         stokes_dir = "stokesI"
     else:
-        if survey == "vast_pilot":
-            image_dir = "COMBINED"
-            stokes_dir = "STOKES{}_IMAGES".format(stokes_param)
-        else:
-            image_dir = "COMBINED_MOSAICS"
-            stokes_dir = "{}_mosaic_1.0".format(stokes_param)
+        image_dir = "COMBINED"
+        stokes_dir = "STOKES{}_IMAGES".format(stokes_param)
 
     IMAGE_FOLDER = os.path.join(
         BASE_FOLDER,
@@ -416,14 +412,8 @@ if not SELAVY_FOLDER:
         SELAVY_FOLDER = ("/import/ada1/askap/RACS/aug2019_reprocessing/"
                          "SELAVY_OUTPUT/stokesI_cat/")
     else:
-        if survey == "vast_pilot":
-            image_dir = "COMBINED"
-            selavy_dir = "STOKES{}_SELAVY".format(stokes_param)
-        else:
-            image_dir = "COMBINED_MOSAICS"
-            selavy_dir = "racs_cat"
-            if args.stokesv:
-                selavy_dir += "v"
+        image_dir = "COMBINED"
+        selavy_dir = "STOKES{}_SELAVY".format(stokes_param)
 
     SELAVY_FOLDER = os.path.join(
         BASE_FOLDER,
@@ -443,12 +433,8 @@ if not RMS_FOLDER:
         logger.warning(
             "Background noise estimates are not supported for tiles.")
         logger.warning("Estimating background from mosaics instead.")
-    if survey == "vast_pilot"::
-        image_dir = "COMBINED"
-        rms_dir = "STOKES{}_RMSMAPS".format(stokes_param)
-    else:
-        image_dir = "COMBINED_MOSAICS"
-        rms_dir = "{}_mosaic_1.0_BANE".format(stokes_param)
+    image_dir = "COMBINED"
+    rms_dir = "STOKES{}_RMSMAPS".format(stokes_param)
 
     RMS_FOLDER = os.path.join(
         BASE_FOLDER,
