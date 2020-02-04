@@ -390,7 +390,7 @@ if not IMAGE_FOLDER:
         image_dir = "FLD_IMAGES/"
         stokes_dir = "stokesI"
     else:
-        if args.vast_pilot:
+        if survey == "vast_pilot":
             image_dir = "COMBINED"
             stokes_dir = "STOKES{}_IMAGES".format(stokes_param)
         else:
@@ -416,7 +416,7 @@ if not SELAVY_FOLDER:
         SELAVY_FOLDER = ("/import/ada1/askap/RACS/aug2019_reprocessing/"
                          "SELAVY_OUTPUT/stokesI_cat/")
     else:
-        if args.vast_pilot:
+        if survey == "vast_pilot":
             image_dir = "COMBINED"
             selavy_dir = "STOKES{}_SELAVY".format(stokes_param)
         else:
@@ -443,7 +443,7 @@ if not RMS_FOLDER:
         logger.warning(
             "Background noise estimates are not supported for tiles.")
         logger.warning("Estimating background from mosaics instead.")
-    if args.vast_pilot:
+    if survey == "vast_pilot"::
         image_dir = "COMBINED"
         rms_dir = "STOKES{}_RMSMAPS".format(stokes_param)
     else:
@@ -520,13 +520,13 @@ for uf in uniq_fields:
     srcs = srcs.reset_index()
     field_src_coords = src_coords[mask]
 
-    if args.vast_pilot:
+    if survey == "vast_pilot":
         fieldname = "{}.{}.{}".format(uf, epoch_str, stokes_param)
     else:
         fieldname = uf
 
     image = Image(srcs["sbid"].iloc[0], fieldname,
-                  IMAGE_FOLDER, RMS_FOLDER, tiles=args.use_tiles)
+                  IMAGE_FOLDER, RMS_FOLDER, pilot_epoch, tiles=args.use_tiles)
 
     if not args.no_background_rms:
         image.get_rms_img()
@@ -551,7 +551,7 @@ for uf in uniq_fields:
             src_coord,
             SBID,
             SELAVY_FOLDER,
-            vast_pilot=args.vast_pilot,
+            vast_pilot=pilot_epoch,
             tiles=args.use_tiles,
             stokesv=args.stokesv)
 

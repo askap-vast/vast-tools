@@ -42,8 +42,8 @@ class Source:
     :type sbid: str
     :param SELAVY_FOLDER: Path to selavy directory
     :type SELAVY_FOLDER: str
-    :param vast_pilot: Survey epoch (if applicable)
-    :type vast_pilot: int or None
+    :param vast_pilot: Survey epoch
+    :type vast_pilot: str
     :param tiles: `True` if image tiles should be used,
         `False` for mosaiced images, defaults to `False`
     :type tiles: bool, optional
@@ -58,7 +58,7 @@ class Source:
             src_coord,
             sbid,
             SELAVY_FOLDER,
-            vast_pilot=None,
+            vast_pilot,
             tiles=False,
             stokesv=False):
         '''Constructor method
