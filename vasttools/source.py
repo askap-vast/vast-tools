@@ -82,7 +82,7 @@ class Source:
                 self.selavyname = '{}.taylor.0.components.txt'.format(
                     self.field)
             else:
-                self.selavyname = '{}-selavy.components.txt'.format(self.field)
+                self.selavyname = '{}.selavy.components.txt'.format(self.field)
 
             self.nselavyname = 'n{}'.format(self.selavyname)
 
