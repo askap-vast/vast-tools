@@ -416,18 +416,17 @@ if not os.path.isdir(IMAGE_FOLDER):
 
 SELAVY_FOLDER = args.cat_folder
 if not SELAVY_FOLDER:
-    if args.use_tiles:
-        SELAVY_FOLDER = ("/import/ada1/askap/RACS/aug2019_reprocessing/"
-                         "SELAVY_OUTPUT/stokesI_cat/")
-    else:
-        image_dir = "COMBINED"
-        selavy_dir = "STOKES{}_SELAVY".format(stokes_param)
+    image_dir = "COMBINED"
+    selavy_dir = "STOKES{}_SELAVY".format(stokes_param)
 
     SELAVY_FOLDER = os.path.join(
         BASE_FOLDER,
         survey_folder,
         image_dir,
         selavy_dir)
+    if args.use_tiles:
+        SELAVY_FOLDER = ("/import/ada1/askap/RACS/aug2019_reprocessing/"
+                         "SELAVY_OUTPUT/stokesI_cat/")
     
     if racsv:
         SELAVY_FOLDER = "/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/racs_catv"
