@@ -80,9 +80,9 @@ class Source:
                     self.field)
             else:
                 self.selavyname = '{}-selavy.components.txt'.format(self.field)
-            if stokesv:
-                self.nselavyname = 'n{}-selavy.components.txt'.format(
-                    self.field)
+
+            self.nselavyname = 'n{}'.format(self.selavyname)
+
         self.selavypath = os.path.join(SELAVY_FOLDER, self.selavyname)
         if stokesv:
             self.nselavypath = os.path.join(SELAVY_FOLDER, self.nselavyname)
