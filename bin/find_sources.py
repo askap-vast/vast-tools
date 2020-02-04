@@ -352,6 +352,7 @@ if args.stokesv and args.use_tiles:
     logger.critical("Run again but remove the option '--use-tiles'.")
     sys.exit()
 
+racsv = False
 if args.stokesv:
     stokes_param = "V"
 else:
@@ -370,6 +371,10 @@ if pilot_epoch == "0":
         survey_folder = "RACS/release/racs_v3/"
     else:
         survey_folder = "racs_v3"
+
+    if stokes_param == "V":
+        logger.critical("Stokes V is currently unavailable for RACS V3. Using V2 instead")
+        racsv = True
 else:
     survey = "vast_pilot"
     epoch_str = "EPOCH{}".format(RELEASED_EPOCHS[pilot_epoch])
@@ -398,6 +403,9 @@ if not IMAGE_FOLDER:
         survey_folder,
         image_dir,
         stokes_dir)
+    
+    if racsv:
+        IMAGE_FOLDER = "/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/V_mosaic_1.0"
 
 if not os.path.isdir(IMAGE_FOLDER):
     if not FIND_FIELDS:
@@ -420,6 +428,9 @@ if not SELAVY_FOLDER:
         survey_folder,
         image_dir,
         selavy_dir)
+    
+    if racsv:
+        SELAVY_FOLDER = "/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/racs_catv"
 
 if not os.path.isdir(SELAVY_FOLDER):
     if not FIND_FIELDS:
@@ -441,6 +452,9 @@ if not RMS_FOLDER:
         survey_folder,
         image_dir,
         rms_dir)
+    
+    if racsv:
+        RMS_FOLDER = "/import/ada1/askap/RACS/aug2019_reprocessing/COMBINED_MOSAICS/V_mosaic_1.0_BANE"
 
 if not os.path.isdir(RMS_FOLDER):
     if not FIND_FIELDS:
