@@ -121,6 +121,10 @@ parser.add_argument(
     action="store_true",
     help='Use the individual tiles instead of combined mosaics.')
 parser.add_argument(
+    '--base-folder'
+    type=str
+    help='Path to base folder if using default directory structure')
+parser.add_argument(
     '--img-folder',
     type=str,
     help='Path to folder where images are stored')
@@ -364,7 +368,9 @@ else:
     epoch_str = "EPOCH{}".format(RELEASED_EPOCHS[pilot_epoch])
     survey_folder = "PILOT/release/{}".format(epoch_str)
 
-default_base_folder = "/import/ada1/askap/"
+BASE_FOLDER = args.base_folder
+if not BASE_FOLDER:
+    BASE_FOLDER="/import/ada1/askap/"
 
 IMAGE_FOLDER = args.img_folder
 if not IMAGE_FOLDER:
@@ -380,7 +386,7 @@ if not IMAGE_FOLDER:
             stokes_dir = "{}_mosaic_1.0".format(stokes_param)
 
     IMAGE_FOLDER = os.path.join(
-        default_base_folder,
+        BASE_FOLDER,
         survey_folder,
         image_dir,
         stokes_dir)
@@ -408,7 +414,7 @@ if not SELAVY_FOLDER:
                 selavy_dir += "v"
 
     SELAVY_FOLDER = os.path.join(
-        default_base_folder,
+        BASE_FOLDER,
         survey_folder,
         image_dir,
         selavy_dir)
@@ -433,7 +439,7 @@ if not RMS_FOLDER:
         rms_dir = "{}_mosaic_1.0_BANE".format(stokes_param)
 
     RMS_FOLDER = os.path.join(
-        default_base_folder,
+        BASE_FOLDER,
         survey_folder,
         image_dir,
         rms_dir)
