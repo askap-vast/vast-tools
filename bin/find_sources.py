@@ -370,7 +370,7 @@ else:
 
 BASE_FOLDER = args.base_folder
 if not BASE_FOLDER:
-    BASE_FOLDER="/import/ada1/askap/"
+    BASE_FOLDER = "/import/ada1/askap/"
 
 IMAGE_FOLDER = args.img_folder
 if not IMAGE_FOLDER:
