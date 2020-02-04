@@ -446,7 +446,8 @@ class Image:
     :type tiles: bool, optional
     '''
 
-    def __init__(self, sbid, field, IMAGE_FOLDER, RMS_FOLDER, vast_pilot, tiles=False):
+    def __init__(self, sbid, field, IMAGE_FOLDER,
+                 RMS_FOLDER, vast_pilot, tiles=False):
         '''Constructor method
         '''
 
@@ -489,10 +490,10 @@ class Image:
         Load the noisemap corresponding to the image
         '''
         if self.vast_pilot == "0":
-            self.rmsname = self.imgname.replace('.fits','.taylor.0.noise.fits')
+            self.rmsname = self.imgname.replace(
+                '.fits', '.taylor.0.noise.fits')
         else:
             self.rmsname = self.imgname.replace('.fits', '_rms.fits')
-            
 
         self.rmspath = os.path.join(self.RMS_FOLDER, self.rmsname)
 

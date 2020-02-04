@@ -76,7 +76,8 @@ class Source:
             self.selavyname = selavyname_template.format(self.sbid, self.field)
         else:
             if vast_pilot == "0":
-                self.selavyname = '{}.taylor.0.components.txt'.format(self.field)
+                self.selavyname = '{}.taylor.0.components.txt'.format(
+                    self.field)
             else:
                 self.selavyname = '{}-selavy.components.txt'.format(self.field)
             if stokesv:
