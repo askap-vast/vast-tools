@@ -436,15 +436,17 @@ class Image:
     :type sbid: str
     :param field: Name of the field
     :type field: str
-    :param tiles: Use image tiles instead of mosaics, defaults to `False`
-    :type tiles: bool, optional
     :param IMAGE_FOLDER: Path to image directory
     :type IMAGE_FOLDER: str
     :param RMS_FOLDER: Path to RMS map directory
     :type RMS_FOLDER: str
+    :param vast_pilot: Survey epoch (if applicable)
+    :type vast_pilot: str
+    :param tiles: Use image tiles instead of mosaics, defaults to `False`
+    :type tiles: bool, optional
     '''
 
-    def __init__(self, sbid, field, IMAGE_FOLDER, RMS_FOLDER, tiles=False):
+    def __init__(self, sbid, field, IMAGE_FOLDER, RMS_FOLDER, vast_pilot, tiles=False):
         '''Constructor method
         '''
 
@@ -454,6 +456,7 @@ class Image:
         self.sbid = sbid
         self.field = field
         self.RMS_FOLDER = RMS_FOLDER
+        self.vast_pilot = vast_pilot
 
         if tiles:
             img_template = 'image.i.SB{}.cont.{}.linmos.taylor.0.restored.fits'
@@ -485,7 +488,11 @@ class Image:
         '''
         Load the noisemap corresponding to the image
         '''
-        self.rmsname = self.imgname.replace('.fits', '_rms.fits')
+        if self.vast_pilot == "0":
+            self.rmsname = self.imgname.replace('.fits','.taylor.0.noise.fits')
+        else:
+            self.rmsname = self.imgname.replace('.fits', '_rms.fits')
+            
 
         self.rmspath = os.path.join(self.RMS_FOLDER, self.rmsname)
 
