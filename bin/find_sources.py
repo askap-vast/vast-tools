@@ -5,6 +5,7 @@
 # ./find_sources.py "16:16:00.22 +22:16:04.83" --create-png --imsize 5.0
 # --png-zscale-contrast 0.1 --png-selavy-overlay --use-combined
 from vasttools.survey import Fields, Image
+from vasttools.survey import RELEASED_EPOCHS
 from vasttools.source import Source
 
 import argparse
@@ -76,10 +77,10 @@ parser.add_argument(
 
 parser.add_argument(
     '--vast-pilot',
-    type=int,
+    choices=["0", ]+sorted(RELEASED_EPOCHS),
     help=("Select the VAST Pilot Epoch to query. "
           "Epoch 0 is RACS."),
-    default=1)
+    default="1")
 parser.add_argument(
     '--imsize',
     type=float,
@@ -328,8 +329,6 @@ imsize = Angle(args.imsize, unit=u.arcmin)
 
 max_sep = args.maxsep
 
-latest_pilot_epoch = 99
-
 if args.use_tiles:
     outfile_prefix = "tile"
 else:
@@ -354,22 +353,16 @@ FIND_FIELDS = args.find_fields
 if FIND_FIELDS:
     logger.info("find-fields selected, only outputting field catalogue")
 
-if args.vast_pilot:
-    pilot_epoch = args.vast_pilot
-    if pilot_epoch > latest_pilot_epoch:
-        logger.critical("Epoch {} of the VAST Pilot Survey does not exist")
-        sys.exit()
-
+pilot_epoch = args.vast_pilot
+if pilot_epoch == "0":
+    survey = "racs"
+    survey_folder = "RACS/aug2019_reprocessing"
+else:
     # This currently works, but we should include a csv for each epoch to
     # ensure complete correctness
     survey = "vast_pilot"
-    epoch_str = "EPOCH{:02}".format(pilot_epoch)
+    epoch_str = "EPOCH{}".format(RELEASED_EPOCHS[pilot_epoch])
     survey_folder = "PILOT/release/{}".format(epoch_str)
-else:
-    pilot_epoch = 0
-    fields_file = "racs_test4.csv"
-    survey = "racs"
-    survey_folder = "RACS/aug2019_reprocessing"
 
 default_base_folder = "/import/ada1/askap/"
 
@@ -489,7 +482,7 @@ if FIND_FIELDS:
     if survey == "racs":
         fields_cat_file = "{}_racs_fields.csv".format(output_name)
     else:
-        fields_cat_file = "{}_VAST_{:02d}_fields.csv".format(
+        fields_cat_file = "{}_VAST_{}_fields.csv".format(
             output_name, pilot_epoch)
 
     fields_cat_file = os.path.join(output_name, fields_cat_file)
@@ -585,7 +578,7 @@ for uf in uniq_fields:
                             uf.split("_")[-1]
                         )
                     else:
-                        png_title = "{} VAST Pilot {} Epoch {:02d}".format(
+                        png_title = "{} VAST Pilot {} Epoch {}".format(
                             label,
                             uf.split("_")[-1],
                             pilot_epoch
