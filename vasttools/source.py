@@ -517,7 +517,7 @@ class Source:
             x = self.selavy_cat_cut["ra_deg_cont"].astype(float)
             y = self.selavy_cat_cut["dec_deg_cont"].astype(float)
 
-            coordinates = np.column_stack((x,y))
+            coordinates = np.column_stack((x, y))
 
             coordinates = cutout_wcs.wcs_world2pix(coordinates, 0)
 
@@ -528,7 +528,8 @@ class Source:
             # defines it vs matplotlib
             colors = ["C2" if c.startswith(
                 "n") else "C1" for c in island_names]
-            patches = [Ellipse(coordinates[i], hh[i], ww[i], 
+            patches = [Ellipse(
+                coordinates[i], hh[i], ww[i],
                 aa[i]) for i in range(len(coordinates))]
             collection = PatchCollection(
                 patches,

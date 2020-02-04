@@ -488,7 +488,7 @@ class Image:
 
             try:
                 self.beam = Beam.from_fits_header(self.header)
-            except:
+            except Exception as e:
                 self.logger.error("Beam information could not be read!")
                 self.beam = None
 
