@@ -13,7 +13,11 @@ The outputs are/can be:
 # Running on your own machine
 By default the script is set up for use on the ada machine. **No local data is required to run the `--find-fields` option which will find which fields that contain your sources of interest.** To create postage FITS files or PNG images, a copy of the survey data is required locally.
 
-You must tell the script where your data is by using the following options:
+You must tell the script where your data is. If your files follow the Dropbox directory structure you can simple specify the base folder for the epoch of interest, for example:
+```
+--base-folder /Users/askap/my-pilot-data/
+```
+which will automatically assign the appropriate values to `IMG_FOLDER`, `RMS_FOLDER` and `CAT_FOLDER`. Alternatively, you can specify each of those variables individually:
 ```
   --img-folder IMG_FOLDER
                         Path to folder where images are stored (default: None)
@@ -26,11 +30,6 @@ For example:
 ```
 --img-folder /Users/askap/my-pilot-data/EPOCH01/COMBINED/STOKESI_IMAGES
 ```
-Alternatively, if your files follow the Dropbox directory structure you can simple specify the base folder for the epoch of interest, for example:
-```
---base-folder /Users/askap/my-pilot-data/
-```
-which will automatically assign the appropriate values to `IMG_FOLDER`, `RMS_FOLDER` and `CAT_FOLDER`.
 
 The script assumes that VAST Pilot data are in the same directory structure as that used in the Dropbox folder. If you are running `find_sources.py` on your own machine we recommend first using the `--find-fields` flag, downloading the relevant fields to an appropriate base directory and then re-running the script as normal.
 
