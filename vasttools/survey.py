@@ -502,7 +502,7 @@ class Image:
         else:
             self.rms_fail = True
             self.logger.error(
-                "{} does not exist! Unable to create postagestamps".format(
+                "{} does not exist! Unable to get noise maps.".format(
                     self.rmspath))
             return
 
