@@ -42,8 +42,8 @@ class Source:
     :type sbid: str
     :param SELAVY_FOLDER: Path to selavy directory
     :type SELAVY_FOLDER: str
-    :param vast_pilot: Survey epoch (if applicable)
-    :type vast_pilot: int or None
+    :param vast_pilot: Survey epoch
+    :type vast_pilot: str
     :param tiles: `True` if image tiles should be used,
         `False` for mosaiced images, defaults to `False`
     :type tiles: bool, optional
@@ -58,7 +58,7 @@ class Source:
             src_coord,
             sbid,
             SELAVY_FOLDER,
-            vast_pilot=None,
+            vast_pilot,
             tiles=False,
             stokesv=False):
         '''Constructor method
@@ -75,13 +75,14 @@ class Source:
                 'linmos.taylor.0.restored.components.txt'
             self.selavyname = selavyname_template.format(self.sbid, self.field)
         else:
-            if vast_pilot:
-                self.selavyname = '{}.selavy.components.txt'.format(self.field)
+            if vast_pilot == "0":
+                self.selavyname = '{}.taylor.0.components.txt'.format(
+                    self.field)
             else:
                 self.selavyname = '{}-selavy.components.txt'.format(self.field)
-            if stokesv:
-                self.nselavyname = 'n{}-selavy.components.txt'.format(
-                    self.field)
+
+            self.nselavyname = 'n{}'.format(self.selavyname)
+
         self.selavypath = os.path.join(SELAVY_FOLDER, self.selavyname)
         if stokesv:
             self.nselavypath = os.path.join(SELAVY_FOLDER, self.nselavyname)

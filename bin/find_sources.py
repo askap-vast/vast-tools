@@ -17,6 +17,7 @@ import pandas as pd
 import warnings
 import shutil
 import io
+import socket
 
 import logging
 import logging.handlers
@@ -56,6 +57,9 @@ except ImportError:
 
 # Force nice
 os.nice(5)
+
+HOST = socket.gethostname()
+HOST_ADA = 'ada.physics.usyd.edu.au'
 
 runstart = datetime.datetime.now()
 
@@ -120,6 +124,10 @@ parser.add_argument(
     '--use-tiles',
     action="store_true",
     help='Use the individual tiles instead of combined mosaics.')
+parser.add_argument(
+    '--base-folder',
+    type=str,
+    help='Path to base folder if using default directory structure')
 parser.add_argument(
     '--img-folder',
     type=str,
@@ -344,6 +352,7 @@ if args.stokesv and args.use_tiles:
     logger.critical("Run again but remove the option '--use-tiles'.")
     sys.exit()
 
+racsv = False
 if args.stokesv:
     stokes_param = "V"
 else:
@@ -353,18 +362,33 @@ FIND_FIELDS = args.find_fields
 if FIND_FIELDS:
     logger.info("find-fields selected, only outputting field catalogue")
 
+BASE_FOLDER = args.base_folder
+
 pilot_epoch = args.vast_pilot
 if pilot_epoch == "0":
     survey = "racs"
-    survey_folder = "RACS/aug2019_reprocessing"
+    if not BASE_FOLDER:
+        survey_folder = "RACS/release/racs_v3/"
+    else:
+        survey_folder = "racs_v3"
+
+    if stokes_param == "V":
+        logger.critical(
+            "Stokes V is currently unavailable for RACS V3. Using V2 instead")
+        racsv = True
 else:
-    # This currently works, but we should include a csv for each epoch to
-    # ensure complete correctness
     survey = "vast_pilot"
     epoch_str = "EPOCH{}".format(RELEASED_EPOCHS[pilot_epoch])
-    survey_folder = "PILOT/release/{}".format(epoch_str)
+    if not BASE_FOLDER:
+        survey_folder = "PILOT/release/{}".format(epoch_str)
+    else:
+        survey_folder = epoch_str
 
-default_base_folder = "/import/ada1/askap/"
+if not BASE_FOLDER:
+    if HOST != HOST_ADA:
+        logger.critical("Base folder must be specified if not running on ada")
+        sys.exit()
+    BASE_FOLDER = "/import/ada1/askap/"
 
 IMAGE_FOLDER = args.img_folder
 if not IMAGE_FOLDER:
@@ -372,18 +396,18 @@ if not IMAGE_FOLDER:
         image_dir = "FLD_IMAGES/"
         stokes_dir = "stokesI"
     else:
-        if args.vast_pilot:
-            image_dir = "COMBINED"
-            stokes_dir = "STOKES{}_IMAGES".format(stokes_param)
-        else:
-            image_dir = "COMBINED_MOSAICS"
-            stokes_dir = "{}_mosaic_1.0".format(stokes_param)
+        image_dir = "COMBINED"
+        stokes_dir = "STOKES{}_IMAGES".format(stokes_param)
 
     IMAGE_FOLDER = os.path.join(
-        default_base_folder,
+        BASE_FOLDER,
         survey_folder,
         image_dir,
         stokes_dir)
+
+    if racsv:
+        IMAGE_FOLDER = ("/import/ada1/askap/RACS/aug2019_reprocessing/"
+                        "COMBINED_MOSAICS/V_mosaic_1.0")
 
 if not os.path.isdir(IMAGE_FOLDER):
     if not FIND_FIELDS:
@@ -394,24 +418,21 @@ if not os.path.isdir(IMAGE_FOLDER):
 
 SELAVY_FOLDER = args.cat_folder
 if not SELAVY_FOLDER:
-    if args.use_tiles:
-        SELAVY_FOLDER = ("/import/ada1/askap/RACS/aug2019_reprocessing/"
-                         "SELAVY_OUTPUT/stokesI_cat/")
-    else:
-        if args.vast_pilot:
-            image_dir = "COMBINED"
-            selavy_dir = "STOKES{}_SELAVY".format(stokes_param)
-        else:
-            image_dir = "COMBINED_MOSAICS"
-            selavy_dir = "racs_cat"
-            if args.stokesv:
-                selavy_dir += "v"
+    image_dir = "COMBINED"
+    selavy_dir = "STOKES{}_SELAVY".format(stokes_param)
 
     SELAVY_FOLDER = os.path.join(
-        default_base_folder,
+        BASE_FOLDER,
         survey_folder,
         image_dir,
         selavy_dir)
+    if args.use_tiles:
+        SELAVY_FOLDER = ("/import/ada1/askap/RACS/aug2019_reprocessing/"
+                         "SELAVY_OUTPUT/stokesI_cat/")
+
+    if racsv:
+        SELAVY_FOLDER = ("/import/ada1/askap/RACS/aug2019_reprocessing/"
+                         "COMBINED_MOSAICS/racs_catv")
 
 if not os.path.isdir(SELAVY_FOLDER):
     if not FIND_FIELDS:
@@ -425,18 +446,18 @@ if not RMS_FOLDER:
         logger.warning(
             "Background noise estimates are not supported for tiles.")
         logger.warning("Estimating background from mosaics instead.")
-    if args.vast_pilot:
-        image_dir = "COMBINED"
-        rms_dir = "STOKES{}_RMSMAPS".format(stokes_param)
-    else:
-        image_dir = "COMBINED_MOSAICS"
-        rms_dir = "{}_mosaic_1.0_BANE".format(stokes_param)
+    image_dir = "COMBINED"
+    rms_dir = "STOKES{}_RMSMAPS".format(stokes_param)
 
     RMS_FOLDER = os.path.join(
-        default_base_folder,
+        BASE_FOLDER,
         survey_folder,
         image_dir,
         rms_dir)
+
+    if racsv:
+        RMS_FOLDER = ("/import/ada1/askap/RACS/aug2019_reprocessing/"
+                      "COMBINED_MOSAICS/V_mosaic_1.0_BANE")
 
 if not os.path.isdir(RMS_FOLDER):
     if not FIND_FIELDS:
@@ -502,13 +523,13 @@ for uf in uniq_fields:
     srcs = srcs.reset_index()
     field_src_coords = src_coords[mask]
 
-    if args.vast_pilot:
+    if survey == "vast_pilot":
         fieldname = "{}.{}.{}".format(uf, epoch_str, stokes_param)
     else:
         fieldname = uf
 
     image = Image(srcs["sbid"].iloc[0], fieldname,
-                  IMAGE_FOLDER, RMS_FOLDER, tiles=args.use_tiles)
+                  IMAGE_FOLDER, RMS_FOLDER, pilot_epoch, tiles=args.use_tiles)
 
     if not args.no_background_rms:
         image.get_rms_img()
@@ -533,7 +554,7 @@ for uf in uniq_fields:
             src_coord,
             SBID,
             SELAVY_FOLDER,
-            vast_pilot=args.vast_pilot,
+            vast_pilot=pilot_epoch,
             tiles=args.use_tiles,
             stokesv=args.stokesv)
 

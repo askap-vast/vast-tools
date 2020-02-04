@@ -13,7 +13,11 @@ The outputs are/can be:
 # Running on your own machine
 By default the script is set up for use on the ada machine. **No local data is required to run the `--find-fields` option which will find which fields that contain your sources of interest.** To create postage FITS files or PNG images, a copy of the survey data is required locally.
 
-You must tell the script where your data is by using the following options:
+You must tell the script where your data is. If your files follow the Dropbox directory structure you can simple specify the base folder for the epoch of interest, for example:
+```
+--base-folder /Users/askap/my-pilot-data/
+```
+which will automatically assign the appropriate values to `IMG_FOLDER`, `RMS_FOLDER` and `CAT_FOLDER`. Alternatively, you can specify each of those variables individually:
 ```
   --img-folder IMG_FOLDER
                         Path to folder where images are stored (default: None)
@@ -86,6 +90,8 @@ optional arguments:
                         represent the crossmatch radius. (default: False)
   --use-tiles           Use the individual tiles instead of combined mosaics. (default:
                         False)
+  --base-folder
+                        Path to base folder if using default directory structure')
   --img-folder IMG_FOLDER
                         Path to folder where images are stored (default: None)
   --rms-folder RMS_FOLDER
