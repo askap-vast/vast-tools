@@ -7,8 +7,11 @@ from astropy.visualization import LinearStretch
 from astropy.visualization import AsymmetricPercentileInterval
 from astropy.visualization import PercentileInterval
 from astropy.visualization import ZScaleInterval, ImageNormalize
+from mpl_toolkits.axes_grid1.anchored_artists import (AnchoredEllipse,
+                                                      AnchoredSizeBar)
 from astropy.visualization.wcsaxes import SphericalCircle
 from matplotlib.collections import PatchCollection
+from astropy.wcs.utils import proj_plane_pixel_scales
 from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
 from matplotlib.patches import Ellipse
@@ -417,12 +420,13 @@ class Source:
             zscale,
             contrast,
             outfile,
-            pa_corr,
+            img_beam,
             no_islands=False,
             label="Source",
             no_colorbar=False,
             title="",
-            crossmatch_overlay=False):
+            crossmatch_overlay=False,
+            hide_beam=False):
         '''
         Save a PNG of the image postagestamp
 
@@ -437,9 +441,9 @@ class Source:
         :param outfile: Name of the file to write to, or the name of the FITS
             file
         :type outfile: str
-        :param pa_corr: Correction to apply to ellipse position angle if
-            needed (in deg). Angle is from x-axis from left to right.
-        :type pa_corr: float
+        :param img_beam: Object containing the beam information of the image,
+            from which the source is being plotted from.
+        :type img_beam: radio_beam.Beam
         :param no_islands: Disable island lables on the png, defaults to
             `False`
         :type no_islands: bool, optional
@@ -455,15 +459,19 @@ class Source:
         :param crossmatch_overlay: If 'True' then a circle is added to the png
             plot representing the crossmatch radius, defaults to `False`.
         :type crossmatch_overlay: bool, optional
+        :param hide_beam: If 'True' then the beam is not plotted onto the png
+            plot, defaults to `False`.
+        :type hide_beam: bool, optional
         '''
 
         # image has already been loaded to get the fits
         outfile = outfile.replace(".fits", ".png")
         # convert data to mJy in case colorbar is used.
         cutout_data = self.cutout.data * 1000.
+        cutout_wcs = self.cutout.wcs
         # create figure
         fig = plt.figure(figsize=(8, 8))
-        ax = fig.add_subplot(1, 1, 1, projection=self.cutout.wcs)
+        ax = fig.add_subplot(1, 1, 1, projection=cutout_wcs)
         # Get the Image Normalisation from zscale, user contrast.
         if zscale:
             self.img_norms = ImageNormalize(
@@ -494,14 +502,25 @@ class Source:
                     " Has the source been crossmatched?")
                 crossmatch_overlay = False
         if selavy and self.selavy_fail is False:
+            pix_scale = proj_plane_pixel_scales(cutout_wcs)
+            sx = pix_scale[0]
+            sy = pix_scale[1]
+            degrees_per_pixel = np.sqrt(sx * sy)
             ax.set_autoscale_on(False)
             # define ellipse properties for clarity, selavy cut will have
             # already been created.
             ww = self.selavy_cat_cut["maj_axis"].astype(float) / 3600.
             hh = self.selavy_cat_cut["min_axis"].astype(float) / 3600.
+            ww /= degrees_per_pixel
+            hh /= degrees_per_pixel
             aa = self.selavy_cat_cut["pos_ang"].astype(float)
             x = self.selavy_cat_cut["ra_deg_cont"].astype(float)
             y = self.selavy_cat_cut["dec_deg_cont"].astype(float)
+
+            coordinates = np.column_stack((x,y))
+
+            coordinates = cutout_wcs.wcs_world2pix(coordinates, 0)
+
             island_names = self.selavy_cat_cut["island_id"].apply(
                 self._remove_sbid)
             # Create ellipses, collect them, add to axis.
@@ -509,18 +528,13 @@ class Source:
             # defines it vs matplotlib
             colors = ["C2" if c.startswith(
                 "n") else "C1" for c in island_names]
-            patches = [Ellipse((x[i], y[i]), ww[i] *
-                               1.1, hh[i] *
-                               1.1, 90. +
-                               (180. -
-                                aa[i]) +
-                               pa_corr) for i in range(len(x))]
+            patches = [Ellipse(coordinates[i], hh[i], ww[i], 
+                aa[i]) for i in range(len(coordinates))]
             collection = PatchCollection(
                 patches,
                 facecolors="None",
                 edgecolors=colors,
-                lw=1.5,
-                transform=ax.get_transform('world'))
+                lw=1.5)
             ax.add_collection(collection, autolim=False)
             # Add island labels, haven't found a better way other than looping
             # at the moment.
@@ -529,7 +543,6 @@ class Source:
                     ax.annotate(
                         island_names[i],
                         val.center,
-                        xycoords=ax.get_transform('world'),
                         annotation_clip=True,
                         color="C0",
                         weight="bold")
@@ -565,6 +578,31 @@ class Source:
             cb.set_label("mJy/beam")
         if title != "":
             ax.set_title(title)
+        if img_beam is not None and hide_beam is False:
+            if cutout_wcs.is_celestial:
+                major = img_beam.major.value
+                minor = img_beam.minor.value
+                pa = img_beam.pa.value
+                pix_scale = proj_plane_pixel_scales(cutout_wcs)
+                sx = pix_scale[0]
+                sy = pix_scale[1]
+                degrees_per_pixel = np.sqrt(sx * sy)
+                minor /= degrees_per_pixel
+                major /= degrees_per_pixel
+
+                png_beam = AnchoredEllipse(
+                    ax.transData, width=minor,
+                    height=major, angle=pa, loc="lower right",
+                    pad=0.5, borderpad=0.4,
+                    frameon=False)
+                png_beam.ellipse.set_edgecolor("k")
+                png_beam.ellipse.set_facecolor("w")
+                png_beam.ellipse.set_linewidth(1.5)
+
+                ax.add_artist(png_beam)
+        else:
+            self.logger.debug("Hiding beam.")
+
         plt.savefig(outfile, bbox_inches="tight")
         self.logger.info("Saved {}".format(outfile))
         plt.close()

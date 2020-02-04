@@ -163,15 +163,13 @@ parser.add_argument(
     default=0.1,
     help='Select contrast to use for zscale.')
 parser.add_argument(
+    '--png-hide-beam',
+    action="store_true",
+    help='Select to not show the image synthesised beam on the plot.')
+parser.add_argument(
     '--png-no-island-labels',
     action="store_true",
     help='Disable island lables on the png.')
-parser.add_argument(
-    '--png-ellipse-pa-corr',
-    type=float,
-    help=("Correction to apply to ellipse position angle if needed (in deg). "
-          "Angle is from x-axis from left to right."),
-    default=0.0)
 parser.add_argument(
     '--png-no-colorbar',
     action="store_true",
@@ -610,12 +608,13 @@ for uf in uniq_fields:
                         args.png_use_zscale,
                         args.png_zscale_contrast,
                         outfile,
-                        args.png_ellipse_pa_corr,
+                        image.beam,
                         no_islands=args.png_no_island_labels,
                         label=label,
                         no_colorbar=args.png_no_colorbar,
                         title=png_title,
-                        crossmatch_overlay=args.crossmatch_radius_overlay)
+                        crossmatch_overlay=args.crossmatch_radius_overlay,
+                        hide_beam=args.png_hide_beam)
 
         if not crossmatch_output_check:
             crossmatch_output = source.selavy_info
