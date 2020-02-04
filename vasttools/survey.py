@@ -19,6 +19,7 @@ from astropy.coordinates import SkyCoord
 from astropy.io import fits
 from astropy.wcs import WCS
 from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
+from radio_beam import Beam
 
 warnings.filterwarnings('ignore', category=AstropyWarning, append=True)
 warnings.filterwarnings('ignore',
@@ -484,6 +485,12 @@ class Image:
                 self.data = hdul[0].data[0, 0, :, :]
             except Exception as e:
                 self.data = hdul[0].data
+
+            try:
+                self.beam = Beam.from_fits_header(self.header)
+            except Exception as e:
+                self.logger.error("Beam information could not be read!")
+                self.beam = None
 
     def get_rms_img(self):
         '''
