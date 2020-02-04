@@ -125,8 +125,8 @@ parser.add_argument(
     action="store_true",
     help='Use the individual tiles instead of combined mosaics.')
 parser.add_argument(
-    '--base-folder'
-    type=str
+    '--base-folder',
+    type=str,
     help='Path to base folder if using default directory structure')
 parser.add_argument(
     '--img-folder',
