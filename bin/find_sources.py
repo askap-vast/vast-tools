@@ -457,10 +457,11 @@ def get_outfile_prefix(args):
 
     return outfile_prefix
 
-
-def get_directory_paths(args, pilot_epoch, stokes_param):
+class EpochInfo:
     '''
-    Get paths to directories
+    This is a class representation of various information about a particular
+    epoch query including the relevant folders, whether to only find fields,
+    the survey and epoch.
 
     :param args: Arguments namespace
     :type args: `argparse.Namespace`
@@ -468,119 +469,136 @@ def get_directory_paths(args, pilot_epoch, stokes_param):
     :type pilot_epoch: str
     :param stokes_param: Stokes parameter (I or V)
     :type stokes_param: str
-
-    :returns:
     '''
+    
+    def __init__(self, args, pilot_epoch, stokes_param):
+        FIND_FIELDS = args.find_fields
+        if FIND_FIELDS:
+            logger.info(
+                "find-fields selected, only outputting field catalogue")
 
-    FIND_FIELDS = args.find_fields
-    if FIND_FIELDS:
-        logger.info("find-fields selected, only outputting field catalogue")
+        BASE_FOLDER = args.base_folder
+        IMAGE_FOLDER = args.img_folder
+        SELAVY_FOLDER = args.cat_folder
+        RMS_FOLDER = args.rms_folder
+        
+        self.use_tiles = args.use_tiles
+        self.pilot_epoch = pilot_epoch
+        self.stokes_param = stokes_param
+        
+        racsv = False
+        
+        if pilot_epoch == "0":
+            survey = "racs"
+            epoch_str = "RACS"
+            if not BASE_FOLDER:
+                survey_folder = "RACS/release/racs_v3/"
+            else:
+                survey_folder = "racs_v3"
 
-    BASE_FOLDER = args.base_folder
-    racsv = False
-    if pilot_epoch == "0":
-        survey = "racs"
-        epoch_str = "RACS"
+            if stokes_param == "V":
+                logger.critical(
+                    "Stokes V is currently unavailable for RACS V3."
+                    "Using V2 instead")
+                racsv = True
+        else:
+            survey = "vast_pilot"
+            epoch_str = "EPOCH{}".format(RELEASED_EPOCHS[pilot_epoch])
+            if not BASE_FOLDER:
+                survey_folder = "PILOT/release/{}".format(epoch_str)
+            else:
+                survey_folder = epoch_str
+        
+        self.survey = survey
+        self.epoch_str = epoch_str
+        self.survey_folder = survey_folder
+        self.racsv = racsv
+        
         if not BASE_FOLDER:
-            survey_folder = "RACS/release/racs_v3/"
-        else:
-            survey_folder = "racs_v3"
+            if HOST != HOST_ADA:
+                logger.critical(
+                    "Base folder must be specified if not running on ada")
+                sys.exit()
+            BASE_FOLDER = "/import/ada1/askap/"
 
-        if stokes_param == "V":
-            logger.critical(
-                "Stokes V is currently unavailable for RACS V3."
-                "Using V2 instead")
-            racsv = True
-    else:
-        survey = "vast_pilot"
-        epoch_str = "EPOCH{}".format(RELEASED_EPOCHS[pilot_epoch])
-        if not BASE_FOLDER:
-            survey_folder = "PILOT/release/{}".format(epoch_str)
-        else:
-            survey_folder = epoch_str
+        
+        if not IMAGE_FOLDER:
+            if self.use_tiles:
+                image_dir = "FLD_IMAGES/"
+                stokes_dir = "stokesI"
+            else:
+                image_dir = "COMBINED"
+                stokes_dir = "STOKES{}_IMAGES".format(stokes_param)
 
-    if not BASE_FOLDER:
-        if HOST != HOST_ADA:
-            logger.critical(
-                "Base folder must be specified if not running on ada")
-            sys.exit()
-        BASE_FOLDER = "/import/ada1/askap/"
+            IMAGE_FOLDER = os.path.join(
+                BASE_FOLDER,
+                survey_folder,
+                image_dir,
+                stokes_dir)
 
-    IMAGE_FOLDER = args.img_folder
-    if not IMAGE_FOLDER:
-        if args.use_tiles:
-            image_dir = "FLD_IMAGES/"
-            stokes_dir = "stokesI"
-        else:
+            if self.racsv:
+                IMAGE_FOLDER = ("/import/ada1/askap/RACS/aug2019_reprocessing/"
+                                "COMBINED_MOSAICS/V_mosaic_1.0")
+
+        if not os.path.isdir(IMAGE_FOLDER):
+            if not FIND_FIELDS:
+                logger.critical(
+                    "{} does not exist. Only finding fields".format(IMAGE_FOLDER))
+                FIND_FIELDS = True
+
+        
+        if not SELAVY_FOLDER:
             image_dir = "COMBINED"
-            stokes_dir = "STOKES{}_IMAGES".format(stokes_param)
+            selavy_dir = "STOKES{}_SELAVY".format(stokes_param)
 
-        IMAGE_FOLDER = os.path.join(
-            BASE_FOLDER,
-            survey_folder,
-            image_dir,
-            stokes_dir)
+            SELAVY_FOLDER = os.path.join(
+                BASE_FOLDER,
+                survey_folder,
+                image_dir,
+                selavy_dir)
+            if self.use_tiles:
+                SELAVY_FOLDER = ("/import/ada1/askap/RACS/aug2019_reprocessing/"
+                                 "SELAVY_OUTPUT/stokesI_cat/")
 
-        if racsv:
-            IMAGE_FOLDER = ("/import/ada1/askap/RACS/aug2019_reprocessing/"
-                            "COMBINED_MOSAICS/V_mosaic_1.0")
+            if racsv:
+                SELAVY_FOLDER = ("/import/ada1/askap/RACS/aug2019_reprocessing/"
+                                 "COMBINED_MOSAICS/racs_catv")
 
-    if not os.path.isdir(IMAGE_FOLDER):
-        if not FIND_FIELDS:
-            logger.critical(
-                "{} does not exist. Only finding fields".format(IMAGE_FOLDER))
-            FIND_FIELDS = True
+        if not os.path.isdir(SELAVY_FOLDER):
+            if not FIND_FIELDS:
+                logger.critical(
+                    "{} does not exist. Only finding fields".format(SELAVY_FOLDER))
+                FIND_FIELDS = True
 
-    SELAVY_FOLDER = args.cat_folder
-    if not SELAVY_FOLDER:
-        image_dir = "COMBINED"
-        selavy_dir = "STOKES{}_SELAVY".format(stokes_param)
+        
+        if not RMS_FOLDER:
+            if self.use_tiles:
+                logger.warning(
+                    "Background noise estimates are not supported for tiles.")
+                logger.warning("Estimating background from mosaics instead.")
+            image_dir = "COMBINED"
+            rms_dir = "STOKES{}_RMSMAPS".format(stokes_param)
 
-        SELAVY_FOLDER = os.path.join(
-            BASE_FOLDER,
-            survey_folder,
-            image_dir,
-            selavy_dir)
-        if args.use_tiles:
-            SELAVY_FOLDER = ("/import/ada1/askap/RACS/aug2019_reprocessing/"
-                             "SELAVY_OUTPUT/stokesI_cat/")
+            RMS_FOLDER = os.path.join(
+                BASE_FOLDER,
+                survey_folder,
+                image_dir,
+                rms_dir)
 
-        if racsv:
-            SELAVY_FOLDER = ("/import/ada1/askap/RACS/aug2019_reprocessing/"
-                             "COMBINED_MOSAICS/racs_catv")
+            if racsv:
+                RMS_FOLDER = ("/import/ada1/askap/RACS/aug2019_reprocessing/"
+                              "COMBINED_MOSAICS/V_mosaic_1.0_BANE")
 
-    if not os.path.isdir(SELAVY_FOLDER):
-        if not FIND_FIELDS:
-            logger.critical(
-                "{} does not exist. Only finding fields".format(SELAVY_FOLDER))
-            FIND_FIELDS = True
-
-    RMS_FOLDER = args.rms_folder
-    if not RMS_FOLDER:
-        if args.use_tiles:
-            logger.warning(
-                "Background noise estimates are not supported for tiles.")
-            logger.warning("Estimating background from mosaics instead.")
-        image_dir = "COMBINED"
-        rms_dir = "STOKES{}_RMSMAPS".format(stokes_param)
-
-        RMS_FOLDER = os.path.join(
-            BASE_FOLDER,
-            survey_folder,
-            image_dir,
-            rms_dir)
-
-        if racsv:
-            RMS_FOLDER = ("/import/ada1/askap/RACS/aug2019_reprocessing/"
-                          "COMBINED_MOSAICS/V_mosaic_1.0_BANE")
-
-    if not os.path.isdir(RMS_FOLDER):
-        if not FIND_FIELDS:
-            logger.critical(
-                "{} does not exist. Only finding fields".format(RMS_FOLDER))
-            FIND_FIELDS = True
-
-    return FIND_FIELDS, IMAGE_FOLDER, SELAVY_FOLDER, RMS_FOLDER, survey, epoch_str
+        if not os.path.isdir(RMS_FOLDER):
+            if not FIND_FIELDS:
+                logger.critical(
+                    "{} does not exist. Only finding fields".format(RMS_FOLDER))
+                FIND_FIELDS = True
+        
+        self.FIND_FIELDS = FIND_FIELDS
+        self.IMAGE_FOLDER = IMAGE_FOLDER
+        self.SELAVY_FOLDER = SELAVY_FOLDER
+        self.RMS_FOLDER = RMS_FOLDER
 
 
 def build_SkyCoord(catalog):
@@ -625,8 +643,10 @@ def build_SkyCoord(catalog):
 
 def run_epoch(args, catalog, src_coords, imsize, max_sep, crossmatch_radius,
               pilot_epoch, outfile_prefix, output_dir, stokes_param):
-    FIND_FIELDS, IMAGE_FOLDER, SELAVY_FOLDER, RMS_FOLDER, survey, epoch_str = get_directory_paths(
-        args, pilot_epoch, stokes_param)
+        
+    EPOCH_INFO = EpochInfo(args, pilot_epoch, stokes_param)
+    survey = EPOCH_INFO.survey
+    epoch_str = EPOCH_INFO.epoch_str
     logger.info("Querying {}".format(epoch_str))
 
     fields = Fields(pilot_epoch)
@@ -641,7 +661,7 @@ def run_epoch(args, catalog, src_coords, imsize, max_sep, crossmatch_radius,
 
         return
 
-    if FIND_FIELDS:
+    if EPOCH_INFO.FIND_FIELDS:
         if survey == "racs":
             fields_cat_file = "{}_racs_fields.csv".format(output_dir)
         else:
@@ -673,8 +693,8 @@ def run_epoch(args, catalog, src_coords, imsize, max_sep, crossmatch_radius,
         else:
             fieldname = uf
 
-        image = Image(srcs["sbid"].iloc[0], fieldname, IMAGE_FOLDER,
-                      RMS_FOLDER, pilot_epoch, tiles=args.use_tiles)
+        image = Image(srcs["sbid"].iloc[0], fieldname, EPOCH_INFO.IMAGE_FOLDER,
+                      EPOCH_INFO.RMS_FOLDER, pilot_epoch, tiles=args.use_tiles)
 
         if not args.no_background_rms:
             image.get_rms_img()
@@ -698,7 +718,7 @@ def run_epoch(args, catalog, src_coords, imsize, max_sep, crossmatch_radius,
                 fieldname,
                 src_coord,
                 SBID,
-                SELAVY_FOLDER,
+                EPOCH_INFO.SELAVY_FOLDER,
                 vast_pilot=pilot_epoch,
                 tiles=args.use_tiles,
                 stokesv=args.stokesv)
