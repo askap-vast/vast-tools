@@ -67,11 +67,11 @@ runstart = datetime.datetime.now()
 def parse_args():
     '''
     Parse arguments
-    
+
     :returns: Argument namespace
     :rtype: `argparse.Namespace`
     '''
-    
+
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
@@ -90,8 +90,6 @@ def parse_args():
 
     parser.add_argument(
         '--vast-pilot',
-        #nargs='+',
-        #choices=["0", ]+sorted(RELEASED_EPOCHS),
         type=str,
         help=("Select the VAST Pilot Epoch to query. "
               "Epoch 0 is RACS."),
@@ -212,7 +210,7 @@ def parse_args():
     parser.add_argument(
         '--process-matches',
         action="store_true",
-        help='Only produce data products for sources that have a selavy match.')
+        help='Only produce data products for sources with a selavy match.')
     parser.add_argument(
         '--debug',
         action="store_true",
@@ -231,48 +229,50 @@ def parse_args():
         help=("Overwrite the output directory if it already exists."))
 
     args = parser.parse_args()
-    
+
     return args
+
 
 def get_epochs(epoch_str):
     '''
     Parse the list of epochs to query.
-    
+
     :param epoch_str: Epochs to query, separated by commas (e.g. '1,2')
     :type epoch_str: str
-    
+
     :returns: Epochs to query, as a list of string
     :rtype: list
     '''
-    
-    available_epochs = ["0", ]+sorted(RELEASED_EPOCHS)
+
+    available_epochs = ["0", ] + sorted(RELEASED_EPOCHS)
     epochs = []
-    
+
     for epoch in epoch_str.split(','):
         if epoch in available_epochs:
-                epochs.append(epoch)
+            epochs.append(epoch)
         else:
             logger.info("Epoch {} is not available. Ignoring.".format(epoch))
-    
+
     if len(epochs) == 0:
         logger.critical("No requested epochs are available")
         sys.exit()
-            
+
     return epochs
+
 
 def get_logger(args, use_colorlog=False):
     '''
     Set up the logger
-    
+
     :param args: Arguments namespace
     :type args: `argparse.Namespace`
     :param usecolorlog: Use colourful logging scheme, defaults to False
     :type usecolorlog: bool, optional
-    
+
     :returns: Logger
     :rtype: `logging.RootLogger`
     '''
-    
+
     logger = logging.getLogger()
     s = logging.StreamHandler()
     fh = logging.FileHandler(
@@ -312,21 +312,21 @@ def get_logger(args, use_colorlog=False):
     logger.addHandler(s)
     logger.addHandler(fh)
     logger.setLevel(logging.DEBUG)
-    
+
     return logger
 
 
 def get_output_directory(args):
     '''
     Build the output directory
-    
+
     :param args: Arguments namespace
     :type args: `argparse.Namespace`
-    
+
     :returns: Output directory
     :rtype: str
     '''
-    
+
     output_dir = args.out_folder
     if os.path.isdir(output_dir):
         if args.clobber:
@@ -344,21 +344,21 @@ def get_output_directory(args):
 
     logger.info("Creating directory '{}'.".format(output_dir))
     os.mkdir(output_dir)
-    
+
     return output_dir
 
 
 def build_catalog(args):
     '''
     Build the catalogue of target sources
-    
+
     :param args: Arguments namespace
     :type args: `argparse.Namespace`
-    
+
     :returns: Catalogue of target sources
     :rtype: `pandas.core.frame.DataFrame`
     '''
-    
+
     if " " not in args.coords:
         logger.info("Loading file {}".format(args.coords))
         # Give explicit check to file existence
@@ -371,7 +371,8 @@ def build_catalog(args):
             catalog = pd.read_csv(user_file, comment="#")
             catalog.columns = map(str.lower, catalog.columns)
             if ("ra" not in catalog.columns) or ("dec" not in catalog.columns):
-                logger.critical("Cannot find one of 'ra' or 'dec' in input file.")
+                logger.critical(
+                    "Cannot find one of 'ra' or 'dec' in input file.")
                 logger.critical("Please check column headers!")
                 sys.exit()
             if "name" not in catalog.columns:
@@ -409,36 +410,38 @@ def build_catalog(args):
         catalog = pd.DataFrame.from_dict(catalog_dict)
 
     catalog['name'] = catalog['name'].astype(str)
-    
+
     return catalog
+
 
 def get_stokes_param(stokesv):
     '''
     :param stokesv: Stokes V argument
     :type stokesv: bool
-    
+
     :returns: Stokes V string
     :rtype: str
     '''
-    
+
     if args.stokesv:
         stokes_param = "V"
     else:
         stokes_param = "I"
-    
+
     return stokes_param
-    
+
+
 def get_outfile_prefix(args):
     '''
     Return general parameters of the requested survey
-    
+
     :param args: Arguments namespace
     :type args: `argparse.Namespace`
-    
+
     :returns: prefix for output file
     :rtype: str
     '''
-    
+
     if args.stokesv and args.use_tiles:
         logger.critical(
             "Stokes V can only be used with combined mosaics at the moment.")
@@ -451,23 +454,24 @@ def get_outfile_prefix(args):
         outfile_prefix = "combined"
         if args.stokesv:
             outfile_prefix += "_stokesv"
-    
+
     return outfile_prefix
-    
+
+
 def get_directory_paths(args, pilot_epoch, stokes_param):
     '''
     Get paths to directories
-    
+
     :param args: Arguments namespace
     :type args: `argparse.Namespace`
     :param pilot_epoch: Pilot epoch (0 for RACS)
     :type pilot_epoch: str
     :param stokes_param: Stokes parameter (I or V)
     :type stokes_param: str
-    
+
     :returns:
     '''
-    
+
     FIND_FIELDS = args.find_fields
     if FIND_FIELDS:
         logger.info("find-fields selected, only outputting field catalogue")
@@ -484,7 +488,8 @@ def get_directory_paths(args, pilot_epoch, stokes_param):
 
         if stokes_param == "V":
             logger.critical(
-                "Stokes V is currently unavailable for RACS V3. Using V2 instead")
+                "Stokes V is currently unavailable for RACS V3."
+                "Using V2 instead")
             racsv = True
     else:
         survey = "vast_pilot"
@@ -496,7 +501,8 @@ def get_directory_paths(args, pilot_epoch, stokes_param):
 
     if not BASE_FOLDER:
         if HOST != HOST_ADA:
-            logger.critical("Base folder must be specified if not running on ada")
+            logger.critical(
+                "Base folder must be specified if not running on ada")
             sys.exit()
         BASE_FOLDER = "/import/ada1/askap/"
 
@@ -524,7 +530,6 @@ def get_directory_paths(args, pilot_epoch, stokes_param):
             logger.critical(
                 "{} does not exist. Only finding fields".format(IMAGE_FOLDER))
             FIND_FIELDS = True
-
 
     SELAVY_FOLDER = args.cat_folder
     if not SELAVY_FOLDER:
@@ -574,20 +579,21 @@ def get_directory_paths(args, pilot_epoch, stokes_param):
             logger.critical(
                 "{} does not exist. Only finding fields".format(RMS_FOLDER))
             FIND_FIELDS = True
-    
+
     return FIND_FIELDS, IMAGE_FOLDER, SELAVY_FOLDER, RMS_FOLDER, survey, epoch_str
-    
+
+
 def build_SkyCoord(catalog):
     '''
     Create a SkyCoord array for each target source
-    
+
     :param catalog: Catalogue of target sources
     :type catalog: `pandas.core.frame.DataFrame`
-    
+
     :returns: Target source SkyCoord
     :rtype: `astropy.coordinates.sky_coordinate.SkyCoord`
     '''
-    
+
     if catalog['ra'].dtype == np.float64:
         hms = False
         deg = True
@@ -607,14 +613,22 @@ def build_SkyCoord(catalog):
                 u.hourangle,
                 u.deg))
     else:
-        src_coords = SkyCoord(catalog['ra'], catalog['dec'], unit=(u.deg, u.deg))
-    
+        src_coords = SkyCoord(
+            catalog['ra'],
+            catalog['dec'],
+            unit=(
+                u.deg,
+                u.deg))
+
     return src_coords
 
-def run_epoch(args, catalog, src_coords, imsize, max_sep, crossmatch_radius, pilot_epoch, outfile_prefix, output_dir, stokes_param):
-    FIND_FIELDS, IMAGE_FOLDER, SELAVY_FOLDER, RMS_FOLDER, survey, epoch_str = get_directory_paths(args, pilot_epoch, stokes_param)
+
+def run_epoch(args, catalog, src_coords, imsize, max_sep, crossmatch_radius,
+              pilot_epoch, outfile_prefix, output_dir, stokes_param):
+    FIND_FIELDS, IMAGE_FOLDER, SELAVY_FOLDER, RMS_FOLDER, survey, epoch_str = get_directory_paths(
+        args, pilot_epoch, stokes_param)
     logger.info("Querying {}".format(epoch_str))
-    
+
     fields = Fields(pilot_epoch)
     src_fields, coords_mask = fields.find(src_coords, max_sep, catalog)
 
@@ -624,7 +638,7 @@ def run_epoch(args, catalog, src_coords, imsize, max_sep, crossmatch_radius, pil
 
     if len(uniq_fields) == 0:
         logger.error("Source(s) not in Survey!")
-        
+
         return
 
     if FIND_FIELDS:
@@ -636,7 +650,7 @@ def run_epoch(args, catalog, src_coords, imsize, max_sep, crossmatch_radius, pil
 
         fields_cat_file = os.path.join(output_dir, fields_cat_file)
         fields.write_fields_cat(fields_cat_file)
-        
+
         return
 
     crossmatch_output_check = False
@@ -644,7 +658,8 @@ def run_epoch(args, catalog, src_coords, imsize, max_sep, crossmatch_radius, pil
     logger.info("Performing crossmatching for sources, please wait...")
 
     for uf in uniq_fields:
-        logger.info("-----------------------------------------------------------")
+        logger.info(
+            "-----------------------------------------------------------")
 
         mask = src_fields["field_name"] == uf
         srcs = src_fields[mask]
@@ -653,12 +668,13 @@ def run_epoch(args, catalog, src_coords, imsize, max_sep, crossmatch_radius, pil
         field_src_coords = src_coords[mask]
 
         if survey == "vast_pilot":
-            fieldname = "{}.EPOCH{}.{}".format(uf, RELEASED_EPOCHS[pilot_epoch], stokes_param)
+            fieldname = "{}.EPOCH{}.{}".format(
+                uf, RELEASED_EPOCHS[pilot_epoch], stokes_param)
         else:
             fieldname = uf
 
-        image = Image(srcs["sbid"].iloc[0], fieldname,
-                      IMAGE_FOLDER, RMS_FOLDER, pilot_epoch, tiles=args.use_tiles)
+        image = Image(srcs["sbid"].iloc[0], fieldname, IMAGE_FOLDER,
+                      RMS_FOLDER, pilot_epoch, tiles=args.use_tiles)
 
         if not args.no_background_rms:
             image.get_rms_img()
@@ -773,13 +789,17 @@ def run_epoch(args, catalog, src_coords, imsize, max_sep, crossmatch_radius, pil
     logger.info("-----------------------------------------------------------")
     logger.info("Summary")
     logger.info("-----------------------------------------------------------")
-    logger.info("Number of sources searched for: {}".format(len(catalog.index)))
-    logger.info("Number of sources in survey: {}".format(len(src_fields.index)))
+    logger.info("Number of sources searched for: {}".format(
+        len(catalog.index)))
+    logger.info("Number of sources in survey: {}".format(
+        len(src_fields.index)))
     logger.info("Number of sources with matches < {} arcsec: {}".format(
         crossmatch_radius.arcsec,
         len(crossmatch_output[~crossmatch_output["island_id"].isna()].index)))
 
-    logger.info("Processing took {:.1f} minutes.".format(runtime.seconds / 60.))
+    logger.info(
+        "Processing took {:.1f} minutes.".format(
+            runtime.seconds / 60.))
 
     # Create and write final crossmatch csv
     if args.selavy_simple:
@@ -790,30 +810,42 @@ def run_epoch(args, catalog, src_coords, imsize, max_sep, crossmatch_radius, pil
 
     final = src_fields.join(crossmatch_output)
 
-    output_crossmatch_name = "{}_crossmatch_{}.csv".format(output_dir, epoch_str)
+    output_crossmatch_name = "{}_crossmatch_{}.csv".format(
+        output_dir, epoch_str)
     output_crossmatch_name = os.path.join(output_dir, output_crossmatch_name)
     final.to_csv(output_crossmatch_name, index=False)
     logger.info("Written {}.".format(output_crossmatch_name))
     logger.info("All results in {}.".format(output_dir))
 
+
 if __name__ == '__main__':
     args = parse_args()
     logger = get_logger(args, use_colorlog=use_colorlog)
     logger.debug("Available epochs: {}".format(RELEASED_EPOCHS.keys()))
-    
+
     epochs = get_epochs(args.vast_pilot)
-    
+
     catalog = build_catalog(args)
     src_coords = build_SkyCoord(catalog)
     logger.info("Finding fields for {} sources...".format(len(src_coords)))
-    
+
     stokes_param = get_stokes_param(args.stokesv)
     outfile_prefix = get_outfile_prefix(args)
     output_dir = get_output_directory(args)
-    
+
     imsize = Angle(args.imsize, unit=u.arcmin)
     max_sep = args.maxsep
     crossmatch_radius = Angle(args.crossmatch_radius, unit=u.arcsec)
-    
+
     for epoch in epochs:
-        run_epoch(args, catalog, src_coords, imsize, max_sep, crossmatch_radius, epoch, outfile_prefix, output_dir, stokes_param)
+        run_epoch(
+            args,
+            catalog,
+            src_coords,
+            imsize,
+            max_sep,
+            crossmatch_radius,
+            epoch,
+            outfile_prefix,
+            output_dir,
+            stokes_param)
