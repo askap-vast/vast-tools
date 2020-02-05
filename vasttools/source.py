@@ -66,7 +66,7 @@ class Source:
             stokesv=False):
         '''Constructor method
         '''
-        self.logger = logging.getLogger('vasttools.survey.Dropbox')
+        self.logger = logging.getLogger('vasttools.source.Source')
         self.logger.debug('Created Source instance')
 
         self.src_coord = src_coord

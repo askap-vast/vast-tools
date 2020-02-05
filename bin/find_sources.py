@@ -519,7 +519,7 @@ class Query:
         EPOCH_INFO = EpochInfo(self.args, epoch, self.stokes_param)
         survey = EPOCH_INFO.survey
         epoch_str = EPOCH_INFO.epoch_str
-        logger.info("Querying {}".format(epoch_str))
+        self.logger.info("Querying {}".format(epoch_str))
 
         fields = Fields(epoch)
         src_fields, coords_mask = fields.find(self.src_coords, self.max_sep, self.catalog)
@@ -529,8 +529,7 @@ class Query:
         uniq_fields = src_fields['field_name'].unique().tolist()
 
         if len(uniq_fields) == 0:
-            logger.error("Source(s) not in Survey!")
-
+            self.logger.error("Source(s) not in Survey!")
             return
 
         if EPOCH_INFO.FIND_FIELDS:
@@ -547,10 +546,10 @@ class Query:
 
         crossmatch_output_check = False
 
-        logger.info("Performing crossmatching for sources, please wait...")
+        self.logger.info("Performing crossmatching for sources, please wait...")
 
         for uf in uniq_fields:
-            logger.info(
+            self.logger.info(
                 "-----------------------------------------------------------")
 
             mask = src_fields["field_name"] == uf
@@ -578,7 +577,7 @@ class Query:
 
                 label = row["name"]
 
-                logger.info("Searching for crossmatch to source {}".format(label))
+                self.logger.info("Searching for crossmatch to source {}".format(label))
 
                 outfile = "{}_{}_{}.fits".format(
                     label.replace(" ", "_"), fieldname, self.outfile_prefix)
@@ -600,7 +599,7 @@ class Query:
                     source.get_background_rms(image.rms_data, image.rms_wcs)
 
                 if self.args.process_matches and not source.has_match:
-                    logger.info("Source does not have a selavy match, not "
+                    self.logger.info("Source does not have a selavy match, not "
                                 "continuing processing")
                     continue
                 else:
@@ -624,7 +623,7 @@ class Query:
                                 outfile,
                                 crossmatch_overlay=self.args.self.crossmatch_radius_overlay)
                     else:
-                        logger.error(
+                        self.logger.error(
                             "Selavy failed! No region or annotation files "
                             "will be made if requested.")
 
@@ -665,11 +664,11 @@ class Query:
                     buffer = io.StringIO()
                     crossmatch_output.info(buf=buffer)
                     df_info = buffer.getvalue()
-                    logger.debug("Crossmatch df:\n{}".format(df_info))
+                    self.logger.debug("Crossmatch df:\n{}".format(df_info))
                     buffer = io.StringIO()
                     source.selavy_info.info(buf=buffer)
                     df_info = buffer.getvalue()
-                    logger.debug("Selavy info df:\n{}".format(df_info))
+                    self.logger.debug("Selavy info df:\n{}".format(df_info))
                     crossmatch_output = crossmatch_output.append(
                         source.selavy_info, sort=False)
                 logger.info(
@@ -678,14 +677,14 @@ class Query:
         runend = datetime.datetime.now()
         runtime = runend - runstart
 
-        logger.info("-----------------------------------------------------------")
-        logger.info("Summary")
-        logger.info("-----------------------------------------------------------")
-        logger.info("Number of sources searched for: {}".format(
+        self.logger.info("-----------------------------------------------------------")
+        self.logger.info("Summary")
+        self.logger.info("-----------------------------------------------------------")
+        self.logger.info("Number of sources searched for: {}".format(
             len(self.catalog.index)))
-        logger.info("Number of sources in survey: {}".format(
+        self.logger.info("Number of sources in survey: {}".format(
             len(src_fields.index)))
-        logger.info("Number of sources with matches < {} arcsec: {}".format(
+        self.logger.info("Number of sources with matches < {} arcsec: {}".format(
             self.crossmatch_radius.arcsec,
             len(crossmatch_output[~crossmatch_output["island_id"].isna()].index)))
 
