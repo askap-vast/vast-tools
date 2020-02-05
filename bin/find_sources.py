@@ -571,45 +571,7 @@ def build_SkyCoord(catalog):
     
     return src_coords
 
-
-if __name__ == '__main__':
-    args = parse_args()
-    logger = get_logger(args, use_colorlog=use_colorlog)
-    logger.debug("Available epochs: {}".format(RELEASED_EPOCHS.keys()))
-    
-    catalog = build_catalog(args)
-    src_coords = build_SkyCoord(catalog)
-    logger.info("Finding fields for {} sources...".format(len(src_coords)))
-    
-    outfile_prefix, stokes_param = get_survey_params(args)
-    
-    imsize = Angle(args.imsize, unit=u.arcmin)
-    max_sep = args.maxsep
-    
-    pilot_epoch = args.vast_pilot
-    FIND_FIELDS, IMAGE_FOLDER, SELAVY_FOLDER, RMS_FOLDER, survey = get_directory_paths(args, pilot_epoch, stokes_param)
-
-exit()
-
-
-
-
-
-
-def rubbish():
-    
-
-
-
-    crossmatch_radius = Angle(args.crossmatch_radius, unit=u.arcsec)
-
-
-
-    
-
-
-
-    logger.info("Finding fields for {} sources...".format(len(src_coords)))
+def run_epoch(args, catalog, src_coords, imsize, max_sep, crossmatch_radius, pilot_epoch, outfile_prefix, stokes_param):
     logger.debug("Using epoch {}".format(pilot_epoch))
     fields = Fields(pilot_epoch)
     src_fields, coords_mask = fields.find(src_coords, max_sep, catalog)
@@ -789,3 +751,24 @@ def rubbish():
     final.to_csv(output_crossmatch_name, index=False)
     logger.info("Written {}.".format(output_crossmatch_name))
     logger.info("All results in {}.".format(output_name))
+
+if __name__ == '__main__':
+    args = parse_args()
+    logger = get_logger(args, use_colorlog=use_colorlog)
+    logger.debug("Available epochs: {}".format(RELEASED_EPOCHS.keys()))
+    
+    catalog = build_catalog(args)
+    src_coords = build_SkyCoord(catalog)
+    logger.info("Finding fields for {} sources...".format(len(src_coords)))
+    
+    outfile_prefix, stokes_param = get_survey_params(args)
+    
+    imsize = Angle(args.imsize, unit=u.arcmin)
+    max_sep = args.maxsep
+    crossmatch_radius = Angle(args.crossmatch_radius, unit=u.arcsec)
+    
+    pilot_epoch = args.vast_pilot
+    FIND_FIELDS, IMAGE_FOLDER, SELAVY_FOLDER, RMS_FOLDER, survey = get_directory_paths(args, pilot_epoch, stokes_param)
+    
+    run_epoch(args, catalog, src_coords, imsize, max_sep, crossmatch_radius, pilot_epoch, outfile_prefix, stokes_param)
+
