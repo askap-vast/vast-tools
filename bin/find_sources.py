@@ -384,10 +384,45 @@ def build_catalog(args):
     
     return catalog
 
+def build_SkyCoord(catalog):
+    '''
+    Create a SkyCoord array for each target source
+    
+    :param catalog: Catalogue of target sources
+    :type catalog: `pandas.core.frame.DataFrame`
+    
+    :returns: Target source SkyCoord
+    :rtype: `astropy.coordinates.sky_coordinate.SkyCoord`
+    '''
+    
+    if catalog['ra'].dtype == np.float64:
+        hms = False
+        deg = True
+
+    elif ":" in catalog['ra'].iloc[0]:
+        hms = True
+        deg = False
+    else:
+        deg = True
+        hms = False
+
+    if hms:
+        src_coords = SkyCoord(
+            catalog['ra'],
+            catalog['dec'],
+            unit=(
+                u.hourangle,
+                u.deg))
+    else:
+        src_coords = SkyCoord(catalog['ra'], catalog['dec'], unit=(u.deg, u.deg))
+    
+    return src_coords
+
 args = parse_args()
 logger = get_logger(args, use_colorlog=use_colorlog)
 catalog = build_catalog(args)
-print(type(catalog))
+src_coords = build_SkyCoord(catalog)
+print(type(src_coords))
 exit()
 
 
@@ -528,26 +563,7 @@ if not os.path.isdir(RMS_FOLDER):
             "{} does not exist. Only finding fields".format(RMS_FOLDER))
         FIND_FIELDS = True
 
-if catalog['ra'].dtype == np.float64:
-    hms = False
-    deg = True
 
-elif ":" in catalog['ra'].iloc[0]:
-    hms = True
-    deg = False
-else:
-    deg = True
-    hms = False
-
-if hms:
-    src_coords = SkyCoord(
-        catalog['ra'],
-        catalog['dec'],
-        unit=(
-            u.hourangle,
-            u.deg))
-else:
-    src_coords = SkyCoord(catalog['ra'], catalog['dec'], unit=(u.deg, u.deg))
 
 logger.info("Finding fields for {} sources...".format(len(src_coords)))
 logger.debug("Using epoch {}".format(pilot_epoch))
