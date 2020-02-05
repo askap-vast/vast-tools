@@ -299,25 +299,25 @@ def get_output_directory(args):
     :rtype: str
     '''
     
-    output_name = args.out_folder
-    if os.path.isdir(output_name):
+    output_dir = args.out_folder
+    if os.path.isdir(output_dir):
         if args.clobber:
             logger.warning(("Directory {} already exists "
                             "but clobber selected. "
                             "Removing current directory."
-                            ).format(output_name))
-            shutil.rmtree(output_name)
+                            ).format(output_dir))
+            shutil.rmtree(output_dir)
         else:
             logger.critical(
                 ("Requested output directory '{}' already exists! "
-                 "Will not overwrite.").format(output_name))
+                 "Will not overwrite.").format(output_dir))
             logger.critical("Exiting.")
             sys.exit()
 
-    logger.info("Creating directory '{}'.".format(output_name))
-    os.mkdir(output_name)
+    logger.info("Creating directory '{}'.".format(output_dir))
+    os.mkdir(output_dir)
     
-    return output_name
+    return output_dir
 
 
 def build_catalog(args):
@@ -398,7 +398,7 @@ def get_stokes_param(stokesv):
     else:
         stokes_param = "I"
     
-    return stokes param
+    return stokes_param
     
 def get_outfile_prefix(args):
     '''
@@ -425,7 +425,7 @@ def get_outfile_prefix(args):
             outfile_prefix += "_stokesv"
     
     return outfile_prefix
-
+    
 def get_directory_paths(args, pilot_epoch, stokes_param):
     '''
     Get paths to directories
@@ -582,8 +582,10 @@ def build_SkyCoord(catalog):
     
     return src_coords
 
-def run_epoch(args, catalog, src_coords, imsize, max_sep, crossmatch_radius, pilot_epoch, outfile_prefix, stokes_param):
+def run_epoch(args, catalog, src_coords, imsize, max_sep, crossmatch_radius, pilot_epoch, outfile_prefix, output_dir, stokes_param):
     logger.debug("Using epoch {}".format(pilot_epoch))
+    FIND_FIELDS, IMAGE_FOLDER, SELAVY_FOLDER, RMS_FOLDER, survey = get_directory_paths(args, pilot_epoch, stokes_param)
+    
     fields = Fields(pilot_epoch)
     src_fields, coords_mask = fields.find(src_coords, max_sep, catalog)
 
@@ -597,12 +599,12 @@ def run_epoch(args, catalog, src_coords, imsize, max_sep, crossmatch_radius, pil
 
     if FIND_FIELDS:
         if survey == "racs":
-            fields_cat_file = "{}_racs_fields.csv".format(output_name)
+            fields_cat_file = "{}_racs_fields.csv".format(output_dir)
         else:
             fields_cat_file = "{}_VAST_{}_fields.csv".format(
-                output_name, pilot_epoch)
+                output_dir, pilot_epoch)
 
-        fields_cat_file = os.path.join(output_name, fields_cat_file)
+        fields_cat_file = os.path.join(output_dir, fields_cat_file)
         fields.write_fields_cat(fields_cat_file)
         sys.exit()
 
@@ -620,7 +622,7 @@ def run_epoch(args, catalog, src_coords, imsize, max_sep, crossmatch_radius, pil
         field_src_coords = src_coords[mask]
 
         if survey == "vast_pilot":
-            fieldname = "{}.{}.{}".format(uf, epoch_str, stokes_param)
+            fieldname = "{}.EPOCH{}.{}".format(uf, RELEASED_EPOCHS[pilot_epoch], stokes_param)
         else:
             fieldname = uf
 
@@ -641,7 +643,7 @@ def run_epoch(args, catalog, src_coords, imsize, max_sep, crossmatch_radius, pil
 
             outfile = "{}_{}_{}.fits".format(
                 label.replace(" ", "_"), fieldname, outfile_prefix)
-            outfile = os.path.join(output_name, outfile)
+            outfile = os.path.join(output_dir, outfile)
 
             src_coord = field_src_coords[i]
 
@@ -757,11 +759,11 @@ def run_epoch(args, catalog, src_coords, imsize, max_sep, crossmatch_radius, pil
 
     final = src_fields.join(crossmatch_output)
 
-    output_crossmatch_name = "{}_crossmatch.csv".format(output_name)
-    output_crossmatch_name = os.path.join(output_name, output_crossmatch_name)
+    output_crossmatch_name = "{}_crossmatch.csv".format(output_dir)
+    output_crossmatch_name = os.path.join(output_dir, output_crossmatch_name)
     final.to_csv(output_crossmatch_name, index=False)
     logger.info("Written {}.".format(output_crossmatch_name))
-    logger.info("All results in {}.".format(output_name))
+    logger.info("All results in {}.".format(output_dir))
 
 if __name__ == '__main__':
     args = parse_args()
@@ -772,14 +774,16 @@ if __name__ == '__main__':
     src_coords = build_SkyCoord(catalog)
     logger.info("Finding fields for {} sources...".format(len(src_coords)))
     
-    outfile_prefix, stokes_param = get_survey_params(args)
+    stokes_param = get_stokes_param(args.stokesv)
+    outfile_prefix = get_outfile_prefix(args)
+    output_dir = get_output_directory(args)
     
     imsize = Angle(args.imsize, unit=u.arcmin)
     max_sep = args.maxsep
     crossmatch_radius = Angle(args.crossmatch_radius, unit=u.arcsec)
     
     pilot_epoch = args.vast_pilot
-    FIND_FIELDS, IMAGE_FOLDER, SELAVY_FOLDER, RMS_FOLDER, survey = get_directory_paths(args, pilot_epoch, stokes_param)
     
-    run_epoch(args, catalog, src_coords, imsize, max_sep, crossmatch_radius, pilot_epoch, outfile_prefix, stokes_param)
+    
+    run_epoch(args, catalog, src_coords, imsize, max_sep, crossmatch_radius, pilot_epoch, outfile_prefix, output_dir, stokes_param)
 
