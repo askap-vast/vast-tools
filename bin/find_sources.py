@@ -476,6 +476,7 @@ def get_directory_paths(args, pilot_epoch, stokes_param):
     racsv = False
     if pilot_epoch == "0":
         survey = "racs"
+        epoch_str = "RACS"
         if not BASE_FOLDER:
             survey_folder = "RACS/release/racs_v3/"
         else:
@@ -574,7 +575,7 @@ def get_directory_paths(args, pilot_epoch, stokes_param):
                 "{} does not exist. Only finding fields".format(RMS_FOLDER))
             FIND_FIELDS = True
     
-    return FIND_FIELDS, IMAGE_FOLDER, SELAVY_FOLDER, RMS_FOLDER, survey
+    return FIND_FIELDS, IMAGE_FOLDER, SELAVY_FOLDER, RMS_FOLDER, survey, epoch_str
     
 def build_SkyCoord(catalog):
     '''
@@ -611,8 +612,8 @@ def build_SkyCoord(catalog):
     return src_coords
 
 def run_epoch(args, catalog, src_coords, imsize, max_sep, crossmatch_radius, pilot_epoch, outfile_prefix, output_dir, stokes_param):
-    logger.debug("Using epoch {}".format(pilot_epoch))
-    FIND_FIELDS, IMAGE_FOLDER, SELAVY_FOLDER, RMS_FOLDER, survey = get_directory_paths(args, pilot_epoch, stokes_param)
+    FIND_FIELDS, IMAGE_FOLDER, SELAVY_FOLDER, RMS_FOLDER, survey, epoch_str = get_directory_paths(args, pilot_epoch, stokes_param)
+    logger.info("Querying {}".format(epoch_str))
     
     fields = Fields(pilot_epoch)
     src_fields, coords_mask = fields.find(src_coords, max_sep, catalog)
@@ -623,7 +624,8 @@ def run_epoch(args, catalog, src_coords, imsize, max_sep, crossmatch_radius, pil
 
     if len(uniq_fields) == 0:
         logger.error("Source(s) not in Survey!")
-        sys.exit()
+        
+        return
 
     if FIND_FIELDS:
         if survey == "racs":
@@ -634,7 +636,8 @@ def run_epoch(args, catalog, src_coords, imsize, max_sep, crossmatch_radius, pil
 
         fields_cat_file = os.path.join(output_dir, fields_cat_file)
         fields.write_fields_cat(fields_cat_file)
-        sys.exit()
+        
+        return
 
     crossmatch_output_check = False
 
@@ -787,7 +790,7 @@ def run_epoch(args, catalog, src_coords, imsize, max_sep, crossmatch_radius, pil
 
     final = src_fields.join(crossmatch_output)
 
-    output_crossmatch_name = "{}_crossmatch.csv".format(output_dir)
+    output_crossmatch_name = "{}_crossmatch_{}.csv".format(output_dir, epoch_str)
     output_crossmatch_name = os.path.join(output_dir, output_crossmatch_name)
     final.to_csv(output_crossmatch_name, index=False)
     logger.info("Written {}.".format(output_crossmatch_name))
