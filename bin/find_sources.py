@@ -319,65 +319,82 @@ def get_output_directory(args):
     
     return output_name
 
+
+def build_catalog(args):
+    '''
+    Build the catalogue of target sources
+    
+    :param args: Arguments namespace
+    :type args: `argparse.Namespace`
+    
+    :returns: Catalogue of target sources
+    :rtype: `pandas.core.frame.DataFrame`
+    '''
+    
+    if " " not in args.coords:
+        logger.info("Loading file {}".format(args.coords))
+        # Give explicit check to file existence
+        user_file = os.path.abspath(args.coords)
+        if not os.path.isfile(user_file):
+            logger.critical("{} not found!".format(user_file))
+            logger.critical("Exiting.")
+            sys.exit()
+        try:
+            catalog = pd.read_csv(user_file, comment="#")
+            catalog.columns = map(str.lower, catalog.columns)
+            if ("ra" not in catalog.columns) or ("dec" not in catalog.columns):
+                logger.critical("Cannot find one of 'ra' or 'dec' in input file.")
+                logger.critical("Please check column headers!")
+                sys.exit()
+            if "name" not in catalog.columns:
+                catalog["name"] = [
+                    "{}_{}".format(
+                        i, j) for i, j in zip(
+                        catalog['ra'], catalog['dec'])]
+        except Exception as e:
+            logger.critical("Pandas reading of {} failed!".format(args.coords))
+            logger.critical("Check format!")
+            sys.exit()
+    else:
+        catalog_dict = {'ra': [], 'dec': []}
+        coords = args.coords.split(",")
+        for i in coords:
+            ra_str, dec_str = i.split(" ")
+            catalog_dict['ra'].append(ra_str)
+            catalog_dict['dec'].append(dec_str)
+
+        if args.source_names != "":
+            source_names = args.source_names.split(",")
+            if len(source_names) != len(catalog_dict['ra']):
+                logger.critical(
+                    "All sources must be named when using '--source-names'.")
+                logger.critical("Please check inputs.")
+                sys.exit()
+        else:
+            source_names = [
+                "{}_{}".format(
+                    i, j) for i, j in zip(
+                    catalog_dict['ra'], catalog_dict['dec'])]
+
+        catalog_dict['name'] = source_names
+
+        catalog = pd.DataFrame.from_dict(catalog_dict)
+
+    catalog['name'] = catalog['name'].astype(str)
+    
+    return catalog
+
 args = parse_args()
 logger = get_logger(args, use_colorlog=use_colorlog)
-print(type(logger))
+catalog = build_catalog(args)
+print(type(catalog))
 exit()
 
 
 
 
 
-if " " not in args.coords:
-    logger.info("Loading file {}".format(args.coords))
-    # Give explicit check to file existence
-    user_file = os.path.abspath(args.coords)
-    if not os.path.isfile(user_file):
-        logger.critical("{} not found!".format(user_file))
-        logger.critical("Exiting.")
-        sys.exit()
-    try:
-        catalog = pd.read_csv(user_file, comment="#")
-        catalog.columns = map(str.lower, catalog.columns)
-        if ("ra" not in catalog.columns) or ("dec" not in catalog.columns):
-            logger.critical("Cannot find one of 'ra' or 'dec' in input file.")
-            logger.critical("Please check column headers!")
-            sys.exit()
-        if "name" not in catalog.columns:
-            catalog["name"] = [
-                "{}_{}".format(
-                    i, j) for i, j in zip(
-                    catalog['ra'], catalog['dec'])]
-    except Exception as e:
-        logger.critical("Pandas reading of {} failed!".format(args.coords))
-        logger.critical("Check format!")
-        sys.exit()
-else:
-    catalog_dict = {'ra': [], 'dec': []}
-    coords = args.coords.split(",")
-    for i in coords:
-        ra_str, dec_str = i.split(" ")
-        catalog_dict['ra'].append(ra_str)
-        catalog_dict['dec'].append(dec_str)
 
-    if args.source_names != "":
-        source_names = args.source_names.split(",")
-        if len(source_names) != len(catalog_dict['ra']):
-            logger.critical(
-                "All sources must be named when using '--source-names'.")
-            logger.critical("Please check inputs.")
-            sys.exit()
-    else:
-        source_names = [
-            "{}_{}".format(
-                i, j) for i, j in zip(
-                catalog_dict['ra'], catalog_dict['dec'])]
-
-    catalog_dict['name'] = source_names
-
-    catalog = pd.DataFrame.from_dict(catalog_dict)
-
-catalog['name'] = catalog['name'].astype(str)
 
 imsize = Angle(args.imsize, unit=u.arcmin)
 
