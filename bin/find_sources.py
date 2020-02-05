@@ -384,6 +384,42 @@ def build_catalog(args):
     
     return catalog
 
+def get_survey_params(args):
+    '''
+    Return general parameters of the requested survey
+    
+    :param args: Arguments namespace
+    :type args: `argparse.Namespace`
+    
+    :returns: prefix for output file, Stokes parameter (V or I)
+    :rtype: tuple of strings
+    '''
+    
+    if args.stokesv and args.use_tiles:
+        logger.critical(
+            "Stokes V can only be used with combined mosaics at the moment.")
+        logger.critical("Run again but remove the option '--use-tiles'.")
+        sys.exit()
+
+    if args.use_tiles:
+        outfile_prefix = "tile"
+    else:
+        outfile_prefix = "combined"
+        if args.stokesv:
+            outfile_prefix += "_stokesv"
+            
+    if args.stokesv:
+        stokes_param = "V"
+    else:
+        stokes_param = "I"
+    
+    return outfile_prefix, stokes_param
+
+def get_directory_paths(args, pilot_epoch):
+    '''
+    Get paths to directories
+    '''
+    
 def build_SkyCoord(catalog):
     '''
     Create a SkyCoord array for each target source
@@ -430,318 +466,303 @@ exit()
 
 
 
+def rubbish()
+    imsize = Angle(args.imsize, unit=u.arcmin)
 
-imsize = Angle(args.imsize, unit=u.arcmin)
+    max_sep = args.maxsep
 
-max_sep = args.maxsep
 
-if args.use_tiles:
-    outfile_prefix = "tile"
-else:
-    outfile_prefix = "combined"
-    if args.stokesv:
-        outfile_prefix += "_stokesv"
 
-crossmatch_radius = Angle(args.crossmatch_radius, unit=u.arcsec)
+    crossmatch_radius = Angle(args.crossmatch_radius, unit=u.arcsec)
 
-if args.stokesv and args.use_tiles:
-    logger.critical(
-        "Stokes V can only be used with combined mosaics at the moment.")
-    logger.critical("Run again but remove the option '--use-tiles'.")
-    sys.exit()
 
-racsv = False
-if args.stokesv:
-    stokes_param = "V"
-else:
-    stokes_param = "I"
 
-FIND_FIELDS = args.find_fields
-if FIND_FIELDS:
-    logger.info("find-fields selected, only outputting field catalogue")
+    FIND_FIELDS = args.find_fields
+    if FIND_FIELDS:
+        logger.info("find-fields selected, only outputting field catalogue")
 
-BASE_FOLDER = args.base_folder
+    BASE_FOLDER = args.base_folder
+    racsv = False
+    pilot_epoch = args.vast_pilot
+    if pilot_epoch == "0":
+        survey = "racs"
+        if not BASE_FOLDER:
+            survey_folder = "RACS/release/racs_v3/"
+        else:
+            survey_folder = "racs_v3"
 
-pilot_epoch = args.vast_pilot
-if pilot_epoch == "0":
-    survey = "racs"
+        if stokes_param == "V":
+            logger.critical(
+                "Stokes V is currently unavailable for RACS V3. Using V2 instead")
+            racsv = True
+    else:
+        survey = "vast_pilot"
+        epoch_str = "EPOCH{}".format(RELEASED_EPOCHS[pilot_epoch])
+        if not BASE_FOLDER:
+            survey_folder = "PILOT/release/{}".format(epoch_str)
+        else:
+            survey_folder = epoch_str
+
     if not BASE_FOLDER:
-        survey_folder = "RACS/release/racs_v3/"
-    else:
-        survey_folder = "racs_v3"
+        if HOST != HOST_ADA:
+            logger.critical("Base folder must be specified if not running on ada")
+            sys.exit()
+        BASE_FOLDER = "/import/ada1/askap/"
 
-    if stokes_param == "V":
-        logger.critical(
-            "Stokes V is currently unavailable for RACS V3. Using V2 instead")
-        racsv = True
-else:
-    survey = "vast_pilot"
-    epoch_str = "EPOCH{}".format(RELEASED_EPOCHS[pilot_epoch])
-    if not BASE_FOLDER:
-        survey_folder = "PILOT/release/{}".format(epoch_str)
-    else:
-        survey_folder = epoch_str
+    IMAGE_FOLDER = args.img_folder
+    if not IMAGE_FOLDER:
+        if args.use_tiles:
+            image_dir = "FLD_IMAGES/"
+            stokes_dir = "stokesI"
+        else:
+            image_dir = "COMBINED"
+            stokes_dir = "STOKES{}_IMAGES".format(stokes_param)
 
-if not BASE_FOLDER:
-    if HOST != HOST_ADA:
-        logger.critical("Base folder must be specified if not running on ada")
-        sys.exit()
-    BASE_FOLDER = "/import/ada1/askap/"
+        IMAGE_FOLDER = os.path.join(
+            BASE_FOLDER,
+            survey_folder,
+            image_dir,
+            stokes_dir)
 
-IMAGE_FOLDER = args.img_folder
-if not IMAGE_FOLDER:
-    if args.use_tiles:
-        image_dir = "FLD_IMAGES/"
-        stokes_dir = "stokesI"
-    else:
+        if racsv:
+            IMAGE_FOLDER = ("/import/ada1/askap/RACS/aug2019_reprocessing/"
+                            "COMBINED_MOSAICS/V_mosaic_1.0")
+
+    if not os.path.isdir(IMAGE_FOLDER):
+        if not FIND_FIELDS:
+            logger.critical(
+                "{} does not exist. Only finding fields".format(IMAGE_FOLDER))
+            FIND_FIELDS = True
+
+
+    SELAVY_FOLDER = args.cat_folder
+    if not SELAVY_FOLDER:
         image_dir = "COMBINED"
-        stokes_dir = "STOKES{}_IMAGES".format(stokes_param)
+        selavy_dir = "STOKES{}_SELAVY".format(stokes_param)
 
-    IMAGE_FOLDER = os.path.join(
-        BASE_FOLDER,
-        survey_folder,
-        image_dir,
-        stokes_dir)
+        SELAVY_FOLDER = os.path.join(
+            BASE_FOLDER,
+            survey_folder,
+            image_dir,
+            selavy_dir)
+        if args.use_tiles:
+            SELAVY_FOLDER = ("/import/ada1/askap/RACS/aug2019_reprocessing/"
+                             "SELAVY_OUTPUT/stokesI_cat/")
 
-    if racsv:
-        IMAGE_FOLDER = ("/import/ada1/askap/RACS/aug2019_reprocessing/"
-                        "COMBINED_MOSAICS/V_mosaic_1.0")
+        if racsv:
+            SELAVY_FOLDER = ("/import/ada1/askap/RACS/aug2019_reprocessing/"
+                             "COMBINED_MOSAICS/racs_catv")
 
-if not os.path.isdir(IMAGE_FOLDER):
-    if not FIND_FIELDS:
-        logger.critical(
-            "{} does not exist. Only finding fields".format(IMAGE_FOLDER))
-        FIND_FIELDS = True
+    if not os.path.isdir(SELAVY_FOLDER):
+        if not FIND_FIELDS:
+            logger.critical(
+                "{} does not exist. Only finding fields".format(SELAVY_FOLDER))
+            FIND_FIELDS = True
 
+    RMS_FOLDER = args.rms_folder
+    if not RMS_FOLDER:
+        if args.use_tiles:
+            logger.warning(
+                "Background noise estimates are not supported for tiles.")
+            logger.warning("Estimating background from mosaics instead.")
+        image_dir = "COMBINED"
+        rms_dir = "STOKES{}_RMSMAPS".format(stokes_param)
 
-SELAVY_FOLDER = args.cat_folder
-if not SELAVY_FOLDER:
-    image_dir = "COMBINED"
-    selavy_dir = "STOKES{}_SELAVY".format(stokes_param)
+        RMS_FOLDER = os.path.join(
+            BASE_FOLDER,
+            survey_folder,
+            image_dir,
+            rms_dir)
 
-    SELAVY_FOLDER = os.path.join(
-        BASE_FOLDER,
-        survey_folder,
-        image_dir,
-        selavy_dir)
-    if args.use_tiles:
-        SELAVY_FOLDER = ("/import/ada1/askap/RACS/aug2019_reprocessing/"
-                         "SELAVY_OUTPUT/stokesI_cat/")
+        if racsv:
+            RMS_FOLDER = ("/import/ada1/askap/RACS/aug2019_reprocessing/"
+                          "COMBINED_MOSAICS/V_mosaic_1.0_BANE")
 
-    if racsv:
-        SELAVY_FOLDER = ("/import/ada1/askap/RACS/aug2019_reprocessing/"
-                         "COMBINED_MOSAICS/racs_catv")
-
-if not os.path.isdir(SELAVY_FOLDER):
-    if not FIND_FIELDS:
-        logger.critical(
-            "{} does not exist. Only finding fields".format(SELAVY_FOLDER))
-        FIND_FIELDS = True
-
-RMS_FOLDER = args.rms_folder
-if not RMS_FOLDER:
-    if args.use_tiles:
-        logger.warning(
-            "Background noise estimates are not supported for tiles.")
-        logger.warning("Estimating background from mosaics instead.")
-    image_dir = "COMBINED"
-    rms_dir = "STOKES{}_RMSMAPS".format(stokes_param)
-
-    RMS_FOLDER = os.path.join(
-        BASE_FOLDER,
-        survey_folder,
-        image_dir,
-        rms_dir)
-
-    if racsv:
-        RMS_FOLDER = ("/import/ada1/askap/RACS/aug2019_reprocessing/"
-                      "COMBINED_MOSAICS/V_mosaic_1.0_BANE")
-
-if not os.path.isdir(RMS_FOLDER):
-    if not FIND_FIELDS:
-        logger.critical(
-            "{} does not exist. Only finding fields".format(RMS_FOLDER))
-        FIND_FIELDS = True
+    if not os.path.isdir(RMS_FOLDER):
+        if not FIND_FIELDS:
+            logger.critical(
+                "{} does not exist. Only finding fields".format(RMS_FOLDER))
+            FIND_FIELDS = True
 
 
 
-logger.info("Finding fields for {} sources...".format(len(src_coords)))
-logger.debug("Using epoch {}".format(pilot_epoch))
-fields = Fields(pilot_epoch)
-src_fields, coords_mask = fields.find(src_coords, max_sep, catalog)
+    logger.info("Finding fields for {} sources...".format(len(src_coords)))
+    logger.debug("Using epoch {}".format(pilot_epoch))
+    fields = Fields(pilot_epoch)
+    src_fields, coords_mask = fields.find(src_coords, max_sep, catalog)
 
-src_coords = src_coords[coords_mask]
+    src_coords = src_coords[coords_mask]
 
-uniq_fields = src_fields['field_name'].unique().tolist()
+    uniq_fields = src_fields['field_name'].unique().tolist()
 
-if len(uniq_fields) == 0:
-    logger.error("Source(s) not in Survey!")
-    sys.exit()
+    if len(uniq_fields) == 0:
+        logger.error("Source(s) not in Survey!")
+        sys.exit()
 
-if FIND_FIELDS:
-    if survey == "racs":
-        fields_cat_file = "{}_racs_fields.csv".format(output_name)
-    else:
-        fields_cat_file = "{}_VAST_{}_fields.csv".format(
-            output_name, pilot_epoch)
-
-    fields_cat_file = os.path.join(output_name, fields_cat_file)
-    fields.write_fields_cat(fields_cat_file)
-    sys.exit()
-
-crossmatch_output_check = False
-
-logger.info("Performing crossmatching for sources, please wait...")
-
-for uf in uniq_fields:
-    logger.info("-----------------------------------------------------------")
-
-    mask = src_fields["field_name"] == uf
-    srcs = src_fields[mask]
-    indexes = srcs.index
-    srcs = srcs.reset_index()
-    field_src_coords = src_coords[mask]
-
-    if survey == "vast_pilot":
-        fieldname = "{}.{}.{}".format(uf, epoch_str, stokes_param)
-    else:
-        fieldname = uf
-
-    image = Image(srcs["sbid"].iloc[0], fieldname,
-                  IMAGE_FOLDER, RMS_FOLDER, pilot_epoch, tiles=args.use_tiles)
-
-    if not args.no_background_rms:
-        image.get_rms_img()
-
-    for i, row in srcs.iterrows():
-        SBID = row['sbid']
-
-        number = row["original_index"] + 1
-
-        label = row["name"]
-
-        logger.info("Searching for crossmatch to source {}".format(label))
-
-        outfile = "{}_{}_{}.fits".format(
-            label.replace(" ", "_"), fieldname, outfile_prefix)
-        outfile = os.path.join(output_name, outfile)
-
-        src_coord = field_src_coords[i]
-
-        source = Source(
-            fieldname,
-            src_coord,
-            SBID,
-            SELAVY_FOLDER,
-            vast_pilot=pilot_epoch,
-            tiles=args.use_tiles,
-            stokesv=args.stokesv)
-
-        source.extract_source(crossmatch_radius, args.stokesv)
-        if not args.no_background_rms and not image.rms_fail:
-            source.get_background_rms(image.rms_data, image.rms_wcs)
-
-        if args.process_matches and not source.has_match:
-            logger.info("Source does not have a selavy match, not "
-                        "continuing processing")
-            continue
+    if FIND_FIELDS:
+        if survey == "racs":
+            fields_cat_file = "{}_racs_fields.csv".format(output_name)
         else:
-            if not args.crossmatch_only and not image.image_fail:
-                source.make_postagestamp(
-                    image.data,
-                    image.header,
-                    image.wcs,
-                    imsize,
-                    outfile)
+            fields_cat_file = "{}_VAST_{}_fields.csv".format(
+                output_name, pilot_epoch)
 
-            # not ideal but line below has to be run after those above
-            if source.selavy_fail is False:
-                source.filter_selavy_components(imsize)
-                if args.ann:
-                    source.write_ann(
-                        outfile,
-                        crossmatch_overlay=args.crossmatch_radius_overlay)
-                if args.reg:
-                    source.write_reg(
-                        outfile,
-                        crossmatch_overlay=args.crossmatch_radius_overlay)
+        fields_cat_file = os.path.join(output_name, fields_cat_file)
+        fields.write_fields_cat(fields_cat_file)
+        sys.exit()
+
+    crossmatch_output_check = False
+
+    logger.info("Performing crossmatching for sources, please wait...")
+
+    for uf in uniq_fields:
+        logger.info("-----------------------------------------------------------")
+
+        mask = src_fields["field_name"] == uf
+        srcs = src_fields[mask]
+        indexes = srcs.index
+        srcs = srcs.reset_index()
+        field_src_coords = src_coords[mask]
+
+        if survey == "vast_pilot":
+            fieldname = "{}.{}.{}".format(uf, epoch_str, stokes_param)
+        else:
+            fieldname = uf
+
+        image = Image(srcs["sbid"].iloc[0], fieldname,
+                      IMAGE_FOLDER, RMS_FOLDER, pilot_epoch, tiles=args.use_tiles)
+
+        if not args.no_background_rms:
+            image.get_rms_img()
+
+        for i, row in srcs.iterrows():
+            SBID = row['sbid']
+
+            number = row["original_index"] + 1
+
+            label = row["name"]
+
+            logger.info("Searching for crossmatch to source {}".format(label))
+
+            outfile = "{}_{}_{}.fits".format(
+                label.replace(" ", "_"), fieldname, outfile_prefix)
+            outfile = os.path.join(output_name, outfile)
+
+            src_coord = field_src_coords[i]
+
+            source = Source(
+                fieldname,
+                src_coord,
+                SBID,
+                SELAVY_FOLDER,
+                vast_pilot=pilot_epoch,
+                tiles=args.use_tiles,
+                stokesv=args.stokesv)
+
+            source.extract_source(crossmatch_radius, args.stokesv)
+            if not args.no_background_rms and not image.rms_fail:
+                source.get_background_rms(image.rms_data, image.rms_wcs)
+
+            if args.process_matches and not source.has_match:
+                logger.info("Source does not have a selavy match, not "
+                            "continuing processing")
+                continue
             else:
-                logger.error(
-                    "Selavy failed! No region or annotation files "
-                    "will be made if requested.")
-
-            if args.create_png:
                 if not args.crossmatch_only and not image.image_fail:
-                    if survey == "racs":
-                        png_title = "{} RACS {}".format(
-                            label,
-                            uf.split("_")[-1]
-                        )
-                    else:
-                        png_title = "{} VAST Pilot {} Epoch {}".format(
-                            label,
-                            uf.split("_")[-1],
-                            pilot_epoch
-                        )
-                    source.make_png(
-                        args.png_selavy_overlay,
-                        args.png_linear_percentile,
-                        args.png_use_zscale,
-                        args.png_zscale_contrast,
-                        outfile,
-                        image.beam,
-                        no_islands=args.png_no_island_labels,
-                        label=label,
-                        no_colorbar=args.png_no_colorbar,
-                        title=png_title,
-                        crossmatch_overlay=args.crossmatch_radius_overlay,
-                        hide_beam=args.png_hide_beam)
+                    source.make_postagestamp(
+                        image.data,
+                        image.header,
+                        image.wcs,
+                        imsize,
+                        outfile)
 
-        if not crossmatch_output_check:
-            crossmatch_output = source.selavy_info
-            crossmatch_output.index = [indexes[i]]
-            crossmatch_output_check = True
-        else:
-            temp_crossmatch_output = source.selavy_info
-            temp_crossmatch_output.index = [indexes[i]]
-            buffer = io.StringIO()
-            crossmatch_output.info(buf=buffer)
-            df_info = buffer.getvalue()
-            logger.debug("Crossmatch df:\n{}".format(df_info))
-            buffer = io.StringIO()
-            source.selavy_info.info(buf=buffer)
-            df_info = buffer.getvalue()
-            logger.debug("Selavy info df:\n{}".format(df_info))
-            crossmatch_output = crossmatch_output.append(
-                source.selavy_info, sort=False)
-        logger.info(
-            "-----------------------------------------------------------")
+                # not ideal but line below has to be run after those above
+                if source.selavy_fail is False:
+                    source.filter_selavy_components(imsize)
+                    if args.ann:
+                        source.write_ann(
+                            outfile,
+                            crossmatch_overlay=args.crossmatch_radius_overlay)
+                    if args.reg:
+                        source.write_reg(
+                            outfile,
+                            crossmatch_overlay=args.crossmatch_radius_overlay)
+                else:
+                    logger.error(
+                        "Selavy failed! No region or annotation files "
+                        "will be made if requested.")
 
-runend = datetime.datetime.now()
-runtime = runend - runstart
+                if args.create_png:
+                    if not args.crossmatch_only and not image.image_fail:
+                        if survey == "racs":
+                            png_title = "{} RACS {}".format(
+                                label,
+                                uf.split("_")[-1]
+                            )
+                        else:
+                            png_title = "{} VAST Pilot {} Epoch {}".format(
+                                label,
+                                uf.split("_")[-1],
+                                pilot_epoch
+                            )
+                        source.make_png(
+                            args.png_selavy_overlay,
+                            args.png_linear_percentile,
+                            args.png_use_zscale,
+                            args.png_zscale_contrast,
+                            outfile,
+                            image.beam,
+                            no_islands=args.png_no_island_labels,
+                            label=label,
+                            no_colorbar=args.png_no_colorbar,
+                            title=png_title,
+                            crossmatch_overlay=args.crossmatch_radius_overlay,
+                            hide_beam=args.png_hide_beam)
 
-logger.info("-----------------------------------------------------------")
-logger.info("Summary")
-logger.info("-----------------------------------------------------------")
-logger.info("Number of sources searched for: {}".format(len(catalog.index)))
-logger.info("Number of sources in survey: {}".format(len(src_fields.index)))
-logger.info("Number of sources with matches < {} arcsec: {}".format(
-    crossmatch_radius.arcsec,
-    len(crossmatch_output[~crossmatch_output["island_id"].isna()].index)))
+            if not crossmatch_output_check:
+                crossmatch_output = source.selavy_info
+                crossmatch_output.index = [indexes[i]]
+                crossmatch_output_check = True
+            else:
+                temp_crossmatch_output = source.selavy_info
+                temp_crossmatch_output.index = [indexes[i]]
+                buffer = io.StringIO()
+                crossmatch_output.info(buf=buffer)
+                df_info = buffer.getvalue()
+                logger.debug("Crossmatch df:\n{}".format(df_info))
+                buffer = io.StringIO()
+                source.selavy_info.info(buf=buffer)
+                df_info = buffer.getvalue()
+                logger.debug("Selavy info df:\n{}".format(df_info))
+                crossmatch_output = crossmatch_output.append(
+                    source.selavy_info, sort=False)
+            logger.info(
+                "-----------------------------------------------------------")
 
-logger.info("Processing took {:.1f} minutes.".format(runtime.seconds / 60.))
+    runend = datetime.datetime.now()
+    runtime = runend - runstart
 
-# Create and write final crossmatch csv
-if args.selavy_simple:
-    crossmatch_output = crossmatch_output.filter(
-        items=["flux_int", "rms_image", "BANE_rms"])
-    crossmatch_output = crossmatch_output.rename(
-        columns={"flux_int": "S_int", "rms_image": "S_err"})
+    logger.info("-----------------------------------------------------------")
+    logger.info("Summary")
+    logger.info("-----------------------------------------------------------")
+    logger.info("Number of sources searched for: {}".format(len(catalog.index)))
+    logger.info("Number of sources in survey: {}".format(len(src_fields.index)))
+    logger.info("Number of sources with matches < {} arcsec: {}".format(
+        crossmatch_radius.arcsec,
+        len(crossmatch_output[~crossmatch_output["island_id"].isna()].index)))
 
-final = src_fields.join(crossmatch_output)
+    logger.info("Processing took {:.1f} minutes.".format(runtime.seconds / 60.))
 
-output_crossmatch_name = "{}_crossmatch.csv".format(output_name)
-output_crossmatch_name = os.path.join(output_name, output_crossmatch_name)
-final.to_csv(output_crossmatch_name, index=False)
-logger.info("Written {}.".format(output_crossmatch_name))
-logger.info("All results in {}.".format(output_name))
+    # Create and write final crossmatch csv
+    if args.selavy_simple:
+        crossmatch_output = crossmatch_output.filter(
+            items=["flux_int", "rms_image", "BANE_rms"])
+        crossmatch_output = crossmatch_output.rename(
+            columns={"flux_int": "S_int", "rms_image": "S_err"})
+
+    final = src_fields.join(crossmatch_output)
+
+    output_crossmatch_name = "{}_crossmatch.csv".format(output_name)
+    output_crossmatch_name = os.path.join(output_name, output_crossmatch_name)
+    final.to_csv(output_crossmatch_name, index=False)
+    logger.info("Written {}.".format(output_crossmatch_name))
+    logger.info("All results in {}.".format(output_name))
