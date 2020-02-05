@@ -90,7 +90,9 @@ def parse_args():
 
     parser.add_argument(
         '--vast-pilot',
-        choices=["0", ]+sorted(RELEASED_EPOCHS),
+        #nargs='+',
+        #choices=["0", ]+sorted(RELEASED_EPOCHS),
+        type=str,
         help=("Select the VAST Pilot Epoch to query. "
               "Epoch 0 is RACS."),
         default="1")
@@ -231,6 +233,32 @@ def parse_args():
     args = parser.parse_args()
     
     return args
+
+def get_epochs(epoch_str):
+    '''
+    Parse the list of epochs to query.
+    
+    :param epoch_str: Epochs to query, separated by commas (e.g. '1,2')
+    :type epoch_str: str
+    
+    :returns: Epochs to query, as a list of string
+    :rtype: list
+    '''
+    
+    available_epochs = ["0", ]+sorted(RELEASED_EPOCHS)
+    epochs = []
+    
+    for epoch in epoch_str.split(','):
+        if epoch in available_epochs:
+                epochs.append(epoch)
+        else:
+            logger.info("Epoch {} is not available. Ignoring.".format(epoch))
+    
+    if len(epochs) == 0:
+        logger.critical("No requested epochs are available")
+        sys.exit()
+            
+    return epochs
 
 def get_logger(args, use_colorlog=False):
     '''
@@ -770,6 +798,8 @@ if __name__ == '__main__':
     logger = get_logger(args, use_colorlog=use_colorlog)
     logger.debug("Available epochs: {}".format(RELEASED_EPOCHS.keys()))
     
+    epochs = get_epochs(args.vast_pilot)
+    
     catalog = build_catalog(args)
     src_coords = build_SkyCoord(catalog)
     logger.info("Finding fields for {} sources...".format(len(src_coords)))
@@ -782,8 +812,5 @@ if __name__ == '__main__':
     max_sep = args.maxsep
     crossmatch_radius = Angle(args.crossmatch_radius, unit=u.arcsec)
     
-    pilot_epoch = args.vast_pilot
-    
-    
-    run_epoch(args, catalog, src_coords, imsize, max_sep, crossmatch_radius, pilot_epoch, outfile_prefix, output_dir, stokes_param)
-
+    for epoch in epochs:
+        run_epoch(args, catalog, src_coords, imsize, max_sep, crossmatch_radius, epoch, outfile_prefix, output_dir, stokes_param)
