@@ -391,7 +391,7 @@ def get_survey_params(args):
     :param args: Arguments namespace
     :type args: `argparse.Namespace`
     
-    :returns: prefix for output file, Stokes parameter (V or I)
+    :returns: prefix for output file, Stokes parameter (I or V)
     :rtype: tuple of strings
     '''
     
@@ -415,75 +415,26 @@ def get_survey_params(args):
     
     return outfile_prefix, stokes_param
 
-def get_directory_paths(args, pilot_epoch):
+def get_directory_paths(args, pilot_epoch, stokes_param):
     '''
     Get paths to directories
+    
+    :param args: Arguments namespace
+    :type args: `argparse.Namespace`
+    :param pilot_epoch: Pilot epoch (0 for RACS)
+    :type pilot_epoch: str
+    :param stokes_param: Stokes parameter (I or V)
+    :type stokes_param: str
+    
+    :returns:
     '''
     
-def build_SkyCoord(catalog):
-    '''
-    Create a SkyCoord array for each target source
-    
-    :param catalog: Catalogue of target sources
-    :type catalog: `pandas.core.frame.DataFrame`
-    
-    :returns: Target source SkyCoord
-    :rtype: `astropy.coordinates.sky_coordinate.SkyCoord`
-    '''
-    
-    if catalog['ra'].dtype == np.float64:
-        hms = False
-        deg = True
-
-    elif ":" in catalog['ra'].iloc[0]:
-        hms = True
-        deg = False
-    else:
-        deg = True
-        hms = False
-
-    if hms:
-        src_coords = SkyCoord(
-            catalog['ra'],
-            catalog['dec'],
-            unit=(
-                u.hourangle,
-                u.deg))
-    else:
-        src_coords = SkyCoord(catalog['ra'], catalog['dec'], unit=(u.deg, u.deg))
-    
-    return src_coords
-
-args = parse_args()
-logger = get_logger(args, use_colorlog=use_colorlog)
-catalog = build_catalog(args)
-src_coords = build_SkyCoord(catalog)
-print(type(src_coords))
-exit()
-
-
-
-
-
-
-def rubbish()
-    imsize = Angle(args.imsize, unit=u.arcmin)
-
-    max_sep = args.maxsep
-
-
-
-    crossmatch_radius = Angle(args.crossmatch_radius, unit=u.arcsec)
-
-
-
     FIND_FIELDS = args.find_fields
     if FIND_FIELDS:
         logger.info("find-fields selected, only outputting field catalogue")
 
     BASE_FOLDER = args.base_folder
     racsv = False
-    pilot_epoch = args.vast_pilot
     if pilot_epoch == "0":
         survey = "racs"
         if not BASE_FOLDER:
@@ -583,6 +534,70 @@ def rubbish()
             logger.critical(
                 "{} does not exist. Only finding fields".format(RMS_FOLDER))
             FIND_FIELDS = True
+    
+    return FIND_FIELDS, IMAGE_FOLDER, SELAVY_FOLDER, RMS_FOLDER, survey
+    
+def build_SkyCoord(catalog):
+    '''
+    Create a SkyCoord array for each target source
+    
+    :param catalog: Catalogue of target sources
+    :type catalog: `pandas.core.frame.DataFrame`
+    
+    :returns: Target source SkyCoord
+    :rtype: `astropy.coordinates.sky_coordinate.SkyCoord`
+    '''
+    
+    if catalog['ra'].dtype == np.float64:
+        hms = False
+        deg = True
+
+    elif ":" in catalog['ra'].iloc[0]:
+        hms = True
+        deg = False
+    else:
+        deg = True
+        hms = False
+
+    if hms:
+        src_coords = SkyCoord(
+            catalog['ra'],
+            catalog['dec'],
+            unit=(
+                u.hourangle,
+                u.deg))
+    else:
+        src_coords = SkyCoord(catalog['ra'], catalog['dec'], unit=(u.deg, u.deg))
+    
+    return src_coords
+
+args = parse_args()
+logger = get_logger(args, use_colorlog=use_colorlog)
+catalog = build_catalog(args)
+src_coords = build_SkyCoord(catalog)
+outfile_prefix, stokes_param = get_survey_params(args)
+pilot_epoch = args.vast_pilot
+FIND_FIELDS, IMAGE_FOLDER, SELAVY_FOLDER, RMS_FOLDER, survey = get_directory_paths(args, pilot_epoch, stokes_param)
+
+exit()
+
+
+
+
+
+
+def rubbish():
+    imsize = Angle(args.imsize, unit=u.arcmin)
+
+    max_sep = args.maxsep
+
+
+
+    crossmatch_radius = Angle(args.crossmatch_radius, unit=u.arcsec)
+
+
+
+    
 
 
 
