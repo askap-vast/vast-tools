@@ -232,6 +232,7 @@ def parse_args():
 
     return args
 
+
 def get_logger(args, use_colorlog=False):
     '''
     Set up the logger
@@ -287,28 +288,30 @@ def get_logger(args, use_colorlog=False):
 
     return logger
 
+
 class Query:
     '''
     This is a class representation of various information about a particular
     query including the catalogue of target sources, the Stokes parameter,
     crossmatch radius and output parameters.
-    
+
     :param args: Arguments namespace
     :type args: `argparse.Namespace`
     '''
-    
+
     def __init__(self, args):
         '''Constructor method
         '''
         self.logger = logging.getLogger('vasttools.find_sources.Query')
-        
+
         self.args = args
-        
+
         self.epochs = self.get_epochs()
 
         self.catalog = self.build_catalog()
         self.src_coords = self.build_SkyCoord()
-        self.logger.info("Finding fields for {} sources...".format(len(self.src_coords)))
+        self.logger.info(
+            "Finding fields for {} sources...".format(len(self.src_coords)))
 
         self.set_stokes_param()
         self.set_outfile_prefix()
@@ -317,7 +320,7 @@ class Query:
         self.imsize = Angle(args.imsize, unit=u.arcmin)
         self.max_sep = args.maxsep
         self.crossmatch_radius = Angle(args.crossmatch_radius, unit=u.arcsec)
-    
+
     def build_catalog(self):
         '''
         Build the catalogue of target sources
@@ -337,7 +340,9 @@ class Query:
             try:
                 catalog = pd.read_csv(user_file, comment="#")
                 catalog.columns = map(str.lower, catalog.columns)
-                if ("ra" not in catalog.columns) or ("dec" not in catalog.columns):
+                no_ra_col = "ra" not in catalog.columns
+                no_dec_col = "dec" not in catalog.columns
+                if no_ra_col or no_dec_col:
                     self.logger.critical(
                         "Cannot find one of 'ra' or 'dec' in input file.")
                     self.logger.critical("Please check column headers!")
@@ -348,7 +353,8 @@ class Query:
                             i, j) for i, j in zip(
                             catalog['ra'], catalog['dec'])]
             except Exception as e:
-                self.logger.critical("Pandas reading of {} failed!".format(self.args.coords))
+                self.logger.critical(
+                    "Pandas reading of {} failed!".format(self.args.coords))
                 self.logger.critical("Check format!")
                 sys.exit()
         else:
@@ -363,7 +369,8 @@ class Query:
                 source_names = self.args.source_names.split(",")
                 if len(source_names) != len(catalog_dict['ra']):
                     self.logger.critical(
-                        "All sources must be named when using '--source-names'.")
+                        ("All sources must be named "
+                         "when using '--source-names'."))
                     self.logger.critical("Please check inputs.")
                     sys.exit()
             else:
@@ -379,7 +386,7 @@ class Query:
         catalog['name'] = catalog['name'].astype(str)
 
         return catalog
-    
+
     def build_SkyCoord(self):
         '''
         Create a SkyCoord array for each target source
@@ -419,7 +426,7 @@ class Query:
     def get_epochs(self):
         '''
         Parse the list of epochs to query.
-        
+
         :returns: Epochs to query, as a list of string
         :rtype: list
         '''
@@ -431,14 +438,15 @@ class Query:
             if epoch in available_epochs:
                 epochs.append(epoch)
             else:
-                self.logger.info("Epoch {} is not available. Ignoring.".format(epoch))
+                self.logger.info(
+                    "Epoch {} is not available. Ignoring.".format(epoch))
 
         if len(epochs) == 0:
             self.logger.critical("No requested epochs are available")
             sys.exit()
 
         return epochs
-    
+
     def set_output_directory(self):
         '''
         Build the output directory and store the path
@@ -448,9 +456,9 @@ class Query:
         if os.path.isdir(output_dir):
             if self.args.clobber:
                 self.logger.warning(("Directory {} already exists "
-                                "but clobber selected. "
-                                "Removing current directory."
-                                ).format(output_dir))
+                                     "but clobber selected. "
+                                     "Removing current directory."
+                                     ).format(output_dir))
                 shutil.rmtree(output_dir)
             else:
                 self.logger.critical(
@@ -463,7 +471,7 @@ class Query:
         os.mkdir(output_dir)
 
         self.output_dir = output_dir
-    
+
     def set_stokes_param(self):
         '''
         Set the stokes Parameter
@@ -476,7 +484,6 @@ class Query:
 
         self.stokes_param = stokes_param
 
-
     def set_outfile_prefix(self):
         '''
         Return general parameters of the requested survey
@@ -487,8 +494,10 @@ class Query:
 
         if self.args.stokesv and self.args.use_tiles:
             self.logger.critical(
-                "Stokes V can only be used with combined mosaics at the moment.")
-            self.logger.critical("Run again but remove the option '--use-tiles'.")
+                ("Stokes V can only be used "
+                 "with combined mosaics at the moment."))
+            self.logger.critical(
+                "Run again but remove the option '--use-tiles'.")
             sys.exit()
 
         if self.args.use_tiles:
@@ -499,30 +508,31 @@ class Query:
                 outfile_prefix += "_stokesv"
 
         self.outfile_prefix = outfile_prefix
-        
+
     def run_query(self):
         '''
         Run the requested query
         '''
-        
+
         for epoch in self.epochs:
             self.run_epoch(epoch)
 
     def run_epoch(self, epoch):
         '''
         Query a specific epoch
-        
+
         :param epoch: The epoch to query
         :type epoch: str
         '''
-        
+
         EPOCH_INFO = EpochInfo(self.args, epoch, self.stokes_param)
         survey = EPOCH_INFO.survey
         epoch_str = EPOCH_INFO.epoch_str
         self.logger.info("Querying {}".format(epoch_str))
 
         fields = Fields(epoch)
-        src_fields, coords_mask = fields.find(self.src_coords, self.max_sep, self.catalog)
+        src_fields, coords_mask = fields.find(
+            self.src_coords, self.max_sep, self.catalog)
 
         src_coords_field = self.src_coords[coords_mask]
 
@@ -546,11 +556,12 @@ class Query:
 
         crossmatch_output_check = False
 
-        self.logger.info("Performing crossmatching for sources, please wait...")
+        self.logger.info(
+            "Performing crossmatching for sources, please wait...")
 
         for uf in uniq_fields:
             self.logger.info(
-                "-----------------------------------------------------------")
+                "-----------------------------------------------------")
 
             mask = src_fields["field_name"] == uf
             srcs = src_fields[mask]
@@ -564,8 +575,12 @@ class Query:
             else:
                 fieldname = uf
 
-            image = Image(srcs["sbid"].iloc[0], fieldname, EPOCH_INFO.IMAGE_FOLDER,
-                          EPOCH_INFO.RMS_FOLDER, epoch, tiles=self.args.use_tiles)
+            image = Image(srcs["sbid"].iloc[0],
+                          fieldname,
+                          EPOCH_INFO.IMAGE_FOLDER,
+                          EPOCH_INFO.RMS_FOLDER,
+                          epoch,
+                          tiles=self.args.use_tiles)
 
             if not self.args.no_background_rms:
                 image.get_rms_img()
@@ -577,7 +592,8 @@ class Query:
 
                 label = row["name"]
 
-                self.logger.info("Searching for crossmatch to source {}".format(label))
+                self.logger.info(
+                    "Searching for crossmatch to source {}".format(label))
 
                 outfile = "{}_{}_{}.fits".format(
                     label.replace(" ", "_"), fieldname, self.outfile_prefix)
@@ -594,16 +610,18 @@ class Query:
                     tiles=self.args.use_tiles,
                     stokesv=self.args.stokesv)
 
-                source.extract_source(self.crossmatch_radius, self.args.stokesv)
+                source.extract_source(
+                    self.crossmatch_radius, self.args.stokesv)
                 if not self.args.no_background_rms and not image.rms_fail:
                     source.get_background_rms(image.rms_data, image.rms_wcs)
 
                 if self.args.process_matches and not source.has_match:
-                    self.logger.info("Source does not have a selavy match, not "
-                                "continuing processing")
+                    self.logger.info("Source does not have a selavy match, "
+                                     "not continuing processing")
                     continue
                 else:
-                    if not self.args.crossmatch_only and not image.image_fail:
+                    crossmatch_only = self.args.crossmatch_only
+                    if not crossmatch_only and not image.image_fail:
                         source.make_postagestamp(
                             image.data,
                             image.header,
@@ -612,23 +630,24 @@ class Query:
                             outfile)
 
                     # not ideal but line below has to be run after those above
+                    crossmatch_overlay = self.args.crossmatch_radius_overlay
                     if source.selavy_fail is False:
                         source.filter_selavy_components(self.imsize)
                         if self.args.ann:
                             source.write_ann(
                                 outfile,
-                                crossmatch_overlay=self.args.self.crossmatch_radius_overlay)
+                                crossmatch_overlay=crossmatch_overlay)
                         if self.args.reg:
                             source.write_reg(
                                 outfile,
-                                crossmatch_overlay=self.args.self.crossmatch_radius_overlay)
+                                crossmatch_overlay=crossmatch_overlay)
                     else:
                         self.logger.error(
                             "Selavy failed! No region or annotation files "
                             "will be made if requested.")
 
                     if self.args.create_png:
-                        if not self.args.crossmatch_only and not image.image_fail:
+                        if not crossmatch_only and not image.image_fail:
                             if survey == "racs":
                                 png_title = "{} RACS {}".format(
                                     label,
@@ -651,7 +670,7 @@ class Query:
                                 label=label,
                                 no_colorbar=self.args.png_no_colorbar,
                                 title=png_title,
-                                crossmatch_overlay=self.args.self.crossmatch_radius_overlay,
+                                crossmatch_overlay=crossmatch_overlay,
                                 hide_beam=self.args.png_hide_beam)
 
                 if not crossmatch_output_check:
@@ -672,21 +691,28 @@ class Query:
                     crossmatch_output = crossmatch_output.append(
                         source.selavy_info, sort=False)
                 logger.info(
-                    "-----------------------------------------------------------")
+                    "-----------------------------------------------------")
 
         runend = datetime.datetime.now()
         runtime = runend - runstart
 
-        self.logger.info("-----------------------------------------------------------")
+        self.logger.info(
+            "-----------------------------------------------------")
         self.logger.info("Summary")
-        self.logger.info("-----------------------------------------------------------")
+        self.logger.info(
+            "-----------------------------------------------------")
         self.logger.info("Number of sources searched for: {}".format(
             len(self.catalog.index)))
         self.logger.info("Number of sources in survey: {}".format(
             len(src_fields.index)))
-        self.logger.info("Number of sources with matches < {} arcsec: {}".format(
-            self.crossmatch_radius.arcsec,
-            len(crossmatch_output[~crossmatch_output["island_id"].isna()].index)))
+
+        matched = crossmatch_output[~crossmatch_output["island_id"].isna()]
+        num_matched = len(matched.index)
+        self.logger.info((
+            "Number of sources with matches"
+            " < {} arcsec: {}").format(
+                                    self.crossmatch_radius.arcsec,
+                                    num_matched))
 
         logger.info(
             "Processing took {:.1f} minutes.".format(
@@ -703,10 +729,12 @@ class Query:
 
         output_crossmatch_name = "{}_crossmatch_{}.csv".format(
             self.output_dir, epoch_str)
-        output_crossmatch_name = os.path.join(self.output_dir, output_crossmatch_name)
+        output_crossmatch_name = os.path.join(
+            self.output_dir, output_crossmatch_name)
         final.to_csv(output_crossmatch_name, index=False)
         logger.info("Written {}.".format(output_crossmatch_name))
         logger.info("All results in {}.".format(self.output_dir))
+
 
 class EpochInfo:
     '''
@@ -721,10 +749,10 @@ class EpochInfo:
     :param stokes_param: Stokes parameter (I or V)
     :type stokes_param: str
     '''
-    
+
     def __init__(self, args, pilot_epoch, stokes_param):
         self.logger = logging.getLogger('vasttools.find_sources.EpochInfo')
-        
+
         FIND_FIELDS = args.find_fields
         if FIND_FIELDS:
             self.logger.info(
@@ -734,13 +762,13 @@ class EpochInfo:
         IMAGE_FOLDER = args.img_folder
         SELAVY_FOLDER = args.cat_folder
         RMS_FOLDER = args.rms_folder
-        
+
         self.use_tiles = args.use_tiles
         self.pilot_epoch = pilot_epoch
         self.stokes_param = stokes_param
-        
+
         racsv = False
-        
+
         if pilot_epoch == "0":
             survey = "racs"
             epoch_str = "RACS"
@@ -761,12 +789,12 @@ class EpochInfo:
                 survey_folder = "PILOT/release/{}".format(epoch_str)
             else:
                 survey_folder = epoch_str
-        
+
         self.survey = survey
         self.epoch_str = epoch_str
         self.survey_folder = survey_folder
         self.racsv = racsv
-        
+
         if not BASE_FOLDER:
             if HOST != HOST_ADA:
                 self.logger.critical(
@@ -774,7 +802,6 @@ class EpochInfo:
                 sys.exit()
             BASE_FOLDER = "/import/ada1/askap/"
 
-        
         if not IMAGE_FOLDER:
             if self.use_tiles:
                 image_dir = "FLD_IMAGES/"
@@ -796,10 +823,10 @@ class EpochInfo:
         if not os.path.isdir(IMAGE_FOLDER):
             if not FIND_FIELDS:
                 self.logger.critical(
-                    "{} does not exist. Only finding fields".format(IMAGE_FOLDER))
+                    ("{} does not exist. "
+                     "Only finding fields").format(IMAGE_FOLDER))
                 FIND_FIELDS = True
 
-        
         if not SELAVY_FOLDER:
             image_dir = "COMBINED"
             selavy_dir = "STOKES{}_SELAVY".format(stokes_param)
@@ -810,25 +837,26 @@ class EpochInfo:
                 image_dir,
                 selavy_dir)
             if self.use_tiles:
-                SELAVY_FOLDER = ("/import/ada1/askap/RACS/aug2019_reprocessing/"
-                                 "SELAVY_OUTPUT/stokesI_cat/")
+                SELAVY_FOLDER = ("/import/ada1/askap/RACS/aug2019_"
+                                 "reprocessing/SELAVY_OUTPUT/stokesI_cat/")
 
             if racsv:
-                SELAVY_FOLDER = ("/import/ada1/askap/RACS/aug2019_reprocessing/"
-                                 "COMBINED_MOSAICS/racs_catv")
+                SELAVY_FOLDER = ("/import/ada1/askap/RACS/aug2019_"
+                                 "reprocessing/COMBINED_MOSAICS/racs_catv")
 
         if not os.path.isdir(SELAVY_FOLDER):
             if not FIND_FIELDS:
                 self.logger.critical(
-                    "{} does not exist. Only finding fields".format(SELAVY_FOLDER))
+                    ("{} does not exist. "
+                     "Only finding fields").format(SELAVY_FOLDER))
                 FIND_FIELDS = True
 
-        
         if not RMS_FOLDER:
             if self.use_tiles:
                 self.logger.warning(
                     "Background noise estimates are not supported for tiles.")
-                self.logger.warning("Estimating background from mosaics instead.")
+                self.logger.warning(
+                    "Estimating background from mosaics instead.")
             image_dir = "COMBINED"
             rms_dir = "STOKES{}_RMSMAPS".format(stokes_param)
 
@@ -845,9 +873,10 @@ class EpochInfo:
         if not os.path.isdir(RMS_FOLDER):
             if not FIND_FIELDS:
                 self.logger.critical(
-                    "{} does not exist. Only finding fields".format(RMS_FOLDER))
+                    ("{} does not exist. "
+                     "Only finding fields").format(RMS_FOLDER))
                 FIND_FIELDS = True
-        
+
         self.FIND_FIELDS = FIND_FIELDS
         self.IMAGE_FOLDER = IMAGE_FOLDER
         self.SELAVY_FOLDER = SELAVY_FOLDER
