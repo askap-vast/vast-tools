@@ -232,34 +232,6 @@ def parse_args():
 
     return args
 
-
-def get_epochs(epoch_str):
-    '''
-    Parse the list of epochs to query.
-
-    :param epoch_str: Epochs to query, separated by commas (e.g. '1,2')
-    :type epoch_str: str
-
-    :returns: Epochs to query, as a list of string
-    :rtype: list
-    '''
-
-    available_epochs = ["0", ] + sorted(RELEASED_EPOCHS)
-    epochs = []
-
-    for epoch in epoch_str.split(','):
-        if epoch in available_epochs:
-            epochs.append(epoch)
-        else:
-            logger.info("Epoch {} is not available. Ignoring.".format(epoch))
-
-    if len(epochs) == 0:
-        logger.critical("No requested epochs are available")
-        sys.exit()
-
-    return epochs
-
-
 def get_logger(args, use_colorlog=False):
     '''
     Set up the logger
@@ -315,148 +287,6 @@ def get_logger(args, use_colorlog=False):
 
     return logger
 
-
-def get_output_directory(args):
-    '''
-    Build the output directory
-
-    :param args: Arguments namespace
-    :type args: `argparse.Namespace`
-
-    :returns: Output directory
-    :rtype: str
-    '''
-
-    output_dir = args.out_folder
-    if os.path.isdir(output_dir):
-        if args.clobber:
-            logger.warning(("Directory {} already exists "
-                            "but clobber selected. "
-                            "Removing current directory."
-                            ).format(output_dir))
-            shutil.rmtree(output_dir)
-        else:
-            logger.critical(
-                ("Requested output directory '{}' already exists! "
-                 "Will not overwrite.").format(output_dir))
-            logger.critical("Exiting.")
-            sys.exit()
-
-    logger.info("Creating directory '{}'.".format(output_dir))
-    os.mkdir(output_dir)
-
-    return output_dir
-
-
-def build_catalog(args):
-    '''
-    Build the catalogue of target sources
-
-    :param args: Arguments namespace
-    :type args: `argparse.Namespace`
-
-    :returns: Catalogue of target sources
-    :rtype: `pandas.core.frame.DataFrame`
-    '''
-
-    if " " not in args.coords:
-        logger.info("Loading file {}".format(args.coords))
-        # Give explicit check to file existence
-        user_file = os.path.abspath(args.coords)
-        if not os.path.isfile(user_file):
-            logger.critical("{} not found!".format(user_file))
-            logger.critical("Exiting.")
-            sys.exit()
-        try:
-            catalog = pd.read_csv(user_file, comment="#")
-            catalog.columns = map(str.lower, catalog.columns)
-            if ("ra" not in catalog.columns) or ("dec" not in catalog.columns):
-                logger.critical(
-                    "Cannot find one of 'ra' or 'dec' in input file.")
-                logger.critical("Please check column headers!")
-                sys.exit()
-            if "name" not in catalog.columns:
-                catalog["name"] = [
-                    "{}_{}".format(
-                        i, j) for i, j in zip(
-                        catalog['ra'], catalog['dec'])]
-        except Exception as e:
-            logger.critical("Pandas reading of {} failed!".format(args.coords))
-            logger.critical("Check format!")
-            sys.exit()
-    else:
-        catalog_dict = {'ra': [], 'dec': []}
-        coords = args.coords.split(",")
-        for i in coords:
-            ra_str, dec_str = i.split(" ")
-            catalog_dict['ra'].append(ra_str)
-            catalog_dict['dec'].append(dec_str)
-
-        if args.source_names != "":
-            source_names = args.source_names.split(",")
-            if len(source_names) != len(catalog_dict['ra']):
-                logger.critical(
-                    "All sources must be named when using '--source-names'.")
-                logger.critical("Please check inputs.")
-                sys.exit()
-        else:
-            source_names = [
-                "{}_{}".format(
-                    i, j) for i, j in zip(
-                    catalog_dict['ra'], catalog_dict['dec'])]
-
-        catalog_dict['name'] = source_names
-
-        catalog = pd.DataFrame.from_dict(catalog_dict)
-
-    catalog['name'] = catalog['name'].astype(str)
-
-    return catalog
-
-
-def get_stokes_param(stokesv):
-    '''
-    :param stokesv: Stokes V argument
-    :type stokesv: bool
-
-    :returns: Stokes V string
-    :rtype: str
-    '''
-
-    if args.stokesv:
-        stokes_param = "V"
-    else:
-        stokes_param = "I"
-
-    return stokes_param
-
-
-def get_outfile_prefix(args):
-    '''
-    Return general parameters of the requested survey
-
-    :param args: Arguments namespace
-    :type args: `argparse.Namespace`
-
-    :returns: prefix for output file
-    :rtype: str
-    '''
-
-    if args.stokesv and args.use_tiles:
-        logger.critical(
-            "Stokes V can only be used with combined mosaics at the moment.")
-        logger.critical("Run again but remove the option '--use-tiles'.")
-        sys.exit()
-
-    if args.use_tiles:
-        outfile_prefix = "tile"
-    else:
-        outfile_prefix = "combined"
-        if args.stokesv:
-            outfile_prefix += "_stokesv"
-
-    return outfile_prefix
-
 class Query:
     '''
     This is a class representation of various information about a particular
@@ -470,13 +300,15 @@ class Query:
     def __init__(self, args):
         '''Constructor method
         '''
-        self.logger = logging.getLogger('vasttools.find_sources.QueryInfo')
+        self.logger = logging.getLogger('vasttools.find_sources.Query')
         
-        self.set_epochs()
+        self.args = args
+        
+        self.epochs = self.get_epochs()
 
         self.catalog = self.build_catalog()
         self.src_coords = self.build_SkyCoord()
-        self.logger.info("Finding fields for {} sources...".format(len(src_coords)))
+        self.logger.info("Finding fields for {} sources...".format(len(self.src_coords)))
 
         self.set_stokes_param()
         self.set_outfile_prefix()
@@ -495,20 +327,20 @@ class Query:
         '''
 
         if " " not in self.args.coords:
-            logger.info("Loading file {}".format(self.args.coords))
+            self.logger.info("Loading file {}".format(self.args.coords))
             # Give explicit check to file existence
             user_file = os.path.abspath(self.args.coords)
             if not os.path.isfile(user_file):
-                logger.critical("{} not found!".format(user_file))
-                logger.critical("Exiting.")
+                self.logger.critical("{} not found!".format(user_file))
+                self.logger.critical("Exiting.")
                 sys.exit()
             try:
                 catalog = pd.read_csv(user_file, comment="#")
                 catalog.columns = map(str.lower, catalog.columns)
                 if ("ra" not in catalog.columns) or ("dec" not in catalog.columns):
-                    logger.critical(
+                    self.logger.critical(
                         "Cannot find one of 'ra' or 'dec' in input file.")
-                    logger.critical("Please check column headers!")
+                    self.logger.critical("Please check column headers!")
                     sys.exit()
                 if "name" not in catalog.columns:
                     catalog["name"] = [
@@ -516,8 +348,8 @@ class Query:
                             i, j) for i, j in zip(
                             catalog['ra'], catalog['dec'])]
             except Exception as e:
-                logger.critical("Pandas reading of {} failed!".format(self.args.coords))
-                logger.critical("Check format!")
+                self.logger.critical("Pandas reading of {} failed!".format(self.args.coords))
+                self.logger.critical("Check format!")
                 sys.exit()
         else:
             catalog_dict = {'ra': [], 'dec': []}
@@ -530,9 +362,9 @@ class Query:
             if self.args.source_names != "":
                 source_names = self.args.source_names.split(",")
                 if len(source_names) != len(catalog_dict['ra']):
-                    logger.critical(
+                    self.logger.critical(
                         "All sources must be named when using '--source-names'.")
-                    logger.critical("Please check inputs.")
+                    self.logger.critical("Please check inputs.")
                     sys.exit()
             else:
                 source_names = [
@@ -584,7 +416,7 @@ class Query:
 
         return src_coords
 
-    def set_epochs(self):
+    def get_epochs(self):
         '''
         Parse the list of epochs to query.
         
@@ -595,39 +427,39 @@ class Query:
         available_epochs = ["0", ] + sorted(RELEASED_EPOCHS)
         epochs = []
 
-        for epoch in epoch_str.split(','):
+        for epoch in self.args.vast_pilot.split(','):
             if epoch in available_epochs:
                 epochs.append(epoch)
             else:
-                logger.info("Epoch {} is not available. Ignoring.".format(epoch))
+                self.logger.info("Epoch {} is not available. Ignoring.".format(epoch))
 
         if len(epochs) == 0:
-            logger.critical("No requested epochs are available")
+            self.logger.critical("No requested epochs are available")
             sys.exit()
 
-        self.epochs = epochs
+        return epochs
     
     def set_output_directory(self):
         '''
-        Build the output directory
+        Build the output directory and store the path
         '''
 
         output_dir = self.args.out_folder
         if os.path.isdir(output_dir):
             if self.args.clobber:
-                logger.warning(("Directory {} already exists "
+                self.logger.warning(("Directory {} already exists "
                                 "but clobber selected. "
                                 "Removing current directory."
                                 ).format(output_dir))
                 shutil.rmtree(output_dir)
             else:
-                logger.critical(
+                self.logger.critical(
                     ("Requested output directory '{}' already exists! "
                      "Will not overwrite.").format(output_dir))
-                logger.critical("Exiting.")
+                self.logger.critical("Exiting.")
                 sys.exit()
 
-        logger.info("Creating directory '{}'.".format(output_dir))
+        self.logger.info("Creating directory '{}'.".format(output_dir))
         os.mkdir(output_dir)
 
         self.output_dir = output_dir
@@ -654,9 +486,9 @@ class Query:
         '''
 
         if self.args.stokesv and self.args.use_tiles:
-            logger.critical(
+            self.logger.critical(
                 "Stokes V can only be used with combined mosaics at the moment.")
-            logger.critical("Run again but remove the option '--use-tiles'.")
+            self.logger.critical("Run again but remove the option '--use-tiles'.")
             sys.exit()
 
         if self.args.use_tiles:
@@ -667,6 +499,215 @@ class Query:
                 outfile_prefix += "_stokesv"
 
         self.outfile_prefix = outfile_prefix
+        
+    def run_query(self):
+        '''
+        Run the requested query
+        '''
+        
+        for epoch in self.epochs:
+            self.run_epoch(epoch)
+
+    def run_epoch(self, epoch):
+        '''
+        Query a specific epoch
+        
+        :param epoch: The epoch to query
+        :type epoch: str
+        '''
+        
+        EPOCH_INFO = EpochInfo(self.args, epoch, self.stokes_param)
+        survey = EPOCH_INFO.survey
+        epoch_str = EPOCH_INFO.epoch_str
+        logger.info("Querying {}".format(epoch_str))
+
+        fields = Fields(epoch)
+        src_fields, coords_mask = fields.find(self.src_coords, self.max_sep, self.catalog)
+
+        src_coords_field = self.src_coords[coords_mask]
+
+        uniq_fields = src_fields['field_name'].unique().tolist()
+
+        if len(uniq_fields) == 0:
+            logger.error("Source(s) not in Survey!")
+
+            return
+
+        if EPOCH_INFO.FIND_FIELDS:
+            if survey == "racs":
+                fields_cat_file = "{}_racs_fields.csv".format(self.output_dir)
+            else:
+                fields_cat_file = "{}_VAST_{}_fields.csv".format(
+                    self.output_dir, epoch)
+
+            fields_cat_file = os.path.join(self.output_dir, fields_cat_file)
+            fields.write_fields_cat(fields_cat_file)
+
+            return
+
+        crossmatch_output_check = False
+
+        logger.info("Performing crossmatching for sources, please wait...")
+
+        for uf in uniq_fields:
+            logger.info(
+                "-----------------------------------------------------------")
+
+            mask = src_fields["field_name"] == uf
+            srcs = src_fields[mask]
+            indexes = srcs.index
+            srcs = srcs.reset_index()
+            field_src_coords = src_coords_field[mask]
+
+            if survey == "vast_pilot":
+                fieldname = "{}.EPOCH{}.{}".format(
+                    uf, RELEASED_EPOCHS[epoch], self.stokes_param)
+            else:
+                fieldname = uf
+
+            image = Image(srcs["sbid"].iloc[0], fieldname, EPOCH_INFO.IMAGE_FOLDER,
+                          EPOCH_INFO.RMS_FOLDER, epoch, tiles=self.args.use_tiles)
+
+            if not self.args.no_background_rms:
+                image.get_rms_img()
+
+            for i, row in srcs.iterrows():
+                SBID = row['sbid']
+
+                number = row["original_index"] + 1
+
+                label = row["name"]
+
+                logger.info("Searching for crossmatch to source {}".format(label))
+
+                outfile = "{}_{}_{}.fits".format(
+                    label.replace(" ", "_"), fieldname, self.outfile_prefix)
+                outfile = os.path.join(self.output_dir, outfile)
+
+                src_coord = field_src_coords[i]
+
+                source = Source(
+                    fieldname,
+                    src_coord,
+                    SBID,
+                    EPOCH_INFO.SELAVY_FOLDER,
+                    vast_pilot=epoch,
+                    tiles=self.args.use_tiles,
+                    stokesv=self.args.stokesv)
+
+                source.extract_source(self.crossmatch_radius, self.args.stokesv)
+                if not self.args.no_background_rms and not image.rms_fail:
+                    source.get_background_rms(image.rms_data, image.rms_wcs)
+
+                if self.args.process_matches and not source.has_match:
+                    logger.info("Source does not have a selavy match, not "
+                                "continuing processing")
+                    continue
+                else:
+                    if not self.args.crossmatch_only and not image.image_fail:
+                        source.make_postagestamp(
+                            image.data,
+                            image.header,
+                            image.wcs,
+                            self.imsize,
+                            outfile)
+
+                    # not ideal but line below has to be run after those above
+                    if source.selavy_fail is False:
+                        source.filter_selavy_components(self.imsize)
+                        if self.args.ann:
+                            source.write_ann(
+                                outfile,
+                                crossmatch_overlay=self.args.self.crossmatch_radius_overlay)
+                        if self.args.reg:
+                            source.write_reg(
+                                outfile,
+                                crossmatch_overlay=self.args.self.crossmatch_radius_overlay)
+                    else:
+                        logger.error(
+                            "Selavy failed! No region or annotation files "
+                            "will be made if requested.")
+
+                    if self.args.create_png:
+                        if not self.args.crossmatch_only and not image.image_fail:
+                            if survey == "racs":
+                                png_title = "{} RACS {}".format(
+                                    label,
+                                    uf.split("_")[-1]
+                                )
+                            else:
+                                png_title = "{} VAST Pilot {} Epoch {}".format(
+                                    label,
+                                    uf.split("_")[-1],
+                                    epoch
+                                )
+                            source.make_png(
+                                self.args.png_selavy_overlay,
+                                self.args.png_linear_percentile,
+                                self.args.png_use_zscale,
+                                self.args.png_zscale_contrast,
+                                outfile,
+                                image.beam,
+                                no_islands=self.args.png_no_island_labels,
+                                label=label,
+                                no_colorbar=self.args.png_no_colorbar,
+                                title=png_title,
+                                crossmatch_overlay=self.args.self.crossmatch_radius_overlay,
+                                hide_beam=self.args.png_hide_beam)
+
+                if not crossmatch_output_check:
+                    crossmatch_output = source.selavy_info
+                    crossmatch_output.index = [indexes[i]]
+                    crossmatch_output_check = True
+                else:
+                    temp_crossmatch_output = source.selavy_info
+                    temp_crossmatch_output.index = [indexes[i]]
+                    buffer = io.StringIO()
+                    crossmatch_output.info(buf=buffer)
+                    df_info = buffer.getvalue()
+                    logger.debug("Crossmatch df:\n{}".format(df_info))
+                    buffer = io.StringIO()
+                    source.selavy_info.info(buf=buffer)
+                    df_info = buffer.getvalue()
+                    logger.debug("Selavy info df:\n{}".format(df_info))
+                    crossmatch_output = crossmatch_output.append(
+                        source.selavy_info, sort=False)
+                logger.info(
+                    "-----------------------------------------------------------")
+
+        runend = datetime.datetime.now()
+        runtime = runend - runstart
+
+        logger.info("-----------------------------------------------------------")
+        logger.info("Summary")
+        logger.info("-----------------------------------------------------------")
+        logger.info("Number of sources searched for: {}".format(
+            len(self.catalog.index)))
+        logger.info("Number of sources in survey: {}".format(
+            len(src_fields.index)))
+        logger.info("Number of sources with matches < {} arcsec: {}".format(
+            self.crossmatch_radius.arcsec,
+            len(crossmatch_output[~crossmatch_output["island_id"].isna()].index)))
+
+        logger.info(
+            "Processing took {:.1f} minutes.".format(
+                runtime.seconds / 60.))
+
+        # Create and write final crossmatch csv
+        if self.args.selavy_simple:
+            crossmatch_output = crossmatch_output.filter(
+                items=["flux_int", "rms_image", "BANE_rms"])
+            crossmatch_output = crossmatch_output.rename(
+                columns={"flux_int": "S_int", "rms_image": "S_err"})
+
+        final = src_fields.join(crossmatch_output)
+
+        output_crossmatch_name = "{}_crossmatch_{}.csv".format(
+            self.output_dir, epoch_str)
+        output_crossmatch_name = os.path.join(self.output_dir, output_crossmatch_name)
+        final.to_csv(output_crossmatch_name, index=False)
+        logger.info("Written {}.".format(output_crossmatch_name))
+        logger.info("All results in {}.".format(self.output_dir))
 
 class EpochInfo:
     '''
@@ -683,9 +724,11 @@ class EpochInfo:
     '''
     
     def __init__(self, args, pilot_epoch, stokes_param):
+        self.logger = logging.getLogger('vasttools.find_sources.EpochInfo')
+        
         FIND_FIELDS = args.find_fields
         if FIND_FIELDS:
-            logger.info(
+            self.logger.info(
                 "find-fields selected, only outputting field catalogue")
 
         BASE_FOLDER = args.base_folder
@@ -708,7 +751,7 @@ class EpochInfo:
                 survey_folder = "racs_v3"
 
             if stokes_param == "V":
-                logger.critical(
+                self.logger.critical(
                     "Stokes V is currently unavailable for RACS V3."
                     "Using V2 instead")
                 racsv = True
@@ -727,7 +770,7 @@ class EpochInfo:
         
         if not BASE_FOLDER:
             if HOST != HOST_ADA:
-                logger.critical(
+                self.logger.critical(
                     "Base folder must be specified if not running on ada")
                 sys.exit()
             BASE_FOLDER = "/import/ada1/askap/"
@@ -753,7 +796,7 @@ class EpochInfo:
 
         if not os.path.isdir(IMAGE_FOLDER):
             if not FIND_FIELDS:
-                logger.critical(
+                self.logger.critical(
                     "{} does not exist. Only finding fields".format(IMAGE_FOLDER))
                 FIND_FIELDS = True
 
@@ -777,16 +820,16 @@ class EpochInfo:
 
         if not os.path.isdir(SELAVY_FOLDER):
             if not FIND_FIELDS:
-                logger.critical(
+                self.logger.critical(
                     "{} does not exist. Only finding fields".format(SELAVY_FOLDER))
                 FIND_FIELDS = True
 
         
         if not RMS_FOLDER:
             if self.use_tiles:
-                logger.warning(
+                self.logger.warning(
                     "Background noise estimates are not supported for tiles.")
-                logger.warning("Estimating background from mosaics instead.")
+                self.logger.warning("Estimating background from mosaics instead.")
             image_dir = "COMBINED"
             rms_dir = "STOKES{}_RMSMAPS".format(stokes_param)
 
@@ -802,7 +845,7 @@ class EpochInfo:
 
         if not os.path.isdir(RMS_FOLDER):
             if not FIND_FIELDS:
-                logger.critical(
+                self.logger.critical(
                     "{} does not exist. Only finding fields".format(RMS_FOLDER))
                 FIND_FIELDS = True
         
@@ -812,271 +855,10 @@ class EpochInfo:
         self.RMS_FOLDER = RMS_FOLDER
 
 
-def build_SkyCoord(catalog):
-    '''
-    Create a SkyCoord array for each target source
-
-    :param catalog: Catalogue of target sources
-    :type catalog: `pandas.core.frame.DataFrame`
-
-    :returns: Target source SkyCoord
-    :rtype: `astropy.coordinates.sky_coordinate.SkyCoord`
-    '''
-
-    if catalog['ra'].dtype == np.float64:
-        hms = False
-        deg = True
-
-    elif ":" in catalog['ra'].iloc[0]:
-        hms = True
-        deg = False
-    else:
-        deg = True
-        hms = False
-
-    if hms:
-        src_coords = SkyCoord(
-            catalog['ra'],
-            catalog['dec'],
-            unit=(
-                u.hourangle,
-                u.deg))
-    else:
-        src_coords = SkyCoord(
-            catalog['ra'],
-            catalog['dec'],
-            unit=(
-                u.deg,
-                u.deg))
-
-    return src_coords
-
-
-def run_epoch(args, catalog, src_coords, imsize, max_sep, crossmatch_radius,
-              pilot_epoch, outfile_prefix, output_dir, stokes_param):
-        
-    EPOCH_INFO = EpochInfo(args, pilot_epoch, stokes_param)
-    survey = EPOCH_INFO.survey
-    epoch_str = EPOCH_INFO.epoch_str
-    logger.info("Querying {}".format(epoch_str))
-
-    fields = Fields(pilot_epoch)
-    src_fields, coords_mask = fields.find(src_coords, max_sep, catalog)
-
-    src_coords = src_coords[coords_mask]
-
-    uniq_fields = src_fields['field_name'].unique().tolist()
-
-    if len(uniq_fields) == 0:
-        logger.error("Source(s) not in Survey!")
-
-        return
-
-    if EPOCH_INFO.FIND_FIELDS:
-        if survey == "racs":
-            fields_cat_file = "{}_racs_fields.csv".format(output_dir)
-        else:
-            fields_cat_file = "{}_VAST_{}_fields.csv".format(
-                output_dir, pilot_epoch)
-
-        fields_cat_file = os.path.join(output_dir, fields_cat_file)
-        fields.write_fields_cat(fields_cat_file)
-
-        return
-
-    crossmatch_output_check = False
-
-    logger.info("Performing crossmatching for sources, please wait...")
-
-    for uf in uniq_fields:
-        logger.info(
-            "-----------------------------------------------------------")
-
-        mask = src_fields["field_name"] == uf
-        srcs = src_fields[mask]
-        indexes = srcs.index
-        srcs = srcs.reset_index()
-        field_src_coords = src_coords[mask]
-
-        if survey == "vast_pilot":
-            fieldname = "{}.EPOCH{}.{}".format(
-                uf, RELEASED_EPOCHS[pilot_epoch], stokes_param)
-        else:
-            fieldname = uf
-
-        image = Image(srcs["sbid"].iloc[0], fieldname, EPOCH_INFO.IMAGE_FOLDER,
-                      EPOCH_INFO.RMS_FOLDER, pilot_epoch, tiles=args.use_tiles)
-
-        if not args.no_background_rms:
-            image.get_rms_img()
-
-        for i, row in srcs.iterrows():
-            SBID = row['sbid']
-
-            number = row["original_index"] + 1
-
-            label = row["name"]
-
-            logger.info("Searching for crossmatch to source {}".format(label))
-
-            outfile = "{}_{}_{}.fits".format(
-                label.replace(" ", "_"), fieldname, outfile_prefix)
-            outfile = os.path.join(output_dir, outfile)
-
-            src_coord = field_src_coords[i]
-
-            source = Source(
-                fieldname,
-                src_coord,
-                SBID,
-                EPOCH_INFO.SELAVY_FOLDER,
-                vast_pilot=pilot_epoch,
-                tiles=args.use_tiles,
-                stokesv=args.stokesv)
-
-            source.extract_source(crossmatch_radius, args.stokesv)
-            if not args.no_background_rms and not image.rms_fail:
-                source.get_background_rms(image.rms_data, image.rms_wcs)
-
-            if args.process_matches and not source.has_match:
-                logger.info("Source does not have a selavy match, not "
-                            "continuing processing")
-                continue
-            else:
-                if not args.crossmatch_only and not image.image_fail:
-                    source.make_postagestamp(
-                        image.data,
-                        image.header,
-                        image.wcs,
-                        imsize,
-                        outfile)
-
-                # not ideal but line below has to be run after those above
-                if source.selavy_fail is False:
-                    source.filter_selavy_components(imsize)
-                    if args.ann:
-                        source.write_ann(
-                            outfile,
-                            crossmatch_overlay=args.crossmatch_radius_overlay)
-                    if args.reg:
-                        source.write_reg(
-                            outfile,
-                            crossmatch_overlay=args.crossmatch_radius_overlay)
-                else:
-                    logger.error(
-                        "Selavy failed! No region or annotation files "
-                        "will be made if requested.")
-
-                if args.create_png:
-                    if not args.crossmatch_only and not image.image_fail:
-                        if survey == "racs":
-                            png_title = "{} RACS {}".format(
-                                label,
-                                uf.split("_")[-1]
-                            )
-                        else:
-                            png_title = "{} VAST Pilot {} Epoch {}".format(
-                                label,
-                                uf.split("_")[-1],
-                                pilot_epoch
-                            )
-                        source.make_png(
-                            args.png_selavy_overlay,
-                            args.png_linear_percentile,
-                            args.png_use_zscale,
-                            args.png_zscale_contrast,
-                            outfile,
-                            image.beam,
-                            no_islands=args.png_no_island_labels,
-                            label=label,
-                            no_colorbar=args.png_no_colorbar,
-                            title=png_title,
-                            crossmatch_overlay=args.crossmatch_radius_overlay,
-                            hide_beam=args.png_hide_beam)
-
-            if not crossmatch_output_check:
-                crossmatch_output = source.selavy_info
-                crossmatch_output.index = [indexes[i]]
-                crossmatch_output_check = True
-            else:
-                temp_crossmatch_output = source.selavy_info
-                temp_crossmatch_output.index = [indexes[i]]
-                buffer = io.StringIO()
-                crossmatch_output.info(buf=buffer)
-                df_info = buffer.getvalue()
-                logger.debug("Crossmatch df:\n{}".format(df_info))
-                buffer = io.StringIO()
-                source.selavy_info.info(buf=buffer)
-                df_info = buffer.getvalue()
-                logger.debug("Selavy info df:\n{}".format(df_info))
-                crossmatch_output = crossmatch_output.append(
-                    source.selavy_info, sort=False)
-            logger.info(
-                "-----------------------------------------------------------")
-
-    runend = datetime.datetime.now()
-    runtime = runend - runstart
-
-    logger.info("-----------------------------------------------------------")
-    logger.info("Summary")
-    logger.info("-----------------------------------------------------------")
-    logger.info("Number of sources searched for: {}".format(
-        len(catalog.index)))
-    logger.info("Number of sources in survey: {}".format(
-        len(src_fields.index)))
-    logger.info("Number of sources with matches < {} arcsec: {}".format(
-        crossmatch_radius.arcsec,
-        len(crossmatch_output[~crossmatch_output["island_id"].isna()].index)))
-
-    logger.info(
-        "Processing took {:.1f} minutes.".format(
-            runtime.seconds / 60.))
-
-    # Create and write final crossmatch csv
-    if args.selavy_simple:
-        crossmatch_output = crossmatch_output.filter(
-            items=["flux_int", "rms_image", "BANE_rms"])
-        crossmatch_output = crossmatch_output.rename(
-            columns={"flux_int": "S_int", "rms_image": "S_err"})
-
-    final = src_fields.join(crossmatch_output)
-
-    output_crossmatch_name = "{}_crossmatch_{}.csv".format(
-        output_dir, epoch_str)
-    output_crossmatch_name = os.path.join(output_dir, output_crossmatch_name)
-    final.to_csv(output_crossmatch_name, index=False)
-    logger.info("Written {}.".format(output_crossmatch_name))
-    logger.info("All results in {}.".format(output_dir))
-
-
 if __name__ == '__main__':
     args = parse_args()
     logger = get_logger(args, use_colorlog=use_colorlog)
     logger.debug("Available epochs: {}".format(RELEASED_EPOCHS.keys()))
 
-    epochs = get_epochs(args.vast_pilot)
-
-    catalog = build_catalog(args)
-    src_coords = build_SkyCoord(catalog)
-    logger.info("Finding fields for {} sources...".format(len(src_coords)))
-
-    stokes_param = get_stokes_param(args.stokesv)
-    outfile_prefix = get_outfile_prefix(args)
-    output_dir = get_output_directory(args)
-
-    imsize = Angle(args.imsize, unit=u.arcmin)
-    max_sep = args.maxsep
-    crossmatch_radius = Angle(args.crossmatch_radius, unit=u.arcsec)
-
-    for epoch in epochs:
-        run_epoch(
-            args,
-            catalog,
-            src_coords,
-            imsize,
-            max_sep,
-            crossmatch_radius,
-            epoch,
-            outfile_prefix,
-            output_dir,
-            stokes_param)
+    query = Query(args)
+    query.run_query()
