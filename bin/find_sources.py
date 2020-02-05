@@ -457,6 +457,217 @@ def get_outfile_prefix(args):
 
     return outfile_prefix
 
+class Query:
+    '''
+    This is a class representation of various information about a particular
+    query including the catalogue of target sources, the Stokes parameter,
+    crossmatch radius and output parameters.
+    
+    :param args: Arguments namespace
+    :type args: `argparse.Namespace`
+    '''
+    
+    def __init__(self, args):
+        '''Constructor method
+        '''
+        self.logger = logging.getLogger('vasttools.find_sources.QueryInfo')
+        
+        self.set_epochs()
+
+        self.catalog = self.build_catalog()
+        self.src_coords = self.build_SkyCoord()
+        self.logger.info("Finding fields for {} sources...".format(len(src_coords)))
+
+        self.set_stokes_param()
+        self.set_outfile_prefix()
+        self.set_output_directory()
+
+        self.imsize = Angle(args.imsize, unit=u.arcmin)
+        self.max_sep = args.maxsep
+        self.crossmatch_radius = Angle(args.crossmatch_radius, unit=u.arcsec)
+    
+    def build_catalog(self):
+        '''
+        Build the catalogue of target sources
+
+        :returns: Catalogue of target sources
+        :rtype: `pandas.core.frame.DataFrame`
+        '''
+
+        if " " not in self.args.coords:
+            logger.info("Loading file {}".format(self.args.coords))
+            # Give explicit check to file existence
+            user_file = os.path.abspath(self.args.coords)
+            if not os.path.isfile(user_file):
+                logger.critical("{} not found!".format(user_file))
+                logger.critical("Exiting.")
+                sys.exit()
+            try:
+                catalog = pd.read_csv(user_file, comment="#")
+                catalog.columns = map(str.lower, catalog.columns)
+                if ("ra" not in catalog.columns) or ("dec" not in catalog.columns):
+                    logger.critical(
+                        "Cannot find one of 'ra' or 'dec' in input file.")
+                    logger.critical("Please check column headers!")
+                    sys.exit()
+                if "name" not in catalog.columns:
+                    catalog["name"] = [
+                        "{}_{}".format(
+                            i, j) for i, j in zip(
+                            catalog['ra'], catalog['dec'])]
+            except Exception as e:
+                logger.critical("Pandas reading of {} failed!".format(self.args.coords))
+                logger.critical("Check format!")
+                sys.exit()
+        else:
+            catalog_dict = {'ra': [], 'dec': []}
+            coords = self.args.coords.split(",")
+            for i in coords:
+                ra_str, dec_str = i.split(" ")
+                catalog_dict['ra'].append(ra_str)
+                catalog_dict['dec'].append(dec_str)
+
+            if self.args.source_names != "":
+                source_names = self.args.source_names.split(",")
+                if len(source_names) != len(catalog_dict['ra']):
+                    logger.critical(
+                        "All sources must be named when using '--source-names'.")
+                    logger.critical("Please check inputs.")
+                    sys.exit()
+            else:
+                source_names = [
+                    "{}_{}".format(
+                        i, j) for i, j in zip(
+                        catalog_dict['ra'], catalog_dict['dec'])]
+
+            catalog_dict['name'] = source_names
+
+            catalog = pd.DataFrame.from_dict(catalog_dict)
+
+        catalog['name'] = catalog['name'].astype(str)
+
+        return catalog
+    
+    def build_SkyCoord(self):
+        '''
+        Create a SkyCoord array for each target source
+
+        :returns: Target source SkyCoord
+        :rtype: `astropy.coordinates.sky_coordinate.SkyCoord`
+        '''
+
+        if self.catalog['ra'].dtype == np.float64:
+            hms = False
+            deg = True
+
+        elif ":" in self.catalog['ra'].iloc[0]:
+            hms = True
+            deg = False
+        else:
+            deg = True
+            hms = False
+
+        if hms:
+            src_coords = SkyCoord(
+                self.catalog['ra'],
+                self.catalog['dec'],
+                unit=(
+                    u.hourangle,
+                    u.deg))
+        else:
+            src_coords = SkyCoord(
+                self.catalog['ra'],
+                self.catalog['dec'],
+                unit=(
+                    u.deg,
+                    u.deg))
+
+        return src_coords
+
+    def set_epochs(self):
+        '''
+        Parse the list of epochs to query.
+        
+        :returns: Epochs to query, as a list of string
+        :rtype: list
+        '''
+
+        available_epochs = ["0", ] + sorted(RELEASED_EPOCHS)
+        epochs = []
+
+        for epoch in epoch_str.split(','):
+            if epoch in available_epochs:
+                epochs.append(epoch)
+            else:
+                logger.info("Epoch {} is not available. Ignoring.".format(epoch))
+
+        if len(epochs) == 0:
+            logger.critical("No requested epochs are available")
+            sys.exit()
+
+        self.epochs = epochs
+    
+    def set_output_directory(self):
+        '''
+        Build the output directory
+        '''
+
+        output_dir = self.args.out_folder
+        if os.path.isdir(output_dir):
+            if self.args.clobber:
+                logger.warning(("Directory {} already exists "
+                                "but clobber selected. "
+                                "Removing current directory."
+                                ).format(output_dir))
+                shutil.rmtree(output_dir)
+            else:
+                logger.critical(
+                    ("Requested output directory '{}' already exists! "
+                     "Will not overwrite.").format(output_dir))
+                logger.critical("Exiting.")
+                sys.exit()
+
+        logger.info("Creating directory '{}'.".format(output_dir))
+        os.mkdir(output_dir)
+
+        self.output_dir = output_dir
+    
+    def set_stokes_param(self):
+        '''
+        Set the stokes Parameter
+        '''
+
+        if self.args.stokesv:
+            stokes_param = "V"
+        else:
+            stokes_param = "I"
+
+        self.stokes_param = stokes_param
+
+
+    def set_outfile_prefix(self):
+        '''
+        Return general parameters of the requested survey
+
+        :returns: prefix for output file
+        :rtype: str
+        '''
+
+        if self.args.stokesv and self.args.use_tiles:
+            logger.critical(
+                "Stokes V can only be used with combined mosaics at the moment.")
+            logger.critical("Run again but remove the option '--use-tiles'.")
+            sys.exit()
+
+        if self.args.use_tiles:
+            outfile_prefix = "tile"
+        else:
+            outfile_prefix = "combined"
+            if self.args.stokesv:
+                outfile_prefix += "_stokesv"
+
+        self.outfile_prefix = outfile_prefix
+
 class EpochInfo:
     '''
     This is a class representation of various information about a particular
