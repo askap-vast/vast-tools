@@ -571,13 +571,23 @@ def build_SkyCoord(catalog):
     
     return src_coords
 
-args = parse_args()
-logger = get_logger(args, use_colorlog=use_colorlog)
-catalog = build_catalog(args)
-src_coords = build_SkyCoord(catalog)
-outfile_prefix, stokes_param = get_survey_params(args)
-pilot_epoch = args.vast_pilot
-FIND_FIELDS, IMAGE_FOLDER, SELAVY_FOLDER, RMS_FOLDER, survey = get_directory_paths(args, pilot_epoch, stokes_param)
+
+if __name__ == '__main__':
+    args = parse_args()
+    logger = get_logger(args, use_colorlog=use_colorlog)
+    logger.debug("Available epochs: {}".format(RELEASED_EPOCHS.keys()))
+    
+    catalog = build_catalog(args)
+    src_coords = build_SkyCoord(catalog)
+    logger.info("Finding fields for {} sources...".format(len(src_coords)))
+    
+    outfile_prefix, stokes_param = get_survey_params(args)
+    
+    imsize = Angle(args.imsize, unit=u.arcmin)
+    max_sep = args.maxsep
+    
+    pilot_epoch = args.vast_pilot
+    FIND_FIELDS, IMAGE_FOLDER, SELAVY_FOLDER, RMS_FOLDER, survey = get_directory_paths(args, pilot_epoch, stokes_param)
 
 exit()
 
@@ -587,9 +597,7 @@ exit()
 
 
 def rubbish():
-    imsize = Angle(args.imsize, unit=u.arcmin)
-
-    max_sep = args.maxsep
+    
 
 
 
