@@ -384,15 +384,31 @@ def build_catalog(args):
     
     return catalog
 
-def get_survey_params(args):
+def get_stokes_param(stokesv):
+    '''
+    :param stokesv: Stokes V argument
+    :type stokesv: bool
+    
+    :returns: Stokes V string
+    :rtype: str
+    '''
+    
+    if args.stokesv:
+        stokes_param = "V"
+    else:
+        stokes_param = "I"
+    
+    return stokes param
+    
+def get_outfile_prefix(args):
     '''
     Return general parameters of the requested survey
     
     :param args: Arguments namespace
     :type args: `argparse.Namespace`
     
-    :returns: prefix for output file, Stokes parameter (I or V)
-    :rtype: tuple of strings
+    :returns: prefix for output file
+    :rtype: str
     '''
     
     if args.stokesv and args.use_tiles:
@@ -407,13 +423,8 @@ def get_survey_params(args):
         outfile_prefix = "combined"
         if args.stokesv:
             outfile_prefix += "_stokesv"
-            
-    if args.stokesv:
-        stokes_param = "V"
-    else:
-        stokes_param = "I"
     
-    return outfile_prefix, stokes_param
+    return outfile_prefix
 
 def get_directory_paths(args, pilot_epoch, stokes_param):
     '''
