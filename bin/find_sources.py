@@ -91,8 +91,9 @@ def parse_args():
     parser.add_argument(
         '--vast-pilot',
         type=str,
-        help=("Select the VAST Pilot Epoch to query. "
-              "Epoch 0 is RACS."),
+        help=("Select the VAST Pilot Epoch to query. Epoch 0 is RACS."
+              "All available epochs can be queried using "
+              "\"--vast-pilot=all\""),
         default="1")
     parser.add_argument(
         '--imsize',
