@@ -625,6 +625,9 @@ class Query:
                 source.extract_source(
                     self.crossmatch_radius, self.args.stokesv)
                 if not self.args.no_background_rms and not image.rms_fail:
+                    self.logger.debug(src_coord)
+                    self.logger.debug(image.rmspath)
+                    self.logger.debug(image.imgpath)
                     source.get_background_rms(image.rms_data, image.rms_wcs)
 
                 if self.args.process_matches and not source.has_match:
