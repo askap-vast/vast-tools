@@ -431,10 +431,17 @@ class Query:
         :rtype: list
         '''
 
-        available_epochs = ["0", ] + sorted(RELEASED_EPOCHS)
+        available_epochs = sorted(RELEASED_EPOCHS)
+        if HOST == HOST_ADA:
+            available_epochs.insert(0, "0")
+
         epochs = []
 
-        for epoch in self.args.vast_pilot.split(','):
+        epoch_arg = self.args.vast_pilot
+        if epoch_arg == 'all':
+            return available_epochs
+
+        for epoch in epoch_arg.split(','):
             if epoch in available_epochs:
                 epochs.append(epoch)
             else:
@@ -711,8 +718,8 @@ class Query:
         self.logger.info((
             "Number of sources with matches"
             " < {} arcsec: {}").format(
-                                    self.crossmatch_radius.arcsec,
-                                    num_matched))
+            self.crossmatch_radius.arcsec,
+            num_matched))
 
         logger.info(
             "Processing took {:.1f} minutes.".format(
