@@ -553,10 +553,14 @@ class Source:
         legend_elements = [
             Line2D(
                 [0], [0], marker='x', color='C3', label=label,
-                markerfacecolor='g', ls="none", markersize=8),
-            Line2D(
-                [0], [0], marker='o', color='C1', label="Selavy Sources",
-                markerfacecolor='none', ls="none", markersize=10)]
+                markerfacecolor='g', ls="none", markersize=8)]
+        if selavy and self.selavy_fail is False:
+            legend_elements.append(
+                Line2D(
+                    [0], [0], marker='o', color='C1', 
+                    label="Selavy Components",
+                    markerfacecolor='none', ls="none", markersize=10)
+            )
         if crossmatch_overlay:
             legend_elements.append(
                 Line2D(
