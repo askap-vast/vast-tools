@@ -215,7 +215,11 @@ parser.add_argument(
 parser.add_argument(
     '--overwrite',
     action="store_true",
-    help='Overwrite any files that already exist in the output directory.')
+    help=(
+        "Overwrite any files that already exist in the output directory."
+        " If overwrite is not selected, integrity checking will still be"
+        " performed on the existing files and if the check fails, the file"
+        " will be re-downloaded."))
 
 parser.add_argument(
     '--debug',
