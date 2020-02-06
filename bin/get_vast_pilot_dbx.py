@@ -75,7 +75,7 @@ def filter_files_list(
     :param tile_only: Filter to only tiles products, defaults
         to False
     :type tile_only: bool, optional
-    :param selected_epochs: Filter to only the epoch selected, 
+    :param selected_epochs: Filter to only the epoch selected,
         defaults to None
     :type selected_epochs: str, optional
     :returns: filtered list of dropbox files
