@@ -50,8 +50,9 @@ optional arguments:
                         get the list of files from Dropbox. (default: None)
   --files-list FILES_LIST
                         Input of files to fetch. (default: None)
-  --overwrite           Overwrite any files that already exist in the output directory. (default:
-                        False)
+  --overwrite           Overwrite any files that already exist in the output directory. If overwrite is 
+                        not selected, integrity checking will still be performed on the existing files 
+                        and if the check fails, the file will be re-downloaded. (default: False)
   --debug               Set logging level to debug. (default: False)
   --dropbox-config DROPBOX_CONFIG
                         Dropbox config file to be read in containing the shared url, password and
