@@ -123,8 +123,7 @@ def filter_files_list(
 
     if skip_qc:
         logger.debug("Filtering out QC files.")
-        filter_df = filter_df[~filter_df.file.str.contains(
-            re.escape("/QC"))]
+        filter_df = filter_df[~filter_df.file.str.contains("/QC")]
         filter_df.reset_index(drop=True, inplace=True)
 
     if skip_islands:
