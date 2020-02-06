@@ -524,6 +524,10 @@ class Query:
 
         for epoch in self.epochs:
             self.run_epoch(epoch)
+        self.logger.info(
+                    "-----------------------------------------------------")
+        self.logger.info("Query executed successfully!")
+        self.logger.info("All results in {}.".format(self.output_dir))
 
     def run_epoch(self, epoch):
         '''
@@ -698,7 +702,7 @@ class Query:
                     self.logger.debug("Selavy info df:\n{}".format(df_info))
                     crossmatch_output = crossmatch_output.append(
                         source.selavy_info, sort=False)
-                logger.info(
+                self.logger.info(
                     "-----------------------------------------------------")
 
         runend = datetime.datetime.now()
@@ -706,7 +710,7 @@ class Query:
 
         self.logger.info(
             "-----------------------------------------------------")
-        self.logger.info("Summary")
+        self.logger.info("Epoch Summary ({})".format(epoch_str))
         self.logger.info(
             "-----------------------------------------------------")
         self.logger.info("Number of sources searched for: {}".format(
@@ -722,7 +726,7 @@ class Query:
             self.crossmatch_radius.arcsec,
             num_matched))
 
-        logger.info(
+        self.logger.info(
             "Processing took {:.1f} minutes.".format(
                 runtime.seconds / 60.))
 
@@ -740,9 +744,9 @@ class Query:
         output_crossmatch_name = os.path.join(
             self.output_dir, output_crossmatch_name)
         final.to_csv(output_crossmatch_name, index=False)
-        logger.info("Written {}.".format(output_crossmatch_name))
-        logger.info("All results in {}.".format(self.output_dir))
-
+        self.logger.info("Written {}.".format(output_crossmatch_name))
+        self.logger.info(
+                    "-----------------------------------------------------")
 
 class EpochInfo:
     '''
