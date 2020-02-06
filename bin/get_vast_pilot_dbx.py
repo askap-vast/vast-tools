@@ -37,7 +37,8 @@ def filter_files_list(
         skip_rms_images=False,
         skip_all_images=False,
         combined_only=False,
-        tile_only=False):
+        tile_only=False,
+        selected_epochs=None):
     '''
     Filters the file_list to fetch by the users request.
 
@@ -74,6 +75,9 @@ def filter_files_list(
     :param tile_only: Filter to only tiles products, defaults
         to False
     :type tile_only: bool, optional
+    :param selected_epochs: Filter to only the epoch selected,
+        defaults to None
+    :type selected_epochs: str, optional
     :returns: filtered list of dropbox files
     :rtype: list
     '''
@@ -157,6 +161,29 @@ def filter_files_list(
     if tile_only:
         logger.debug("Filtering to tiles files only.")
         filter_df = filter_df[filter_df.file.str.contains("/TILES/")]
+        filter_df.reset_index(drop=True, inplace=True)
+
+    if selected_epochs is not None:
+        logger.debug("Filtering epochs.")
+        pattern_strings = []
+        for i in selected_epochs.split(","):
+            if i.startswith("0"):
+                i = i[1:]
+            if i not in RELEASED_EPOCHS:
+                logger.warning(
+                    "Epoch '{}' is unknown or not released yet!"
+                    " No files will be found for this selection."
+                )
+            else:
+                epoch_dbx_format = "/EPOCH{}/".format(
+                    RELEASED_EPOCHS[i])
+                pattern_strings.append(epoch_dbx_format)
+        pattern = "|".join(pattern_strings)
+        logger.debug("Filtering to {} only.".format(
+            pattern
+        ))
+        filter_df = filter_df[filter_df.file.str.contains(
+            pattern)]
         filter_df.reset_index(drop=True, inplace=True)
 
     final_list = filter_df.file.tolist()
@@ -312,6 +339,13 @@ parser.add_argument(
     '--tile-only',
     action="store_true",
     help="Only download the combined products.")
+
+parser.add_argument(
+    '--epochs-only',
+    type=str,
+    help=("Only download files from the selected epochs."
+          " Enter as a list with no spaces, e.g. '1,2,4x'."),
+    default=None)
 
 args = parser.parse_args()
 
@@ -473,7 +507,8 @@ elif args.download_epoch is not None:
             skip_rms_images=args.skip_rms_images,
             skip_all_images=args.skip_all_images,
             combined_only=args.combined_only,
-            tile_only=args.tile_only
+            tile_only=args.tile_only,
+            selected_epochs=args.epochs_only
         )
 
         logger.info(
@@ -497,7 +532,7 @@ elif args.find_fields_input is not None:
         logger.error(
             "Supplied file '{}' not found!".format(args.find_fields_input))
         sys.exit()
-    fields_df = pd.read_csv(args.find_fields_input)
+    fields_df = pd.read_csv(args.find_fields_input, comment="#")
     fields_to_fetch = fields_df.field_name.unique()
     logger.info("Will download data products of the following fields:")
     for f in fields_to_fetch:
@@ -533,7 +568,8 @@ elif args.find_fields_input is not None:
         skip_rms_images=args.skip_rms_images,
         skip_all_images=args.skip_all_images,
         combined_only=args.combined_only,
-        tile_only=args.tile_only
+        tile_only=args.tile_only,
+        selected_epochs=args.epochs_only
     )
 
     dirs_to_create = np.unique(
@@ -591,7 +627,8 @@ elif args.files_list is not None:
         skip_rms_images=args.skip_rms_images,
         skip_all_images=args.skip_all_images,
         combined_only=args.combined_only,
-        tile_only=args.tile_only
+        tile_only=args.tile_only,
+        selected_epochs=args.epochs_only
     )
 
     dirs_to_create = np.unique(
