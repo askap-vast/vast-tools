@@ -260,15 +260,30 @@ class Dropbox:
                 for vast_file in files_list:
                     download_path = os.path.join(
                         pwd, output_dir, vast_file[1:])
+                    dropbox_path = "{}".format(vast_file)
                     if not overwrite:
                         if os.path.isfile(download_path):
-                            self.logger.error(
+                            self.logger.warning(
                                 "{} already exists and overwrite "
                                 "is set to {}.".format(
                                     download_path, overwrite))
-                            self.logger.info("Skipping file.")
-                            continue
-                    dropbox_path = "{}".format(vast_file)
+                            self.logger.info(
+                                "Checking integrity..."
+                            )
+                            good_file = self._checksum_check(
+                                dropbox_path,
+                                download_path
+                            )
+                            if good_file is False:
+                                self.logger.warning(
+                                    "Redownloading {}".format(
+                                        vast_file
+                                    )
+                                )
+                            else:
+                                self.logger.info("Checksum check passed!")
+                                self.logger.info("Skipping file.")
+                                continue
                     self.logger.debug(
                         "Download path: {}".format(download_path))
                     download_success = self.download_file(
