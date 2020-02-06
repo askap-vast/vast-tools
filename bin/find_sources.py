@@ -525,7 +525,7 @@ class Query:
         for epoch in self.epochs:
             self.run_epoch(epoch)
         self.logger.info(
-                    "-----------------------------------------------------")
+            "-----------------------------------------------------")
         self.logger.info("Query executed successfully!")
         self.logger.info("All results in {}.".format(self.output_dir))
 
@@ -749,7 +749,8 @@ class Query:
         final.to_csv(output_crossmatch_name, index=False)
         self.logger.info("Written {}.".format(output_crossmatch_name))
         self.logger.info(
-                    "-----------------------------------------------------")
+            "-----------------------------------------------------")
+
 
 class EpochInfo:
     '''
