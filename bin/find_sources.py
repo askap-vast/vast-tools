@@ -551,7 +551,7 @@ class Query:
         uniq_fields = src_fields['field_name'].unique().tolist()
 
         if len(uniq_fields) == 0:
-            self.logger.error("Source(s) not in Survey!")
+            self.logger.error("Source(s) not in {}!".format(EPOCH_INFO.epoch_str))
             return
 
         if EPOCH_INFO.FIND_FIELDS:
@@ -902,7 +902,7 @@ class EpochInfo:
 if __name__ == '__main__':
     args = parse_args()
     logger = get_logger(args, use_colorlog=use_colorlog)
-    logger.debug("Available epochs: {}".format(RELEASED_EPOCHS.keys()))
+    logger.debug("Available epochs: {}".format(sorted(RELEASED_EPOCHS.keys())))
 
     query = Query(args)
     query.run_query()
