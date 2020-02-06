@@ -557,7 +557,7 @@ class Source:
         if selavy and self.selavy_fail is False:
             legend_elements.append(
                 Line2D(
-                    [0], [0], marker='o', color='C1', 
+                    [0], [0], marker='o', color='C1',
                     label="Selavy Components",
                     markerfacecolor='none', ls="none", markersize=10)
             )
