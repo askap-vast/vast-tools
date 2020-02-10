@@ -8,6 +8,7 @@ import datetime
 import configparser
 import numpy as np
 import pandas as pd
+import re
 
 from vasttools.survey import RELEASED_EPOCHS
 from vasttools.survey import Dropbox
@@ -95,6 +96,7 @@ def filter_files_list(
         tiles_only = False
 
     if len(fields) > 0:
+        fields = [re.escape(i) for i in fields]
         field_pattern = "|".join(fields)
         logger.debug("Filtering fields for {}".format(field_pattern))
         filter_df = filter_df[filter_df.file.str.contains(field_pattern)]
