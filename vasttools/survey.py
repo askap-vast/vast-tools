@@ -30,7 +30,13 @@ RELEASED_EPOCHS = {
     "1": "01",
     "2": "02",
     "3x": "03x",
-    "4x": "04x"
+    "4x": "04x",
+    "5x": "05x",
+    "6x": "06x",
+    "8": "08",
+    "9": "09",
+    "10x": "10x",
+    "11x": "11x"
 }
 
 FIELD_FILES = {
@@ -43,7 +49,19 @@ FIELD_FILES = {
     "3x": pkg_resources.resource_filename(
         __name__, "./data/vast_epoch03x_info.csv"),
     "4x": pkg_resources.resource_filename(
-        __name__, "./data/vast_epoch04x_info.csv")
+        __name__, "./data/vast_epoch04x_info.csv"),
+    "5x": pkg_resources.resource_filename(
+        __name__, "./data/vast_epoch05x_info.csv"),
+    "6x": pkg_resources.resource_filename(
+        __name__, "./data/vast_epoch06x_info.csv"),
+    "8": pkg_resources.resource_filename(
+        __name__, "./data/vast_epoch08_info.csv"),
+    "9": pkg_resources.resource_filename(
+        __name__, "./data/vast_epoch09_info.csv"),
+    "10x": pkg_resources.resource_filename(
+        __name__, "./data/vast_epoch10x_info.csv"),
+    "11x": pkg_resources.resource_filename(
+        __name__, "./data/vast_epoch11x_info.csv")
 }
 
 CHECKSUMS_FILE = pkg_resources.resource_filename(
@@ -400,6 +418,7 @@ class Fields:
         nearest_beams, seps, _d3d = src_coord.match_to_catalog_sky(
             self.direction)
         self.logger.debug(seps.deg)
+        self.logger.debug("Nearest beams: {}".format(self.fields["BEAM"][nearest_beams]))
         within_beam = seps.deg < max_sep
         catalog["sbid"] = self.fields["SBID"].iloc[nearest_beams].values
         nearest_fields = self.fields["FIELD_NAME"].iloc[nearest_beams]
