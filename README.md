@@ -24,7 +24,7 @@ pip install -r requirements.txt
 ## Current Scripts
 As part of the installation the following scripts are made available in your path:
 
-* **find\_sources.py** - A tool to swiftly search VAST Pilot data at chosen coordaintes (also supports RACS if available).
+* **find\_sources.py** - A tool to swiftly search VAST Pilot data at chosen coordinates (also supports RACS if available).
     - See [FINDSOURCES.md](FINDSOURCES.md) for full instructions.
 * **get\_vast\_pilot\_dbx.py** - A script to allow simpler downloading of the VAST Pilot survey from Dropbox.
     - See [VASTDROPBOX.md](VASTDROPBOX.md) for full instructions.
