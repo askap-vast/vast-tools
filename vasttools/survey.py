@@ -55,6 +55,8 @@ FIELD_FILES = {
         __name__, "./data/vast_epoch05x_info.csv"),
     "6x": pkg_resources.resource_filename(
         __name__, "./data/vast_epoch06x_info.csv"),
+    "7x": pkg_resources.resource_filename(
+        __name__, "./data/vast_epoch07x_info.csv"),
     "8": pkg_resources.resource_filename(
         __name__, "./data/vast_epoch08_info.csv"),
     "9": pkg_resources.resource_filename(
