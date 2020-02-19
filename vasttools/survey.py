@@ -428,6 +428,8 @@ class Fields:
         self.logger.debug(nearest_fields)
         catalog["field_name"] = nearest_fields.values
         catalog["original_index"] = catalog.index.values
+        obs_dates = self.fields["DATEOBS"].iloc[nearest_beams]
+        catalog["obs_date"] = obs_dates.values
         new_catalog = catalog[within_beam].reset_index(drop=True)
         self.logger.info(
             "Field match found for {}/{} sources.".format(
