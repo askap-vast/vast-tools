@@ -8,6 +8,7 @@ import pkg_resources
 import dropbox
 import itertools
 import hashlib
+import numpy as np
 
 import logging
 import logging.handlers
@@ -418,6 +419,7 @@ class Fields:
         :rtype: `pandas.core.frame.DataFrame`, `numpy.ndarray`
         '''
         self.logger.debug(src_coord)
+        self.logger.debug(catalog[np.isnan(src_coord.ra)])
         nearest_beams, seps, _d3d = src_coord.match_to_catalog_sky(
             self.direction)
         self.logger.debug(seps.deg)
@@ -429,7 +431,9 @@ class Fields:
         catalog["field_name"] = nearest_fields.values
         catalog["original_index"] = catalog.index.values
         obs_dates = self.fields["DATEOBS"].iloc[nearest_beams]
+        date_end = self.fields["DATEEND"].iloc[nearest_beams]
         catalog["obs_date"] = obs_dates.values
+        catalog["date_end"] = date_end.values
         beams = self.fields["BEAM"][nearest_beams]
         catalog["beam"] = beams.values
         new_catalog = catalog[within_beam].reset_index(drop=True)
