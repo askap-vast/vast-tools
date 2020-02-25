@@ -339,8 +339,11 @@ class Query:
                 self.logger.critical("Exiting.")
                 sys.exit()
             try:
+                self.logger.debug(user_file)
                 catalog = pd.read_csv(user_file, comment="#")
+                self.logger.debug(catalog)
                 catalog.columns = map(str.lower, catalog.columns)
+                self.logger.debug(catalog.columns)
                 no_ra_col = "ra" not in catalog.columns
                 no_dec_col = "dec" not in catalog.columns
                 if no_ra_col or no_dec_col:
