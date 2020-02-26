@@ -48,7 +48,96 @@ try:
 except ImportError:
     use_colorlog = False
 
+# Force nice
+os.nice(5)
 
+runstart = datetime.datetime.now()
+
+def get_logger(args, use_colorlog=False):
+    '''
+    Set up the logger
+
+    :param args: Arguments namespace
+    :type args: `argparse.Namespace`
+    :param usecolorlog: Use colourful logging scheme, defaults to False
+    :type usecolorlog: bool, optional
+
+    :returns: Logger
+    :rtype: `logging.RootLogger`
+    '''
+    
+    logger = logging.getLogger()
+    s = logging.StreamHandler()
+    fh = logging.FileHandler(
+        "build_lightcurves_{}.log".format(
+            runstart.strftime("%Y%m%d_%H:%M:%S")))
+    fh.setLevel(logging.DEBUG)
+    logformat = '[%(asctime)s] - %(levelname)s - %(message)s'
+
+    if use_colorlog:
+        formatter = colorlog.ColoredFormatter(
+            "%(log_color)s[%(asctime)s] - %(levelname)s - %(blue)s%(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+            reset=True,
+            log_colors={
+                'DEBUG': 'cyan',
+                'INFO': 'green',
+                'WARNING': 'yellow',
+                'ERROR': 'red',
+                'CRITICAL': 'red,bg_white', },
+            secondary_log_colors={},
+            style='%'
+        )
+    else:
+        formatter = logging.Formatter(logformat, datefmt="%Y-%m-%d %H:%M:%S")
+
+    s.setFormatter(formatter)
+    fh.setFormatter(formatter)
+
+    if args.debug:
+        s.setLevel(logging.DEBUG)
+    else:
+        if args.quiet:
+            s.setLevel(logging.WARNING)
+        else:
+            s.setLevel(logging.INFO)
+
+    logger.addHandler(s)
+    logger.addHandler(fh)
+    logger.setLevel(logging.DEBUG)
+
+def parse_args():
+    '''
+    Parse arguments
+
+    :returns: Argument namespace
+    :rtype: `argparse.Namespace`
+    '''
+    
+    parser = argparse.ArgumentParser(
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    parser.add_argument(
+        'folder',
+        type=str,
+        help='')
+    parser.add_argument(
+        '--no-plotting',
+        action="store_true",
+        help='Write lightcurves to file without plotting')
+    parser.add_argument(
+        '--quiet',
+        action="store_true",
+        help='Turn off non-essential terminal output.')
+    parser.add_argument(
+        '--debug',
+        action="store_true",
+        help='Turn on debug output.')
+        
+    args = parser.parse_args()
+    
+    return args
+    
 class Lightcurve:
     '''
     This is a class representation of the lightcurve of a source
@@ -61,6 +150,7 @@ class Lightcurve:
     def __init__(self, name, num_obs):
         '''Constructor method
         '''
+        self.logger = logging.getLogger('vasttools.build_lightcurves.Lightcurve')
         self.name = name
         self.observations = pd.DataFrame(
             columns=[
@@ -90,10 +180,10 @@ class Lightcurve:
         obs_end = pd.to_datetime(row['date_end'])
 
         if np.isnan(S_int):
-            logger.debug("Observation is a non-detection")
+            self.logger.debug("Observation is a non-detection")
             upper_lim = True
         else:
-            logger.debug("Observation is a detection")
+            self.logger.debug("Observation is a detection")
             upper_lim = False
 
         self.observations.iloc[i] = [
@@ -131,7 +221,7 @@ class Lightcurve:
 
         for i, row in self.observations.iterrows():
             if row['upper_lim']:
-                logger.debug("Plotting upper limit")
+                self.logger.debug("Plotting upper limit")
                 ax.errorbar(
                     row['obs_start'],
                     sigma_thresh *
@@ -142,7 +232,7 @@ class Lightcurve:
                     marker='_',
                     c='k')
             else:
-                logger.debug("Plotting detection")
+                self.logger.debug("Plotting detection")
                 ax.errorbar(
                     row['obs_start'],
                     row['S_int'],
@@ -175,8 +265,10 @@ class Lightcurve:
 def create_lightcurves(crossmatch_paths):
     '''
     Create a lightcurve for each source by looping over all observation files
+    
     :param crossmatch_paths: List of observation file paths
     :type crossmatch_paths: list
+    
     :return: Dictionary of lightcurve objects
     :rtype: dict
     '''
@@ -208,6 +300,7 @@ def create_lightcurves(crossmatch_paths):
 def plot_lightcurves(lightcurve_dict, folder=''):
     '''
     Plot a lightcurve for each source
+    
     :param lightcurve_dict:
     :type lightcurve_dict: dict
     '''
@@ -226,91 +319,38 @@ def write_lightcurves(lightcurve_dict, folder=''):
         savefile = os.path.join(folder,name+'_lightcurve.csv')
         lightcurve.write_lightcurve(savefile)
 
+def build_paths(args):
+    '''
+    Build list of paths to crossmatch files
+    
+    :param args: Arguments namespace
+    :type args: `argparse.Namespace`
+    
+    :return: list of crossmatch paths
+    :rtype: list
+    '''
+    
+    crossmatch_paths = glob.glob(os.path.join(args.folder,'*crossmatch*.csv'))
+    
+    return crossmatch_paths
 
-# Force nice
-os.nice(5)
+def run_query(args):
+    '''
+    
+    :param args: Arguments namespace
+    :type args: `argparse.Namespace`
+    '''
+    
+    crossmatch_paths = build_paths(args)
+    lightcurve_dict = create_lightcurves(crossmatch_paths)
 
-runstart = datetime.datetime.now()
-
-parser = argparse.ArgumentParser(
-    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-
-parser.add_argument(
-    'folder',
-    type=str,
-    help='')
-#parser.add_argument(
-#    'info_file',
-#    metavar="input.csv",
-#    type=str,
-#    help='')
-parser.add_argument(
-    '--quiet',
-    action="store_true",
-    help='Turn off non-essential terminal output.')
-parser.add_argument(
-    '--debug',
-    action="store_true",
-    help='Turn on debug output.')
-
-args = parser.parse_args()
-
-logger = logging.getLogger()
-s = logging.StreamHandler()
-fh = logging.FileHandler(
-    "build_lightcurves_{}.log".format(
-        runstart.strftime("%Y%m%d_%H:%M:%S")))
-fh.setLevel(logging.DEBUG)
-logformat = '[%(asctime)s] - %(levelname)s - %(message)s'
-
-if use_colorlog:
-    formatter = colorlog.ColoredFormatter(
-        "%(log_color)s[%(asctime)s] - %(levelname)s - %(blue)s%(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-        reset=True,
-        log_colors={
-            'DEBUG': 'cyan',
-            'INFO': 'green',
-            'WARNING': 'yellow',
-            'ERROR': 'red',
-            'CRITICAL': 'red,bg_white', },
-        secondary_log_colors={},
-        style='%'
-    )
-else:
-    formatter = logging.Formatter(logformat, datefmt="%Y-%m-%d %H:%M:%S")
-
-s.setFormatter(formatter)
-fh.setFormatter(formatter)
-
-if args.debug:
-    s.setLevel(logging.DEBUG)
-else:
-    if args.quiet:
-        s.setLevel(logging.WARNING)
-    else:
-        s.setLevel(logging.INFO)
-
-logger.addHandler(s)
-logger.addHandler(fh)
-logger.setLevel(logging.DEBUG)
-
-'''
-info_file = os.path.abspath(args.info_file)
-logger.info("Getting file list from {}".format(info_file))
-if not os.path.isfile(info_file):
-    logger.critical("{} not found!".format(info_file))
-    sys.exit()
-try:
-    crossmatch_paths = pd.read_csv(info_file)
-except Exception as e:
-    logger.critical("Pandas reading of {} failed!".format(info_file))
-    logger.critical("Check format!")
-    sys.exit()
-'''
-crossmatch_paths = glob.glob(os.path.join(args.folder,'*crossmatch*.csv'))
-
-lightcurve_dict = create_lightcurves(crossmatch_paths)
-
-write_lightcurves(lightcurve_dict, folder=args.folder)
-#plot_lightcurves(lightcurve_dict, folder=args.folder)
+    write_lightcurves(lightcurve_dict, folder=args.folder)
+    
+    if not args.no_plotting:
+        plot_lightcurves(lightcurve_dict, folder=args.folder)
+        
+if __name__ == '__main__':
+    args = parse_args()
+    logger = get_logger(args, use_colorlog=use_colorlog)
+    
+    run_query(args)
