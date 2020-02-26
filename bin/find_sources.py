@@ -339,7 +339,6 @@ class Query:
                 self.logger.critical("Exiting.")
                 sys.exit()
             try:
-                self.logger.debug(user_file)
                 catalog = pd.read_csv(user_file, comment="#")
                 self.logger.debug(catalog)
                 catalog.columns = map(str.lower, catalog.columns)
