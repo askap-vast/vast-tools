@@ -260,7 +260,7 @@ class Lightcurve:
                     yerr=row['S_err'],
                     marker='o',
                     c='k')
-        
+
         fig.autofmt_xdate()
         ax.set_ylim(bottom=0)
         plt.savefig(savefile)
@@ -282,6 +282,7 @@ class Lightcurve:
             return
         self.observations.to_csv(savefile, index=False)
 
+
 class BuildLightcurves:
     '''
     This is a class representation of various information about a \
@@ -290,27 +291,30 @@ class BuildLightcurves:
     :param args: Arguments namespace
     :type args: `argparse.Namespace`
     '''
+
     def __init__(self, args):
         '''Constructor method
         '''
-        
-        self.logger = logging.getLogger('vasttools.build_lightcurves.BuildLightcurves')
+
+        self.logger = logging.getLogger(
+            'vasttools.build_lightcurves.BuildLightcurves')
         self.args = args
-        
+
         self.crossmatch_paths = self.build_paths()
-        
-        
+
     def create_lightcurves(self):
         '''
-        Create a lightcurve for each source by looping over all observation files
+        Create a lightcurve for each source by looping over all \
+        observation files
 
         :return: Dictionary of lightcurve objects
         :rtype: dict
         '''
 
         num_obs = len(self.crossmatch_paths)
-        self.logger.info("Creating lightcurves from {} observations".format(num_obs))
-        
+        self.logger.info(
+            "Creating lightcurves from {} observations".format(num_obs))
+
         lightcurve_dict = {}
         for i, path in enumerate(self.crossmatch_paths):
             path = os.path.abspath(path)
@@ -321,10 +325,11 @@ class BuildLightcurves:
             try:
                 source_list = pd.read_csv(path)
             except Exception as e:
-                self.logger.critical("Pandas reading of {} failed!".format(path))
+                self.logger.critical(
+                    "Pandas reading of {} failed!".format(path))
                 self.logger.critical("Check format!")
                 continue
-            
+
             for j, row in source_list.iterrows():
                 name = row['name']
                 if name not in lightcurve_dict.keys():
@@ -332,11 +337,10 @@ class BuildLightcurves:
                     self.logger.info("Building lightcurve for {}".format(name))
 
                 lightcurve_dict[name].add_observation(i, row)
-        
+
         self.logger.info("Lightcurve creation complete")
 
         return lightcurve_dict
-
 
     def plot_lightcurves(self, lightcurve_dict, folder=''):
         '''
@@ -345,17 +349,21 @@ class BuildLightcurves:
         :param lightcurve_dict:
         :type lightcurve_dict: dict
         '''
-        
+
         min_points = self.args.min_points
         min_detections = self.args.min_detections
-        
+
         for name, lightcurve in lightcurve_dict.items():
             savefile = os.path.join(folder, name + '.png')
-            savefile = savefile.replace(' ','_')
-            
-            lightcurve.plot_lightcurve(savefile=savefile, min_points=min_points, min_detections=min_detections)
-            self.logger.info("Wrote {} lightcurve plot to {}".format(name, savefile))
+            savefile = savefile.replace(' ', '_')
 
+            lightcurve.plot_lightcurve(
+                savefile=savefile,
+                min_points=min_points,
+                min_detections=min_detections)
+            self.logger.info(
+                "Wrote {} lightcurve plot to {}".format(
+                    name, savefile))
 
     def write_lightcurves(self, lightcurve_dict, folder=''):
         '''
@@ -363,16 +371,17 @@ class BuildLightcurves:
         :param lightcurve_dict:
         :type lightcurve_dict: dict
         '''
-        
+
         min_points = self.args.min_points
-        
+
         for name, lightcurve in lightcurve_dict.items():
             savefile = os.path.join(folder, name + '_lightcurve.csv')
-            savefile = savefile.replace(' ','_')
-            
-            lightcurve.write_lightcurve(savefile, min_points=min_points)
-            self.logger.info("Wrote {} lightcurve to {}".format(name, savefile))
+            savefile = savefile.replace(' ', '_')
 
+            lightcurve.write_lightcurve(savefile, min_points=min_points)
+            self.logger.info(
+                "Wrote {} lightcurve to {}".format(
+                    name, savefile))
 
     def build_paths(self):
         '''
@@ -382,11 +391,15 @@ class BuildLightcurves:
         :rtype: list
         '''
 
-        crossmatch_paths = glob.glob(os.path.join(args.folder, '*crossmatch*.csv'))
-        self.logger.info('Getting lightcurve info from:\n{}'.format('\n'.join(crossmatch_paths)))
+        crossmatch_paths = glob.glob(
+            os.path.join(
+                args.folder,
+                '*crossmatch*.csv'))
+        self.logger.info(
+            'Getting lightcurve info from:\n{}'.format(
+                '\n'.join(crossmatch_paths)))
 
         return crossmatch_paths
-
 
     def run_query(self):
         '''
@@ -407,6 +420,6 @@ class BuildLightcurves:
 if __name__ == '__main__':
     args = parse_args()
     logger = get_logger(args, use_colorlog=use_colorlog)
-    
+
     query = BuildLightcurves(args)
     query.run_query()
