@@ -17,6 +17,7 @@ import logging
 import logging.handlers
 import logging.config
 
+import matplotlib
 import matplotlib.pyplot as plt
 
 from astropy.coordinates import Angle
@@ -47,6 +48,8 @@ register_matplotlib_converters()
 warnings.filterwarnings('ignore', category=AstropyWarning, append=True)
 warnings.filterwarnings('ignore',
                         category=AstropyDeprecationWarning, append=True)
+
+matplotlib.pyplot.switch_backend('Agg')
 
 try:
     import colorlog
