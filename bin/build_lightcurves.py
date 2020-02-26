@@ -138,6 +138,16 @@ def parse_args():
         '--debug',
         action="store_true",
         help='Turn on debug output.')
+    parser.add_argument(
+        '--min-points',
+        type=int,
+        help='Minimum number of epochs a source must be covered by',
+        default=2)
+    parser.add_argument(
+        '--min-detections',
+        type=int,
+        help='Minimum number of times a source must be detected',
+        default=1)
 
     args = parser.parse_args()
 
@@ -250,7 +260,8 @@ class Lightcurve:
                     yerr=row['S_err'],
                     marker='o',
                     c='k')
-
+        
+        fig.autofmt_xdate()
         ax.set_ylim(bottom=0)
         plt.savefig(savefile)
         plt.close()
@@ -334,12 +345,15 @@ class BuildLightcurves:
         :param lightcurve_dict:
         :type lightcurve_dict: dict
         '''
-
+        
+        min_points = self.args.min_points
+        min_detections = self.args.min_detections
+        
         for name, lightcurve in lightcurve_dict.items():
             savefile = os.path.join(folder, name + '.png')
             savefile = savefile.replace(' ','_')
             
-            lightcurve.plot_lightcurve(savefile=savefile)
+            lightcurve.plot_lightcurve(savefile=savefile, min_points=min_points, min_detections=min_detections)
             self.logger.info("Wrote {} lightcurve plot to {}".format(name, savefile))
 
 
@@ -349,12 +363,14 @@ class BuildLightcurves:
         :param lightcurve_dict:
         :type lightcurve_dict: dict
         '''
-
+        
+        min_points = self.args.min_points
+        
         for name, lightcurve in lightcurve_dict.items():
             savefile = os.path.join(folder, name + '_lightcurve.csv')
             savefile = savefile.replace(' ','_')
             
-            lightcurve.write_lightcurve(savefile)
+            lightcurve.write_lightcurve(savefile, min_points=min_points)
             self.logger.info("Wrote {} lightcurve to {}".format(name, savefile))
 
 
