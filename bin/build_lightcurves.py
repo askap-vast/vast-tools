@@ -225,7 +225,7 @@ class Lightcurve:
         '''
 
         num_obs = self.observations['obs_start'].count()
-        num_detections = (self.observations['upper_lim'] == False).sum()
+        num_detections = self.observations['upper_lim'].sum()
 
         if num_obs < min_points:
             return
