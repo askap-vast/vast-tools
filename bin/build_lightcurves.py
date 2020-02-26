@@ -427,10 +427,10 @@ class BuildLightcurves:
         :rtype: list
         '''
 
-        crossmatch_paths = glob.glob(
+        crossmatch_paths = sorted(glob.glob(
             os.path.join(
                 args.folder,
-                '*crossmatch*.csv'))
+                '*crossmatch*.csv')))
         self.logger.info(
             'Getting lightcurve info from:\n{}'.format(
                 '\n'.join(crossmatch_paths)))
