@@ -41,6 +41,8 @@ warnings.filterwarnings('ignore', category=AstropyWarning, append=True)
 warnings.filterwarnings('ignore',
                         category=AstropyDeprecationWarning, append=True)
 
+HOST = socket.gethostname()
+HOST_ADA = 'ada.physics.usyd.edu.au'
 
 class Query:
     '''
@@ -465,8 +467,8 @@ class Query:
                 self.logger.info(
                     "-----------------------------------------------------")
 
-        runend = datetime.datetime.now()
-        runtime = runend - runstart
+        #runend = datetime.datetime.now()
+        #runtime = runend - runstart
 
         self.logger.info(
             "-----------------------------------------------------")
@@ -486,9 +488,9 @@ class Query:
             self.crossmatch_radius.arcsec,
             num_matched))
 
-        self.logger.info(
-            "Processing took {:.1f} minutes.".format(
-                runtime.seconds / 60.))
+        #self.logger.info(
+        #    "Processing took {:.1f} minutes.".format(
+        #        runtime.seconds / 60.))
 
         # Create and write final crossmatch csv
         if self.args.selavy_simple:

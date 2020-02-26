@@ -59,9 +59,6 @@ except ImportError:
 # Force nice
 os.nice(5)
 
-HOST = socket.gethostname()
-HOST_ADA = 'ada.physics.usyd.edu.au'
-
 runstart = datetime.datetime.now()
 
 
