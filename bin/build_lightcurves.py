@@ -36,6 +36,7 @@ from astropy.visualization import PercentileInterval
 from astropy.visualization import AsymmetricPercentileInterval
 from astropy.visualization import LinearStretch
 import matplotlib.axes as maxes
+import matplotlib.dates as mdates
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from pandas.plotting import register_matplotlib_converters
@@ -263,6 +264,11 @@ class Lightcurve:
 
         fig.autofmt_xdate()
         ax.set_ylim(bottom=0)
+
+        date_form = mdates.DateFormatter("%Y-%m-%d")
+        ax.xaxis.set_major_formatter(date_form)
+        ax.xaxis.set_major_locator(mdates.WeekdayLocator(interval=2))
+
         plt.savefig(savefile)
         plt.close()
 
