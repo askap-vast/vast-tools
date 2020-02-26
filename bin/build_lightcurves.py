@@ -38,6 +38,9 @@ from astropy.visualization import LinearStretch
 import matplotlib.axes as maxes
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
+from pandas.plotting import register_matplotlib_converters
+register_matplotlib_converters()
+
 warnings.filterwarnings('ignore', category=AstropyWarning, append=True)
 warnings.filterwarnings('ignore',
                         category=AstropyDeprecationWarning, append=True)
