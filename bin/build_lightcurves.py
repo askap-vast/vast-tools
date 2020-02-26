@@ -228,7 +228,7 @@ class Lightcurve:
         '''
 
         self.observations = self.observations.dropna(how='all')
-        
+
     def _infer_objects(self):
         '''
         Infer the dtype objects of the dataframe.
@@ -237,7 +237,7 @@ class Lightcurve:
         self.observations = self.observations.infer_objects()
 
     def plot_lightcurve(self, sigma_thresh=5, savefile=None, figsize=(8, 4),
-                        min_points=2, min_detections=1, mjd=False, 
+                        min_points=2, min_detections=1, mjd=False,
                         grid=False):
         '''
         Plot source lightcurves and save to file
