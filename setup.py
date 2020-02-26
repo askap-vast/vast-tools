@@ -25,6 +25,7 @@ setup(
     scripts=[
         "bin/find_sources.py",
         "bin/get_vast_pilot_dbx.py"
+        "bin/build_lightcurves.py"
         ],
     include_package_data=True
 )
