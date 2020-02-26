@@ -271,103 +271,126 @@ class Lightcurve:
             return
         self.observations.to_csv(savefile, index=False)
 
-
-def create_lightcurves(crossmatch_paths):
+class BuildLightcurves:
     '''
-    Create a lightcurve for each source by looping over all observation files
-
-    :param crossmatch_paths: List of observation file paths
-    :type crossmatch_paths: list
-
-    :return: Dictionary of lightcurve objects
-    :rtype: dict
-    '''
-
-    num_obs = len(crossmatch_paths)
-    lightcurve_dict = {}
-    for i, path in enumerate(crossmatch_paths):
-        path = os.path.abspath(path)
-
-        if not os.path.isfile(path):
-            logger.critical("{} not found!".format(path))
-            sys.exit()
-        try:
-            source_list = pd.read_csv(path)
-        except Exception as e:
-            logger.critical("Pandas reading of {} failed!".format(path))
-            logger.critical("Check format!")
-            continue
-        for j, row in source_list.iterrows():
-            name = row['name']
-            if name not in lightcurve_dict.keys():
-                lightcurve_dict[name] = Lightcurve(name, num_obs)
-
-            lightcurve_dict[name].add_observation(i, row)
-
-    return lightcurve_dict
-
-
-def plot_lightcurves(lightcurve_dict, folder=''):
-    '''
-    Plot a lightcurve for each source
-
-    :param lightcurve_dict:
-    :type lightcurve_dict: dict
-    '''
-
-    for name, lightcurve in lightcurve_dict.items():
-        savefile = os.path.join(folder, name + '.png')
-        savefile = savefile.replace(' ','_')
-        lightcurve.plot_lightcurve(savefile=savefile)
-
-
-def write_lightcurves(lightcurve_dict, folder=''):
-    '''
-    Plot a lightcurve for each source
-    :param lightcurve_dict:
-    :type lightcurve_dict: dict
-    '''
-
-    for name, lightcurve in lightcurve_dict.items():
-        savefile = os.path.join(folder, name + '_lightcurve.csv')
-        savefile = savefile.replace(' ','_')
-        lightcurve.write_lightcurve(savefile)
-
-
-def build_paths(args):
-    '''
-    Build list of paths to crossmatch files
-
-    :param args: Arguments namespace
-    :type args: `argparse.Namespace`
-
-    :return: list of crossmatch paths
-    :rtype: list
-    '''
-
-    crossmatch_paths = glob.glob(os.path.join(args.folder, '*crossmatch*.csv'))
-
-    return crossmatch_paths
-
-
-def run_query(args):
-    '''
+    This is a class representation of various information about a \
+    series of lightcurves.
 
     :param args: Arguments namespace
     :type args: `argparse.Namespace`
     '''
+    def __init__(self, args):
+        '''Constructor method
+        '''
+        
+        self.logger = logging.getLogger('vasttools.build_lightcurves.BuildLightcurves')
+        self.args = args
+        
+        self.crossmatch_paths = self.build_paths()
+        
+        
+    def create_lightcurves(self):
+        '''
+        Create a lightcurve for each source by looping over all observation files
 
-    crossmatch_paths = build_paths(args)
-    lightcurve_dict = create_lightcurves(crossmatch_paths)
+        :return: Dictionary of lightcurve objects
+        :rtype: dict
+        '''
 
-    write_lightcurves(lightcurve_dict, folder=args.folder)
+        num_obs = len(self.crossmatch_paths)
+        self.logger.info("Creating lightcurves from {} observations".format(num_obs))
+        
+        lightcurve_dict = {}
+        for i, path in enumerate(self.crossmatch_paths):
+            path = os.path.abspath(path)
 
-    if not args.no_plotting:
-        plot_lightcurves(lightcurve_dict, folder=args.folder)
+            if not os.path.isfile(path):
+                self.logger.critical("{} not found!".format(path))
+                sys.exit()
+            try:
+                source_list = pd.read_csv(path)
+            except Exception as e:
+                self.logger.critical("Pandas reading of {} failed!".format(path))
+                self.logger.critical("Check format!")
+                continue
+            
+            for j, row in source_list.iterrows():
+                name = row['name']
+                if name not in lightcurve_dict.keys():
+                    lightcurve_dict[name] = Lightcurve(name, num_obs)
+                    self.logger.info("Building lightcurve for {}".format(name))
+
+                lightcurve_dict[name].add_observation(i, row)
+        
+        self.logger.info("Lightcurve creation complete")
+
+        return lightcurve_dict
+
+
+    def plot_lightcurves(self, lightcurve_dict, folder=''):
+        '''
+        Plot a lightcurve for each source
+
+        :param lightcurve_dict:
+        :type lightcurve_dict: dict
+        '''
+
+        for name, lightcurve in lightcurve_dict.items():
+            savefile = os.path.join(folder, name + '.png')
+            savefile = savefile.replace(' ','_')
+            
+            lightcurve.plot_lightcurve(savefile=savefile)
+            self.logger.info("Wrote {} lightcurve plot to {}".format(name, savefile))
+
+
+    def write_lightcurves(self, lightcurve_dict, folder=''):
+        '''
+        Plot a lightcurve for each source
+        :param lightcurve_dict:
+        :type lightcurve_dict: dict
+        '''
+
+        for name, lightcurve in lightcurve_dict.items():
+            savefile = os.path.join(folder, name + '_lightcurve.csv')
+            savefile = savefile.replace(' ','_')
+            
+            lightcurve.write_lightcurve(savefile)
+            self.logger.info("Wrote {} lightcurve to {}".format(name, savefile))
+
+
+    def build_paths(self):
+        '''
+        Build list of paths to crossmatch files
+
+        :return: list of crossmatch paths
+        :rtype: list
+        '''
+
+        crossmatch_paths = glob.glob(os.path.join(args.folder, '*crossmatch*.csv'))
+        self.logger.info('Getting lightcurve info from:\n{}'.format('\n'.join(crossmatch_paths)))
+
+        return crossmatch_paths
+
+
+    def run_query(self):
+        '''
+        Run the query
+        '''
+
+        lightcurve_dict = self.create_lightcurves()
+
+        self.logger.info("Writing lightcurves to file")
+        self.write_lightcurves(lightcurve_dict, folder=self.args.folder)
+
+        if args.no_plotting:
+            self.logger.info("Not plotting lightcurves")
+        else:
+            self.plot_lightcurves(lightcurve_dict, folder=self.args.folder)
 
 
 if __name__ == '__main__':
     args = parse_args()
     logger = get_logger(args, use_colorlog=use_colorlog)
-
-    run_query(args)
+    
+    query = BuildLightcurves(args)
+    query.run_query()
