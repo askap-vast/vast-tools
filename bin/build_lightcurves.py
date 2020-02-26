@@ -53,6 +53,7 @@ os.nice(5)
 
 runstart = datetime.datetime.now()
 
+
 def get_logger(args, use_colorlog=False):
     '''
     Set up the logger
@@ -65,7 +66,7 @@ def get_logger(args, use_colorlog=False):
     :returns: Logger
     :rtype: `logging.RootLogger`
     '''
-    
+
     logger = logging.getLogger()
     s = logging.StreamHandler()
     fh = logging.FileHandler(
@@ -106,6 +107,7 @@ def get_logger(args, use_colorlog=False):
     logger.addHandler(fh)
     logger.setLevel(logging.DEBUG)
 
+
 def parse_args():
     '''
     Parse arguments
@@ -113,9 +115,9 @@ def parse_args():
     :returns: Argument namespace
     :rtype: `argparse.Namespace`
     '''
-    
+
     parser = argparse.ArgumentParser(
-    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument(
         'folder',
@@ -133,14 +135,16 @@ def parse_args():
         '--debug',
         action="store_true",
         help='Turn on debug output.')
-        
+
     args = parser.parse_args()
-    
+
     return args
-    
+
+
 class Lightcurve:
     '''
     This is a class representation of the lightcurve of a source
+
     :param name: Name of the source
     :type name: str
     :param num_obs: Total number of observations
@@ -150,7 +154,8 @@ class Lightcurve:
     def __init__(self, name, num_obs):
         '''Constructor method
         '''
-        self.logger = logging.getLogger('vasttools.build_lightcurves.Lightcurve')
+        self.logger = logging.getLogger(
+            'vasttools.build_lightcurves.Lightcurve')
         self.name = name
         self.observations = pd.DataFrame(
             columns=[
@@ -167,6 +172,7 @@ class Lightcurve:
     def add_observation(self, i, row):
         '''
         Add a single observation to the lightcurve
+
         :param i: Observation number (i.e. the row in the observations table)
         :type i: int
         :param row: Row containing flux measurements, background estimates \
@@ -175,7 +181,7 @@ class Lightcurve:
         '''
         S_int = row['flux_int']
         S_err = row['rms_image']
-        img_rms = row['SELAVY_rms']*1e3
+        img_rms = row['SELAVY_rms'] * 1e3
         obs_start = pd.to_datetime(row['obs_date'])
         obs_end = pd.to_datetime(row['date_end'])
 
@@ -189,35 +195,37 @@ class Lightcurve:
         self.observations.iloc[i] = [
             obs_start, obs_end, S_int, S_err, img_rms, upper_lim]
 
-    def plot_lightcurve(self, sigma_thresh=5, savefile=None, figsize=(8,4), min_points=2, min_detections=1):
+    def plot_lightcurve(self, sigma_thresh=5, savefile=None,
+                        figsize=(8, 4), min_points=2, min_detections=1):
         '''
         Plot source lightcurves and save to file
+
         :param sigma_thresh: Threshold to use for upper limits, defaults to 5
         :type sigma_thresh: int or float
         :param savefile: Filename to save plot, defaults to None
         :type savefile: str
         :param min_points: Minimum number of points for plotting, defaults to 2
         :type min_points: int, optional
-        :param min_detections: Minimum number of detections for plotting, defaults to 1
+        :param min_detections: Minimum number of detections for plotting, \
+        defaults to 1
         :type min_detections: int, optional
         '''
-        
+
         num_obs = self.observations['obs_start'].count()
         num_detections = (self.observations['upper_lim'] == False).sum()
-        
+
         if num_obs < min_points:
             return
-            
+
         if num_detections < min_detections:
             return
-        
+
         fig = plt.figure(figsize=figsize)
         ax = fig.add_subplot(111)
         ax.set_title(self.name)
 
         ax.set_xlabel('Date')
         ax.set_ylabel('Flux Density (mJy)')
-        
 
         for i, row in self.observations.iterrows():
             if row['upper_lim']:
@@ -239,36 +247,35 @@ class Lightcurve:
                     yerr=row['S_err'],
                     marker='o',
                     c='k')
-        
+
         ax.set_ylim(bottom=0)
         plt.savefig(savefile)
         plt.close()
-        
+
     def write_lightcurve(self, savefile, min_points=2):
         '''
         Output the lightcurve for processing with external scripts
-        
+
         :param savefile: Output filename
         :type savefile: str
         :param min_points: Minimum number of points for plotting, defaults to 2
         :type min_points: int, optional
         '''
-        
+
         num_obs = self.observations['obs_start'].count()
-        
+
         if num_obs < min_points:
             return
         self.observations.to_csv(savefile, index=False)
-        
 
 
 def create_lightcurves(crossmatch_paths):
     '''
     Create a lightcurve for each source by looping over all observation files
-    
+
     :param crossmatch_paths: List of observation file paths
     :type crossmatch_paths: list
-    
+
     :return: Dictionary of lightcurve objects
     :rtype: dict
     '''
@@ -300,14 +307,17 @@ def create_lightcurves(crossmatch_paths):
 def plot_lightcurves(lightcurve_dict, folder=''):
     '''
     Plot a lightcurve for each source
-    
+
     :param lightcurve_dict:
     :type lightcurve_dict: dict
     '''
 
     for name, lightcurve in lightcurve_dict.items():
-        lightcurve.plot_lightcurve(savefile=os.path.join(folder,name+'.png'))
-        
+        lightcurve.plot_lightcurve(
+            savefile=os.path.join(
+                folder, name + '.png'))
+
+
 def write_lightcurves(lightcurve_dict, folder=''):
     '''
     Plot a lightcurve for each source
@@ -316,41 +326,44 @@ def write_lightcurves(lightcurve_dict, folder=''):
     '''
 
     for name, lightcurve in lightcurve_dict.items():
-        savefile = os.path.join(folder,name+'_lightcurve.csv')
+        savefile = os.path.join(folder, name + '_lightcurve.csv')
         lightcurve.write_lightcurve(savefile)
+
 
 def build_paths(args):
     '''
     Build list of paths to crossmatch files
-    
+
     :param args: Arguments namespace
     :type args: `argparse.Namespace`
-    
+
     :return: list of crossmatch paths
     :rtype: list
     '''
-    
-    crossmatch_paths = glob.glob(os.path.join(args.folder,'*crossmatch*.csv'))
-    
+
+    crossmatch_paths = glob.glob(os.path.join(args.folder, '*crossmatch*.csv'))
+
     return crossmatch_paths
+
 
 def run_query(args):
     '''
-    
+
     :param args: Arguments namespace
     :type args: `argparse.Namespace`
     '''
-    
+
     crossmatch_paths = build_paths(args)
     lightcurve_dict = create_lightcurves(crossmatch_paths)
 
     write_lightcurves(lightcurve_dict, folder=args.folder)
-    
+
     if not args.no_plotting:
         plot_lightcurves(lightcurve_dict, folder=args.folder)
-        
+
+
 if __name__ == '__main__':
     args = parse_args()
     logger = get_logger(args, use_colorlog=use_colorlog)
-    
+
     run_query(args)

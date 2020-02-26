@@ -554,7 +554,8 @@ class Query:
         uniq_fields = src_fields['field_name'].unique().tolist()
 
         if len(uniq_fields) == 0:
-            self.logger.error("Source(s) not in {}!".format(EPOCH_INFO.epoch_str))
+            self.logger.error(
+                    "Source(s) not in {}!".format(EPOCH_INFO.epoch_str))
             return
 
         if EPOCH_INFO.FIND_FIELDS:
