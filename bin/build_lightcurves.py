@@ -313,9 +313,9 @@ def plot_lightcurves(lightcurve_dict, folder=''):
     '''
 
     for name, lightcurve in lightcurve_dict.items():
-        lightcurve.plot_lightcurve(
-            savefile=os.path.join(
-                folder, name + '.png'))
+        savefile = os.path.join(folder, name + '.png')
+        savefile = savefile.replace(' ','_')
+        lightcurve.plot_lightcurve(savefile=savefile)
 
 
 def write_lightcurves(lightcurve_dict, folder=''):
@@ -327,6 +327,7 @@ def write_lightcurves(lightcurve_dict, folder=''):
 
     for name, lightcurve in lightcurve_dict.items():
         savefile = os.path.join(folder, name + '_lightcurve.csv')
+        savefile = savefile.replace(' ','_')
         lightcurve.write_lightcurve(savefile)
 
 
