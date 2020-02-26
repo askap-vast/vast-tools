@@ -55,7 +55,7 @@ except ImportError:
     use_colorlog = False
 
 # Force nice
-#os.nice(5)
+# os.nice(5)
 
 runstart = datetime.datetime.now()
 
@@ -211,19 +211,19 @@ class Lightcurve:
         else:
             self.logger.debug("Observation is a detection")
             upper_lim = False
-            
+
         self.observations.iloc[i] = [
             obs_start, obs_end, S_int, S_err, img_rms, upper_lim]
-    
+
     def _drop_empty(self):
         '''
         Drop empty rows
         '''
-        
+
         self.observations = self.observations.dropna(how='all')
 
-    def plot_lightcurve(self, sigma_thresh=5, savefile=None,
-                        figsize=(8, 4), min_points=2, min_detections=1, mjd=False):
+    def plot_lightcurve(self, sigma_thresh=5, savefile=None, figsize=(8, 4),
+                        min_points=2, min_detections=1, mjd=False):
         '''
         Plot source lightcurves and save to file
 
@@ -242,25 +242,25 @@ class Lightcurve:
 
         num_obs = self.observations['obs_start'].count()
         num_detections = self.observations['upper_lim'].sum()
-        
+
         if num_obs < min_points:
             return
 
         if num_detections < min_detections:
             return
-        
+
         plot_date = self.observations['obs_start']
         if mjd:
             self.observations['plot_date'] = Time(plot_date.to_numpy()).mjd
         else:
             self.observations['plot_date'] = plot_date
-        
+
         fig = plt.figure(figsize=figsize)
         ax = fig.add_subplot(111)
         ax.set_title(self.name)
 
         ax.set_ylabel('Flux Density (mJy)')
-        
+
         for i, row in self.observations.iterrows():
             if row['upper_lim']:
                 self.logger.debug("Plotting upper limit")
@@ -284,12 +284,12 @@ class Lightcurve:
 
         fig.autofmt_xdate()
         ax.set_ylim(bottom=0)
-        
+
         if mjd:
             ax.set_xlabel('Date (MJD)')
         else:
             ax.set_xlabel('Date')
-            
+
             date_form = mdates.DateFormatter("%Y-%m-%d")
             ax.xaxis.set_major_formatter(date_form)
             ax.xaxis.set_major_locator(mdates.WeekdayLocator(interval=2))
@@ -368,7 +368,7 @@ class BuildLightcurves:
                     self.logger.info("Building lightcurve for {}".format(name))
 
                 lightcurve_dict[name].add_observation(i, row)
-        
+
         for name in lightcurve_dict.keys():
             lightcurve_dict[name]._drop_empty()
 
@@ -403,7 +403,7 @@ class BuildLightcurves:
     def write_lightcurves(self, lightcurve_dict, folder=''):
         '''
         Plot a lightcurve for each source
-        
+
         :param lightcurve_dict:
         :type lightcurve_dict: dict
         '''
