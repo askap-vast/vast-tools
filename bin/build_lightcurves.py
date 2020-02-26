@@ -285,12 +285,12 @@ class Lightcurve:
                     marker='o',
                     c='k')
 
-        fig.autofmt_xdate()
         ax.set_ylim(bottom=0)
 
         if mjd:
             ax.set_xlabel('Date (MJD)')
         else:
+            fig.autofmt_xdate()
             ax.set_xlabel('Date')
 
             date_form = mdates.DateFormatter("%Y-%m-%d")
