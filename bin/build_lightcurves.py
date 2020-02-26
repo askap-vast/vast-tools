@@ -158,6 +158,10 @@ def parse_args():
         '--mjd',
         action="store_true",
         help='Plot lightcurve in MJD rather than datetime.')
+    parser.add_argument(
+        '--grid',
+        action="store_true",
+        help="Turn on the 'grid' in the lightcurve plot.")
 
     args = parser.parse_args()
 
@@ -179,7 +183,7 @@ class Lightcurve:
         '''
         self.logger = logging.getLogger(
             'vasttools.build_lightcurves.Lightcurve')
-        self.name = name
+        self.name = name.strip()
         self.observations = pd.DataFrame(
             columns=[
                 'obs_start',
@@ -224,9 +228,17 @@ class Lightcurve:
         '''
 
         self.observations = self.observations.dropna(how='all')
+        
+    def _infer_objects(self):
+        '''
+        Infer the dtype objects of the dataframe.
+        '''
+
+        self.observations = self.observations.infer_objects()
 
     def plot_lightcurve(self, sigma_thresh=5, savefile=None, figsize=(8, 4),
-                        min_points=2, min_detections=1, mjd=False):
+                        min_points=2, min_detections=1, mjd=False, 
+                        grid=False):
         '''
         Plot source lightcurves and save to file
 
@@ -241,16 +253,30 @@ class Lightcurve:
         :type min_detections: int, optional
         :param mjd: Plot x-axis in MJD rather than datetime, defaults to False
         :type mjd: bool, optional
+        :param grid: Turn on matplotlib grid, defaults to False
+        :type grid: bool, optional
         '''
 
         num_obs = self.observations['obs_start'].count()
         num_detections = (~self.observations['upper_lim']).sum()
 
         if num_obs < min_points:
-            return
+            self.logger.warning(
+                "Minimum number of data points ({}) not met"
+                " for {} ({}).".format(min_points, self.name, num_obs)
+            )
+            self.logger.warning("Skipping plot.")
+            return False
 
         if num_detections < min_detections:
-            return
+            self.logger.warning(
+                "Minimum number of detections ({}) not met"
+                " for {} ({}).".format(
+                    min_detections, self.name, num_detections
+                )
+            )
+            self.logger.warning("Skipping plot.")
+            return False
 
         plot_date = self.observations['obs_start']
         if mjd:
@@ -297,8 +323,11 @@ class Lightcurve:
             ax.xaxis.set_major_formatter(date_form)
             ax.xaxis.set_major_locator(mdates.WeekdayLocator(interval=2))
 
+        plt.grid(grid)
         plt.savefig(savefile)
         plt.close()
+
+        return True
 
     def write_lightcurve(self, savefile, min_points=2):
         '''
@@ -313,8 +342,16 @@ class Lightcurve:
         num_obs = self.observations['obs_start'].count()
 
         if num_obs < min_points:
-            return
+            self.logger.warning(
+                "Minimum number of data points ({}) not met"
+                " for {} ({}).".format(min_points, self.name, num_obs)
+            )
+            self.logger.warning("Skipping plot.")
+            return False
+
         self.observations.to_csv(savefile, index=False)
+
+        return True
 
 
 class BuildLightcurves:
@@ -374,6 +411,7 @@ class BuildLightcurves:
 
         for name in lightcurve_dict.keys():
             lightcurve_dict[name]._drop_empty()
+            lightcurve_dict[name]._infer_objects()
 
         self.logger.info("Lightcurve creation complete")
 
@@ -390,18 +428,26 @@ class BuildLightcurves:
         min_points = self.args.min_points
         min_detections = self.args.min_detections
 
+        self.logger.debug(
+            "mjd: {}"
+            "; grid: {}".format(args.mjd, args.grid)
+        )
+
         for name, lightcurve in lightcurve_dict.items():
             savefile = os.path.join(folder, name + '.png')
             savefile = savefile.replace(' ', '_')
 
-            lightcurve.plot_lightcurve(
+            success = lightcurve.plot_lightcurve(
                 savefile=savefile,
                 min_points=min_points,
                 min_detections=min_detections,
-                mjd=self.args.mjd)
-            self.logger.info(
-                "Wrote {} lightcurve plot to {}".format(
-                    name, savefile))
+                mjd=self.args.mjd,
+                grid=self.args.grid
+            )
+            if success:
+                self.logger.info(
+                    "Wrote {} lightcurve plot to {}".format(
+                        name, savefile))
 
     def write_lightcurves(self, lightcurve_dict, folder=''):
         '''
@@ -417,10 +463,13 @@ class BuildLightcurves:
             savefile = os.path.join(folder, name + '_lightcurve.csv')
             savefile = savefile.replace(' ', '_')
 
-            lightcurve.write_lightcurve(savefile, min_points=min_points)
-            self.logger.info(
-                "Wrote {} lightcurve to {}".format(
-                    name, savefile))
+            success = lightcurve.write_lightcurve(
+                savefile, min_points=min_points
+            )
+            if success:
+                self.logger.info(
+                    "Wrote {} lightcurve to {}".format(
+                        name, savefile))
 
     def build_paths(self):
         '''

@@ -20,7 +20,7 @@ Most options should be self explanatory. The lightcurve plots and csv files are 
 ```
 usage: build_lightcurves.py [-h] [--no-plotting] [--quiet] [--debug]
                             [--min-points MIN_POINTS]
-                            [--min-detections MIN_DETECTIONS] [--mjd]
+                            [--min-detections MIN_DETECTIONS] [--mjd] [--grid]
                             folder
 
 positional arguments:
@@ -28,17 +28,14 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  --no-plotting         Write lightcurves to file without plotting (default:
-                        False)
-  --quiet               Turn off non-essential terminal output. (default:
-                        False)
+  --no-plotting         Write lightcurves to file without plotting (default: False)
+  --quiet               Turn off non-essential terminal output. (default: False)
   --debug               Turn on debug output. (default: False)
   --min-points MIN_POINTS
-                        Minimum number of epochs a source must be covered by
-                        (default: 2)
+                        Minimum number of epochs a source must be covered by (default:
+                        2)
   --min-detections MIN_DETECTIONS
-                        Minimum number of times a source must be detected
-                        (default: 1)
-  --mjd                 Plot lightcurve in MJD rather than datetime. (default:
-                        False)
+                        Minimum number of times a source must be detected (default: 1)
+  --mjd                 Plot lightcurve in MJD rather than datetime. (default: False)
+  --grid                Turn on the 'grid' in the lightcurve plot. (default: False)
 ```
