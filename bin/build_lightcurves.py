@@ -6,61 +6,11 @@
 
 from vasttools.analysis import Lightcurve, BuildLightcurves
 from vasttools.utils import get_logger
+
 import argparse
-import sys
-import numpy as np
 import os
-import glob
+
 import datetime
-import pandas as pd
-import warnings
-
-import logging
-import logging.handlers
-import logging.config
-
-import matplotlib
-import matplotlib.pyplot as plt
-
-from astropy.coordinates import Angle
-from astropy.coordinates import SkyCoord
-from astropy import units as u
-from astropy.nddata.utils import Cutout2D
-from astropy.coordinates import SkyCoord
-from astropy.io import fits
-from astropy.wcs import WCS
-from astropy.time import Time
-from astropy.timeseries import TimeSeries
-from astropy.wcs.utils import skycoord_to_pixel
-from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
-
-from matplotlib.patches import Ellipse
-from matplotlib.collections import PatchCollection
-from astropy.visualization import ZScaleInterval, ImageNormalize
-from astropy.visualization import PercentileInterval
-from astropy.visualization import AsymmetricPercentileInterval
-from astropy.visualization import LinearStretch
-import matplotlib.axes as maxes
-import matplotlib.dates as mdates
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-
-from pandas.plotting import register_matplotlib_converters
-register_matplotlib_converters()
-
-warnings.filterwarnings('ignore', category=AstropyWarning, append=True)
-warnings.filterwarnings('ignore',
-                        category=AstropyDeprecationWarning, append=True)
-
-matplotlib.pyplot.switch_backend('Agg')
-
-try:
-    import colorlog
-    use_colorlog = True
-except ImportError:
-    use_colorlog = False
-
-# Force nice
-# os.nice(5)
 
 runstart = datetime.datetime.now()
 
