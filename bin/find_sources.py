@@ -434,7 +434,9 @@ class Query:
         :rtype: list
         '''
 
-        available_epochs = sorted(RELEASED_EPOCHS)
+        available_epochs = sorted(RELEASED_EPOCHS, key=RELEASED_EPOCHS.get)
+        self.logger.debug(available_epochs)
+
         if HOST == HOST_ADA:
             available_epochs.insert(0, "0")
 
