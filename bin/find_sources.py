@@ -220,6 +220,11 @@ def parse_args():
         '--clobber',
         action="store_true",
         help=("Overwrite the output directory if it already exists."))
+    parser.add_argument(
+        '--nice',
+        type=int,
+        help='Set nice level.',
+        default=5)
 
     args = parser.parse_args()
 
@@ -228,6 +233,7 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
+    os.nice(args.nice)
     
     logfile = "find_sources_{}.log".format(runstart.strftime("%Y%m%d_%H:%M:%S"))
     logger = get_logger(args.debug, args.quiet, logfile=logfile)

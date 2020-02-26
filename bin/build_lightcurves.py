@@ -109,6 +109,11 @@ def parse_args():
         '--grid',
         action="store_true",
         help="Turn on the 'grid' in the lightcurve plot.")
+    parser.add_argument(
+        '--nice',
+        type=int,
+        help='Set nice level.',
+        default=5)
 
     args = parser.parse_args()
 
@@ -117,6 +122,8 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
+    os.nice(args.nice)
+    
     logfile = "build_lightcurves_{}.log".format(
                 runstart.strftime("%Y%m%d_%H:%M:%S"))
     logger = get_logger(args.debug, args.quiet, logfile=logfile)
