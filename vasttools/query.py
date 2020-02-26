@@ -44,6 +44,7 @@ warnings.filterwarnings('ignore',
 HOST = socket.gethostname()
 HOST_ADA = 'ada.physics.usyd.edu.au'
 
+
 class Query:
     '''
     This is a class representation of various information about a particular
@@ -310,7 +311,7 @@ class Query:
 
         if len(uniq_fields) == 0:
             self.logger.error(
-                    "Source(s) not in {}!".format(EPOCH_INFO.epoch_str))
+                "Source(s) not in {}!".format(EPOCH_INFO.epoch_str))
             return
 
         if EPOCH_INFO.FIND_FIELDS:

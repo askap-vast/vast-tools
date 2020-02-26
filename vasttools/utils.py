@@ -61,7 +61,7 @@ def get_logger(debug, quiet, logfile=None):
             s.setLevel(logging.INFO)
 
     logger.addHandler(s)
-    
+
     if logfile is not None:
         fh.setFormatter(formatter)
         logger.addHandler(fh)

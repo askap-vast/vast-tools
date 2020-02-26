@@ -40,6 +40,7 @@ register_matplotlib_converters()
 
 matplotlib.pyplot.switch_backend('Agg')
 
+
 class Lightcurve:
     '''
     This is a class representation of the lightcurve of a source

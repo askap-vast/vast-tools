@@ -14,6 +14,7 @@ import datetime
 
 runstart = datetime.datetime.now()
 
+
 def parse_args():
     '''
     Parse arguments
@@ -73,14 +74,16 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
     os.nice(args.nice)
-    
+
     logfile = "build_lightcurves_{}.log".format(
-                runstart.strftime("%Y%m%d_%H:%M:%S"))
+        runstart.strftime("%Y%m%d_%H:%M:%S"))
     logger = get_logger(args.debug, args.quiet, logfile=logfile)
 
     query = BuildLightcurves(args)
     query.run_query()
-    
+
     runend = datetime.datetime.now()
     runtime = runend - runstart
-    logger.info("Processing took {:.1f} minutes.".format(runtime.seconds / 60.))
+    logger.info(
+        "Processing took {:.1f} minutes.".format(
+            runtime.seconds / 60.))

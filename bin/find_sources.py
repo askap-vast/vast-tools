@@ -195,14 +195,17 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
     os.nice(args.nice)
-    
-    logfile = "find_sources_{}.log".format(runstart.strftime("%Y%m%d_%H:%M:%S"))
+
+    logfile = "find_sources_{}.log".format(
+        runstart.strftime("%Y%m%d_%H:%M:%S"))
     logger = get_logger(args.debug, args.quiet, logfile=logfile)
     logger.debug("Available epochs: {}".format(sorted(RELEASED_EPOCHS.keys())))
 
     query = Query(args)
     query.run_query()
-    
+
     runend = datetime.datetime.now()
     runtime = runend - runstart
-    logger.info("Processing took {:.1f} minutes.".format(runtime.seconds / 60.))
+    logger.info(
+        "Processing took {:.1f} minutes.".format(
+            runtime.seconds / 60.))
