@@ -467,9 +467,6 @@ class Query:
                 self.logger.info(
                     "-----------------------------------------------------")
 
-        #runend = datetime.datetime.now()
-        #runtime = runend - runstart
-
         self.logger.info(
             "-----------------------------------------------------")
         self.logger.info("Epoch Summary ({})".format(epoch_str))
@@ -488,11 +485,6 @@ class Query:
             self.crossmatch_radius.arcsec,
             num_matched))
 
-        #self.logger.info(
-        #    "Processing took {:.1f} minutes.".format(
-        #        runtime.seconds / 60.))
-
-        # Create and write final crossmatch csv
         if self.args.selavy_simple:
             crossmatch_output = crossmatch_output.filter(
                 items=["flux_int", "rms_image", "BANE_rms"])

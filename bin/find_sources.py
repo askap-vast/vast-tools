@@ -11,47 +11,8 @@ from vasttools.query import Query, EpochInfo
 from vasttools.utils import get_logger
 
 import argparse
-import sys
-import numpy as np
 import os
 import datetime
-import pandas as pd
-import warnings
-import shutil
-import io
-import socket
-
-import logging
-import logging.handlers
-import logging.config
-
-import matplotlib.pyplot as plt
-
-from astropy.coordinates import Angle
-from astropy.coordinates import SkyCoord
-from astropy import units as u
-from astropy.nddata.utils import Cutout2D
-from astropy.coordinates import SkyCoord
-from astropy.io import fits
-from astropy.wcs import WCS
-from astropy.wcs.utils import skycoord_to_pixel
-from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
-
-from matplotlib.patches import Ellipse
-from matplotlib.collections import PatchCollection
-from astropy.visualization import ZScaleInterval, ImageNormalize
-from astropy.visualization import PercentileInterval
-from astropy.visualization import AsymmetricPercentileInterval
-from astropy.visualization import LinearStretch
-import matplotlib.axes as maxes
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-
-warnings.filterwarnings('ignore', category=AstropyWarning, append=True)
-warnings.filterwarnings('ignore',
-                        category=AstropyDeprecationWarning, append=True)
-
-# Force nice
-os.nice(5)
 
 runstart = datetime.datetime.now()
 
@@ -241,3 +202,7 @@ if __name__ == '__main__':
 
     query = Query(args)
     query.run_query()
+    
+    runend = datetime.datetime.now()
+    runtime = runend - runstart
+    logger.info("Processing took {:.1f} minutes.".format(runtime.seconds / 60.))

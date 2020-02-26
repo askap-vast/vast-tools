@@ -2,7 +2,7 @@
 
 # Example command:
 
-# ./build_lightcurves.py
+# ./build_lightcurves.py outputfolder
 
 from vasttools.analysis import Lightcurve, BuildLightcurves
 from vasttools.utils import get_logger
@@ -80,3 +80,7 @@ if __name__ == '__main__':
 
     query = BuildLightcurves(args)
     query.run_query()
+    
+    runend = datetime.datetime.now()
+    runtime = runend - runstart
+    logger.info("Processing took {:.1f} minutes.".format(runtime.seconds / 60.))
