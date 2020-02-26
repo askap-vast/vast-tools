@@ -5,7 +5,7 @@
 # ./build_lightcurves.py
 
 from vasttools.analysis import Lightcurve, BuildLightcurves
-
+from vasttools.utils import get_logger
 import argparse
 import sys
 import numpy as np
@@ -64,61 +64,6 @@ except ImportError:
 
 runstart = datetime.datetime.now()
 
-
-def get_logger(args, use_colorlog=False):
-    '''
-    Set up the logger
-
-    :param args: Arguments namespace
-    :type args: `argparse.Namespace`
-    :param usecolorlog: Use colourful logging scheme, defaults to False
-    :type usecolorlog: bool, optional
-
-    :returns: Logger
-    :rtype: `logging.RootLogger`
-    '''
-
-    logger = logging.getLogger()
-    s = logging.StreamHandler()
-    fh = logging.FileHandler(
-        "build_lightcurves_{}.log".format(
-            runstart.strftime("%Y%m%d_%H:%M:%S")))
-    fh.setLevel(logging.DEBUG)
-    logformat = '[%(asctime)s] - %(levelname)s - %(message)s'
-
-    if use_colorlog:
-        formatter = colorlog.ColoredFormatter(
-            "%(log_color)s[%(asctime)s] - %(levelname)s - %(blue)s%(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
-            reset=True,
-            log_colors={
-                'DEBUG': 'cyan',
-                'INFO': 'green',
-                'WARNING': 'yellow',
-                'ERROR': 'red',
-                'CRITICAL': 'red,bg_white', },
-            secondary_log_colors={},
-            style='%'
-        )
-    else:
-        formatter = logging.Formatter(logformat, datefmt="%Y-%m-%d %H:%M:%S")
-
-    s.setFormatter(formatter)
-    fh.setFormatter(formatter)
-
-    if args.debug:
-        s.setLevel(logging.DEBUG)
-    else:
-        if args.quiet:
-            s.setLevel(logging.WARNING)
-        else:
-            s.setLevel(logging.INFO)
-
-    logger.addHandler(s)
-    logger.addHandler(fh)
-    logger.setLevel(logging.DEBUG)
-
-
 def parse_args():
     '''
     Parse arguments
@@ -172,7 +117,9 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    logger = get_logger(args, use_colorlog=use_colorlog)
+    logfile = "build_lightcurves_{}.log".format(
+                runstart.strftime("%Y%m%d_%H:%M:%S"))
+    logger = get_logger(args.debug, args.quiet, logfile=logfile)
 
     query = BuildLightcurves(args)
     query.run_query()

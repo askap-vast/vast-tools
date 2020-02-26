@@ -8,6 +8,7 @@ from vasttools.survey import Fields, Image
 from vasttools.survey import RELEASED_EPOCHS
 from vasttools.source import Source
 from vasttools.query import Query, EpochInfo
+from vasttools.utils import get_logger
 
 import argparse
 import sys
@@ -48,13 +49,6 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 warnings.filterwarnings('ignore', category=AstropyWarning, append=True)
 warnings.filterwarnings('ignore',
                         category=AstropyDeprecationWarning, append=True)
-
-
-try:
-    import colorlog
-    use_colorlog = True
-except ImportError:
-    use_colorlog = False
 
 # Force nice
 os.nice(5)
@@ -232,65 +226,11 @@ def parse_args():
     return args
 
 
-def get_logger(args, use_colorlog=False):
-    '''
-    Set up the logger
-
-    :param args: Arguments namespace
-    :type args: `argparse.Namespace`
-    :param usecolorlog: Use colourful logging scheme, defaults to False
-    :type usecolorlog: bool, optional
-
-    :returns: Logger
-    :rtype: `logging.RootLogger`
-    '''
-
-    logger = logging.getLogger()
-    s = logging.StreamHandler()
-    fh = logging.FileHandler(
-        "find_sources_{}.log".format(
-            runstart.strftime("%Y%m%d_%H:%M:%S")))
-    fh.setLevel(logging.DEBUG)
-    logformat = '[%(asctime)s] - %(levelname)s - %(message)s'
-
-    if use_colorlog:
-        formatter = colorlog.ColoredFormatter(
-            "%(log_color)s[%(asctime)s] - %(levelname)s - %(blue)s%(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
-            reset=True,
-            log_colors={
-                'DEBUG': 'cyan',
-                'INFO': 'green',
-                'WARNING': 'yellow',
-                'ERROR': 'red',
-                'CRITICAL': 'red,bg_white', },
-            secondary_log_colors={},
-            style='%'
-        )
-    else:
-        formatter = logging.Formatter(logformat, datefmt="%Y-%m-%d %H:%M:%S")
-
-    s.setFormatter(formatter)
-    fh.setFormatter(formatter)
-
-    if args.debug:
-        s.setLevel(logging.DEBUG)
-    else:
-        if args.quiet:
-            s.setLevel(logging.WARNING)
-        else:
-            s.setLevel(logging.INFO)
-
-    logger.addHandler(s)
-    logger.addHandler(fh)
-    logger.setLevel(logging.DEBUG)
-
-    return logger
-
-
 if __name__ == '__main__':
     args = parse_args()
-    logger = get_logger(args, use_colorlog=use_colorlog)
+    
+    logfile = "find_sources_{}.log".format(runstart.strftime("%Y%m%d_%H:%M:%S"))
+    logger = get_logger(args.debug, args.quiet, logfile=logfile)
     logger.debug("Available epochs: {}".format(sorted(RELEASED_EPOCHS.keys())))
 
     query = Query(args)
