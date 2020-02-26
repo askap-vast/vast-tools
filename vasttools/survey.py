@@ -423,7 +423,8 @@ class Fields:
         nearest_beams, seps, _d3d = src_coord.match_to_catalog_sky(
             self.direction)
         self.logger.debug(seps.deg)
-        self.logger.debug("Nearest beams: {}".format(self.fields["BEAM"][nearest_beams]))
+        self.logger.debug(
+            "Nearest beams: {}".format(self.fields["BEAM"][nearest_beams]))
         within_beam = seps.deg < max_sep
         catalog["sbid"] = self.fields["SBID"].iloc[nearest_beams].values
         nearest_fields = self.fields["FIELD_NAME"].iloc[nearest_beams]
