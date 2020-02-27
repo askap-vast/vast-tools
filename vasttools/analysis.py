@@ -201,8 +201,8 @@ class Lightcurve:
 
         if yaxis_start == "0":
             max_y = np.max(
-                self.observations["S_int"].tolist() + 
-                (sigma_thresh * self.observations["S_int"]).tolist()
+                detections["S_int"].tolist() + 
+                (sigma_thresh * upper_lims["S_int"]).tolist()
             )
             ax.set_ylim(
                 bottom=0,
