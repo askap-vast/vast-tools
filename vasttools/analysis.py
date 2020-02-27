@@ -81,7 +81,7 @@ class Lightcurve:
         '''
         S_int = row['flux_int']
         S_err = row['rms_image']
-        img_rms = row['SELAVY_rms'] * 1e3
+        img_rms = row['SELAVY_rms']
         obs_start = pd.to_datetime(row['obs_date'])
         obs_end = pd.to_datetime(row['date_end'])
 

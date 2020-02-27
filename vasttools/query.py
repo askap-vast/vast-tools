@@ -140,6 +140,7 @@ class Query:
             catalog_dict['name'] = source_names
 
             catalog = pd.DataFrame.from_dict(catalog_dict)
+            catalog = catalog[['name', 'ra', 'dec']]
 
         catalog['name'] = catalog['name'].astype(str)
 
