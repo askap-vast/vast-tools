@@ -170,29 +170,62 @@ class Lightcurve:
 
         ax.set_ylabel('Flux Density (mJy)')
 
-        for i, row in self.observations.iterrows():
-            if row['upper_lim']:
-                self.logger.debug("Plotting upper limit")
-                ax.errorbar(
-                    row['plot_date'],
-                    sigma_thresh *
-                    row['img_rms'],
-                    yerr=row['img_rms'],
-                    uplims=True,
-                    lolims=False,
-                    marker='_',
-                    c='k')
-            else:
-                self.logger.debug("Plotting detection")
-                ax.errorbar(
-                    row['plot_date'],
-                    row['S_int'],
-                    yerr=row['S_err'],
-                    marker='o',
-                    c='k')
+        self.logger.debug("Plotting upper limit")
+        upper_lims = self.observations[
+            self.observations.upper_lim
+        ]
+
+        ax.errorbar(
+            upper_lims['plot_date'],
+            sigma_thresh *
+            upper_lims['img_rms'],
+            yerr=uplims['img_rms'],
+            uplims=True,
+            lolims=False,
+            marker='_',
+            c='k')
+            
+        self.logger.debug("Plotting detection")
+        detections = self.observations[
+            ~self.observations.upper_lim
+        ]
+
+        ax.errorbar(
+            detections['plot_date'],
+            detections['S_int'],
+            yerr=detections['S_err'],
+            marker='o',
+            c='k')
+        # for i, row in self.observations.iterrows():
+        #     if row['upper_lim']:
+        #         self.logger.debug("Plotting upper limit")
+        #         ax.errorbar(
+        #             row['plot_date'],
+        #             sigma_thresh *
+        #             row['img_rms'],
+        #             yerr=row['img_rms'],
+        #             uplims=True,
+        #             lolims=False,
+        #             marker='_',
+        #             c='k')
+        #     else:
+        #         self.logger.debug("Plotting detection")
+        #         ax.errorbar(
+        #             row['plot_date'],
+        #             row['S_int'],
+        #             yerr=row['S_err'],
+        #             marker='o',
+        #             c='k')
 
         if yaxis_start == "0":
-            ax.set_ylim(bottom=0)
+            max_y = np.max(
+                self.observations["S_int"].tolist() + 
+                (sigma_thresh * self.observations["S_int"]).tolist()
+            )
+            ax.set_ylim(
+                bottom=0,
+                top=max_y*1.1
+            )
 
         if mjd:
             ax.set_xlabel('Date (MJD)')

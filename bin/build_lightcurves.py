@@ -64,8 +64,12 @@ def parse_args():
         '--yaxis-start',
         type=str,
         choices=["auto", "0"],
-        default="auto"
-        help="Turn on the 'grid' in the lightcurve plot.")
+        default="auto",
+        help=(
+            "Define where the y axis on the lightcurve plot starts from."
+            " 'auto' will let matplotlib decide the best range (default)"
+            " and '0' will start from 0."
+        ))
     parser.add_argument(
         '--nice',
         type=int,
