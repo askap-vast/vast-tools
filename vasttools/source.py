@@ -76,8 +76,10 @@ class Source:
 
         if islands:
             self.cat_type = "islands"
+            self.islands = True
         else:
             self.cat_type = "components"
+            self.islands = False
 
         if tiles:
             selavyname_template = 'selavy-image.i.SB{}.cont.{}.' \
@@ -253,7 +255,7 @@ class Source:
 
                 nselavy_cat["island_id"] = [
                     "n{}".format(i) for i in nselavy_cat["island_id"]]
-                if not self.args.islands:
+                if not self.islands:
                     nselavy_cat["component_id"] = [
                         "n{}".format(i) for i in nselavy_cat["component_id"]]
 
@@ -263,7 +265,7 @@ class Source:
         except Exception as e:
             self.logger.warning('{} does not exist'.format(self.selavypath))
             self.selavy_fail = True
-            self.selavy_info = self._empty_selavy(islands=self.args.islands)
+            self.selavy_info = self._empty_selavy(islands=self.islands)
             self.selavy_info["has_match"] = False
             self.has_match = False
             return
@@ -301,7 +303,7 @@ class Source:
                               "Nearest source {:.0f} arcsec away."
                               ).format(match_sep[0].arcsec))
             self.has_match = False
-            self.selavy_info = self._empty_selavy(islands=self.args.islands)
+            self.selavy_info = self._empty_selavy(islands=self.islands)
 
         self.selavy_fail = False
         self.selavy_info["has_match"] = self.has_match
@@ -596,7 +598,7 @@ class Source:
             ax.add_collection(collection, autolim=False)
             # Add island labels, haven't found a better way other than looping
             # at the moment.
-            if not no_islands and not self.args.islands:
+            if not no_islands and not self.islands:
                 for i, val in enumerate(patches):
                     ax.annotate(
                         island_names[i],
@@ -685,5 +687,5 @@ class Source:
         try:
             self.selavy_info['SELAVY_rms'] = rms_val
         except Exception as e:
-            self.selavy_info = self._empty_selavy(islands=self.args.islands)
+            self.selavy_info = self._empty_selavy(islands=self.islands)
             self.selavy_info['SELAVY_rms'] = rms_val
