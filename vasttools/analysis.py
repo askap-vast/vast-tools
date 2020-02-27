@@ -51,12 +51,13 @@ class Lightcurve:
     :type num_obs: int
     '''
 
-    def __init__(self, name, num_obs):
+    def __init__(self, name, num_obs, islands=False):
         '''Constructor method
         '''
         self.logger = logging.getLogger(
             'vasttools.build_lightcurves.Lightcurve')
         self.name = name.strip()
+        self.islands = islands
         self.observations = pd.DataFrame(
             columns=[
                 'obs_start',
@@ -288,7 +289,9 @@ class BuildLightcurves:
             for j, row in source_list.iterrows():
                 name = row['name']
                 if name not in lightcurve_dict.keys():
-                    lightcurve_dict[name] = Lightcurve(name, num_obs)
+                    lightcurve_dict[name] = Lightcurve(
+                        name, num_obs, islands=self.islands
+                    )
                     self.logger.info("Building lightcurve for {}".format(name))
 
                 lightcurve_dict[name].add_observation(i, row)
