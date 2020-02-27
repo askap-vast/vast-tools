@@ -115,6 +115,7 @@ optional arguments:
   --no-background-rms   Do not estimate the background RMS around each source. (default: False)
   --find-fields         Only return the associated field for each source. (default: False)
   --clobber             Overwrite the output directory if it already exists. (default: False)
+  --nice NICE           Set nice level. (default: 5)
 ```
 
 ## Inputs

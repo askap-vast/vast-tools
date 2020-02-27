@@ -38,4 +38,5 @@ optional arguments:
                         Minimum number of times a source must be detected (default: 1)
   --mjd                 Plot lightcurve in MJD rather than datetime. (default: False)
   --grid                Turn on the 'grid' in the lightcurve plot. (default: False)
+  --nice NICE           Set nice level. (default: 5)
 ```
