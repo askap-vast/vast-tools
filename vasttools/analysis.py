@@ -183,7 +183,8 @@ class Lightcurve:
             uplims=True,
             lolims=False,
             marker='_',
-            c='k')
+            c='k',
+            linestyle="none")
             
         self.logger.debug("Plotting detection")
         detections = self.observations[
@@ -195,27 +196,8 @@ class Lightcurve:
             detections['S_int'],
             yerr=detections['S_err'],
             marker='o',
-            c='k')
-        # for i, row in self.observations.iterrows():
-        #     if row['upper_lim']:
-        #         self.logger.debug("Plotting upper limit")
-        #         ax.errorbar(
-        #             row['plot_date'],
-        #             sigma_thresh *
-        #             row['img_rms'],
-        #             yerr=row['img_rms'],
-        #             uplims=True,
-        #             lolims=False,
-        #             marker='_',
-        #             c='k')
-        #     else:
-        #         self.logger.debug("Plotting detection")
-        #         ax.errorbar(
-        #             row['plot_date'],
-        #             row['S_int'],
-        #             yerr=row['S_err'],
-        #             marker='o',
-        #             c='k')
+            c='k',
+            linestyle="none")
 
         if yaxis_start == "0":
             max_y = np.max(
