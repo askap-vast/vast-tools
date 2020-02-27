@@ -24,10 +24,12 @@ pip install -r requirements.txt
 ## Current Scripts
 As part of the installation the following scripts are made available in your path:
 
-* **find\_sources.py** - A tool to swiftly search VAST Pilot data at chosen coordinates (also supports RACS if available).
-    - See [FINDSOURCES.md](FINDSOURCES.md) for full instructions.
 * **get\_vast\_pilot\_dbx.py** - A script to allow simpler downloading of the VAST Pilot survey from Dropbox.
     - See [VASTDROPBOX.md](VASTDROPBOX.md) for full instructions.
+* **pilot\_fields\_info.py** - A script to get basic information of VAST Pilot survey fields.
+    - See [PILOTFIELDSINFO.md](PILOTFIELDSINFO.md) for full instructions.
+* **find\_sources.py** - A tool to swiftly search VAST Pilot data at chosen coordinates (also supports RACS if available).
+    - See [FINDSOURCES.md](FINDSOURCES.md) for full instructions.
 * **build\_lightcurves.py** - A script to allow easy creation of source lightcurves.
     - See [BUILDLIGHTCURVES.md](BUILDLIGHTCURVES.md) for full instructions.
     

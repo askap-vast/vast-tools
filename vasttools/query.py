@@ -1,5 +1,6 @@
 from vasttools.survey import Fields, Image
 from vasttools.survey import RELEASED_EPOCHS
+from vasttools.survey import FIELD_FILES
 from vasttools.source import Source
 
 import sys
@@ -11,6 +12,7 @@ import warnings
 import shutil
 import io
 import socket
+import re
 
 import logging
 import logging.handlers
@@ -36,6 +38,10 @@ from astropy.visualization import AsymmetricPercentileInterval
 from astropy.visualization import LinearStretch
 import matplotlib.axes as maxes
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+from radio_beam import Beams
+
+from tabulate import tabulate
 
 warnings.filterwarnings('ignore', category=AstropyWarning, append=True)
 warnings.filterwarnings('ignore',
@@ -649,3 +655,202 @@ class EpochInfo:
         self.IMAGE_FOLDER = IMAGE_FOLDER
         self.SELAVY_FOLDER = SELAVY_FOLDER
         self.RMS_FOLDER = RMS_FOLDER
+
+
+class FieldQuery:
+    '''
+    This is a class representation of various information about a particular
+    query including the catalogue of target sources, the Stokes parameter,
+    crossmatch radius and output parameters.
+
+    :param args: Arguments namespace
+    :type args: `argparse.Namespace`
+    '''
+
+    def __init__(self, field):
+        '''Constructor method
+        '''
+        self.logger = logging.getLogger('vasttools.query.FieldQuery')
+
+        self.field = field
+        self.valid = self._check_field()
+
+    def _check_field(self):
+        '''Constructor method
+        '''
+        #Check against Epoch 01 which is a complete epoch.
+        epoch_01 = pd.read_csv(FIELD_FILES["1"])
+        self.logger.debug("Field name: {}".format(self.field))
+        result = epoch_01['FIELD_NAME'].str.contains(
+            re.escape(self.field)
+        ).any()
+        self.logger.debug("Field found: {}".format(result))
+        if result is False:
+            self.logger.error(
+                "Field {} is not a valid field name!".format(self.field)
+            )
+        del epoch_01
+        return result
+
+    def _get_beams(self):
+        epoch_beams = {}
+        for e in self.epochs:
+            epoch_cut = self.field_info[self.field_info.EPOCH == e]
+            epoch_beams[e] = Beams(
+                epoch_cut.BMAJ.values * u.arcsec,
+                epoch_cut.BMIN.values * u.arcsec,
+                epoch_cut.BPA.values * u.deg
+            )
+        return epoch_beams
+
+    def run_query(
+        self, 
+        largest_psf=False,
+        common_psf=False,
+        all_psf=False,
+        save=False,
+        _pilot_info=None):
+        '''Constructor method
+        '''
+        if not self.valid:
+            self.logger.error("Field doesn't exist.")
+            return
+
+        if _pilot_info is not None:
+            self.pilot_info = _pilot_info
+        else:
+            self.logger.debug("Building pilot info file.")
+            for i,val in enumerate(sorted(RELEASED_EPOCHS)):
+                if i == 0:
+                    self.pilot_info = pd.read_csv(FIELD_FILES[val])
+                    self.pilot_info["EPOCH"] = RELEASED_EPOCHS[val]
+                else:
+                    to_append = pd.read_csv(FIELD_FILES[val])
+                    to_append["EPOCH"] = RELEASED_EPOCHS[val]
+                    self.pilot_info = self.pilot_info.append(
+                        to_append, sort=False
+                    )
+
+        self.field_info = self.pilot_info[self.pilot_info.FIELD_NAME == self.field]
+
+        self.field_info.reset_index(drop=True, inplace=True)
+
+        self.field_info = self.field_info.filter([
+            "EPOCH",
+            "FIELD_NAME",
+            "SBID",
+            "BEAM",
+            "RA_HMS",
+            "DEC_DMS",
+            "DATEOBS",
+            "DATEEND",
+            "BMAJ",
+            "BMIN",
+            "BPA"
+        ])
+
+        self.field_info.sort_values(by=["EPOCH", "BEAM"], inplace=True)
+
+        self.epochs = self.field_info.EPOCH.unique()
+
+        if largest_psf or common_psf or all_psf:
+            self.logger.info("Getting psf information.")
+            epoch_beams = self._get_beams()
+
+        if all_psf:
+            common_beams = {}
+            self.logger.info("Calculating common psfs...")
+            for i in sorted(epoch_beams):
+                common_beams[i] = epoch_beams[i].common_beam()
+
+            self.logger.info("{} information:".format(self.field))    
+
+            print(tabulate(
+                self.field_info,
+                headers=self.field_info.columns,
+                showindex=False
+            ))
+
+            table=[]
+
+            for i in sorted(epoch_beams):
+                table.append([
+                    self.field,
+                    i,
+                    common_beams[i].major.to(u.arcsec).value,
+                    common_beams[i].minor.to(u.arcsec).value,
+                    common_beams[i].pa.to(u.deg).value
+                ])
+
+            self.logger.info("Common psf for {}".format(self.field))
+
+            print(tabulate(table, headers=[
+                "FIELD",
+                "EPOCH",
+                "BMAJ (arcsec)",
+                "BMIN (arcsec)",
+                "BPA (degree)"
+            ]))
+
+            if save:
+                common_df = pd.DataFrame(table, columns=[
+                "FIELD",
+                "EPOCH",
+                "BMAJ (arcsec)",
+                "BMIN (arcsec)",
+                "BPA (degree)"
+                ])
+                savename = "{}_field_info_common_psf.csv".format(self.field)
+                common_df.to_csv(savename, index=False)
+                self.logger.info("Saved common psf output to {}.".format(
+                    savename
+                ))
+
+        else:
+            self.field_info = self.field_info.filter([
+                "EPOCH",
+                "FIELD_NAME",
+                "SBID",
+                "RA_HMS",
+                "DEC_DMS",
+                "DATEOBS",
+                "DATEEND",
+            ])
+
+            self.field_info.rename(columns={
+                "RA_HMS":"RA_HMS (Beam 0)",
+                "DEC_DMS":"DEC_DMS (Beam 0)",
+            }, inplace=True)
+
+            self.field_info.drop_duplicates("EPOCH", inplace=True)
+            if largest_psf:
+                largest_beams = []
+                for i in sorted(epoch_beams):
+                    largest_beams.append(epoch_beams[i].largest_beam())
+
+                self.field_info["L_BMAJ (arcsec)"] = [b.major.value for b in largest_beams]
+                self.field_info["L_BMIN (arcsec)"] = [b.minor.value for b in largest_beams]
+                self.field_info["L_BPA (deg)"] = [b.pa.value for b in largest_beams]
+
+            elif common_psf:
+                common_beams = []
+                self.logger.info("Calculating common psfs...")
+                for i in sorted(epoch_beams):
+                    common_beams.append(epoch_beams[i].common_beam())
+
+                self.field_info["C_BMAJ (arcsec)"] = [b.major.value for b in common_beams]
+                self.field_info["C_BMIN (arcsec)"] = [b.minor.value for b in common_beams]
+                self.field_info["C_BPA (deg)"] = [b.pa.value for b in common_beams]
+
+            self.logger.info("{} information:".format(self.field))
+
+            print(tabulate(
+                self.field_info,
+                headers=self.field_info.columns,
+                showindex=False
+            ))
+
+        if save:
+            savename = "{}_field_info.csv".format(self.field)
+            self.field_info.to_csv(savename, index=False)
+            self.logger.info("Saved output to {}.".format(savename))
