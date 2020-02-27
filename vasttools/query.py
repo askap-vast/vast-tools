@@ -380,7 +380,8 @@ class Query:
                     EPOCH_INFO.SELAVY_FOLDER,
                     vast_pilot=epoch,
                     tiles=self.args.use_tiles,
-                    stokesv=self.args.stokesv)
+                    stokesv=self.args.stokesv,
+                    islands=self.args.islands)
 
                 source.extract_source(
                     self.crossmatch_radius, self.args.stokesv)

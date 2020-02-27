@@ -88,6 +88,10 @@ def parse_args():
         action="store_true",
         help='Use the individual tiles instead of combined mosaics.')
     parser.add_argument(
+        '--islands',
+        action="store_true",
+        help='Search islands instead of components.')
+    parser.add_argument(
         '--base-folder',
         type=str,
         help='Path to base folder if using default directory structure')
