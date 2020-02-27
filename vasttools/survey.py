@@ -353,9 +353,14 @@ class Dropbox:
                 link_password=password)
             download_complete = True
         except Exception as e:
+            self.logger.debug(e)
             self.logger.warning("{} encountered a problem!".format(
                 dropbox_path
             ))
+            self.logger.warning(
+                "Couldn't connect to Dropbox."
+                " Check password, network connection and Dropbox status."
+            )
             download_complete = False
             return False
 
