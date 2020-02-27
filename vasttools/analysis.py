@@ -367,7 +367,7 @@ class BuildLightcurves:
                 min_detections=min_detections,
                 mjd=self.args.mjd,
                 grid=self.args.grid,
-                yaxis_start=self.yaxis_start
+                yaxis_start=self.args.yaxis_start
             )
             if success:
                 self.logger.info(
