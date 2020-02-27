@@ -179,7 +179,7 @@ class Lightcurve:
             upper_lims['plot_date'],
             sigma_thresh *
             upper_lims['img_rms'],
-            yerr=uplims['img_rms'],
+            yerr=upper_lims['img_rms'],
             uplims=True,
             lolims=False,
             marker='_',
