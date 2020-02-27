@@ -51,12 +51,13 @@ class Lightcurve:
     :type num_obs: int
     '''
 
-    def __init__(self, name, num_obs):
+    def __init__(self, name, num_obs, islands=False):
         '''Constructor method
         '''
         self.logger = logging.getLogger(
             'vasttools.build_lightcurves.Lightcurve')
         self.name = name.strip()
+        self.islands = islands
         self.observations = pd.DataFrame(
             columns=[
                 'obs_start',
@@ -80,7 +81,10 @@ class Lightcurve:
         :type row: `pandas.core.series.Series`
         '''
         S_int = row['flux_int']
-        S_err = row['rms_image']
+        if self.islands:
+            S_err = row['background_noise']
+        else:
+            S_err = row['rms_image']
         img_rms = row['SELAVY_rms']
         obs_start = pd.to_datetime(row['obs_date'])
         obs_end = pd.to_datetime(row['date_end'])
@@ -111,7 +115,7 @@ class Lightcurve:
 
     def plot_lightcurve(self, sigma_thresh=5, savefile=None, figsize=(8, 4),
                         min_points=2, min_detections=1, mjd=False,
-                        grid=False):
+                        grid=False, yaxis_start="auto"):
         '''
         Plot source lightcurves and save to file
 
@@ -159,32 +163,51 @@ class Lightcurve:
 
         fig = plt.figure(figsize=figsize)
         ax = fig.add_subplot(111)
-        ax.set_title(self.name)
+        plot_title = self.name
+        if self.islands:
+            plot_title += " (island)"
+        ax.set_title(plot_title)
 
         ax.set_ylabel('Flux Density (mJy)')
 
-        for i, row in self.observations.iterrows():
-            if row['upper_lim']:
-                self.logger.debug("Plotting upper limit")
-                ax.errorbar(
-                    row['plot_date'],
-                    sigma_thresh *
-                    row['img_rms'],
-                    yerr=row['img_rms'],
-                    uplims=True,
-                    lolims=False,
-                    marker='_',
-                    c='k')
-            else:
-                self.logger.debug("Plotting detection")
-                ax.errorbar(
-                    row['plot_date'],
-                    row['S_int'],
-                    yerr=row['S_err'],
-                    marker='o',
-                    c='k')
+        self.logger.debug("Plotting upper limit")
+        upper_lims = self.observations[
+            self.observations.upper_lim
+        ]
 
-        ax.set_ylim(bottom=0)
+        ax.errorbar(
+            upper_lims['plot_date'],
+            sigma_thresh *
+            upper_lims['img_rms'],
+            yerr=upper_lims['img_rms'],
+            uplims=True,
+            lolims=False,
+            marker='_',
+            c='k',
+            linestyle="none")
+
+        self.logger.debug("Plotting detection")
+        detections = self.observations[
+            ~self.observations.upper_lim
+        ]
+
+        ax.errorbar(
+            detections['plot_date'],
+            detections['S_int'],
+            yerr=detections['S_err'],
+            marker='o',
+            c='k',
+            linestyle="none")
+
+        if yaxis_start == "0":
+            max_y = np.max(
+                detections["S_int"].tolist() +
+                (sigma_thresh * upper_lims["S_int"]).tolist()
+            )
+            ax.set_ylim(
+                bottom=0,
+                top=max_y*1.1
+            )
 
         if mjd:
             ax.set_xlabel('Date (MJD)')
@@ -274,10 +297,20 @@ class BuildLightcurves:
                 self.logger.critical("Check format!")
                 continue
 
+            if i == 0:
+                if "component_id" in source_list.columns:
+                    self.logger.debug("Component mode.")
+                    self.islands = False
+                else:
+                    self.logger.debug("Island mode.")
+                    self.islands = True
+
             for j, row in source_list.iterrows():
                 name = row['name']
                 if name not in lightcurve_dict.keys():
-                    lightcurve_dict[name] = Lightcurve(name, num_obs)
+                    lightcurve_dict[name] = Lightcurve(
+                        name, num_obs, islands=self.islands
+                    )
                     self.logger.info("Building lightcurve for {}".format(name))
 
                 lightcurve_dict[name].add_observation(i, row)
@@ -315,7 +348,8 @@ class BuildLightcurves:
                 min_points=min_points,
                 min_detections=min_detections,
                 mjd=self.args.mjd,
-                grid=self.args.grid
+                grid=self.args.grid,
+                yaxis_start=self.args.yaxis_start
             )
             if success:
                 self.logger.info(

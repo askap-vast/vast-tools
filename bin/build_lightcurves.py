@@ -4,7 +4,7 @@
 
 # ./build_lightcurves.py outputfolder
 
-from vasttools.analysis import Lightcurve, BuildLightcurves
+from vasttools.analysis import BuildLightcurves
 from vasttools.utils import get_logger
 
 import argparse
@@ -60,6 +60,16 @@ def parse_args():
         '--grid',
         action="store_true",
         help="Turn on the 'grid' in the lightcurve plot.")
+    parser.add_argument(
+        '--yaxis-start',
+        type=str,
+        choices=["auto", "0"],
+        default="auto",
+        help=(
+            "Define where the y axis on the lightcurve plot starts from."
+            " 'auto' will let matplotlib decide the best range and '0' "
+            " will start from 0."
+        ))
     parser.add_argument(
         '--nice',
         type=int,
