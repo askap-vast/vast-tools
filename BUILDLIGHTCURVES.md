@@ -20,7 +20,7 @@ Most options should be self explanatory. The lightcurve plots and csv files are 
 ```
 usage: build_lightcurves.py [-h] [--no-plotting] [--quiet] [--debug]
                             [--min-points MIN_POINTS]
-                            [--min-detections MIN_DETECTIONS] [--mjd] [--grid]
+                            [--min-detections MIN_DETECTIONS] [--mjd] [--grid] [--nice NICE]
                             folder
 
 positional arguments:
