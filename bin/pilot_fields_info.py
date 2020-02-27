@@ -53,7 +53,11 @@ def parse_args():
     parser.add_argument(
         '--save',
         action="store_true",
-        help='Save the resulting information.')
+        help=(
+            "Save the resulting information."
+            " Files will be saved to the current working directory"
+            " in the form of 'VAST_XXXX+/-XXA_field_info.csv'."
+        ))
     parser.add_argument(
         '--quiet',
         action="store_true",

@@ -32,7 +32,9 @@ ra,dec,name,sbid,field_name
 pilot_fields_info.py my_fields.csv
 ```
 
-See the section below for details on the options available when running.
+If you wish to save the output then using the `--save` flag will write the results for each field to their own individual file in the current working directory.
+
+See the section below for details on the other options available when running.
 
 ## Usage
 
@@ -51,7 +53,8 @@ optional arguments:
   --psf         Include the largest PSF of the 36 beams that make up the field. (default: False)
   --common-psf  Include the common PSF of the 36 beams that make up the field. (default: False)
   --all-psf     Include all the PSF information for the field. (default: False)
-  --save        Save the resulting information. (default: False)
+  --save        Save the resulting information. Files will be saved to the current working directory
+                in the form of 'VAST_XXXX+/-XXA_field_info.csv'." (default: False)
   --quiet       Turn off non-essential terminal output. (default: False)
   --debug       Turn on debug output. (default: False)
   --nice NICE   Set nice level. (default: 5)
