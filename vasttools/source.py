@@ -624,7 +624,7 @@ class Source:
 
         pix_coord = np.rint(skycoord_to_pixel(
             self.src_coord, rms_wcs)).astype(int)
-        rms_val = rms_img_data[pix_coord[0], pix_coord[1]]
+        rms_val = rms_img_data[pix_coord[0], pix_coord[1]] * 1e3
         try:
             self.selavy_info['SELAVY_rms'] = rms_val
         except Exception as e:
