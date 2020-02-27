@@ -80,7 +80,10 @@ class Lightcurve:
         :type row: `pandas.core.series.Series`
         '''
         S_int = row['flux_int']
-        S_err = row['rms_image']
+        if self.islands:
+            S_err = row['background_noise']
+        else:
+            S_err = row['rms_image']
         img_rms = row['SELAVY_rms'] * 1e3
         obs_start = pd.to_datetime(row['obs_date'])
         obs_end = pd.to_datetime(row['date_end'])
@@ -273,6 +276,14 @@ class BuildLightcurves:
                     "Pandas reading of {} failed!".format(path))
                 self.logger.critical("Check format!")
                 continue
+ 
+            if i == 0:
+                if "component_id" in source_list.columns:
+                    self.logger.debug("Component mode.")
+                    self.islands = False
+                else:
+                    self.logger.debug("Island mode.")
+                    self.islands = True
 
             for j, row in source_list.iterrows():
                 name = row['name']

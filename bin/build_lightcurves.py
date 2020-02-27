@@ -4,7 +4,7 @@
 
 # ./build_lightcurves.py outputfolder
 
-from vasttools.analysis import Lightcurve, BuildLightcurves
+from vasttools.analysis import BuildLightcurves
 from vasttools.utils import get_logger
 
 import argparse
