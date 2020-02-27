@@ -146,7 +146,7 @@ class Source:
 
         if islands:
             columns = [
-                '#'
+                "#",
                 "island_id",
                 "island_name",
                 "n_components",
