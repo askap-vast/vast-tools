@@ -699,7 +699,7 @@ class FieldQuery:
 
     def _get_beams(self):
         '''
-        Processes all the beams of a field per epoch and initialises 
+        Processes all the beams of a field per epoch and initialises
         radio_beam.Beams objects.
 
         :returns: Dictionary of 'radio_beam.Beams' objects.
@@ -732,7 +732,7 @@ class FieldQuery:
             of the field per epoch. Defaults to False.
         :type common_psf: bool, optional
         :param all_psf: If true the common psf is calculated
-            of the field per epoch and all the beam information of 
+            of the field per epoch and all the beam information of
             the field is shown. Defaults to False.
         :type all_psf: bool, optional
         :param save: Save the output tables to a csv file. Defaults
@@ -851,8 +851,8 @@ class FieldQuery:
             ])
 
             self.field_info.rename(columns={
-                "RA_HMS" : "RA_HMS (Beam 0)",
-                "DEC_DMS" : "DEC_DMS (Beam 0)",
+                "RA_HMS": "RA_HMS (Beam 0)",
+                "DEC_DMS": "DEC_DMS (Beam 0)",
             }, inplace=True)
 
             self.field_info.drop_duplicates("EPOCH", inplace=True)
