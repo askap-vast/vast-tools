@@ -18,9 +18,9 @@ Prior to running this script you should query the survey data using `find_source
 Most options should be self explanatory. The lightcurve plots and csv files are saved in the same directory as the input
 
 ```
-usage: build_lightcurves.py [-h] [--no-plotting] [--quiet] [--debug]
-                            [--min-points MIN_POINTS]
-                            [--min-detections MIN_DETECTIONS] [--mjd] [--grid] [--nice NICE]
+usage: build_lightcurves.py [-h] [--no-plotting] [--quiet] [--debug] [--min-points MIN_POINTS]
+                            [--min-detections MIN_DETECTIONS] [--mjd] [--grid]
+                            [--yaxis-start {auto,0}] [--nice NICE]
                             folder
 
 positional arguments:
@@ -32,11 +32,14 @@ optional arguments:
   --quiet               Turn off non-essential terminal output. (default: False)
   --debug               Turn on debug output. (default: False)
   --min-points MIN_POINTS
-                        Minimum number of epochs a source must be covered by (default:
-                        2)
+                        Minimum number of epochs a source must be covered by (default: 2)
   --min-detections MIN_DETECTIONS
                         Minimum number of times a source must be detected (default: 1)
   --mjd                 Plot lightcurve in MJD rather than datetime. (default: False)
   --grid                Turn on the 'grid' in the lightcurve plot. (default: False)
+  --yaxis-start {auto,0}
+                        Define where the y axis on the lightcurve plot starts from. 'auto' will let
+                        matplotlib decide the best range and '0' will start from 0.
+                        (default: auto)
   --nice NICE           Set nice level. (default: 5)
 ```

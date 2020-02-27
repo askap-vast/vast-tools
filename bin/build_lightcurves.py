@@ -67,8 +67,8 @@ def parse_args():
         default="auto",
         help=(
             "Define where the y axis on the lightcurve plot starts from."
-            " 'auto' will let matplotlib decide the best range (default)"
-            " and '0' will start from 0."
+            " 'auto' will let matplotlib decide the best range and '0' "
+            " will start from 0."
         ))
     parser.add_argument(
         '--nice',
