@@ -185,7 +185,7 @@ class Lightcurve:
             marker='_',
             c='k',
             linestyle="none")
-            
+
         self.logger.debug("Plotting detection")
         detections = self.observations[
             ~self.observations.upper_lim
@@ -201,7 +201,7 @@ class Lightcurve:
 
         if yaxis_start == "0":
             max_y = np.max(
-                detections["S_int"].tolist() + 
+                detections["S_int"].tolist() +
                 (sigma_thresh * upper_lims["S_int"]).tolist()
             )
             ax.set_ylim(
@@ -296,7 +296,7 @@ class BuildLightcurves:
                     "Pandas reading of {} failed!".format(path))
                 self.logger.critical("Check format!")
                 continue
- 
+
             if i == 0:
                 if "component_id" in source_list.columns:
                     self.logger.debug("Component mode.")
