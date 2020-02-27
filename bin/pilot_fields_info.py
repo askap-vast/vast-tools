@@ -72,6 +72,7 @@ def parse_args():
 
     return args
 
+
 def read_fields(fields_file):
     fields = pd.read_csv(fields_file, comment='#')
     try:
@@ -80,6 +81,7 @@ def read_fields(fields_file):
         logger.error("Could not find column 'field_name' in file.")
         fields = []
     return fields
+
 
 if __name__ == '__main__':
     args = parse_args()
