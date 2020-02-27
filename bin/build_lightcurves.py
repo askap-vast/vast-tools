@@ -61,6 +61,12 @@ def parse_args():
         action="store_true",
         help="Turn on the 'grid' in the lightcurve plot.")
     parser.add_argument(
+        '--yaxis-start',
+        type=str,
+        choices=["auto", "0"],
+        default="auto"
+        help="Turn on the 'grid' in the lightcurve plot.")
+    parser.add_argument(
         '--nice',
         type=int,
         help='Set nice level.',

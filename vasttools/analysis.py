@@ -115,7 +115,7 @@ class Lightcurve:
 
     def plot_lightcurve(self, sigma_thresh=5, savefile=None, figsize=(8, 4),
                         min_points=2, min_detections=1, mjd=False,
-                        grid=False):
+                        grid=False, yaxis_start="auto"):
         '''
         Plot source lightcurves and save to file
 
@@ -163,7 +163,10 @@ class Lightcurve:
 
         fig = plt.figure(figsize=figsize)
         ax = fig.add_subplot(111)
-        ax.set_title(self.name)
+        plot_title = self.name
+        if self.islands:
+            plot_title += " (island)"
+        ax.set_title(plot_title)
 
         ax.set_ylabel('Flux Density (mJy)')
 
@@ -188,7 +191,8 @@ class Lightcurve:
                     marker='o',
                     c='k')
 
-        ax.set_ylim(bottom=0)
+        if yaxis_start == "0":
+            ax.set_ylim(bottom=0)
 
         if mjd:
             ax.set_xlabel('Date (MJD)')
@@ -329,7 +333,8 @@ class BuildLightcurves:
                 min_points=min_points,
                 min_detections=min_detections,
                 mjd=self.args.mjd,
-                grid=self.args.grid
+                grid=self.args.grid,
+                yaxis_start=self.yaxis_start
             )
             if success:
                 self.logger.info(
