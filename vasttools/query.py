@@ -880,13 +880,13 @@ class FieldQuery:
                     common_beams.append(epoch_beams[i].common_beam())
 
                 self.field_info["C_BMAJ (arcsec)"] = [
-                    b.major.value for b in common_beams
+                    b.major.to(u.arcsec).value for b in common_beams
                 ]
                 self.field_info["C_BMIN (arcsec)"] = [
-                    b.minor.value for b in common_beams
+                    b.minor.to(u.arcsec).value for b in common_beams
                 ]
                 self.field_info["C_BPA (deg)"] = [
-                    b.pa.value for b in common_beams
+                    b.pa.to(u.deg).value for b in common_beams
                 ]
 
             self.logger.info("{} information:".format(self.field))
