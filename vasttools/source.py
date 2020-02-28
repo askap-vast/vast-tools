@@ -63,26 +63,38 @@ class Source:
             SELAVY_FOLDER,
             vast_pilot,
             tiles=False,
-            stokesv=False):
+            stokesv=False,
+            islands=False):
         '''Constructor method
         '''
-        self.logger = logging.getLogger('vasttools.survey.Dropbox')
+        self.logger = logging.getLogger('vasttools.source.Source')
         self.logger.debug('Created Source instance')
 
         self.src_coord = src_coord
         self.field = field
         self.sbid = sbid
 
+        if islands:
+            self.cat_type = "islands"
+            self.islands = True
+        else:
+            self.cat_type = "components"
+            self.islands = False
+
         if tiles:
             selavyname_template = 'selavy-image.i.SB{}.cont.{}.' \
-                'linmos.taylor.0.restored.components.txt'
-            self.selavyname = selavyname_template.format(self.sbid, self.field)
+                'linmos.taylor.0.restored.{}.txt'
+            self.selavyname = selavyname_template.format(
+                self.sbid, self.field, self.cat_type
+            )
         else:
             if vast_pilot == "0":
-                self.selavyname = '{}.taylor.0.components.txt'.format(
-                    self.field)
+                self.selavyname = '{}.taylor.0.{}.txt'.format(
+                    self.field, self.cat_type)
             else:
-                self.selavyname = '{}.selavy.components.txt'.format(self.field)
+                self.selavyname = '{}.selavy.{}.txt'.format(
+                    self.field, self.cat_type
+                )
 
             self.nselavyname = 'n{}'.format(self.selavyname)
 
@@ -124,7 +136,7 @@ class Source:
         # Write the cutout to a new FITS file
         hdu_stamp.writeto(outfile, overwrite=True)
 
-    def _empty_selavy(self):
+    def _empty_selavy(self, islands=False):
         '''
         Create an empty `DataFrame` for sources that have no selavy match
 
@@ -132,48 +144,94 @@ class Source:
         :rtype: `pandas.core.frame.DataFrame`
         '''
 
-        columns = [
-            '#',
-            'island_id',
-            'component_id',
-            'component_name',
-            'ra_hms_cont',
-            'dec_dms_cont',
-            'ra_deg_cont',
-            'dec_deg_cont',
-            'ra_err',
-            'dec_err',
-            'freq',
-            'flux_peak',
-            'flux_peak_err',
-            'flux_int',
-            'flux_int_err',
-            'maj_axis',
-            'min_axis',
-            'pos_ang',
-            'maj_axis_err',
-            'min_axis_err',
-            'pos_ang_err',
-            'maj_axis_deconv',
-            'min_axis_deconv',
-            'pos_ang_deconv',
-            'maj_axis_deconv_err',
-            'min_axis_deconv_err',
-            'pos_ang_deconv_err',
-            'chi_squared_fit',
-            'rms_fit_gauss',
-            'spectral_index',
-            'spectral_curvature',
-            'spectral_index_err',
-            'spectral_curvature_err',
-            'rms_image',
-            'has_siblings',
-            'fit_is_estimate',
-            'spectral_index_from_TT',
-            'flag_c4',
-            'comment']
+        if islands:
+            columns = [
+                "#",
+                "island_id",
+                "island_name",
+                "n_components",
+                "ra_hms_cont",
+                "dec_dms_cont",
+                "ra_deg_cont",
+                "dec_deg_cont",
+                "freq",
+                "maj_axis",
+                "min_axis",
+                "pos_ang",
+                "flux_int",
+                "flux_int_err",
+                "flux_peak",
+                "mean_background",
+                "background_noise",
+                "max_residual",
+                "min_residual",
+                "mean_residual",
+                "rms_residual",
+                "stdev_residual",
+                "x_min",
+                "x_max",
+                "y_min",
+                "y_max",
+                "n_pix",
+                "solid_angle",
+                "beam_area",
+                "x_ave",
+                "y_ave",
+                "x_cen",
+                "y_cen",
+                "x_peak",
+                "y_peak",
+                "flag_i1",
+                "flag_i2",
+                "flag_i3",
+                "flag_i4"
+            ]
+        else:
+            columns = [
+                '#',
+                'island_id',
+                'component_id',
+                'component_name',
+                'ra_hms_cont',
+                'dec_dms_cont',
+                'ra_deg_cont',
+                'dec_deg_cont',
+                'ra_err',
+                'dec_err',
+                'freq',
+                'flux_peak',
+                'flux_peak_err',
+                'flux_int',
+                'flux_int_err',
+                'maj_axis',
+                'min_axis',
+                'pos_ang',
+                'maj_axis_err',
+                'min_axis_err',
+                'pos_ang_err',
+                'maj_axis_deconv',
+                'min_axis_deconv',
+                'pos_ang_deconv',
+                'maj_axis_deconv_err',
+                'min_axis_deconv_err',
+                'pos_ang_deconv_err',
+                'chi_squared_fit',
+                'rms_fit_gauss',
+                'spectral_index',
+                'spectral_curvature',
+                'spectral_index_err',
+                'spectral_curvature_err',
+                'rms_image',
+                'has_siblings',
+                'fit_is_estimate',
+                'spectral_index_from_TT',
+                'flag_c4',
+                'comment'
+            ]
         return pd.DataFrame(
-            np.array([[np.nan for i in range(len(columns))]]), columns=columns)
+            np.array(
+                [[np.nan for i in range(len(columns))]]), columns=columns
+            )
 
     def extract_source(self, crossmatch_radius, stokesv):
         '''
@@ -197,8 +255,9 @@ class Source:
 
                 nselavy_cat["island_id"] = [
                     "n{}".format(i) for i in nselavy_cat["island_id"]]
-                nselavy_cat["component_id"] = [
-                    "n{}".format(i) for i in nselavy_cat["component_id"]]
+                if not self.islands:
+                    nselavy_cat["component_id"] = [
+                        "n{}".format(i) for i in nselavy_cat["component_id"]]
 
                 self.selavy_cat = self.selavy_cat.append(
                     nselavy_cat, ignore_index=True, sort=False)
@@ -206,7 +265,7 @@ class Source:
         except Exception as e:
             self.logger.warning('{} does not exist'.format(self.selavypath))
             self.selavy_fail = True
-            self.selavy_info = self._empty_selavy()
+            self.selavy_info = self._empty_selavy(islands=self.islands)
             self.selavy_info["has_match"] = False
             self.has_match = False
             return
@@ -244,7 +303,7 @@ class Source:
                               "Nearest source {:.0f} arcsec away."
                               ).format(match_sep[0].arcsec))
             self.has_match = False
-            self.selavy_info = self._empty_selavy()
+            self.selavy_info = self._empty_selavy(islands=self.islands)
 
         self.selavy_fail = False
         self.selavy_info["has_match"] = self.has_match
@@ -539,7 +598,7 @@ class Source:
             ax.add_collection(collection, autolim=False)
             # Add island labels, haven't found a better way other than looping
             # at the moment.
-            if not no_islands:
+            if not no_islands and not self.islands:
                 for i, val in enumerate(patches):
                     ax.annotate(
                         island_names[i],
@@ -553,10 +612,14 @@ class Source:
         legend_elements = [
             Line2D(
                 [0], [0], marker='x', color='C3', label=label,
-                markerfacecolor='g', ls="none", markersize=8),
-            Line2D(
-                [0], [0], marker='o', color='C1', label="Selavy Sources",
-                markerfacecolor='none', ls="none", markersize=10)]
+                markerfacecolor='g', ls="none", markersize=8)]
+        if selavy and self.selavy_fail is False:
+            legend_elements.append(
+                Line2D(
+                    [0], [0], marker='o', color='C1',
+                    label="Selavy {}".format(self.cat_type),
+                    markerfacecolor='none', ls="none", markersize=10)
+            )
         if crossmatch_overlay:
             legend_elements.append(
                 Line2D(
@@ -620,9 +683,9 @@ class Source:
 
         pix_coord = np.rint(skycoord_to_pixel(
             self.src_coord, rms_wcs)).astype(int)
-        rms_val = rms_img_data[pix_coord[0], pix_coord[1]]
+        rms_val = rms_img_data[pix_coord[0], pix_coord[1]] * 1e3
         try:
             self.selavy_info['SELAVY_rms'] = rms_val
         except Exception as e:
-            self.selavy_info = self._empty_selavy()
+            self.selavy_info = self._empty_selavy(islands=self.islands)
             self.selavy_info['SELAVY_rms'] = rms_val

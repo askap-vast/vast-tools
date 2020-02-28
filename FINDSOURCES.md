@@ -55,7 +55,7 @@ usage: find_sources.py [-h] [--vast-pilot {0,1,2,3x,4x}] [--imsize IMSIZE] [--ma
                        [--png-zscale-contrast PNG_ZSCALE_CONTRAST] [--png-hide-beam] [--png-no-island-labels]
                        [--png-no-colorbar] [--ann] [--reg] [--stokesv] [--quiet] [--crossmatch-only]
                        [--selavy-simple] [--process-matches] [--debug] [--no-background-rms] [--find-fields]
-                       [--clobber]
+                       [--clobber] [--nice NICE]
                        "HH:MM:SS [+/-]DD:MM:SS" OR input.csv
 
 positional arguments:
@@ -115,6 +115,7 @@ optional arguments:
   --no-background-rms   Do not estimate the background RMS around each source. (default: False)
   --find-fields         Only return the associated field for each source. (default: False)
   --clobber             Overwrite the output directory if it already exists. (default: False)
+  --nice NICE           Set nice level. (default: 5)
 ```
 
 ## Inputs

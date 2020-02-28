@@ -20,11 +20,14 @@ setup(
         "colorlog>=4.0.2,<5.0",
         "dropbox>=9.4.0,<9.5.0",
         "tables>=3.6.1,<3.7.0",
-        "radio_beam>=0.3.1,<0.4"
+        "radio_beam>=0.3.1,<0.4",
+        "tabulate>=0.8.6,<0.9"
         ],
     scripts=[
         "bin/find_sources.py",
-        "bin/get_vast_pilot_dbx.py"
+        "bin/get_vast_pilot_dbx.py",
+        "bin/build_lightcurves.py",
+        "bin/pilot_fields_info.py"
         ],
     include_package_data=True
 )

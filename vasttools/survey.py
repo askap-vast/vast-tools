@@ -8,6 +8,7 @@ import pkg_resources
 import dropbox
 import itertools
 import hashlib
+import numpy as np
 
 import logging
 import logging.handlers
@@ -30,7 +31,14 @@ RELEASED_EPOCHS = {
     "1": "01",
     "2": "02",
     "3x": "03x",
-    "4x": "04x"
+    "4x": "04x",
+    "5x": "05x",
+    "6x": "06x",
+    "7x": "07x",
+    "8": "08",
+    "9": "09",
+    "10x": "10x",
+    "11x": "11x"
 }
 
 FIELD_FILES = {
@@ -43,7 +51,21 @@ FIELD_FILES = {
     "3x": pkg_resources.resource_filename(
         __name__, "./data/vast_epoch03x_info.csv"),
     "4x": pkg_resources.resource_filename(
-        __name__, "./data/vast_epoch04x_info.csv")
+        __name__, "./data/vast_epoch04x_info.csv"),
+    "5x": pkg_resources.resource_filename(
+        __name__, "./data/vast_epoch05x_info.csv"),
+    "6x": pkg_resources.resource_filename(
+        __name__, "./data/vast_epoch06x_info.csv"),
+    "7x": pkg_resources.resource_filename(
+        __name__, "./data/vast_epoch07x_info.csv"),
+    "8": pkg_resources.resource_filename(
+        __name__, "./data/vast_epoch08_info.csv"),
+    "9": pkg_resources.resource_filename(
+        __name__, "./data/vast_epoch09_info.csv"),
+    "10x": pkg_resources.resource_filename(
+        __name__, "./data/vast_epoch10x_info.csv"),
+    "11x": pkg_resources.resource_filename(
+        __name__, "./data/vast_epoch11x_info.csv")
 }
 
 CHECKSUMS_FILE = pkg_resources.resource_filename(
@@ -260,15 +282,30 @@ class Dropbox:
                 for vast_file in files_list:
                     download_path = os.path.join(
                         pwd, output_dir, vast_file[1:])
+                    dropbox_path = "{}".format(vast_file)
                     if not overwrite:
                         if os.path.isfile(download_path):
-                            self.logger.error(
+                            self.logger.warning(
                                 "{} already exists and overwrite "
                                 "is set to {}.".format(
                                     download_path, overwrite))
-                            self.logger.info("Skipping file.")
-                            continue
-                    dropbox_path = "{}".format(vast_file)
+                            self.logger.info(
+                                "Checking integrity..."
+                            )
+                            good_file = self._checksum_check(
+                                dropbox_path,
+                                download_path
+                            )
+                            if good_file is False:
+                                self.logger.warning(
+                                    "Redownloading {}".format(
+                                        vast_file
+                                    )
+                                )
+                            else:
+                                self.logger.info("Checksum check passed!")
+                                self.logger.info("Skipping file.")
+                                continue
                     self.logger.debug(
                         "Download path: {}".format(download_path))
                     download_success = self.download_file(
@@ -316,9 +353,14 @@ class Dropbox:
                 link_password=password)
             download_complete = True
         except Exception as e:
+            self.logger.debug(e)
             self.logger.warning("{} encountered a problem!".format(
                 dropbox_path
             ))
+            self.logger.warning(
+                "Couldn't connect to Dropbox."
+                " Check password, network connection and Dropbox status."
+            )
             download_complete = False
             return False
 
@@ -382,15 +424,24 @@ class Fields:
         :rtype: `pandas.core.frame.DataFrame`, `numpy.ndarray`
         '''
         self.logger.debug(src_coord)
+        self.logger.debug(catalog[np.isnan(src_coord.ra)])
         nearest_beams, seps, _d3d = src_coord.match_to_catalog_sky(
             self.direction)
         self.logger.debug(seps.deg)
+        self.logger.debug(
+            "Nearest beams: {}".format(self.fields["BEAM"][nearest_beams]))
         within_beam = seps.deg < max_sep
         catalog["sbid"] = self.fields["SBID"].iloc[nearest_beams].values
         nearest_fields = self.fields["FIELD_NAME"].iloc[nearest_beams]
         self.logger.debug(nearest_fields)
         catalog["field_name"] = nearest_fields.values
         catalog["original_index"] = catalog.index.values
+        obs_dates = self.fields["DATEOBS"].iloc[nearest_beams]
+        date_end = self.fields["DATEEND"].iloc[nearest_beams]
+        catalog["obs_date"] = obs_dates.values
+        catalog["date_end"] = date_end.values
+        beams = self.fields["BEAM"][nearest_beams]
+        catalog["beam"] = beams.values
         new_catalog = catalog[within_beam].reset_index(drop=True)
         self.logger.info(
             "Field match found for {}/{} sources.".format(
