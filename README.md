@@ -40,4 +40,4 @@ This is an example of a basic workflow to query three sources of interest. The s
 1. Determine which VAST Pilot fields contain the sources of interest. Do this using the `--find-fields ` mode in `find_sources.py` (see [FINDSOURCES.md](FINDSOURCES.md)).
 2. Download the required fields by passing the above output to `get_vast_pilot_dbx.py` (see [VASTDROPBOX.md](VASTDROPBOX.md)).
 3. Run `find_sources.py` for a second time, making sure to point to the newly downloaded data above, to gather information and cut outs of the sources and their crossmatches (see [FINDSOURCES.md](FINDSOURCES.md)).
-4. Run `build_lightcurves.py` on the output directory to create lightcurves of the sources
+4. Run `build_lightcurves.py` on the output directory to create lightcurves of the sources (see [BUILDLIGHTCURVES.md](BUILDLIGHTCURVES.md)).
