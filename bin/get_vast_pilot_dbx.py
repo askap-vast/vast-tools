@@ -489,7 +489,7 @@ elif args.download_epoch is not None:
         logger.info(
             "Gathering {} files to download...".format(epoch_string))
         files_list, folders_list = vast_dropbox.recursive_build_files(
-            epoch_file_list, dbx, preappend=epoch_string)
+            epoch_file_list, preappend=epoch_string)
         logger.info("{} files to download".format(len(files_list)))
 
         for folder in folders_list:
