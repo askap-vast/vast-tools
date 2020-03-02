@@ -475,7 +475,7 @@ elif args.download_epoch is not None:
     epochs = []
     for i in base_file_list.entries:
         if isinstance(i, dropbox.files.FolderMetadata) and "EPOCH" in i.name:
-            epochs.append(int(i.name.split('EPOCH')[-1]))
+            epochs.append(i.name.split('EPOCH')[-1])
     dropbox_name = RELEASED_EPOCHS[args.download_epoch]
     if dropbox_name not in epochs:
         logger.error(
@@ -489,7 +489,7 @@ elif args.download_epoch is not None:
         logger.info(
             "Gathering {} files to download...".format(epoch_string))
         files_list, folders_list = vast_dropbox.recursive_build_files(
-            epoch_file_list, dbx, preappend=epoch_string)
+            epoch_file_list, preappend=epoch_string)
         logger.info("{} files to download".format(len(files_list)))
 
         for folder in folders_list:

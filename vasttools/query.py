@@ -573,9 +573,10 @@ class EpochInfo:
 
         if not BASE_FOLDER:
             if HOST != HOST_ADA:
-                self.logger.critical(
-                    "Base folder must be specified if not running on ada")
-                sys.exit()
+                if not FIND_FIELDS:
+                    self.logger.critical(
+                        "Base folder must be specified if not running on ada")
+                    sys.exit()
             BASE_FOLDER = "/import/ada1/askap/"
 
         if not IMAGE_FOLDER:
