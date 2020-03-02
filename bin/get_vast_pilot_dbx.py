@@ -475,7 +475,7 @@ elif args.download_epoch is not None:
     epochs = []
     for i in base_file_list.entries:
         if isinstance(i, dropbox.files.FolderMetadata) and "EPOCH" in i.name:
-            epochs.append(int(i.name.split('EPOCH')[-1]))
+            epochs.append(i.name.split('EPOCH')[-1])
     dropbox_name = RELEASED_EPOCHS[args.download_epoch]
     if dropbox_name not in epochs:
         logger.error(
