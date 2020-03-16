@@ -40,6 +40,6 @@ optional arguments:
   --yaxis-start {auto,0}
                         Define where the y axis on the lightcurve plot starts from. 'auto' will let
                         matplotlib decide the best range and '0' will start from 0.
-                        (default: auto)
+                        (default: 0)
   --nice NICE           Set nice level. (default: 5)
 ```
