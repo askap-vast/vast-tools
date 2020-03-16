@@ -474,7 +474,6 @@ class Source:
         mask = seps <= imsize / 1.4
         self.selavy_cat_cut = self.selavy_cat[mask].reset_index(drop=True)
 
-
     def _create_crosshair_lines(self, target, pixel_buff, length, img_size):
         '''
         Takes the target pixel coordinates and creates the plots
@@ -497,7 +496,6 @@ class Source:
         :returns: list of pairs of pixel coordinates to plot using
             scatter.
         :rtype: list.
-
         '''
         x = target[0][0]
         y = target[0][1]
@@ -515,7 +513,6 @@ class Source:
         plots.append([[x-pixel_buff, x-pixel_buff-length], [y, y]])
 
         return plots
-
 
     def make_png(
             self,
@@ -592,7 +589,7 @@ class Source:
             ([[self.src_coord.ra.deg, self.src_coord.dec.deg]])
         )
         target_coords = cutout_wcs.wcs_world2pix(target_coords, 0)
-        crosshair_lines  = self._create_crosshair_lines(
+        crosshair_lines = self._create_crosshair_lines(
             target_coords,
             0.03,
             0.03,
