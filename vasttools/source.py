@@ -30,6 +30,8 @@ import pandas as pd
 import os
 import numpy as np
 
+import vasttools.crosshair
+
 matplotlib.pyplot.switch_backend('Agg')
 
 
@@ -472,6 +474,49 @@ class Source:
         mask = seps <= imsize / 1.4
         self.selavy_cat_cut = self.selavy_cat[mask].reset_index(drop=True)
 
+
+    def _create_crosshair_lines(self, target, pixel_buff, length, img_size):
+        '''
+        Takes the target pixel coordinates and creates the plots
+        that are required to plot a 'crosshair' marker. To keep
+        the crosshair consistent between scales, the values are
+        provided as percentages of the image size.
+
+        :param target: The target in pixel coordinates.
+        :type np.array: array of the pixel values of the target
+            returned by wcs.wcs_world2pix.
+        :param pixel_buff: Percentage of image size that is the buffer
+            of the crosshair, i.e. the distance between the target and
+            beginning of the line.
+        :type pixel_buff: float.
+        :param length: Size of the line of the crosshair, again as a
+            percentage of the image size.
+        :type length: float.
+        :param img_size: Tuple size of the image array.
+        :type img_size: tuple.
+        :returns: list of pairs of pixel coordinates to plot using
+            scatter.
+        :rtype: list.
+
+        '''
+        x = target[0][0]
+        y = target[0][1]
+
+        min_size = np.min(img_size)
+
+        pixel_buff = int(min_size * pixel_buff)
+        length = int(min_size * length)
+
+        plots = []
+
+        plots.append([[x, x], [y+pixel_buff, y+pixel_buff+length]])
+        plots.append([[x, x], [y-pixel_buff, y-pixel_buff-length]])
+        plots.append([[x+pixel_buff, x+pixel_buff+length], [y, y]])
+        plots.append([[x-pixel_buff, x-pixel_buff-length], [y, y]])
+
+        return plots
+
+
     def make_png(
             self,
             selavy,
@@ -542,9 +587,28 @@ class Source:
                 interval=PercentileInterval(percentile),
                 stretch=LinearStretch())
         im = ax.imshow(cutout_data, norm=self.img_norms, cmap="gray_r")
-        ax.scatter([self.src_coord.ra.deg], [self.src_coord.dec.deg],
-                   transform=ax.get_transform('world'), marker="x",
-                   color="C3", zorder=10, label=label)
+        # insert crosshair of target
+        target_coords = np.array(
+            ([[self.src_coord.ra.deg, self.src_coord.dec.deg]])
+        )
+        target_coords = cutout_wcs.wcs_world2pix(target_coords, 0)
+        crosshair_lines  = self._create_crosshair_lines(
+            target_coords,
+            0.03,
+            0.03,
+            cutout_data.shape
+        )
+        [ax.plot(
+            l[0], l[1], color="C3", zorder=10, lw=1.5, alpha=0.6
+        ) for l in crosshair_lines]
+        # the commented lines below are to use the crosshair
+        # marker directly.
+        # ax.scatter(
+        #     [self.src_coord.ra.deg], [self.src_coord.dec.deg],
+        #     transform=ax.get_transform('world'), marker="c",
+        #     color="C3", zorder=10, label=label, s=1000, lw=1.5,
+        #     alpha=0.5
+        # )
         if crossmatch_overlay:
             try:
                 crossmatch_patch = SphericalCircle(
@@ -553,7 +617,7 @@ class Source:
                     transform=ax.get_transform('world'),
                     label="Crossmatch radius ({:.1f} arcsec)".format(
                         self.crossmatch_radius.arcsec
-                    ), edgecolor='C4', facecolor='none')
+                    ), edgecolor='C4', facecolor='none', alpha=0.8)
                 ax.add_patch(crossmatch_patch)
             except Exception as e:
                 self.logger.warning(
@@ -611,7 +675,7 @@ class Source:
                 "PNG: No selavy selected or selavy catalogue failed.")
         legend_elements = [
             Line2D(
-                [0], [0], marker='x', color='C3', label=label,
+                [0], [0], marker='c', color='C3', label=label,
                 markerfacecolor='g', ls="none", markersize=8)]
         if selavy and self.selavy_fail is False:
             legend_elements.append(
