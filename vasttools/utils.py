@@ -75,12 +75,13 @@ def get_logger(debug, quiet, logfile=None):
 
     return logger
 
+
 def _set_crosshair(self):
     """This module adds a true crosshair marker to matplotlib.
 
-    ============================== ===============================================
+    ============================== ===========================================
     marker                         description
-    ============================== ===============================================
+    ============================== ===========================================
     `"c"`                          crosshair
 
     Usage
@@ -94,16 +95,16 @@ def _set_crosshair(self):
     Notes
     -----
 
-    I tried to stay as close to the style of `matplotlib/lib/markers.py`, so it can
-    easily implemented in mpl after further testing.
+    I tried to stay as close to the style of `matplotlib/lib/markers.py`,
+    so it can easily implemented in mpl after further testing.
 
     How to implement this in matplotlib via a module was inspired by:
     https://stackoverflow.com/a/16655800/5064815
 
-    Be aware that for small sizes the crosshair looks like four dots or even a
-    circle.  This is due to the fact that in this case the linewidth is larger then
-    the length of the 'hairs' of the crosshair.  This is know and similar behaviour
-    is seen for other markers at small sizes.
+    Be aware that for small sizes the crosshair looks like four dots or
+    even a circle.  This is due to the fact that in this case the linewidth
+    is larger then the length of the 'hairs' of the crosshair. This is know
+    and similar behaviour is seen for other markers at small sizes.
 
     Author
     ------
@@ -132,6 +133,7 @@ def _set_crosshair(self):
     self._snap_threshold = 1.0
     self._filled = False
     self._path = _crosshair_path
+
 
 def crosshair():
     """
