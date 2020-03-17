@@ -30,7 +30,9 @@ import pandas as pd
 import os
 import numpy as np
 
-import vasttools.crosshair
+from vasttools.utils import crosshair
+# run crosshair to set up the marker
+crosshair()
 
 matplotlib.pyplot.switch_backend('Agg')
 
