@@ -43,6 +43,8 @@ from radio_beam import Beams
 
 from tabulate import tabulate
 
+from astroquery.simbad import Simbad
+
 warnings.filterwarnings('ignore', category=AstropyWarning, append=True)
 warnings.filterwarnings('ignore',
                         category=AstropyDeprecationWarning, append=True)
@@ -91,7 +93,7 @@ class Query:
         :rtype: `pandas.core.frame.DataFrame`
         '''
 
-        if " " not in self.args.coords:
+        if (self.args.coords is not None) and (" " not in self.args.coords):
             self.logger.info("Loading file {}".format(self.args.coords))
             # Give explicit check to file existence
             user_file = os.path.abspath(self.args.coords)
@@ -123,20 +125,43 @@ class Query:
                 sys.exit()
         else:
             catalog_dict = {'ra': [], 'dec': []}
-            coords = self.args.coords.split(",")
-            for i in coords:
-                ra_str, dec_str = i.split(" ")
-                catalog_dict['ra'].append(ra_str)
-                catalog_dict['dec'].append(dec_str)
+            if self.args.coords is not None:
+                coords = self.args.coords.split(",")
+            
+                for i in coords:
+                    ra_str, dec_str = i.split(" ")
+                    catalog_dict['ra'].append(ra_str)
+                    catalog_dict['dec'].append(dec_str)
 
             if self.args.source_names != "":
                 source_names = self.args.source_names.split(",")
-                if len(source_names) != len(catalog_dict['ra']):
-                    self.logger.critical(
-                        ("All sources must be named "
-                         "when using '--source-names'."))
-                    self.logger.critical("Please check inputs.")
-                    sys.exit()
+                if len(catalog_dict['ra'])>0:
+                    if len(source_names) != len(catalog_dict['ra']):
+                        self.logger.critical(
+                            ("All sources must be named "
+                             "when using '--source-names'."))
+                        self.logger.critical("Please check inputs.")
+                        sys.exit()
+                else:
+                    # use astroquery to get coordinates from simbad
+                    for source_name in source_names:
+                        try:
+                            result_table = Simbad.query_object(source_name)
+                            if (result_table is not None) and (len(result_table)>0):
+                                # assume it's the first entry
+                                catalog_dict['ra'].append(result_table[0]['RA'])
+                                catalog_dict['dec'].append(result_table[0]['DEC'])
+                                self.logger.info('Identified source "%s" with coordinates %s,%s' %
+                                                 (source_name,result_table[0]['RA'],result_table[0]['DEC']))
+                            else:
+                                self.logger.critical(
+                                    ("SIMBAD query for source %s did not return a result" % source_name))
+                                sys.exit()                        
+                        except Exception as e:
+                            # I don't know what exceptions would be raised here
+                            self.logger.critical(e.message, e.args)
+                            sys.exit()
+
             else:
                 source_names = [
                     "{}_{}".format(
