@@ -29,7 +29,9 @@ def parse_args():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument(
-        'coords',
+        # DK: I changed this to be an optional argument to allow
+        # use of simbad queries.
+        '--coords',
         metavar="\"HH:MM:SS [+/-]DD:MM:SS\" OR input.csv",
         type=str,
         help=("Right Ascension and Declination in format "
