@@ -30,7 +30,6 @@ def parse_args():
 
     parser.add_argument(
         'coords',
-        metavar="\"HH:MM:SS [+/-]DD:MM:SS\" OR input.csv",
         type=str,
         help=("Right Ascension and Declination in format "
               "\"HH:MM:SS [+/-]DD:MM:SS\", in quotes. "
