@@ -46,75 +46,108 @@ All output is placed in an output directory of which the name can be set with th
 
 Can be run in either Stokes I or Stokes V, not both at once.
 ```
-usage: find_sources.py [-h] [--vast-pilot {0,1,2,3x,4x}] [--imsize IMSIZE] [--maxsep MAXSEP]
-                       [--out-folder OUT_FOLDER] [--source-names SOURCE_NAMES]
-                       [--crossmatch-radius CROSSMATCH_RADIUS] [--crossmatch-radius-overlay] [--use-tiles]
-                       [--base-folder BASE_FOLDER] [--img-folder IMG_FOLDER] [--rms-folder RMS_FOLDER]
-                       [--cat-folder CAT_FOLDER] [--create-png] [--png-selavy-overlay]
-                       [--png-linear-percentile PNG_LINEAR_PERCENTILE] [--png-use-zscale]
-                       [--png-zscale-contrast PNG_ZSCALE_CONTRAST] [--png-hide-beam] [--png-no-island-labels]
-                       [--png-no-colorbar] [--ann] [--reg] [--stokesv] [--quiet] [--crossmatch-only]
-                       [--selavy-simple] [--process-matches] [--debug] [--no-background-rms] [--find-fields]
-                       [--clobber] [--nice NICE]
-                       "HH:MM:SS [+/-]DD:MM:SS" OR input.csv
+usage: find_sources.py [-h] [--vast-pilot VAST_PILOT] [--imsize IMSIZE]
+                       [--maxsep MAXSEP] [--out-folder OUT_FOLDER]
+                       [--source-names SOURCE_NAMES]
+                       [--crossmatch-radius CROSSMATCH_RADIUS]
+                       [--crossmatch-radius-overlay] [--use-tiles] [--islands]
+                       [--base-folder BASE_FOLDER] [--img-folder IMG_FOLDER]
+                       [--rms-folder RMS_FOLDER] [--cat-folder CAT_FOLDER]
+                       [--create-png] [--png-selavy-overlay]
+                       [--png-linear-percentile PNG_LINEAR_PERCENTILE]
+                       [--png-use-zscale]
+                       [--png-zscale-contrast PNG_ZSCALE_CONTRAST]
+                       [--png-hide-beam] [--png-no-island-labels]
+                       [--png-no-colorbar] [--ann] [--reg] [--stokesv]
+                       [--quiet] [--crossmatch-only] [--selavy-simple]
+                       [--process-matches] [--debug] [--no-background-rms]
+                       [--find-fields] [--clobber] [--nice NICE]
+                       coords
 
 positional arguments:
-  "HH:MM:SS [+/-]DD:MM:SS" OR input.csv
-                        Right Ascension and Declination in format "HH:MM:SS [+/-]DD:MM:SS", in quotes. E.g.
-                        "12:00:00 -20:00:00". Degrees is also acceptable, e.g. "12.123 -20.123". Multiple
-                        coordinates are supported by separating with a comma (no space) e.g. "12.231 -56.56,123.4
-                        +21.3". Finally you can also enter coordinates using a .csv file. See example file for
-                        format.
+  coords                Right Ascension and Declination in format "HH:MM:SS
+                        [+/-]DD:MM:SS", in quotes. E.g. "12:00:00 -20:00:00".
+                        Degrees is also acceptable, e.g. "12.123 -20.123".
+                        Multiple coordinates are supported by separating with
+                        a comma (no space) e.g. "12.231 -56.56,123.4 +21.3".
+                        Finally you can also enter coordinates using a .csv
+                        file. See example file for format.
 
 optional arguments:
   -h, --help            show this help message and exit
-  --vast-pilot {0,1,2,3x,4x}
-                        Select the VAST Pilot Epoch to query. Epoch 0 is RACS. (default: 1)
-  --imsize IMSIZE       Edge size of the postagestamp in arcmin (default: 30.0)
-  --maxsep MAXSEP       Maximum separation of source from beam centre in degrees. (default: 1.0)
+  --vast-pilot VAST_PILOT
+                        Select the VAST Pilot Epoch to query. Epoch 0 is
+                        RACS.All available epochs can be queried using "--
+                        vast-pilot=all" (default: 1)
+  --imsize IMSIZE       Edge size of the postagestamp in arcmin (default:
+                        30.0)
+  --maxsep MAXSEP       Maximum separation of source from beam centre in
+                        degrees. (default: 1.0)
   --out-folder OUT_FOLDER
-                        Name of the output directory to place all results in. (default:
-                        find_sources_output_YYYYMMDD_HH:MM:SS)
+                        Name of the output directory to place all results in.
+                        (default: find_sources_output_20200326_10:43:33)
   --source-names SOURCE_NAMES
-                        Only for use when entering coordaintes via the command line. State the name of the source
-                        being searched. Use quote marks for names that contain a space. For multiple sources
-                        separate with a comma with no space, e.g. "SN 1994N,SN 2003D,SN 2019A". (default: )
+                        Only for use when entering coordaintes via the command
+                        line. State the name of the source being searched. Use
+                        quote marks for names that contain a space. For
+                        multiple sources separate with a comma with no space,
+                        e.g. "SN 1994N,SN 2003D,SN 2019A". (default: )
   --crossmatch-radius CROSSMATCH_RADIUS
                         Crossmatch radius in arcseconds (default: 15.0)
   --crossmatch-radius-overlay
-                        A circle is placed on all PNG and region/annotation files to represent the crossmatch
-                        radius. (default: False)
-  --use-tiles           Use the individual tiles instead of combined mosaics. (default: False)
+                        A circle is placed on all PNG and region/annotation
+                        files to represent the crossmatch radius. (default:
+                        False)
+  --use-tiles           Use the individual tiles instead of combined mosaics.
+                        (default: False)
+  --islands             Search islands instead of components. (default: False)
   --base-folder BASE_FOLDER
-                        Path to base folder if using default directory structure (default: None)
+                        Path to base folder if using default directory
+                        structure (default: None)
   --img-folder IMG_FOLDER
                         Path to folder where images are stored (default: None)
   --rms-folder RMS_FOLDER
-                        Path to folder where image RMS estimates are stored (default: None)
+                        Path to folder where image RMS estimates are stored
+                        (default: None)
   --cat-folder CAT_FOLDER
-                        Path to folder where selavy catalogues are stored (default: None)
+                        Path to folder where selavy catalogues are stored
+                        (default: None)
   --create-png          Create a png of the fits cutout. (default: False)
-  --png-selavy-overlay  Overlay selavy components onto the png image. (default: False)
+  --png-selavy-overlay  Overlay selavy components onto the png image.
+                        (default: False)
   --png-linear-percentile PNG_LINEAR_PERCENTILE
-                        Choose the percentile level for the png normalisation. (default: 99.9)
-  --png-use-zscale      Select ZScale normalisation (default is 'linear'). (default: False)
+                        Choose the percentile level for the png normalisation.
+                        (default: 99.9)
+  --png-use-zscale      Select ZScale normalisation (default is 'linear').
+                        (default: False)
   --png-zscale-contrast PNG_ZSCALE_CONTRAST
                         Select contrast to use for zscale. (default: 0.1)
-  --png-hide-beam       Select to not show the image synthesised beam on the plot. (default: False)
+  --png-hide-beam       Select to not show the image synthesised beam on the
+                        plot. (default: False)
   --png-no-island-labels
                         Disable island lables on the png. (default: False)
   --png-no-colorbar     Do not show the colorbar on the png. (default: False)
-  --ann                 Create a kvis annotation file of the components. (default: False)
-  --reg                 Create a DS9 region file of the components. (default: False)
-  --stokesv             Use Stokes V images and catalogues if available. (default: False)
-  --quiet               Turn off non-essential terminal output. (default: False)
-  --crossmatch-only     Only run crossmatch, do not generate any fits or png files. (default: False)
-  --selavy-simple       Only include flux density and uncertainty in returned table. (default: False)
-  --process-matches     Only produce data products for sources that have a selavy match. (default: False)
+  --ann                 Create a kvis annotation file of the components.
+                        (default: False)
+  --reg                 Create a DS9 region file of the components. (default:
+                        False)
+  --stokesv             Use Stokes V images and catalogues if available.
+                        (default: False)
+  --quiet               Turn off non-essential terminal output. (default:
+                        False)
+  --crossmatch-only     Only run crossmatch, do not generate any fits or png
+                        files. (default: False)
+  --selavy-simple       Only include flux density and uncertainty in returned
+                        table. (default: False)
+  --process-matches     Only produce data products for sources with a selavy
+                        match. (default: False)
   --debug               Turn on debug output. (default: False)
-  --no-background-rms   Do not estimate the background RMS around each source. (default: False)
-  --find-fields         Only return the associated field for each source. (default: False)
-  --clobber             Overwrite the output directory if it already exists. (default: False)
+  --no-background-rms   Do not estimate the background RMS around each source.
+                        (default: False)
+  --find-fields         Only return the associated field for each source.
+                        (default: False)
+  --clobber             Overwrite the output directory if it already exists.
+                        (default: False)
   --nice NICE           Set nice level. (default: 5)
 ```
 
