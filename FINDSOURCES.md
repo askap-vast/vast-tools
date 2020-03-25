@@ -65,13 +65,14 @@ usage: find_sources.py [-h] [--vast-pilot VAST_PILOT] [--imsize IMSIZE]
                        coords
 
 positional arguments:
-  coords                Right Ascension and Declination in format "HH:MM:SS
-                        [+/-]DD:MM:SS", in quotes. E.g. "12:00:00 -20:00:00".
-                        Degrees is also acceptable, e.g. "12.123 -20.123".
-                        Multiple coordinates are supported by separating with
-                        a comma (no space) e.g. "12.231 -56.56,123.4 +21.3".
-                        Finally you can also enter coordinates using a .csv
-                        file. See example file for format.
+  coords                Right Ascension and Declination in quotes. Can be
+                        formatted as "HH:MM:SS [+/-]DD:MM:SS" (e.g. "12:00:00
+                        -20:00:00") or decimal degrees (e.g. "12.123
+                        -20.123"). Multiple coordinates are supported by
+                        separating with a comma (no space) e.g. "12.231
+                        -56.56,123.4 +21.3". Finally you can also enter
+                        coordinates using a .csv file. See example file for
+                        format.
 
 optional arguments:
   -h, --help            show this help message and exit

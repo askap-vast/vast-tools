@@ -31,11 +31,10 @@ def parse_args():
     parser.add_argument(
         'coords',
         type=str,
-        help=("Right Ascension and Declination in format "
-              "\"HH:MM:SS [+/-]DD:MM:SS\", in quotes. "
-              "E.g. \"12:00:00 -20:00:00\". Degrees is also acceptable, "
-              "e.g. \"12.123 -20.123\". Multiple coordinates are supported "
-              "by separating with a comma (no space) e.g. "
+        help=("Right Ascension and Declination in quotes. Can be formatted as "
+              "\"HH:MM:SS [+/-]DD:MM:SS\" (e.g. \"12:00:00 -20:00:00\") or "
+              "decimal degrees (e.g. \"12.123 -20.123\"). Multiple coordinates "
+              " are supported by separating with a comma (no space) e.g. "
               "\"12.231 -56.56,123.4 +21.3\"."
               " Finally you can also enter coordinates using a .csv file."
               " See example file for format."))
@@ -43,7 +42,7 @@ def parse_args():
     parser.add_argument(
         '--vast-pilot',
         type=str,
-        help=("Select the VAST Pilot Epoch to query. Epoch 0 is RACS."
+        help=("Select the VAST Pilot Epoch to query. Epoch 0 is RACS. "
               "All available epochs can be queried using "
               "\"--vast-pilot=all\""),
         default="1")
