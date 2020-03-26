@@ -252,12 +252,7 @@ class Query:
         Set the stokes Parameter
         '''
 
-        if self.args.stokesv:
-            stokes_param = "V"
-        else:
-            stokes_param = "I"
-
-        self.stokes_param = stokes_param
+        self.stokes_param = self.args.stokes
 
     def set_outfile_prefix(self):
         '''
