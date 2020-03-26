@@ -148,9 +148,11 @@ def parse_args():
         action="store_true",
         help='Create a DS9 region file of the components.')
     parser.add_argument(
-        '--stokesv',
-        action="store_true",
-        help='Use Stokes V images and catalogues if available.')
+        '--stokes',
+        type=str,
+        choices=["I", "Q", "U", "V"],
+        help='Select the Stokes parameter.',
+        default="I")
     parser.add_argument(
         '--quiet',
         action="store_true",
