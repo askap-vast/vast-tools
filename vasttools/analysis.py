@@ -200,7 +200,7 @@ class Lightcurve:
             linestyle="none")
 
         if yaxis_start == "0":
-            max_y = np.max(
+            max_y = np.nanmax(
                 detections["S_int"].tolist() +
                 (sigma_thresh * upper_lims["S_int"]).tolist()
             )
