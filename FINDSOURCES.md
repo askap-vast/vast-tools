@@ -86,7 +86,7 @@ optional arguments:
                         degrees. (default: 1.0)
   --out-folder OUT_FOLDER
                         Name of the output directory to place all results in.
-                        (default: find_sources_output_20200326_10:43:33)
+                        (default: find_sources_output_YYYYMMDD_HH:MM:SS)
   --source-names SOURCE_NAMES
                         Only for use when entering coordaintes via the command
                         line. State the name of the source being searched. Use
