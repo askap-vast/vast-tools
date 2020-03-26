@@ -78,7 +78,7 @@ optional arguments:
   -h, --help            show this help message and exit
   --vast-pilot VAST_PILOT
                         Select the VAST Pilot Epoch to query. Epoch 0 is
-                        RACS.All available epochs can be queried using "--
+                        RACS. All available epochs can be queried using "--
                         vast-pilot=all" (default: 1)
   --imsize IMSIZE       Edge size of the postagestamp in arcmin (default:
                         30.0)
