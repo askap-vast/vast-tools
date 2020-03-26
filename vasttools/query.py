@@ -199,7 +199,7 @@ class Query:
         available_epochs = sorted(RELEASED_EPOCHS, key=RELEASED_EPOCHS.get)
         self.logger.debug(available_epochs)
 
-        if HOST == HOST_ADA:
+        if HOST == HOST_ADA or self.args.find_fields:
             available_epochs.insert(0, "0")
 
         epochs = []
