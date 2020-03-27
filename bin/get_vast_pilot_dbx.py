@@ -448,7 +448,8 @@ def parse_args():
         '--dry-run',
         action="store_true",
         help=(
-            "Only print files that will be downloaded, without downloading them."
+            "Only print files that will be downloaded,"
+            " without downloading them."
         ))
 
     parser.add_argument(
