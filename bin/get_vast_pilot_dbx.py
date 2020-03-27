@@ -242,8 +242,7 @@ def filter_files_list(
                     RELEASED_EPOCHS[i])
                 pattern_strings.append(epoch_dbx_format)
         pattern = "|".join(pattern_strings)
-        logger.debug("Filtering to %s only.", pattern
-        )
+        logger.debug("Filtering to %s only.", pattern)
         filter_df = filter_df[filter_df.file.str.contains(
             pattern)]
         filter_df.reset_index(drop=True, inplace=True)
@@ -321,21 +320,24 @@ parser.add_argument(
 parser.add_argument(
     '--only-epochs',
     type=str,
-    help=("Only download files from the selected epochs."
-          " Enter as a list with no spaces, e.g. '1,2,4x'."
-          " If nothing is entered then all epochs are fetched."
-          " The current epochs are: {}.".format(
-              ", ".join(user_friendly_epochs)
-          )),
+    help=(
+        "Only download files from the selected epochs."
+        " Enter as a list with no spaces, e.g. '1,2,4x'."
+        " If nothing is entered then all epochs are fetched."
+        " The current epochs are: {}.".format(
+            ", ".join(user_friendly_epochs)
+            )
+    ),
     default=None)
 
 parser.add_argument(
     '--only-fields',
     type=str,
-    help=("Only download files from the selected fields."
-          " Enter as a list with no spaces,"
-          " e.g. 'VAST_0012+00A,VAST_0012-06A'."
-          " If nothing is entered then all fields are fetched."
+    help=(
+        "Only download files from the selected fields."
+        " Enter as a list with no spaces,"
+        " e.g. 'VAST_0012+00A,VAST_0012-06A'."
+        " If nothing is entered then all fields are fetched."
     ),
     default=None)
 
