@@ -658,29 +658,6 @@ if __name__ == "__main__":
             for f in fields_to_fetch:
                 logger.info(f)
 
-            # files_to_download = filter_files_list(
-            #     files_list,
-            #     fields=fields_to_fetch,
-            #     stokesI_only=args.stokesI_only,
-            #     stokesV_only=args.stokesV_only,
-            #     stokesQ_only=args.stokesQ_only,
-            #     stokesU_only=args.stokesU_only,
-            #     no_stokesI=args.no_stokesI,
-            #     no_stokesV=args.no_stokesV,
-            #     no_stokesQ=args.no_stokesQ,
-            #     no_stokesU=args.no_stokesU,
-            #     skip_xml=args.skip_xml,
-            #     skip_qc=args.skip_qc,
-            #     skip_islands=args.skip_islands,
-            #     skip_field_images=args.skip_field_images,
-            #     skip_bkg_images=args.skip_bkg_images,
-            #     skip_rms_images=args.skip_rms_images,
-            #     skip_all_images=args.skip_all_images,
-            #     combined_only=args.combined_only,
-            #     tile_only=args.tile_only,
-            #     selected_epochs=args.only_epochs
-            # )
-
         elif args.user_files_list is not None:
             if not os.path.isfile(args.user_files_list):
                 logger.error("Supplied file '%s' not found!", args.user_files_list)
