@@ -758,7 +758,6 @@ if __name__ == "__main__":
                         multi_download,
                         files_to_download
                     ).get()
-                    complete_failures
                 except KeyboardInterrupt:
                     logger.error(
                         "Caught KeyboardInterrupt, terminating workers."
