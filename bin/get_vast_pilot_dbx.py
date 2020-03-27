@@ -436,6 +436,13 @@ parser.add_argument(
         " will be re-downloaded."))
 
 parser.add_argument(
+    '--dry-run',
+    action="store_true",
+    help=(
+        "Only print files that will be downloaded, without downloading them."
+    ))
+
+parser.add_argument(
     '--debug',
     action="store_true",
     help='Set logging level to debug.')
@@ -549,7 +556,13 @@ if not args.available_epochs and not args.get_available_files:
         )
         logger.warning("Files may get overwritten!")
     else:
-        os.mkdir(output_dir)
+        if args.dry_run:
+            logger.info(
+                "Dry run selected: will not create"
+                " output directory."
+            )
+        else:
+            os.mkdir(output_dir)
 
 
 dbx = dropbox.Dropbox(access_token)
@@ -701,28 +714,35 @@ elif args.download:
     dirs_to_create = np.unique(
         ["/".join(i.strip().split("/")[1:-1]) for i in files_to_download])
 
-    for i in dirs_to_create:
-        if i == "":
-            continue
-        os.makedirs(os.path.join(output_dir, i), exist_ok=True)
+    if not args.dry_run:
+        for i in dirs_to_create:
+            if i == "":
+                continue
+            os.makedirs(os.path.join(output_dir, i), exist_ok=True)
 
-    logger.info(
-        "Downloading %s files from '%s'...",
-        len(files_to_download),
-        args.user_files_list
-    )
-    complete_failures = vast_dropbox.download_files(
-        files_to_download,
-        output_dir,
-        shared_url,
-        password,
-        args.max_retries,
-        args.overwrite)
-    if len(complete_failures) > 0:
-        logger.warning("The following files failed to download correctly:")
-        for fail in complete_failures:
-            logger.warning(fail)
-        logger.warning("These files may be corrupted!")
+        logger.info(
+            "Downloading %s files...",
+            len(files_to_download)
+        )
+        complete_failures = vast_dropbox.download_files(
+            files_to_download,
+            output_dir,
+            shared_url,
+            password,
+            args.max_retries,
+            args.overwrite)
+        if len(complete_failures) > 0:
+            logger.warning("The following files failed to download correctly:")
+            for fail in complete_failures:
+                logger.warning(fail)
+            logger.warning("These files may be corrupted!")
+    else:
+        logger.info(
+            "Dry run selected. Would download the follwing"
+            " %s files:", len(files_to_download)
+        )
+        for i in files_to_download:
+            logger.info(i)
 
 else:
     logger.info("Nothing to be done!")
