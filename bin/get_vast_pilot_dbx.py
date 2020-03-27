@@ -99,8 +99,6 @@ def filter_files_list(
     :returns: filtered list of dropbox files
     :rtype: list
     '''
-    if fields is None:
-        fields = []
     filter_df = pd.DataFrame(data=files_list, columns=["file"])
 
     stokes_only_sum = sum(
@@ -133,7 +131,7 @@ def filter_files_list(
         combined_only = False
         tiles_only = False
 
-    if len(fields) > 0:
+    if fields is not None:
         fields = [re.escape(i) for i in fields]
         field_pattern = "|".join(fields)
         logger.debug("Filtering fields for %s", field_pattern)
@@ -255,8 +253,23 @@ def filter_files_list(
     return final_list
 
 
+user_friendly_epochs = {v: k for k, v in RELEASED_EPOCHS.items()}
+user_friendly_epochs = [
+    user_friendly_epochs[i] for i in sorted(user_friendly_epochs.keys())
+]
+
 parser = argparse.ArgumentParser(
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+parser.add_argument(
+    '--dropbox-config',
+    type=str,
+    help=(
+        "Dropbox config file to be read in containing the shared url, "
+        "password and access token. A template can be generated using "
+        "'--write-template-dropbox-config'."
+    ),
+    default="dropbox.cfg")
 
 parser.add_argument(
     '--output',
@@ -288,11 +301,9 @@ parser.add_argument(
     ))
 
 parser.add_argument(
-    '--download-epoch',
-    type=str,
-    choices=sorted(RELEASED_EPOCHS),
-    help=('Select to download an entire Epoch directory. '
-          'Enter as shown in choices.'),
+    '--download',
+    action="store_true",
+    help=('Download data according to the filter options entered'),
     default=None)
 
 parser.add_argument(
@@ -302,54 +313,31 @@ parser.add_argument(
     default=None)
 
 parser.add_argument(
-    '--files-list',
+    '--user-files-list',
     type=str,
     help='Input of files to fetch.',
     default=None)
 
 parser.add_argument(
-    '--overwrite',
-    action="store_true",
-    help=(
-        "Overwrite any files that already exist in the output directory."
-        " If overwrite is not selected, integrity checking will still be"
-        " performed on the existing files and if the check fails, the file"
-        " will be re-downloaded."))
-
-parser.add_argument(
-    '--debug',
-    action="store_true",
-    help='Set logging level to debug.')
-
-parser.add_argument(
-    '--dropbox-config',
+    '--only-epochs',
     type=str,
-    help=(
-        "Dropbox config file to be read in containing the shared url, "
-        "password and access token. A template can be generated using "
-        "'--write-template-dropbox-config'."
+    help=("Only download files from the selected epochs."
+          " Enter as a list with no spaces, e.g. '1,2,4x'."
+          " If nothing is entered then all epochs are fetched."
+          " The current epochs are: {}.".format(
+              ", ".join(user_friendly_epochs)
+          )),
+    default=None)
+
+parser.add_argument(
+    '--only-fields',
+    type=str,
+    help=("Only download files from the selected fields."
+          " Enter as a list with no spaces,"
+          " e.g. 'VAST_0012+00A,VAST_0012-06A'."
+          " If nothing is entered then all fields are fetched."
     ),
-    default="dropbox.cfg")
-
-parser.add_argument(
-    '--write-template-dropbox-config',
-    action="store_true",
-    help='Create a template dropbox config file.')
-
-parser.add_argument(
-    '--include-legacy',
-    action="store_true",
-    help=(
-        "Include the 'LEGACY' directory when searching through files. "
-        "Only valid when using the '--get-available-files' option."
-    )
-)
-
-parser.add_argument(
-    '--max-retries',
-    type=int,
-    help='How many times to attempt to retry a failed download',
-    default=2)
+    default=None)
 
 parser.add_argument(
     '--stokesI-only',
@@ -437,11 +425,39 @@ parser.add_argument(
     help="Only download the combined products.")
 
 parser.add_argument(
-    '--epochs-only',
-    type=str,
-    help=("Only download files from the selected epochs."
-          " Enter as a list with no spaces, e.g. '1,2,4x'."),
-    default=None)
+    '--overwrite',
+    action="store_true",
+    help=(
+        "Overwrite any files that already exist in the output directory."
+        " If overwrite is not selected, integrity checking will still be"
+        " performed on the existing files and if the check fails, the file"
+        " will be re-downloaded."))
+
+parser.add_argument(
+    '--debug',
+    action="store_true",
+    help='Set logging level to debug.')
+
+parser.add_argument(
+    '--write-template-dropbox-config',
+    action="store_true",
+    help='Create a template dropbox config file.')
+
+parser.add_argument(
+    '--include-legacy',
+    action="store_true",
+    help=(
+        "Include the 'LEGACY' directory when searching through files. "
+        "Only valid when using the '--get-available-files' option."
+    )
+)
+
+parser.add_argument(
+    '--max-retries',
+    type=int,
+    help='How many times to attempt to retry a failed download',
+    default=2)
+
 
 args = parser.parse_args()
 
@@ -556,7 +572,7 @@ if args.available_files is not None:
         lines = f.readlines()
     files_list = [i.strip() for i in lines]
 else:
-    files_list = []
+    files_list = None
 
 if args.available_epochs:
     logger.info("The following epochs are available:")
@@ -583,97 +599,80 @@ elif args.get_available_files:
 
     logger.info("All available files written to %s", vast_list_file_name)
 
-elif args.download_epoch is not None:
-    epochs = []
-    for i in base_file_list.entries:
-        if isinstance(i, dropbox.files.FolderMetadata) and "EPOCH" in i.name:
-            epochs.append(i.name.split('EPOCH')[-1])
-    dropbox_name = RELEASED_EPOCHS[args.download_epoch]
-    if dropbox_name not in epochs:
-        logger.error(
-            "EPOCH%s has not yet been released!", dropbox_name
-        )
-        sys.exit()
-    else:
-        epoch_string = "EPOCH{}".format(dropbox_name)
-        epoch_file_list = dbx.files_list_folder(
-            "/{}".format(epoch_string), shared_link=shared_link)
+elif args.download:
+    if files_list is None:
         logger.info(
-            "Gathering %s files to download...", epoch_string)
-        files_list, folders_list = vast_dropbox.recursive_build_files(
-            epoch_file_list, preappend=epoch_string
+            "No list of available files provided, will generate."
         )
-        logger.info("%s files to download", len(files_list))
-
-        for folder in folders_list:
-            os.makedirs(os.path.join(output_dir, folder[1:]), exist_ok=True)
-
-        files_to_download = filter_files_list(
-            files_list,
-            stokesI_only=args.stokesI_only,
-            stokesV_only=args.stokesV_only,
-            stokesQ_only=args.stokesQ_only,
-            stokesU_only=args.stokesU_only,
-            skip_xml=args.skip_xml,
-            skip_qc=args.skip_qc,
-            skip_islands=args.skip_islands,
-            skip_field_images=args.skip_field_images,
-            skip_bkg_images=args.skip_bkg_images,
-            skip_rms_images=args.skip_rms_images,
-            skip_all_images=args.skip_all_images,
-            combined_only=args.combined_only,
-            tile_only=args.tile_only,
-            selected_epochs=args.epochs_only
-        )
-
         logger.info(
-            "Downloading %s files for %s...",
-            len(files_to_download),
-            epoch_string
+            "Gathering a list of files - this will take "
+            "approximately 4 minutes per epoch."
         )
-        complete_failures = vast_dropbox.download_files(
-            files_to_download,
-            output_dir,
-            shared_url,
-            password,
-            args.max_retries,
-            args.overwrite)
-        if len(complete_failures) > 0:
-            logger.warning("The following files failed to download correctly:")
-            for fail in complete_failures:
-                logger.warning(fail)
-            logger.warning("These files may be corrupted!")
 
-elif args.find_fields_input is not None:
-    if not os.path.isfile(args.find_fields_input):
-        logger.error(
-            "Supplied file '%s' not found!", args.find_fields_input
-        )
-        sys.exit()
-    fields_df = pd.read_csv(args.find_fields_input, comment="#")
-    fields_to_fetch = fields_df.field_name.unique()
-    logger.info("Will download data products of the following fields:")
-    for f in fields_to_fetch:
-        logger.info(f)
-    if args.find_fields_available_files_input is not None:
-        if not os.path.isfile(args.find_fields_available_files_input):
-            logger.error(
-                "Available files list file %s "
-                "not found!", args.find_fields_available_files_input
-            )
-            logger.error(
-                "Check file or remove the"
-                " '--find-fields-available-files-list' option.")
-            sys.exit()
-        with open(args.find_fields_available_files_input, 'r') as f:
-            lines = f.readlines()
-        files_list = [i.strip() for i in lines]
-    else:
-        # We need to search all files so we need to make the main search
-        logger.info("Gathering list of available files, please wait...")
         files_list, folders_list = vast_dropbox.recursive_build_files(
             base_file_list,
             legacy=args.include_legacy)
+
+    if args.find_fields_input is not None:
+        if not os.path.isfile(args.find_fields_input):
+            logger.error(
+                "Supplied file '%s' not found!", args.find_fields_input
+            )
+            sys.exit()
+        fields_df = pd.read_csv(args.find_fields_input, comment="#")
+        fields_to_fetch = fields_df.field_name.unique()
+        logger.info("Will download data products of the following fields:")
+        for f in fields_to_fetch:
+            logger.info(f)
+
+        # files_to_download = filter_files_list(
+        #     files_list,
+        #     fields=fields_to_fetch,
+        #     stokesI_only=args.stokesI_only,
+        #     stokesV_only=args.stokesV_only,
+        #     stokesQ_only=args.stokesQ_only,
+        #     stokesU_only=args.stokesU_only,
+        #     no_stokesI=args.no_stokesI,
+        #     no_stokesV=args.no_stokesV,
+        #     no_stokesQ=args.no_stokesQ,
+        #     no_stokesU=args.no_stokesU,
+        #     skip_xml=args.skip_xml,
+        #     skip_qc=args.skip_qc,
+        #     skip_islands=args.skip_islands,
+        #     skip_field_images=args.skip_field_images,
+        #     skip_bkg_images=args.skip_bkg_images,
+        #     skip_rms_images=args.skip_rms_images,
+        #     skip_all_images=args.skip_all_images,
+        #     combined_only=args.combined_only,
+        #     tile_only=args.tile_only,
+        #     selected_epochs=args.only_epochs
+        # )
+
+    elif args.user_files_list is not None:
+        if not os.path.isfile(args.user_files_list):
+            logger.error("Supplied file '%s' not found!", args.user_files_list)
+            sys.exit()
+        with open(args.user_files_list, 'r') as f:
+            userlines = f.readlines()
+
+        # check files start with / and ignore #
+        files_list = []
+
+        for i in userlines:
+            if i.startswith("#"):
+                continue
+            else:
+                if i.startswith("/"):
+                    files_list.append(i.strip())
+                else:
+                    files_list.append("/{}".format(i.strip()))
+
+    else:
+        if args.only_fields is not None:
+            fields_to_fetch = args.only_fields.split(",")
+        else:
+            fields_to_fetch = args.only_fields
+
     files_to_download = filter_files_list(
         files_list,
         fields=fields_to_fetch,
@@ -694,67 +693,7 @@ elif args.find_fields_input is not None:
         skip_all_images=args.skip_all_images,
         combined_only=args.combined_only,
         tile_only=args.tile_only,
-        selected_epochs=args.epochs_only
-    )
-
-    dirs_to_create = np.unique(
-        ["/".join(i.strip().split("/")[1:-1]) for i in files_to_download])
-
-    for i in dirs_to_create:
-        if i == "":
-            continue
-        os.makedirs(os.path.join(output_dir, i), exist_ok=True)
-
-    logger.info(
-        "Downloading %s files for %s fields...",
-        len(files_to_download), len(fields_to_fetch)
-    )
-    complete_failures = vast_dropbox.download_files(
-        files_to_download,
-        output_dir,
-        shared_url,
-        password,
-        args.max_retries,
-        args.overwrite)
-    if len(complete_failures) > 0:
-        logger.warning("The following files failed to download correctly:")
-        for fail in complete_failures:
-            logger.warning(fail)
-        logger.warning("These files may be corrupted!")
-
-elif args.files_list is not None:
-    if not os.path.isfile(args.files_list):
-        logger.error("Supplied file '%s' not found!", args.files_list)
-        sys.exit()
-    with open(args.files_list, 'r') as f:
-        userlines = f.readlines()
-
-    # check files start with / and ignore #
-    files_list = []
-
-    for i in userlines:
-        if i.startswith("#"):
-            continue
-        else:
-            if i.startswith("/"):
-                files_list.append(i.strip())
-            else:
-                files_list.append("/{}".format(i.strip()))
-
-    files_to_download = filter_files_list(
-        files_list,
-        stokesI_only=args.stokesI_only,
-        stokesV_only=args.stokesV_only,
-        skip_xml=args.skip_xml,
-        skip_qc=args.skip_qc,
-        skip_islands=args.skip_islands,
-        skip_field_images=args.skip_field_images,
-        skip_bkg_images=args.skip_bkg_images,
-        skip_rms_images=args.skip_rms_images,
-        skip_all_images=args.skip_all_images,
-        combined_only=args.combined_only,
-        tile_only=args.tile_only,
-        selected_epochs=args.epochs_only
+        selected_epochs=args.only_epochs
     )
 
     dirs_to_create = np.unique(
@@ -768,7 +707,7 @@ elif args.files_list is not None:
     logger.info(
         "Downloading %s files from '%s'...",
         len(files_to_download),
-        args.files_list
+        args.user_files_list
     )
     complete_failures = vast_dropbox.download_files(
         files_to_download,
@@ -792,6 +731,6 @@ runtime = end - now
 
 logger.info("Ran for {:.1f} minutes.".format(runtime.seconds / 60.))
 
-logger.info("Log file written to %s"., logfilename)
+logger.info("Log file written to %s.", logfilename)
 
 logger.info("All done!")
