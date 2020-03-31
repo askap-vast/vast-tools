@@ -54,9 +54,8 @@ class Source:
     :param tiles: `True` if image tiles should be used,
         `False` for mosaiced images, defaults to `False`
     :type tiles: bool, optional
-    :param stokesv: `True` if Stokes V information is requested,
-        `False` for Stokes I, defaults to `False`
-    :type stokesv: bool, optional
+    :param stokes: Stokes parameter to query, defaults to "I"
+    :type stokes: str, optional
     '''
 
     def __init__(
@@ -67,7 +66,7 @@ class Source:
             SELAVY_FOLDER,
             vast_pilot,
             tiles=False,
-            stokesv=False,
+            stokes="I",
             islands=False):
         '''Constructor method
         '''
@@ -77,6 +76,7 @@ class Source:
         self.src_coord = src_coord
         self.field = field
         self.sbid = sbid
+        self.stokes = stokes
 
         if islands:
             self.cat_type = "islands"
@@ -103,7 +103,7 @@ class Source:
             self.nselavyname = 'n{}'.format(self.selavyname)
 
         self.selavypath = os.path.join(SELAVY_FOLDER, self.selavyname)
-        if stokesv:
+        if self.stokes != "I":
             self.nselavypath = os.path.join(SELAVY_FOLDER, self.nselavyname)
 
     def make_postagestamp(self, img_data, header, wcs, size, outfile):
@@ -237,16 +237,13 @@ class Source:
                 [[np.nan for i in range(len(columns))]]), columns=columns
             )
 
-    def extract_source(self, crossmatch_radius, stokesv):
+    def extract_source(self, crossmatch_radius):
         '''
         Search for catalogued selavy sources within `crossmatch_radius` of
         `self.src_coord` and store information of best match
 
         :param crossmatch_radius: Crossmatch radius to use
         :type crossmatch_radius: `astropy.coordinates.angles.Angle`
-        :param stokesv: `True` to crossmatch with Stokes V image,
-            `False` to match with Stokes I image, defaults to `False`
-        :type stokesv: bool, optional
         '''
 
         self.crossmatch_radius = crossmatch_radius
@@ -254,7 +251,7 @@ class Source:
         try:
             self.selavy_cat = pd.read_fwf(self.selavypath, skiprows=[1, ])
 
-            if stokesv:
+            if self.stokes != "I":
                 nselavy_cat = pd.read_fwf(self.nselavypath, skiprows=[1, ])
 
                 nselavy_cat["island_id"] = [

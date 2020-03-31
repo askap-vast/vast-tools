@@ -252,12 +252,7 @@ class Query:
         Set the stokes Parameter
         '''
 
-        if self.args.stokesv:
-            stokes_param = "V"
-        else:
-            stokes_param = "I"
-
-        self.stokes_param = stokes_param
+        self.stokes_param = self.args.stokes
 
     def set_outfile_prefix(self):
         '''
@@ -267,10 +262,9 @@ class Query:
         :rtype: str
         '''
 
-        if self.args.stokesv and self.args.use_tiles:
+        if self.stokes_param != "I" and self.args.use_tiles:
             self.logger.critical(
-                ("Stokes V can only be used "
-                 "with combined mosaics at the moment."))
+                ("Only Stokes I tiles can be queried right now."))
             self.logger.critical(
                 "Run again but remove the option '--use-tiles'.")
             sys.exit()
@@ -279,8 +273,9 @@ class Query:
             outfile_prefix = "tile"
         else:
             outfile_prefix = "combined"
-            if self.args.stokesv:
-                outfile_prefix += "_stokesv"
+            if self.stokes_param != "I":
+                outfile_prefix += "_stokes{}".format(
+                    self.stokes_param.lower())
 
         self.outfile_prefix = outfile_prefix
 
@@ -388,11 +383,11 @@ class Query:
                     EPOCH_INFO.SELAVY_FOLDER,
                     vast_pilot=epoch,
                     tiles=self.args.use_tiles,
-                    stokesv=self.args.stokesv,
+                    stokes=self.stokes_param,
                     islands=self.args.islands)
 
                 source.extract_source(
-                    self.crossmatch_radius, self.args.stokesv)
+                    self.crossmatch_radius)
                 if not self.args.no_background_rms and not image.rms_fail:
                     self.logger.debug(src_coord)
                     self.logger.debug(image.rmspath)
@@ -554,11 +549,17 @@ class EpochInfo:
             else:
                 survey_folder = "racs_v3"
 
-            if stokes_param == "V":
+            # if stokes_param == "V":
+            #    self.logger.critical(
+            #        "Stokes V is currently unavailable for RACS V3. "
+            #        "Using V2 instead")
+            #    racsv = True
+            if stokes_param != "I":
                 self.logger.critical(
-                    "Stokes V is currently unavailable for RACS V3."
-                    "Using V2 instead")
-                racsv = True
+                    "Stokes {} is currently unavailable for RACS".format(
+                        stokes_param))
+                sys.exit()
+
         else:
             survey = "vast_pilot"
             epoch_str = "EPOCH{}".format(RELEASED_EPOCHS[pilot_epoch])

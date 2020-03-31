@@ -44,8 +44,9 @@ Most options should be self explanatory. See examples below on how to run the sc
 
 All output is placed in an output directory of which the name can be set with the option `--out-folder`.
 
-Can be run in either Stokes I or Stokes V, not both at once.
+Can be run on any Stokes parameter, but only one at a time.
 ```
+<<<<<<< HEAD
 usage: find_sources.py [-h] [--vast-pilot VAST_PILOT] [--imsize IMSIZE]
                        [--maxsep MAXSEP] [--out-folder OUT_FOLDER]
                        [--source-names SOURCE_NAMES]
@@ -63,6 +64,19 @@ usage: find_sources.py [-h] [--vast-pilot VAST_PILOT] [--imsize IMSIZE]
                        [--process-matches] [--debug] [--no-background-rms]
                        [--find-fields] [--clobber] [--nice NICE]
                        coords
+=======
+usage: find_sources.py [-h] [--vast-pilot {0,1,2,3x,4x}] [--imsize IMSIZE] [--maxsep MAXSEP]
+                       [--out-folder OUT_FOLDER] [--source-names SOURCE_NAMES]
+                       [--crossmatch-radius CROSSMATCH_RADIUS] [--crossmatch-radius-overlay] [--use-tiles]
+                       [--base-folder BASE_FOLDER] [--img-folder IMG_FOLDER] [--rms-folder RMS_FOLDER]
+                       [--cat-folder CAT_FOLDER] [--create-png] [--png-selavy-overlay]
+                       [--png-linear-percentile PNG_LINEAR_PERCENTILE] [--png-use-zscale]
+                       [--png-zscale-contrast PNG_ZSCALE_CONTRAST] [--png-hide-beam] [--png-no-island-labels]
+                       [--png-no-colorbar] [--ann] [--reg] [--stokes] [--quiet] [--crossmatch-only]
+                       [--selavy-simple] [--process-matches] [--debug] [--no-background-rms] [--find-fields]
+                       [--clobber] [--nice NICE]
+                       "HH:MM:SS [+/-]DD:MM:SS" OR input.csv
+>>>>>>> Allow all Stokes params to be queried
 
 positional arguments:
   coords                Right Ascension and Declination in quotes. Can be
@@ -132,8 +146,7 @@ optional arguments:
                         (default: False)
   --reg                 Create a DS9 region file of the components. (default:
                         False)
-  --stokesv             Use Stokes V images and catalogues if available.
-                        (default: False)
+  --stokes {I,Q,U,V}    Select the Stokes parameter. (default: I)
   --quiet               Turn off non-essential terminal output. (default:
                         False)
   --crossmatch-only     Only run crossmatch, do not generate any fits or png
@@ -226,7 +239,7 @@ find_sources.py "22:37:5.6000 +34:24:31.90" --imsize 5.0 --source-names "SN 2014
 ```
 Now search in Stokes V to a different directory and also include a kvis annotation file and an extra coodinate:
 ```
-find_sources.py "22:37:5.6000 +34:24:31.90,22:37:5.6000 +44:24:31.90" --imsize 5.0 --source-names "SN 2014C,SN 2019I" --out-folder example_source_stokesv_ --create-png --png-selavy-overlay --stokesv --ann
+find_sources.py "22:37:5.6000 +34:24:31.90,22:37:5.6000 +44:24:31.90" --imsize 5.0 --source-names "SN 2014C,SN 2019I" --out-folder example_source_stokesv_ --create-png --png-selavy-overlay --stokes="V" --ann
 ```
 Search through a csv of coordinates, make pngs, use zscale with a contrast of 0.2, create annotation and region files.:
 ```
