@@ -549,14 +549,15 @@ class EpochInfo:
             else:
                 survey_folder = "racs_v3"
 
-            if stokes_param == "V":
+            # if stokes_param == "V":
+            #    self.logger.critical(
+            #        "Stokes V is currently unavailable for RACS V3. "
+            #        "Using V2 instead")
+            #    racsv = True
+            if stokes_param != "I":
                 self.logger.critical(
-                    "Stokes V is currently unavailable for RACS V3. "
-                    "Using V2 instead")
-                racsv = True
-            elif stokes_param != "I":
-                self.logger.critical(
-                    "Stokes {} is currently unavailable for RACS".format(stokes_param))
+                    "Stokes {} is currently unavailable for RACS".format(
+                    stokes_param))
                 sys.exit()
 
         else:
