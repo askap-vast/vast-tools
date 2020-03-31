@@ -211,8 +211,6 @@ ra,dec,name
 123.45,-67.89,source name
 ```
 
-See `input_example.csv`.
-
 ## Examples
 
 Search for a match to one source and create a FITS postage stamp of 5 arcminutes across. Will place the output in `example_source`.
