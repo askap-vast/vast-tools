@@ -71,6 +71,9 @@ FIELD_FILES = {
 CHECKSUMS_FILE = pkg_resources.resource_filename(
     __name__, "./data/checksums.h5")
 
+DROPBOX_FILE = pkg_resources.resource_filename(
+    __name__, "./data/dropbox_files.txt")
+
 
 class Dropbox:
     '''
