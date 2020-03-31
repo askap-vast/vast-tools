@@ -300,9 +300,10 @@ def parse_args():
         '--available-files',
         type=str,
         help=(
-            "Provide a file containing the files available on Dropbox to download."
-            " Only use this option only if you wish to override the built-in"
-            " list of Dropbox files that is already provided."
+            "Provide a file containing the files available on Dropbox"
+            " to download. Only use this option only if you wish"
+            " to override the built-in list of Dropbox files"
+            " that is already provided."
         ),
         default=None)
 
