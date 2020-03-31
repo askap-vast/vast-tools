@@ -275,7 +275,7 @@ class Query:
             outfile_prefix = "combined"
             if self.stokes_param != "I":
                 outfile_prefix += "_stokes{}".format(
-                                        self.stokes_param.lower())
+                    self.stokes_param.lower())
 
         self.outfile_prefix = outfile_prefix
 
@@ -554,6 +554,11 @@ class EpochInfo:
                     "Stokes V is currently unavailable for RACS V3. "
                     "Using V2 instead")
                 racsv = True
+            elif stokes_param != "I":
+                self.logger.critical(
+                    "Stokes {} is currently unavailable for RACS".format(stokes_param))
+                sys.exit()
+
         else:
             survey = "vast_pilot"
             epoch_str = "EPOCH{}".format(RELEASED_EPOCHS[pilot_epoch])
