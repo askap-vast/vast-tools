@@ -101,6 +101,7 @@ class Query:
                 sys.exit()
             try:
                 catalog = pd.read_csv(user_file, comment="#")
+                catalog.dropna(how="all", inplace=True)
                 self.logger.debug(catalog)
                 catalog.columns = map(str.lower, catalog.columns)
                 self.logger.debug(catalog.columns)
@@ -199,7 +200,7 @@ class Query:
         available_epochs = sorted(RELEASED_EPOCHS, key=RELEASED_EPOCHS.get)
         self.logger.debug(available_epochs)
 
-        if HOST == HOST_ADA:
+        if HOST == HOST_ADA or self.args.find_fields:
             available_epochs.insert(0, "0")
 
         epochs = []
