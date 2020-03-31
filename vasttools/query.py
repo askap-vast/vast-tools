@@ -557,7 +557,7 @@ class EpochInfo:
             if stokes_param != "I":
                 self.logger.critical(
                     "Stokes {} is currently unavailable for RACS".format(
-                    stokes_param))
+                        stokes_param))
                 sys.exit()
 
         else:
