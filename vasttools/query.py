@@ -101,6 +101,7 @@ class Query:
                 sys.exit()
             try:
                 catalog = pd.read_csv(user_file, comment="#")
+                catalog.dropna(how="all", inplace=True)
                 self.logger.debug(catalog)
                 catalog.columns = map(str.lower, catalog.columns)
                 self.logger.debug(catalog.columns)
