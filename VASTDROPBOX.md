@@ -178,7 +178,7 @@ I recommened you run `get_vast_pilot_dbx.py --get-available-files` and use this 
 **LEGACY DIRECTORY**: The Dropbox directory also includes the `LEGACY` folder which contains old verisons of Epoch releases that are no longer considered as part of the official release. To include this directory in the results of available files use the `--include-legacy` option.
 
 ### Parallel Dropbox Downloads (EXPERIMENTAL)
-There is an experimental option of `--download-threads`. This allows multiple Dropbox download commands to be launched in parallel to speed up the download of large requests. However this mode is considered experimental and logging is not set up to use with this mode. Warning level messages will be printed to the terminal but you will not be receiving any feedback on the download until it completes (see isse #141 on Github). Integrity checking is still performed.
+There is an experimental option of `--download-threads`. This allows multiple Dropbox download commands to be launched in parallel to speed up the download of large requests. However this mode is considered experimental and logging is not set up to use with this mode. Warning level messages will be printed to the terminal but you will not be receiving any feedback on the download until it completes (see issue [#141](https://github.com/askap-vast/vast-tools/issues/141) on Github). Integrity checking is still performed.
 
 Do not use a high number of parallel downloads, we suggest no more than 6. And if only downloading a small amount of files it is recommended to not use this mode.
 
