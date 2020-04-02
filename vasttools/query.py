@@ -161,11 +161,12 @@ class Query:
         :rtype: `astropy.coordinates.sky_coordinate.SkyCoord`
         '''
 
+        ra_str = self.catalog['ra'].iloc[0]
         if self.catalog['ra'].dtype == np.float64:
             hms = False
             deg = True
 
-        elif ":" in self.catalog['ra'].iloc[0]:
+        elif ":" in ra_str or " " in ra_str:
             hms = True
             deg = False
         else:
