@@ -164,7 +164,7 @@ class Query:
         ra_str = self.catalog['ra'].iloc[0]
         if self.catalog['ra'].dtype == np.float64:
             hms = False
-            deg = Tr
+            deg = True
 
         elif ":" in ra_str or " " in ra_str:
             hms = True
