@@ -247,4 +247,8 @@ get_vast_pilot_dbx.py --files-list to_download.txt --output VAST_DOWNLOAD
 ```
 This will place these files in `VAST_DOWNLOAD`. The directory structure will be mimiced. You can still apply flags to this method if you want to filter your own list.
 
+#### Downloading everything
+To download the entire release structure:
+```get_vast_pilot_dbx.py --download --output VAST_DOWNLOAD```
+This will place all the files in the directory `VAST_DOWNLOAD`.
 
