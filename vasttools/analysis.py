@@ -202,7 +202,7 @@ class Lightcurve:
         if yaxis_start == "0":
             max_y = np.nanmax(
                 detections["S_int"].tolist() +
-                (sigma_thresh * upper_lims["S_int"]).tolist()
+                (sigma_thresh * upper_lims["img_rms"]).tolist()
             )
             ax.set_ylim(
                 bottom=0,
