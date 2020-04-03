@@ -46,7 +46,6 @@ All output is placed in an output directory of which the name can be set with th
 
 Can be run on any Stokes parameter, but only one at a time.
 ```
-<<<<<<< HEAD
 usage: find_sources.py [-h] [--vast-pilot VAST_PILOT] [--imsize IMSIZE]
                        [--maxsep MAXSEP] [--out-folder OUT_FOLDER]
                        [--source-names SOURCE_NAMES]
@@ -59,24 +58,11 @@ usage: find_sources.py [-h] [--vast-pilot VAST_PILOT] [--imsize IMSIZE]
                        [--png-use-zscale]
                        [--png-zscale-contrast PNG_ZSCALE_CONTRAST]
                        [--png-hide-beam] [--png-no-island-labels]
-                       [--png-no-colorbar] [--ann] [--reg] [--stokesv]
+                       [--png-no-colorbar] [--ann] [--reg] [--stokes]
                        [--quiet] [--crossmatch-only] [--selavy-simple]
                        [--process-matches] [--debug] [--no-background-rms]
                        [--find-fields] [--clobber] [--nice NICE]
                        coords
-=======
-usage: find_sources.py [-h] [--vast-pilot {0,1,2,3x,4x}] [--imsize IMSIZE] [--maxsep MAXSEP]
-                       [--out-folder OUT_FOLDER] [--source-names SOURCE_NAMES]
-                       [--crossmatch-radius CROSSMATCH_RADIUS] [--crossmatch-radius-overlay] [--use-tiles]
-                       [--base-folder BASE_FOLDER] [--img-folder IMG_FOLDER] [--rms-folder RMS_FOLDER]
-                       [--cat-folder CAT_FOLDER] [--create-png] [--png-selavy-overlay]
-                       [--png-linear-percentile PNG_LINEAR_PERCENTILE] [--png-use-zscale]
-                       [--png-zscale-contrast PNG_ZSCALE_CONTRAST] [--png-hide-beam] [--png-no-island-labels]
-                       [--png-no-colorbar] [--ann] [--reg] [--stokes] [--quiet] [--crossmatch-only]
-                       [--selavy-simple] [--process-matches] [--debug] [--no-background-rms] [--find-fields]
-                       [--clobber] [--nice NICE]
-                       "HH:MM:SS [+/-]DD:MM:SS" OR input.csv
->>>>>>> Allow all Stokes params to be queried
 
 positional arguments:
   coords                Right Ascension and Declination in quotes. Can be
