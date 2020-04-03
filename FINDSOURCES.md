@@ -214,6 +214,18 @@ ra,dec,name
 123.45,-67.89,source name
 ```
 
+## Outputs
+The following files are or can be produced (for tiles the `combined` will be replaced with `tile`):
+
+* `{X}_crossmatch_EPOCH{NN}.csv` - csv file containing the results of the searched coordinates. There will be a separate file for each epoch searched. In the case of the detections, the source information included is taken direct from the selavy catalogues (see the [selavy documentation](https://www.atnf.csiro.au/computing/software/askapsoft/sdp/docs/current/analysis/postprocessing.html#component-catalogue)). All fluxes are in mJy.
+* `{source_name}.EPOCH{NN}.{STOKES}_combined.fits` - Cutout FITS file of the source referenced in the name (if requested).
+* `{source_name}.EPOCH{NN}.{STOKES}_combined.png` - Matplotlib png figure of the above cutout of the source referenced in the name (if requested).
+* `{source_name}.EPOCH{NN}.{STOKES}_combined.ann` - Kvis annotation file for use with the FITS file (if requested).
+* `{source_name}.EPOCH{NN}.{STOKES}_combined.reg` - DS9 region file for use with the FITS file (if requested).
+* `{X}-find-fields_VAST_{NN}_fields.csv` - Output of the find fields option containing the input sources and the matched VAST Pilot Survey field (find-fields only).
+
+`X` refers to the out-folder name.
+
 ## Examples
 
 Search for a match to one source and create a FITS postage stamp of 5 arcminutes across. Will place the output in `example_source`.
