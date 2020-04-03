@@ -176,6 +176,8 @@ You can use these flags to only obtain the bits of the data you need (see [examp
 **Note** The filtering does not quite work on the quality control plots due to the slight different naming scheme. This is hoped to be addressed in a future update, but if you wish to view the plots then the suggested method is to filter out everything apart from the QC and download this.
 
 ### User Files List
+**Note** It's now easier to perform custom queries using the flags as presented above, so this method should not be needed often, if at all.
+
 When supplying a list of files it needs to follow the directory structure of the Dropbox. It also needs to explictly state the files - i.e. you **cannot use wildcards** (sorry it's the limitations of using Dropbox this way).
 
 For example if I wanted to download a set of STOKES I COMBINED images from EPOCH01, the file would be:
@@ -191,7 +193,7 @@ For example if I wanted to download a set of STOKES I COMBINED images from EPOCH
 ```
 Note the leading `/` which is also needed.
 
-I recommend you run `get_vast_pilot_dbx.py --get-available-files` and use this output to build your request (**warning** `--get-available-fields` will take a while to run, up to 1 hour or more).
+I recommend you either run `get_vast_pilot_dbx.py --get-available-files` or grab the file list directly from the dropbox repository, and use this output to build your request (**warning** `--get-available-fields` will take a while to run, up to 30 mins with legacy).
 
 ### Parallel Dropbox Downloads (EXPERIMENTAL)
 There is an experimental option of `--download-threads`. This allows multiple Dropbox download commands to be launched in parallel to speed up the download of large requests. However this mode is considered experimental and logging is not set up to use with this mode. Warning level messages will be printed to the terminal but you will not be receiving any feedback on the download until it completes (see issue [#141](https://github.com/askap-vast/vast-tools/issues/141) on Github). Integrity checking is still performed.
