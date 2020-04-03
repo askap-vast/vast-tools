@@ -848,6 +848,8 @@ if __name__ == "__main__":
                 )
                 for i in files_to_download:
                     logger.info(i)
+
+                logger.info("Total: %s files.", len(files_to_download))
         else:
             logger.info("No files to download with selected filters.")
 
