@@ -215,6 +215,13 @@ The above would limit the download request to only use the data that is present 
 ### Examples
 Below are examples of how to download the data with different scenarios in mind. Remember you can add `--dry-run` to your command to see exactly what will be downloaded without actually downloading.
 
+#### Downloading everything
+To download the entire release structure:
+```
+get_vast_pilot_dbx.py --download --output VAST_DOWNLOAD
+```
+This will place all the files in the directory `VAST_DOWNLOAD`. As of data releast v1.0, the total size stands at 8.0 TB. To clarify this will **not** download the legacy directory.
+
 #### Downloading an entire epoch
 Using epoch 01 as an example:
 ```
@@ -272,8 +279,3 @@ This will place the relevant files in the directory `VAST_DOWNLOAD`.
 get_vast_pilot_dbx.py --files-list to_download.txt --output VAST_DOWNLOAD
 ```
 This will place these files in `VAST_DOWNLOAD`. The directory structure will be mimiced. You can still apply flags to this method if you want to filter your own list.
-
-#### Downloading everything
-To download the entire release structure:
-```get_vast_pilot_dbx.py --download --output VAST_DOWNLOAD```
-This will place all the files in the directory `VAST_DOWNLOAD`. To clarify this will **not** download the legacy directory.
