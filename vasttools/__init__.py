@@ -9,4 +9,4 @@ functions and classes for use within the VAST project.
 '''
 
 __author__ = 'Dougal Dobie, Adam Stewart'
-__version__ = "1.1.3"
+__version__ = "1.2.0"
