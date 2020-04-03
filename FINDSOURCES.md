@@ -222,7 +222,7 @@ The following files are or can be produced:
 * <source name>.EPOCHNN.I_combined.png - Matplotlib png figure of the above cutout of the source referenced in the name (if requested).
 * <source name>.EPOCHNN.I_combined.ann - Kvis annotation file for use with the FITs file (if requested).
 * <source name>.EPOCHNN.I_combined.reg - DS9 region file for use with the FITs file (if requested).
-* X-find-fields_VAST_NN_fields.csv - Output of the find fields option containing the input sources and the matched VAST Pilot Survey field.
+* X-find-fields_VAST_NN_fields.csv - Output of the find fields option containing the input sources and the matched VAST Pilot Survey field (find-fields only).
 
 ## Examples
 
