@@ -152,6 +152,10 @@ def filter_files_list(
         leg_str = "/LEGACY/{}/".format(legacy_download)
         filter_df = filter_df[filter_df.file.str.contains(leg_str)]
         filter_df.reset_index(drop=True, inplace=True)
+    else:
+        logger.debug("Removing legacy")
+        filter_df = filter_df[~filter_df.file.str.contains("LEGACY")]
+        filter_df.reset_index(drop=True, inplace=True)
 
     if fields is not None:
         fields = [re.escape(i) for i in fields]
