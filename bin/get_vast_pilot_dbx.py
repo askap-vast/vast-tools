@@ -8,7 +8,6 @@ import datetime
 import configparser
 import numpy as np
 import pandas as pd
-import re
 import numexpr
 import functools
 from multiprocessing import Pool
@@ -17,6 +16,8 @@ import signal
 from vasttools.survey import RELEASED_EPOCHS
 from vasttools.survey import DROPBOX_FILE
 from vasttools.survey import Dropbox
+from vasttools.utils import get_logger
+from vasttools.utils import check_file
 
 import logging
 import logging.handlers
@@ -28,265 +29,276 @@ try:
 except ImportError:
     use_colorlog = False
 
+runstart = datetime.datetime.now()
 
-def filter_files_list(
-        files_list,
-        fields=None,
-        stokesI_only=False,
-        stokesV_only=False,
-        stokesQ_only=False,
-        stokesU_only=False,
-        no_stokesI=False,
-        no_stokesV=False,
-        no_stokesQ=False,
-        no_stokesU=False,
-        skip_xml=False,
-        skip_txt=False,
-        skip_qc=False,
-        skip_components=False,
-        skip_islands=False,
-        skip_field_images=False,
-        skip_bkg_images=False,
-        skip_rms_images=False,
-        skip_all_images=False,
-        combined_only=False,
-        tile_only=False,
-        selected_epochs=None,
-        legacy_download=None):
-    '''
-    Filters the file_list to fetch by the users request.
 
-    :param file_list: the list of dropbox files to filter
-    :type file_list: list
-    :param fields: list of fields to filter, defaults to None.
-    :type fields: list, optional
-    :param stokesI_only: Stokes I only boolean, defaults to False
-    :type stokesI_only: bool, optional
-    :param stokesV_only: Stokes V only boolean, defaults to False
-    :type stokesV_only: bool, optional
-    :param stokesQ_only: Stokes Q only boolean, defaults to False
-    :type stokesQ_only: bool, optional
-    :param stokesU_only: Stokes U only boolean, defaults to False
-    :type stokesU_only: bool, optional
-    :param no_stokesI: No Stokes I boolean, defaults to False
-    :type no_stokesI: bool, optional
-    :param no_stokesV: No Stokes V boolean, defaults to False
-    :type no_stokesV: bool, optional
-    :param no_stokesQ: No Stokes Q boolean, defaults to False
-    :type no_stokesQ: bool, optional
-    :param no_stokesU: No Stokes U boolean, defaults to False
-    :type no_stokesU: bool, optional
-    :param skip_xml: Filter out .xml files, defaults to False
-    :type skip_xml: bool, optional
-    :param skip_txt: Filter out .txt files, defaults to False
-    :type skip_txt: bool, optional
-    :param skip_qc: Filter out QC files, defaults to False
-    :type skip_qc: bool, optional
-    :param skip_components: Filter out component selavy
-        files, defaults to False
-    :type skip_islands: bool, optional
-    :param skip_islands: Filter out island selavy
-        files, defaults to False
-    :type skip_islands: bool, optional
-    :param skip_field_images: Filter out field fits
-        files, defaults to False
-    :type skip_field_images: bool, optional
-    :param skip_bkg_images: Filter out bkg fits files, defaults
-        to False
-    :type skip_bkg_images: bool, optional
-    :param skip_rms_images: Filter out rms fits files, defaults
-        to False
-    :type skip_rms_images: bool, optional
-    :param skip_all_images: Filter out .fits files, defaults
-        to False
-    :type skip_all_images: bool, optional
-    :param combined_only: Filter to only combined products,
-        defaults to False
-    :type combined_only: bool, optional
-    :param tile_only: Filter to only tiles products, defaults
-        to False
-    :type tile_only: bool, optional
-    :param selected_epochs: Filter to only the epoch selected,
-        defaults to None
-    :type selected_epochs: str, optional
-    :param legacy_download: Filter to only the selected legacy,
-        version, defaults to None
-    :type legacy_download: str, optional
-    :returns: filtered list of dropbox files
-    :rtype: list
-    '''
-    filter_df = pd.DataFrame(data=files_list, columns=["file"])
+def write_config_template():
+    config_file = "dropbox.cfg"
+    with open(config_file, "w") as f:
+        f.write("[dropbox]\n")
+        f.write("shared_url = ENTER_URL\n")
+        f.write("password = ENTER_PASSWORD\n")
+        f.write("access_token = ENTER_ACCESS_TOKEN\n")
 
-    stokes_only_sum = sum(
-        [stokesI_only, stokesV_only, stokesQ_only, stokesU_only]
+    logger.info(
+        "Writen an example dropbox config file to '%s'.", config_file
     )
 
-    if stokes_only_sum > 1:
-        logger.critical(
-            "Multiple 'Stokes only' arguments have been set:"
-            "\nStokes I only: %s"
-            "\nStokes V only: %s"
-            "\nStokes Q only: %s"
-            "\nStokes U only: %s",
-            stokesI_only,
-            stokesV_only,
-            stokesQ_only,
-            stokesU_only
-        )
-        logger.critical("Please check your settings and run again!")
-        sys.exit()
-    elif stokes_only_sum == 1:
-        check_nos = False
-    else:
-        check_nos = True
+def read_dbx_config(config_file):
+    logger.debug("Reading config file.")
+    config = configparser.ConfigParser()
+    config.read(config_file)
 
-    if combined_only is True and tile_only is True:
-        logger.warning(
-            "Combined only and tiles only are both set to True.")
-        logger.warning("Ignoring.")
-        combined_only = False
-        tiles_only = False
+    shared_url = config["dropbox"]["shared_url"]
+    password = config["dropbox"]["password"]
+    access_token = config["dropbox"]["access_token"]
 
-    if legacy_download is not None:
-        logger.debug("Filtering to Legacy %s only", legacy_download)
-        leg_str = "/LEGACY/{}/".format(legacy_download)
-        filter_df = filter_df[filter_df.file.str.contains(leg_str)]
-        filter_df.reset_index(drop=True, inplace=True)
-    else:
-        logger.debug("Removing legacy")
-        filter_df = filter_df[~filter_df.file.str.contains("LEGACY")]
-        filter_df.reset_index(drop=True, inplace=True)
+    logger.debug("Shared URL: %s", shared_url)
+    logger.debug("Password: %s", password != "")
 
-    if fields is not None:
-        fields = [re.escape(i) for i in fields]
-        field_pattern = "|".join(fields)
-        logger.debug("Filtering fields for %s", field_pattern)
-        filter_df = filter_df[filter_df.file.str.contains(field_pattern)]
-        filter_df.reset_index(drop=True, inplace=True)
+    dbx_config = {
+        "shared_url": shared_url,
+        "password": password,
+        "access_token": access_token
+    }
 
-    if check_nos:
-        if no_stokesI:
-            logger.debug("Filtering out Stokes I products")
-            filter_df = filter_df[~filter_df.file.str.contains("STOKESI")]
-            filter_df.reset_index(drop=True, inplace=True)
+    return dbx_config
 
-        if no_stokesV:
-            logger.debug("Filtering out Stokes V products")
-            filter_df = filter_df[~filter_df.file.str.contains("STOKESV")]
-            filter_df.reset_index(drop=True, inplace=True)
-
-        if no_stokesQ:
-            logger.debug("Filtering out Stokes Q products")
-            filter_df = filter_df[~filter_df.file.str.contains("STOKESQ")]
-            filter_df.reset_index(drop=True, inplace=True)
-
-        if no_stokesU:
-            logger.debug("Filtering out Stokes U products")
-            filter_df = filter_df[~filter_df.file.str.contains("STOKESU")]
-            filter_df.reset_index(drop=True, inplace=True)
-    else:
-        if stokesI_only:
-            logger.debug("Filtering to Stokes I only")
-            filter_df = filter_df[filter_df.file.str.contains("STOKESI")]
-            filter_df.reset_index(drop=True, inplace=True)
-
-        if stokesV_only:
-            logger.debug("Filtering to Stokes V only")
-            filter_df = filter_df[filter_df.file.str.contains("STOKESV")]
-            filter_df.reset_index(drop=True, inplace=True)
-
-        if stokesQ_only:
-            logger.debug("Filtering to Stokes Q only")
-            filter_df = filter_df[filter_df.file.str.contains("STOKESQ")]
-            filter_df.reset_index(drop=True, inplace=True)
-
-        if stokesU_only:
-            logger.debug("Filtering to Stokes U only")
-            filter_df = filter_df[filter_df.file.str.contains("STOKESU")]
-            filter_df.reset_index(drop=True, inplace=True)
-
-    if skip_xml:
-        logger.debug("Filtering out XML files.")
-        filter_df = filter_df[~filter_df.file.str.endswith(".xml")]
-        filter_df.reset_index(drop=True, inplace=True)
-
-    if skip_txt:
-        logger.debug("Filtering out txt files.")
-        filter_df = filter_df[~filter_df.file.str.endswith(".txt")]
-        filter_df.reset_index(drop=True, inplace=True)
-
-    if skip_qc:
-        logger.debug("Filtering out QC files.")
-        filter_df = filter_df[~filter_df.file.str.contains("/QC")]
-        filter_df.reset_index(drop=True, inplace=True)
-
-    if skip_components:
-        logger.debug("Filtering out component files.")
-        filter_df = filter_df[~filter_df.file.str.contains(".components.")]
-        filter_df.reset_index(drop=True, inplace=True)
-
-    if skip_islands:
-        logger.debug("Filtering out island files.")
-        filter_df = filter_df[~filter_df.file.str.contains(".islands.")]
-        filter_df.reset_index(drop=True, inplace=True)
-
-    if not skip_all_images:
-        if skip_field_images:
-            logger.debug("Filtering out field fits files.")
-            pattern = ".I.fits|.V.fits"
-            filter_df = filter_df[~filter_df.file.str.contains(pattern)]
-            filter_df.reset_index(drop=True, inplace=True)
-
-        if skip_bkg_images:
-            logger.debug("Filtering out rms fits files.")
-            filter_df = filter_df[~filter_df.file.str.endswith("_bkg.fits")]
-            filter_df.reset_index(drop=True, inplace=True)
-
-        if skip_rms_images:
-            logger.debug("Filtering out rms fits files.")
-            filter_df = filter_df[~filter_df.file.str.endswith("_rms.fits")]
-            filter_df.reset_index(drop=True, inplace=True)
-
-    else:
-        logger.debug("Filtering out fits files.")
-        filter_df = filter_df[~filter_df.file.str.endswith(".fits")]
-        filter_df.reset_index(drop=True, inplace=True)
-
-    if combined_only:
-        logger.debug("Filtering to combined files only.")
-        filter_df = filter_df[filter_df.file.str.contains("/COMBINED/")]
-        filter_df.reset_index(drop=True, inplace=True)
-
-    if tile_only:
-        logger.debug("Filtering to tiles files only.")
-        filter_df = filter_df[filter_df.file.str.contains("/TILES/")]
-        filter_df.reset_index(drop=True, inplace=True)
-
-    if selected_epochs is not None:
-        logger.debug("Filtering epochs.")
-        pattern_strings = []
-        for i in selected_epochs.split(","):
-            if i.startswith("0"):
-                i = i[1:]
-            if i not in RELEASED_EPOCHS:
-                logger.warning(
-                    "Epoch '{}' is unknown or not released yet!"
-                    " No files will be found for this selection."
+def setup_outdir(output, args):
+    # check dir
+    if not args.available_epochs and not args.get_available_files:
+        if os.path.isdir(output_dir):
+            logger.warning(
+                "Output directory '%s' already exists!", output_dir
+            )
+            logger.warning("Files may get overwritten!")
+        else:
+            if args.dry_run:
+                logger.info(
+                    "Dry run selected: will not create"
+                    " output directory."
                 )
             else:
-                epoch_dbx_format = "/EPOCH{}/".format(
-                    RELEASED_EPOCHS[i])
-                pattern_strings.append(epoch_dbx_format)
-        pattern = "|".join(pattern_strings)
-        logger.debug("Filtering to %s only.", pattern)
-        filter_df = filter_df[filter_df.file.str.contains(
-            pattern)]
-        filter_df.reset_index(drop=True, inplace=True)
+                os.mkdir(output_dir)
 
-    final_list = filter_df.file.tolist()
+def setup_dropbox(dbx_config):
+    dbx = dropbox.Dropbox(dbx_config["access_token"])
+    shared_link = dropbox.files.SharedLink(
+        url=dbx_config["shared_url"],
+        password=dbx_config["password"]
+    )
+    base_file_list = dbx.files_list_folder(
+        "", shared_link=shared_link
+    )
+    vast_dropbox = Dropbox(dbx, shared_link)
 
-    return final_list
+    return vast_dropbox, base_file_list
 
+def run_get_dropbox(
+        vast_dropbox,
+        base_file_list,
+        dbx_config,
+        output_dir,
+        args):
+    if args.available_files is not None:
+        if not os.path.isfile(args.available_files):
+            logger.error(
+                "Available files list file %s "
+                "not found!", args.available_files
+            )
+            logger.error(
+                "Check file or remove the"
+                " '--available-files' option.")
+            return
+    else:
+        args.available_files = DROPBOX_FILE
+
+    with open(args.available_files, 'r') as f:
+        lines = f.readlines()
+    files_list = [i.strip() for i in lines]
+
+    if args.available_epochs:
+        logger.info("The following epochs are available:")
+        for i in base_file_list.entries:
+            if isinstance(
+                i, dropbox.files.FolderMetadata
+            ) and "EPOCH" in i.name:
+                logger.info(i.name)
+
+    elif args.get_available_files:
+        logger.info(
+            "Gathering a list of files - this will take "
+            "approximately 4 minutes per epoch."
+        )
+
+        files_list, folders_list = vast_dropbox.recursive_build_files(
+            base_file_list,
+            legacy=args.include_legacy)
+        logger.info("Found %s files.", len(files_list))
+        vast_list_file_name = "vast_dbx_file_list_{}.txt".format(now_str)
+
+        with open(vast_list_file_name, "w") as f:
+            f.write(
+                "# File list on VAST Pilot survey dropbox as of {}\n".format(
+                    now
+                )
+            )
+            [f.write(i + "\n") for i in files_list]
+
+        logger.info("All available files written to %s", vast_list_file_name)
+
+        return
+
+    elif args.download:
+
+        fields_to_fetch = None
+
+        if args.find_fields_input is not None:
+            if not os.path.isfile(args.find_fields_input):
+                logger.error(
+                    "Supplied file '%s' not found!", args.find_fields_input
+                )
+                sys.exit()
+            fields_df = pd.read_csv(args.find_fields_input, comment="#")
+            fields_to_fetch = fields_df.field_name.unique()
+            logger.info("Will download data products of the following fields:")
+            for f in fields_to_fetch:
+                logger.info(f)
+
+        elif args.user_files_list is not None:
+            if not os.path.isfile(args.user_files_list):
+                logger.error(
+                    "Supplied file '%s' not found!", args.user_files_list
+                )
+                sys.exit()
+            with open(args.user_files_list, 'r') as f:
+                userlines = f.readlines()
+
+            # check files start with / and ignore #
+            files_list = []
+
+            for i in userlines:
+                if i.startswith("#"):
+                    continue
+                else:
+                    if i.startswith("/"):
+                        files_list.append(i.strip())
+                    else:
+                        files_list.append("/{}".format(i.strip()))
+
+        if fields_to_fetch is None and args.only_fields is not None:
+                fields_to_fetch = args.only_fields.split(",")
+
+        files_to_download = vast_dropbox.filter_files_list(
+            files_list,
+            fields=fields_to_fetch,
+            stokes=args.stokes,
+            skip_xml=args.skip_xml,
+            skip_txt=args.skip_txt,
+            skip_qc=args.skip_qc,
+            skip_components=args.skip_components,
+            skip_islands=args.skip_islands,
+            skip_field_images=args.skip_field_images,
+            skip_bkg_images=args.skip_bkg_images,
+            skip_rms_images=args.skip_rms_images,
+            skip_all_images=args.skip_all_images,
+            combined_only=args.combined_only,
+            tile_only=args.tile_only,
+            selected_epochs=args.only_epochs,
+            legacy_download=args.legacy_download
+        )
+
+        if len(files_to_download) != 0:
+            dirs_to_create = np.unique(
+                [
+                    "/".join(i.strip().split("/")[1:-1])
+                    for i in files_to_download
+                ]
+            )
+
+            if not args.dry_run:
+                for i in dirs_to_create:
+                    if i == "":
+                        continue
+                    os.makedirs(os.path.join(output_dir, i), exist_ok=True)
+
+                logger.info(
+                    "Downloading %s files...",
+                    len(files_to_download)
+                )
+                if args.download_threads > 1:
+                    logger.info(
+                        "Will use %s workers to download data.",
+                        args.download_threads
+                    )
+                    logger.warning(
+                        'There will be no logging apart from'
+                        ' warning level messages printed to the terminal.'
+                    )
+                    files_to_download = [[j] for j in files_to_download]
+                    multi_download = functools.partial(
+                        vast_dropbox.download_files,
+                        output_dir=output_dir,
+                        shared_url=dbx_config["shared_url"],
+                        password=dbx_config["password"],
+                        max_retries=args.max_retries,
+                        main_overwrite=args.overwrite,
+                        checksum_check=True
+                    )
+                    original_sigint_handler = signal.signal(
+                        signal.SIGINT, signal.SIG_IGN
+                    )
+                    p = Pool(args.download_threads)
+                    signal.signal(signal.SIGINT, original_sigint_handler)
+                    try:
+                        complete_failures = p.map_async(
+                            multi_download,
+                            files_to_download
+                        ).get()
+                    except KeyboardInterrupt:
+                        logger.error(
+                            "Caught KeyboardInterrupt, terminating workers."
+                        )
+                        p.terminate()
+                        sys.exit()
+                    else:
+                        logger.info("Normal termination")
+                        p.close()
+                        p.join()
+
+                    complete_failures = [
+                        j for i in complete_failures for j in i
+                    ]
+                else:
+                    complete_failures = vast_dropbox.download_files(
+                        files_to_download,
+                        output_dir,
+                        dbx_config["shared_url"],
+                        dbx_config["password"],
+                        args.max_retries,
+                        args.overwrite)
+
+                if len(complete_failures) > 0:
+                    logger.warning(
+                        "The following files failed to download correctly:"
+                    )
+                    for fail in complete_failures:
+                        logger.warning(fail)
+                    logger.warning("These files may be corrupted!")
+            else:
+                logger.info(
+                    "Dry run selected. Would download the follwing"
+                    " %s files:", len(files_to_download)
+                )
+                for i in files_to_download:
+                    logger.info(i)
+
+                logger.info("Total: %s files.", len(files_to_download))
+        else:
+            logger.info("No files to download with selected filters.")
+
+    else:
+        logger.info("Nothing to be done!")
 
 def parse_args():
     user_friendly_epochs = {v: k for k, v in RELEASED_EPOCHS.items()}
@@ -383,44 +395,14 @@ def parse_args():
         default=None)
 
     parser.add_argument(
-        '--stokesI-only',
-        action="store_true",
-        help="Only download STOKES I products.")
-
-    parser.add_argument(
-        '--stokesV-only',
-        action="store_true",
-        help="Only download STOKES V products.")
-
-    parser.add_argument(
-        '--stokesQ-only',
-        action="store_true",
-        help="Only download STOKES Q products.")
-
-    parser.add_argument(
-        '--stokesU-only',
-        action="store_true",
-        help="Only download STOKES U products.")
-
-    parser.add_argument(
-        '--no-stokesI',
-        action="store_true",
-        help="Do not download Stokes I products.")
-
-    parser.add_argument(
-        '--no-stokesV',
-        action="store_true",
-        help="Do not download Stokes V products.")
-
-    parser.add_argument(
-        '--no-stokesQ',
-        action="store_true",
-        help="Do not download Stokes Q products.")
-
-    parser.add_argument(
-        '--no-stokesU',
-        action="store_true",
-        help="Do not download Stokes U products.")
+        '--stokes',
+        type=str,
+        help=(
+            "Select which Stokes data products are to be downloaded"
+            " Enter as a list separated by a comma with no space, e.g."
+            " 'I,V'"
+        )
+    )
 
     parser.add_argument(
         '--skip-xml',
@@ -549,319 +531,42 @@ if __name__ == "__main__":
     numexpr.set_num_threads(2)
     args = parse_args()
 
-    now = datetime.datetime.now()
-    now_str = now.strftime("%Y%m%d_%H:%M:%S")
+    logfile = "get_vast_pilot_dbx_{}.log".format(
+        runstart.strftime("%Y%m%d_%H:%M:%S"))
 
-    logger = logging.getLogger()
-    s = logging.StreamHandler()
-    logformat = '[%(asctime)s] - %(levelname)s - %(message)s'
+    logger = get_logger(args.debug, False, logfile=logfile)
 
-    if use_colorlog:
-        formatter = colorlog.ColoredFormatter(
-            "%(log_color)s[%(asctime)s] - %(levelname)s - %(blue)s%(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
-            reset=True,
-            log_colors={
-                'DEBUG': 'cyan',
-                'INFO': 'green',
-                'WARNING': 'yellow',
-                'ERROR': 'red',
-                'CRITICAL': 'red,bg_white',
-            },
-            secondary_log_colors={},
-            style='%'
-        )
-    else:
-        formatter = logging.Formatter(logformat, datefmt="%Y-%m-%d %H:%M:%S")
-
-    s.setFormatter(formatter)
-    logger.addHandler(s)
-
-    logfilename = "get_vast_pilot_dbx_{}.log".format(now_str)
-    fileHandler = logging.FileHandler(logfilename)
-    fileHandler.setFormatter(
-        logging.Formatter(
-            logformat,
-            datefmt="%Y-%m-%d %H:%M:%S"))
-    logger.addHandler(fileHandler)
-
-    if args.debug:
-        logger.setLevel(logging.DEBUG)
-    else:
-        logger.setLevel(logging.INFO)
-
+    # Set the logging level of the dropbox module
     logging.getLogger("dropbox").setLevel(logging.WARNING)
 
     if args.write_template_dropbox_config:
-        config_file = "dropbox.cfg"
-        with open(config_file, "w") as f:
-            f.write("[dropbox]\n")
-            f.write("shared_url = ENTER_URL\n")
-            f.write("password = ENTER_PASSWORD\n")
-            f.write("access_token = ENTER_ACCESS_TOKEN\n")
-
-        logger.info(
-            "Writen an example dropbox config file to '%s'.", config_file)
+        write_config_template()
         sys.exit()
 
-    if not os.path.isfile(args.dropbox_config):
-        logger.critical(
-            "Cannot find dropbox config file '%s'!", args.dropbox_config
-        )
+    if not check_file(args.dropbox_config):
         logger.info(
             "A template dropbox file can be generated using "
             "python get_vast_pilot_dbx.py '--write-template-dropbox-config'"
         )
-
         sys.exit()
 
-    config = configparser.ConfigParser()
-    config.read(args.dropbox_config)
-
-    shared_url = config["dropbox"]["shared_url"]
-    password = config["dropbox"]["password"]
-    access_token = config["dropbox"]["access_token"]
-
-    logger.debug("Shared URL: %s", shared_url)
-    logger.debug("Password: %s", password != "")
+    dropbox_config = read_dbx_config(args.dropbox_config)
 
     output_dir = args.output
+    setup_outdir(output_dir, args)
 
-    # check dir
-    if not args.available_epochs and not args.get_available_files:
-        if os.path.isdir(output_dir):
-            logger.warning(
-                "Output directory '%s' already exists!", output_dir
-            )
-            logger.warning("Files may get overwritten!")
-        else:
-            if args.dry_run:
-                logger.info(
-                    "Dry run selected: will not create"
-                    " output directory."
-                )
-            else:
-                os.mkdir(output_dir)
+    vast_dropbox, base_file_list = setup_dropbox(dropbox_config)
 
-    dbx = dropbox.Dropbox(access_token)
+    run_get_dropbox(
+        vast_dropbox, base_file_list, dropbox_config, output_dir, args
+    )
 
-    shared_link = dropbox.files.SharedLink(url=shared_url, password=password)
+    runend = datetime.datetime.now()
 
-    base_file_list = dbx.files_list_folder("", shared_link=shared_link)
-
-    vast_dropbox = Dropbox(dbx, shared_link)
-
-    if args.available_files is not None:
-        if not os.path.isfile(args.available_files):
-            logger.error(
-                "Available files list file %s "
-                "not found!", args.available_files
-            )
-            logger.error(
-                "Check file or remove the"
-                " '--available-files' option.")
-            sys.exit()
-    else:
-        args.available_files = DROPBOX_FILE
-
-    with open(args.available_files, 'r') as f:
-        lines = f.readlines()
-    files_list = [i.strip() for i in lines]
-
-    if args.available_epochs:
-        logger.info("The following epochs are available:")
-        for i in base_file_list.entries:
-            if isinstance(
-                i, dropbox.files.FolderMetadata
-            ) and "EPOCH" in i.name:
-                logger.info(i.name)
-
-    elif args.get_available_files:
-        logger.info(
-            "Gathering a list of files - this will take "
-            "approximately 4 minutes per epoch."
-        )
-
-        files_list, folders_list = vast_dropbox.recursive_build_files(
-            base_file_list,
-            legacy=args.include_legacy)
-        logger.info("Found %s files.", len(files_list))
-        vast_list_file_name = "vast_dbx_file_list_{}.txt".format(now_str)
-
-        with open(vast_list_file_name, "w") as f:
-            f.write(
-                "# File list on VAST Pilot survey dropbox as of {}\n".format(
-                    now
-                )
-            )
-            [f.write(i + "\n") for i in files_list]
-
-        logger.info("All available files written to %s", vast_list_file_name)
-
-    elif args.download:
-
-        fields_to_fetch = None
-
-        if args.find_fields_input is not None:
-            if not os.path.isfile(args.find_fields_input):
-                logger.error(
-                    "Supplied file '%s' not found!", args.find_fields_input
-                )
-                sys.exit()
-            fields_df = pd.read_csv(args.find_fields_input, comment="#")
-            fields_to_fetch = fields_df.field_name.unique()
-            logger.info("Will download data products of the following fields:")
-            for f in fields_to_fetch:
-                logger.info(f)
-
-        elif args.user_files_list is not None:
-            if not os.path.isfile(args.user_files_list):
-                logger.error(
-                    "Supplied file '%s' not found!", args.user_files_list
-                )
-                sys.exit()
-            with open(args.user_files_list, 'r') as f:
-                userlines = f.readlines()
-
-            # check files start with / and ignore #
-            files_list = []
-
-            for i in userlines:
-                if i.startswith("#"):
-                    continue
-                else:
-                    if i.startswith("/"):
-                        files_list.append(i.strip())
-                    else:
-                        files_list.append("/{}".format(i.strip()))
-
-        if fields_to_fetch is None and args.only_fields is not None:
-                fields_to_fetch = args.only_fields.split(",")
-
-        files_to_download = filter_files_list(
-            files_list,
-            fields=fields_to_fetch,
-            stokesI_only=args.stokesI_only,
-            stokesV_only=args.stokesV_only,
-            stokesQ_only=args.stokesQ_only,
-            stokesU_only=args.stokesU_only,
-            no_stokesI=args.no_stokesI,
-            no_stokesV=args.no_stokesV,
-            no_stokesQ=args.no_stokesQ,
-            no_stokesU=args.no_stokesU,
-            skip_xml=args.skip_xml,
-            skip_txt=args.skip_txt,
-            skip_qc=args.skip_qc,
-            skip_components=args.skip_components,
-            skip_islands=args.skip_islands,
-            skip_field_images=args.skip_field_images,
-            skip_bkg_images=args.skip_bkg_images,
-            skip_rms_images=args.skip_rms_images,
-            skip_all_images=args.skip_all_images,
-            combined_only=args.combined_only,
-            tile_only=args.tile_only,
-            selected_epochs=args.only_epochs,
-            legacy_download=args.legacy_download
-        )
-
-        if len(files_to_download) != 0:
-            dirs_to_create = np.unique(
-                [
-                    "/".join(i.strip().split("/")[1:-1])
-                    for i in files_to_download
-                ]
-            )
-
-            if not args.dry_run:
-                for i in dirs_to_create:
-                    if i == "":
-                        continue
-                    os.makedirs(os.path.join(output_dir, i), exist_ok=True)
-
-                logger.info(
-                    "Downloading %s files...",
-                    len(files_to_download)
-                )
-                if args.download_threads > 1:
-                    logger.info(
-                        "Will use %s workers to download data.",
-                        args.download_threads
-                    )
-                    logger.warning(
-                        'There will be no logging apart from'
-                        ' warning level messages printed to the terminal.'
-                    )
-                    files_to_download = [[j] for j in files_to_download]
-                    multi_download = functools.partial(
-                        vast_dropbox.download_files,
-                        output_dir=output_dir,
-                        shared_url=shared_url,
-                        password=password,
-                        max_retries=args.max_retries,
-                        main_overwrite=args.overwrite,
-                        checksum_check=True
-                    )
-                    original_sigint_handler = signal.signal(
-                        signal.SIGINT, signal.SIG_IGN
-                    )
-                    p = Pool(args.download_threads)
-                    signal.signal(signal.SIGINT, original_sigint_handler)
-                    try:
-                        complete_failures = p.map_async(
-                            multi_download,
-                            files_to_download
-                        ).get()
-                    except KeyboardInterrupt:
-                        logger.error(
-                            "Caught KeyboardInterrupt, terminating workers."
-                        )
-                        p.terminate()
-                        sys.exit()
-                    else:
-                        logger.info("Normal termination")
-                        p.close()
-                        p.join()
-
-                    complete_failures = [
-                        j for i in complete_failures for j in i
-                    ]
-                else:
-                    complete_failures = vast_dropbox.download_files(
-                        files_to_download,
-                        output_dir,
-                        shared_url,
-                        password,
-                        args.max_retries,
-                        args.overwrite)
-
-                if len(complete_failures) > 0:
-                    logger.warning(
-                        "The following files failed to download correctly:"
-                    )
-                    for fail in complete_failures:
-                        logger.warning(fail)
-                    logger.warning("These files may be corrupted!")
-            else:
-                logger.info(
-                    "Dry run selected. Would download the follwing"
-                    " %s files:", len(files_to_download)
-                )
-                for i in files_to_download:
-                    logger.info(i)
-
-                logger.info("Total: %s files.", len(files_to_download))
-        else:
-            logger.info("No files to download with selected filters.")
-
-    else:
-        logger.info("Nothing to be done!")
-
-    end = datetime.datetime.now()
-
-    runtime = end - now
+    runtime = runend - runstart
 
     logger.info("Ran for {:.1f} minutes.".format(runtime.seconds / 60.))
 
-    logger.info("Log file written to %s.", logfilename)
+    logger.info("Log file written to %s.", logfile)
 
     logger.info("All done!")

@@ -18,52 +18,63 @@ You also need to know the shared Dropbox URL of the Pilot survey and the passwor
 
 ## Usage
 ```
-usage: get_vast_pilot_dbx.py [-h] [--dropbox-config DROPBOX_CONFIG] [--output OUTPUT] [--available-epochs]
-                             [--available-files AVAILABLE_FILES] [--get-available-files] [--download]
-                             [--find-fields-input FIND_FIELDS_INPUT] [--user-files-list USER_FILES_LIST]
-                             [--only-epochs ONLY_EPOCHS] [--only-fields ONLY_FIELDS] [--stokesI-only]
-                             [--stokesV-only] [--stokesQ-only] [--stokesU-only] [--no-stokesI] [--no-stokesV]
-                             [--no-stokesQ] [--no-stokesU] [--skip-xml] [--skip-txt] [--skip-qc] [--skip-components]
-                             [--skip-islands] [--skip-field-images] [--skip-bkg-images] [--skip-rms-images]
-                             [--skip-all-images] [--combined-only] [--tile-only] [--overwrite] [--dry-run] [--debug]
-                             [--write-template-dropbox-config] [--legacy-download LEGACY_DOWNLOAD]
-                             [--include-legacy] [--max-retries MAX_RETRIES] [--download-threads DOWNLOAD_THREADS]
+usage: get_vast_pilot_dbx.py [-h] [--dropbox-config DROPBOX_CONFIG]
+                             [--output OUTPUT] [--available-epochs]
+                             [--available-files AVAILABLE_FILES]
+                             [--get-available-files] [--download]
+                             [--find-fields-input FIND_FIELDS_INPUT]
+                             [--user-files-list USER_FILES_LIST]
+                             [--only-epochs ONLY_EPOCHS]
+                             [--only-fields ONLY_FIELDS] [--stokes STOKES]
+                             [--skip-xml] [--skip-txt] [--skip-qc]
+                             [--skip-components] [--skip-islands]
+                             [--skip-field-images] [--skip-bkg-images]
+                             [--skip-rms-images] [--skip-all-images]
+                             [--combined-only] [--tile-only] [--overwrite]
+                             [--dry-run] [--debug]
+                             [--write-template-dropbox-config]
+                             [--legacy-download LEGACY_DOWNLOAD] [--include-legacy]
+                             [--max-retries MAX_RETRIES]
+                             [--download-threads DOWNLOAD_THREADS]
 
 optional arguments:
   -h, --help            show this help message and exit
   --dropbox-config DROPBOX_CONFIG
-                        Dropbox config file to be read in containing the shared url, password and access token. A
-                        template can be generated using '--write-template-dropbox-config'. (default: dropbox.cfg)
-  --output OUTPUT       Name of the local output directory where files will be saved (default: vast_dropbox)
+                        Dropbox config file to be read in containing the shared
+                        url, password and access token. A template can be generated
+                        using '--write-template-dropbox-config'. (default:
+                        dropbox.cfg)
+  --output OUTPUT       Name of the local output directory where files will be
+                        saved (default: vast_dropbox)
   --available-epochs    Print out what Epochs are available. (default: False)
   --available-files AVAILABLE_FILES
-                        Provide a file containing the files available on Dropbox to download. Only use this option
-                        only if you wish to override the built-in list of Dropbox files that is already provided.
-                        (default: None)
+                        Provide a file containing the files available on Dropbox to
+                        download. Only use this option only if you wish to override
+                        the built-in list of Dropbox files that is already
+                        provided. (default: None)
   --get-available-files
-                        Generate the list of available files on the shared folder. The list will be saved to a file.
-                        (default: False)
-  --download            Download data according to the filter options entered (default: None)
+                        Generate the list of available files on the shared folder.
+                        The list will be saved to a file. (default: False)
+  --download            Download data according to the filter options entered
+                        (default: None)
   --find-fields-input FIND_FIELDS_INPUT
-                        Input of fields to fetch (can be obtained from 'find_sources.py'). (default: None)
+                        Input of fields to fetch (can be obtained from
+                        'find_sources.py'). (default: None)
   --user-files-list USER_FILES_LIST
                         Input of files to fetch. (default: None)
   --only-epochs ONLY_EPOCHS
-                        Only download files from the selected epochs. Enter as a list with no spaces, e.g. '1,2,4x'.
-                        If nothing is entered then all epochs are fetched. The current epochs are: 1, 2, 3x, 4x, 5x,
-                        6x, 7x, 8, 9, 10x, 11x. (default: None)
+                        Only download files from the selected epochs. Enter as a
+                        list with no spaces, e.g. '1,2,4x'. If nothing is entered
+                        then all epochs are fetched. The current epochs are: 1, 2,
+                        3x, 4x, 5x, 6x, 7x, 8, 9, 10x, 11x. (default: None)
   --only-fields ONLY_FIELDS
-                        Only download files from the selected fields. Enter as a list with no spaces, e.g.
-                        'VAST_0012+00A,VAST_0012-06A'. If nothing is entered then all fields are fetched. (default:
+                        Only download files from the selected fields. Enter as a
+                        list with no spaces, e.g. 'VAST_0012+00A,VAST_0012-06A'. If
+                        nothing is entered then all fields are fetched. (default:
                         None)
-  --stokesI-only        Only download STOKES I products. (default: False)
-  --stokesV-only        Only download STOKES V products. (default: False)
-  --stokesQ-only        Only download STOKES Q products. (default: False)
-  --stokesU-only        Only download STOKES U products. (default: False)
-  --no-stokesI          Do not download Stokes I products. (default: False)
-  --no-stokesV          Do not download Stokes V products. (default: False)
-  --no-stokesQ          Do not download Stokes Q products. (default: False)
-  --no-stokesU          Do not download Stokes U products. (default: False)
+  --stokes STOKES       Select which Stokes data products are to be downloaded
+                        Enter as a list separated by a comma with no space, e.g.
+                        'I,V' (default: None)
   --skip-xml            Do not download XML files. (default: False)
   --skip-txt            Do not download txt files. (default: False)
   --skip-qc             Do not download the QC plots. (default: False)
@@ -75,24 +86,30 @@ optional arguments:
   --skip-all-images     Only download non-image data products. (default: False)
   --combined-only       Only download the combined products. (default: False)
   --tile-only           Only download the combined products. (default: False)
-  --overwrite           Overwrite any files that already exist in the output directory. If overwrite is not
-                        selected, integrity checking will still be performed on the existing files and if the check
-                        fails, the file will be re-downloaded. (default: False)
-  --dry-run             Only print files that will be downloaded, without downloading them. (default: False)
+  --overwrite           Overwrite any files that already exist in the output
+                        directory. If overwrite is not selected, integrity checking
+                        will still be performed on the existing files and if the
+                        check fails, the file will be re-downloaded. (default:
+                        False)
+  --dry-run             Only print files that will be downloaded, without
+                        downloading them. (default: False)
   --debug               Set logging level to debug. (default: False)
   --write-template-dropbox-config
                         Create a template dropbox config file. (default: False)
   --legacy-download LEGACY_DOWNLOAD
-                        Select the legacy version to download from. Enter with the included 'v', e.g. 'v0.6'. Using
-                        this option will only download the legacy data, no other data shall be downloaded. (default:
-                        None)
-  --include-legacy      Include the 'LEGACY' directory when searching through files. Only valid when using the '--
-                        get-available-files' option. (default: False)
+                        Select the legacy version to download from. Enter with the
+                        included 'v', e.g. 'v0.6'. Using this option will only
+                        download the legacy data, no other data shall be
+                        downloaded. (default: None)
+  --include-legacy      Include the 'LEGACY' directory when searching through
+                        files. Only valid when using the '--get-available-files'
+                        option. (default: False)
   --max-retries MAX_RETRIES
-                        How many times to attempt to retry a failed download (default: 2)
+                        How many times to attempt to retry a failed download
+                        (default: 2)
   --download-threads DOWNLOAD_THREADS
-                        How many parallel downloads to attempt. EXPERIMENTAL! See the VASTDROPBOX.md file for full
-                        information. (default: 1)
+                        How many parallel downloads to attempt. EXPERIMENTAL! See
+                        the VASTDROPBOX.md file for full information. (default: 1)
 ```
 
 To run the script needs a Dropbox configuration file, which by default is assumed to be named 'dropbox.cfg'. Create a text file in the following format and enter the respective values:
@@ -141,14 +158,7 @@ Note the following options in the Dropbox script:
 ```
   --only-epochs         Only download data of the requested epochs. (default: all epochs)
   --only-fieds          Only download data of the requested fields. (default: all fields)
-  --stokesI-only        Only download STOKES I products. (default: False)
-  --stokesV-only        Only download STOKES V products. (default: False)
-  --stokesQ-only        Only download STOKES Q products. (default: False)
-  --stokesU-only        Only download STOKES U products. (default: False)
-  --no-stokesI          Exclude Stokes I products. (default: False)
-  --no-stokesV          Exclude Stokes V products. (default: False)
-  --no-stokesQ          Exclude Stokes Q products. (default: False)
-  --no-stokesU          Exclude Stokes U products. (default: False)
+  --stokes              Only download selected Stokes. (default: all stokes)
   --skip-xml            Do not download XML files. (default: False)
   --skip-txt            Do not download txt files. (default: False)
   --skip-qc             Do not download the QC plots. (default: False)
@@ -216,12 +226,12 @@ Scenario:
 * Download fields VAST_0918+00A and VAST_1739-25A.
 * From epochs 1, 2, 8 and 9.
 * Combined data products only.
-* Stokes I only.
+* Stokes I and V.
 * Field images and selavy components only (txt files).
 * No quality control plots.
 
 ```
-get_vast_pilot_dbx.py --download --output VAST_DOWNLOAD --only-epochs 1,2,8,9 --only-fields VAST_0918+00A,VAST_1739-25A --combined-only --stokesI-only --skip-bkg-images --skip-rms-images --skip-islands --skip-xml --skip-qc
+get_vast_pilot_dbx.py --download --output VAST_DOWNLOAD --only-epochs 1,2,8,9 --only-fields VAST_0918+00A,VAST_1739-25A --combined-only --stokes I,V --skip-bkg-images --skip-rms-images --skip-islands --skip-xml --skip-qc
 ```
 This will place the relevant files in the directory `VAST_DOWNLOAD`.
 
@@ -239,7 +249,7 @@ This will place the relevant files in the directory `VAST_DOWNLOAD`.
 
     The command for this becomes:
     ```
-    get_vast_pilot_dbx.py --find-fields-input find-fields-ouput.csv --output VAST_DOWNLOAD --stokesI-only --skip-xml --skip-bkg-images --skip-qc --skip-islands --combined-only
+    get_vast_pilot_dbx.py --find-fields-input find-fields-ouput.csv --output VAST_DOWNLOAD --stokes I --skip-xml --skip-bkg-images --skip-qc --skip-islands --combined-only
     ```
 
 #### Downloading a user selected set of files

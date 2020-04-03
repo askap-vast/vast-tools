@@ -1,3 +1,4 @@
+import os
 import logging
 import logging.handlers
 import logging.config
@@ -144,3 +145,13 @@ def crosshair():
     matplotlib.markers.MarkerStyle._set_crosshair = _set_crosshair
     matplotlib.markers.MarkerStyle.markers['c'] = 'crosshair'
     matplotlib.lines.Line2D.markers = matplotlib.markers.MarkerStyle.markers
+
+
+def check_file(path):
+    logger = logging.getLogger()
+    exists = os.path.isfile(path)
+    if not exists:
+        logger.critical(
+            "Cannot find file '%s'!", path
+        )
+    return exists

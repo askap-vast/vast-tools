@@ -7,5 +7,5 @@ colorlog<=4.0.2
 dropbox<=9.4.0
 tables<=3.6.1
 radio_beam>=0.3.1,<0.4
-tabulate>=0.8.6,<0.9
-
+tabulate>=0.8.6,<0.9,
+numexpr>=2.7.1,<2.8

@@ -9,6 +9,7 @@ import dropbox
 import itertools
 import hashlib
 import numpy as np
+import re
 
 import logging
 import logging.handlers
@@ -226,6 +227,200 @@ class Dropbox:
             self.logger.warning(
                 "Checksum check failed for {}!".format(local_file))
             return False
+
+    def filter_files_list(
+            self,
+            files_list,
+            fields=None,
+            stokes=None,
+            skip_xml=False,
+            skip_txt=False,
+            skip_qc=False,
+            skip_components=False,
+            skip_islands=False,
+            skip_field_images=False,
+            skip_bkg_images=False,
+            skip_rms_images=False,
+            skip_all_images=False,
+            combined_only=False,
+            tile_only=False,
+            selected_epochs=None,
+            legacy_download=None):
+        '''
+        Filters the file_list to fetch by the users request.
+
+        :param file_list: the list of dropbox files to filter
+        :type file_list: list
+        :param fields: list of fields to filter, defaults to None.
+        :type fields: list, optional
+        :param stokes: List of stokes to download, defaults to None.
+            Default of None means download all stokes. Must be comma
+            separated string.
+        :type stokes: str, optional
+        :param skip_xml: Filter out .xml files, defaults to False
+        :type skip_xml: bool, optional
+        :param skip_txt: Filter out .txt files, defaults to False
+        :type skip_txt: bool, optional
+        :param skip_qc: Filter out QC files, defaults to False
+        :type skip_qc: bool, optional
+        :param skip_components: Filter out component selavy
+            files, defaults to False
+        :type skip_islands: bool, optional
+        :param skip_islands: Filter out island selavy
+            files, defaults to False
+        :type skip_islands: bool, optional
+        :param skip_field_images: Filter out field fits
+            files, defaults to False
+        :type skip_field_images: bool, optional
+        :param skip_bkg_images: Filter out bkg fits files, defaults
+            to False
+        :type skip_bkg_images: bool, optional
+        :param skip_rms_images: Filter out rms fits files, defaults
+            to False
+        :type skip_rms_images: bool, optional
+        :param skip_all_images: Filter out .fits files, defaults
+            to False
+        :type skip_all_images: bool, optional
+        :param combined_only: Filter to only combined products,
+            defaults to False
+        :type combined_only: bool, optional
+        :param tile_only: Filter to only tiles products, defaults
+            to False
+        :type tile_only: bool, optional
+        :param selected_epochs: Filter to only the epoch selected,
+            defaults to None
+        :type selected_epochs: str, optional
+        :param legacy_download: Filter to only the selected legacy,
+            version, defaults to None
+        :type legacy_download: str, optional
+        :returns: filtered list of dropbox files
+        :rtype: list
+        '''
+        filter_df = pd.DataFrame(data=files_list, columns=["file"])
+
+        allowed_stokes = ['I', 'Q', 'U', 'V']
+
+        if combined_only is True and tile_only is True:
+            self.logger.warning(
+                "Combined only and tiles only are both set to True.")
+            self.logger.warning("Ignoring.")
+            combined_only = False
+            tiles_only = False
+
+        if legacy_download is not None:
+            self.logger.debug("Filtering to Legacy %s only", legacy_download)
+            leg_str = "/LEGACY/{}/".format(legacy_download)
+            filter_df = filter_df[filter_df.file.str.contains(leg_str)]
+            filter_df.reset_index(drop=True, inplace=True)
+        else:
+            self.logger.debug("Removing legacy")
+            filter_df = filter_df[~filter_df.file.str.contains("LEGACY")]
+            filter_df.reset_index(drop=True, inplace=True)
+
+        if fields is not None:
+            fields = [re.escape(i) for i in fields]
+            field_pattern = "|".join(fields)
+            self.logger.debug("Filtering fields for %s", field_pattern)
+            filter_df = filter_df[filter_df.file.str.contains(field_pattern)]
+            filter_df.reset_index(drop=True, inplace=True)
+
+        if stokes is not None:
+            stokes_to_get = []
+            wanted_stokes = stokes.split(",")
+            for s in wanted_stokes:
+                s_u = s.upper()
+                if s_u in allowed_stokes:
+                    stokes_to_get.append("STOKES{}".format(s_u))
+                else:
+                    self.logger.warning(
+                        "Stokes '%s' is not valid", s_u
+                    )
+            stokes_pattern = "|".join(stokes_to_get)
+            self.logger.debug("Filtering data for %s", stokes_pattern)
+            filter_df = filter_df[filter_df.file.str.contains(stokes_pattern)]
+            filter_df.reset_index(drop=True, inplace=True)
+
+        if skip_xml:
+            self.logger.debug("Filtering out XML files.")
+            filter_df = filter_df[~filter_df.file.str.endswith(".xml")]
+            filter_df.reset_index(drop=True, inplace=True)
+
+        if skip_txt:
+            self.logger.debug("Filtering out txt files.")
+            filter_df = filter_df[~filter_df.file.str.endswith(".txt")]
+            filter_df.reset_index(drop=True, inplace=True)
+
+        if skip_qc:
+            self.logger.debug("Filtering out QC files.")
+            filter_df = filter_df[~filter_df.file.str.contains("/QC")]
+            filter_df.reset_index(drop=True, inplace=True)
+
+        if skip_components:
+            self.logger.debug("Filtering out component files.")
+            filter_df = filter_df[~filter_df.file.str.contains(".components.")]
+            filter_df.reset_index(drop=True, inplace=True)
+
+        if skip_islands:
+            self.logger.debug("Filtering out island files.")
+            filter_df = filter_df[~filter_df.file.str.contains(".islands.")]
+            filter_df.reset_index(drop=True, inplace=True)
+
+        if not skip_all_images:
+            if skip_field_images:
+                self.logger.debug("Filtering out field fits files.")
+                pattern = ".I.fits|.V.fits"
+                filter_df = filter_df[~filter_df.file.str.contains(pattern)]
+                filter_df.reset_index(drop=True, inplace=True)
+
+            if skip_bkg_images:
+                self.logger.debug("Filtering out rms fits files.")
+                filter_df = filter_df[~filter_df.file.str.endswith("_bkg.fits")]
+                filter_df.reset_index(drop=True, inplace=True)
+
+            if skip_rms_images:
+                self.logger.debug("Filtering out rms fits files.")
+                filter_df = filter_df[~filter_df.file.str.endswith("_rms.fits")]
+                filter_df.reset_index(drop=True, inplace=True)
+
+        else:
+            self.logger.debug("Filtering out fits files.")
+            filter_df = filter_df[~filter_df.file.str.endswith(".fits")]
+            filter_df.reset_index(drop=True, inplace=True)
+
+        if combined_only:
+            self.logger.debug("Filtering to combined files only.")
+            filter_df = filter_df[filter_df.file.str.contains("/COMBINED/")]
+            filter_df.reset_index(drop=True, inplace=True)
+
+        if tile_only:
+            self.logger.debug("Filtering to tiles files only.")
+            filter_df = filter_df[filter_df.file.str.contains("/TILES/")]
+            filter_df.reset_index(drop=True, inplace=True)
+
+        if selected_epochs is not None:
+            self.logger.debug("Filtering epochs.")
+            pattern_strings = []
+            for i in selected_epochs.split(","):
+                if i.startswith("0"):
+                    i = i[1:]
+                if i not in RELEASED_EPOCHS:
+                    self.logger.warning(
+                        "Epoch '{}' is unknown or not released yet!"
+                        " No files will be found for this selection."
+                    )
+                else:
+                    epoch_dbx_format = "/EPOCH{}/".format(
+                        RELEASED_EPOCHS[i])
+                    pattern_strings.append(epoch_dbx_format)
+            pattern = "|".join(pattern_strings)
+            self.logger.debug("Filtering to %s only.", pattern)
+            filter_df = filter_df[filter_df.file.str.contains(
+                pattern)]
+            filter_df.reset_index(drop=True, inplace=True)
+
+        final_list = filter_df.file.tolist()
+
+        return final_list
 
     def download_files(
             self,
