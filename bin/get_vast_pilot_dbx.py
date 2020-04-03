@@ -44,6 +44,7 @@ def write_config_template():
         "Writen an example dropbox config file to '%s'.", config_file
     )
 
+
 def read_dbx_config(config_file):
     logger.debug("Reading config file.")
     config = configparser.ConfigParser()
@@ -64,6 +65,7 @@ def read_dbx_config(config_file):
 
     return dbx_config
 
+
 def setup_outdir(output, args):
     # check dir
     if not args.available_epochs and not args.get_available_files:
@@ -81,6 +83,7 @@ def setup_outdir(output, args):
             else:
                 os.mkdir(output_dir)
 
+
 def setup_dropbox(dbx_config):
     dbx = dropbox.Dropbox(dbx_config["access_token"])
     shared_link = dropbox.files.SharedLink(
@@ -93,6 +96,7 @@ def setup_dropbox(dbx_config):
     vast_dropbox = Dropbox(dbx, shared_link)
 
     return vast_dropbox, base_file_list
+
 
 def run_get_dropbox(
         vast_dropbox,
@@ -299,6 +303,7 @@ def run_get_dropbox(
 
     else:
         logger.info("Nothing to be done!")
+
 
 def parse_args():
     user_friendly_epochs = {v: k for k, v in RELEASED_EPOCHS.items()}

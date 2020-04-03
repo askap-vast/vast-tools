@@ -374,12 +374,16 @@ class Dropbox:
 
             if skip_bkg_images:
                 self.logger.debug("Filtering out rms fits files.")
-                filter_df = filter_df[~filter_df.file.str.endswith("_bkg.fits")]
+                filter_df = filter_df[
+                    ~filter_df.file.str.endswith("_bkg.fits")
+                ]
                 filter_df.reset_index(drop=True, inplace=True)
 
             if skip_rms_images:
                 self.logger.debug("Filtering out rms fits files.")
-                filter_df = filter_df[~filter_df.file.str.endswith("_rms.fits")]
+                filter_df = filter_df[
+                    ~filter_df.file.str.endswith("_rms.fits")
+                ]
                 filter_df.reset_index(drop=True, inplace=True)
 
         else:
