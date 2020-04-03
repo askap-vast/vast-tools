@@ -760,7 +760,6 @@ if __name__ == "__main__":
             legacy_download=args.legacy_download
         )
 
-
         if len(files_to_download) != 0:
             dirs_to_create = np.unique(
                 [
