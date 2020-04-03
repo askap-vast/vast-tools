@@ -699,6 +699,9 @@ if __name__ == "__main__":
         logger.info("All available files written to %s", vast_list_file_name)
 
     elif args.download:
+
+        fields_to_fetch = None
+
         if args.find_fields_input is not None:
             if not os.path.isfile(args.find_fields_input):
                 logger.error(
@@ -732,11 +735,8 @@ if __name__ == "__main__":
                     else:
                         files_list.append("/{}".format(i.strip()))
 
-        else:
-            if args.only_fields is not None:
+        if fields_to_fetch is None and args.only_fields is not None:
                 fields_to_fetch = args.only_fields.split(",")
-            else:
-                fields_to_fetch = args.only_fields
 
         files_to_download = filter_files_list(
             files_list,
