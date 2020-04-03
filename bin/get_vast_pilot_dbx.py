@@ -191,7 +191,7 @@ def run_get_dropbox(
                         files_list.append("/{}".format(i.strip()))
 
         if fields_to_fetch is None and args.only_fields is not None:
-                fields_to_fetch = args.only_fields.split(",")
+            fields_to_fetch = args.only_fields.split(",")
 
         files_to_download = vast_dropbox.filter_files_list(
             files_list,
