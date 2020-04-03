@@ -23,11 +23,11 @@ usage: get_vast_pilot_dbx.py [-h] [--dropbox-config DROPBOX_CONFIG] [--output OU
                              [--find-fields-input FIND_FIELDS_INPUT] [--user-files-list USER_FILES_LIST]
                              [--only-epochs ONLY_EPOCHS] [--only-fields ONLY_FIELDS] [--stokesI-only]
                              [--stokesV-only] [--stokesQ-only] [--stokesU-only] [--no-stokesI] [--no-stokesV]
-                             [--no-stokesQ] [--no-stokesU] [--skip-xml] [--skip-qc] [--skip-components]
+                             [--no-stokesQ] [--no-stokesU] [--skip-xml] [--skip-txt] [--skip-qc] [--skip-components]
                              [--skip-islands] [--skip-field-images] [--skip-bkg-images] [--skip-rms-images]
                              [--skip-all-images] [--combined-only] [--tile-only] [--overwrite] [--dry-run] [--debug]
-                             [--write-template-dropbox-config] [--include-legacy] [--max-retries MAX_RETRIES]
-                             [--download-threads DOWNLOAD_THREADS]
+                             [--write-template-dropbox-config] [--legacy-download LEGACY_DOWNLOAD]
+                             [--include-legacy] [--max-retries MAX_RETRIES] [--download-threads DOWNLOAD_THREADS]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -65,6 +65,7 @@ optional arguments:
   --no-stokesQ          Do not download Stokes Q products. (default: False)
   --no-stokesU          Do not download Stokes U products. (default: False)
   --skip-xml            Do not download XML files. (default: False)
+  --skip-txt            Do not download txt files. (default: False)
   --skip-qc             Do not download the QC plots. (default: False)
   --skip-components     Do not download components selavy files. (default: False)
   --skip-islands        Do not download island selavy files. (default: False)
@@ -81,6 +82,10 @@ optional arguments:
   --debug               Set logging level to debug. (default: False)
   --write-template-dropbox-config
                         Create a template dropbox config file. (default: False)
+  --legacy-download LEGACY_DOWNLOAD
+                        Select the legacy version to download from. Enter with the included 'v', e.g. 'v0.6'. Using
+                        this option will only download the legacy data, no other data shall be downloaded. (default:
+                        None)
   --include-legacy      Include the 'LEGACY' directory when searching through files. Only valid when using the '--
                         get-available-files' option. (default: False)
   --max-retries MAX_RETRIES
@@ -116,6 +121,8 @@ There are 2 main ways in which the script is intended to be used:
 
 Data will only download when the `--download` option is provided. This can be used in combination with `--dry-run` to see exactly what files will be downloaded before starting the download process.
 
+**Note** As of vast-tools v1.2.0, the module comes with a packaged list of Dropbox files of the latest release, so users are no longer required to either fetch, or let the script fetch, a list of available files or provide one.
+
 There are a few other options that present but are now mostly considered legacy as they should not be required often, if at all:
 
 * `--available-epochs` will only display the currently released epochs. Nothing will be downloaded.
@@ -143,6 +150,7 @@ Note the following options in the Dropbox script:
   --no-stokesQ          Exclude Stokes Q products. (default: False)
   --no-stokesU          Exclude Stokes U products. (default: False)
   --skip-xml            Do not download XML files. (default: False)
+  --skip-txt            Do not download txt files. (default: False)
   --skip-qc             Do not download the QC plots. (default: False)
   --skip-components     Do not downlaod selavy component files. (default: False)
   --skip-islands        Do not downlaod selavy island files. (default: False)
@@ -175,8 +183,6 @@ Note the leading `/` which is also needed.
 
 I recommened you run `get_vast_pilot_dbx.py --get-available-files` and use this output to build your request (**warning** `--get-available-fiels` will take a while to run, up to 1 hour or more).
 
-**LEGACY DIRECTORY**: The Dropbox directory also includes the `LEGACY` folder which contains old verisons of Epoch releases that are no longer considered as part of the official release. To include this directory in the results of available files use the `--include-legacy` option.
-
 ### Parallel Dropbox Downloads (EXPERIMENTAL)
 There is an experimental option of `--download-threads`. This allows multiple Dropbox download commands to be launched in parallel to speed up the download of large requests. However this mode is considered experimental and logging is not set up to use with this mode. Warning level messages will be printed to the terminal but you will not be receiving any feedback on the download until it completes (see issue [#141](https://github.com/askap-vast/vast-tools/issues/141) on Github). Integrity checking is still performed.
 
@@ -187,7 +193,15 @@ Example
 get_vast_pilot_dbx.py --download --only-epochs 1 --output VAST_DOWNLOAD --download-threads 4
 ```
 
+### Legacy Data Downloading
+To download data from a specific legacy version you can use the `--legacy-download` option, which takes an argument of the legacy version you wish to download from in the form of the directory name on Dropbox (we suggest browsing the Dropbox folder via a browser to check the versions). For example, to limit the download to `v0.6` legacy data, the input would be:
+```
+get_vast_pilot_dbx.py --download --output VAST_DOWNLOAD --legacy-download v0.6 <use normal filter flags here>
+```
+The above would limit the download request to only use the data that is present in the `/LEGACY/v0.6/` directory.
+
 ### Examples
+Below are examples of how to download the data with different scenarios in mind. Remember you can add `--dry-run` to your command to see exactly what will be downloaded without actually downloading.
 
 #### Downloading an entire epoch
 Using epoch 01 as an example:
@@ -250,5 +264,5 @@ This will place these files in `VAST_DOWNLOAD`. The directory structure will be 
 #### Downloading everything
 To download the entire release structure:
 ```get_vast_pilot_dbx.py --download --output VAST_DOWNLOAD```
-This will place all the files in the directory `VAST_DOWNLOAD`.
+This will place all the files in the directory `VAST_DOWNLOAD`. To clarify this will **not** download the legacy directory.
 

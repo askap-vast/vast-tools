@@ -41,6 +41,7 @@ def filter_files_list(
         no_stokesQ=False,
         no_stokesU=False,
         skip_xml=False,
+        skip_txt=False,
         skip_qc=False,
         skip_components=False,
         skip_islands=False,
@@ -50,7 +51,8 @@ def filter_files_list(
         skip_all_images=False,
         combined_only=False,
         tile_only=False,
-        selected_epochs=None):
+        selected_epochs=None,
+        legacy_download=None):
     '''
     Filters the file_list to fetch by the users request.
 
@@ -76,6 +78,8 @@ def filter_files_list(
     :type no_stokesU: bool, optional
     :param skip_xml: Filter out .xml files, defaults to False
     :type skip_xml: bool, optional
+    :param skip_txt: Filter out .txt files, defaults to False
+    :type skip_txt: bool, optional
     :param skip_qc: Filter out QC files, defaults to False
     :type skip_qc: bool, optional
     :param skip_components: Filter out component selavy
@@ -105,6 +109,9 @@ def filter_files_list(
     :param selected_epochs: Filter to only the epoch selected,
         defaults to None
     :type selected_epochs: str, optional
+    :param legacy_download: Filter to only the selected legacy,
+        version, defaults to None
+    :type legacy_download: str, optional
     :returns: filtered list of dropbox files
     :rtype: list
     '''
@@ -139,6 +146,12 @@ def filter_files_list(
         logger.warning("Ignoring.")
         combined_only = False
         tiles_only = False
+
+    if legacy_download is not None:
+        logger.debug("Filtering to Legacy %s only", legacy_download)
+        leg_str = "/LEGACY/{}/".format(legacy_download)
+        filter_df = filter_df[filter_df.file.str.contains(leg_str)]
+        filter_df.reset_index(drop=True, inplace=True)
 
     if fields is not None:
         fields = [re.escape(i) for i in fields]
@@ -191,6 +204,11 @@ def filter_files_list(
     if skip_xml:
         logger.debug("Filtering out XML files.")
         filter_df = filter_df[~filter_df.file.str.endswith(".xml")]
+        filter_df.reset_index(drop=True, inplace=True)
+
+    if skip_txt:
+        logger.debug("Filtering out txt files.")
+        filter_df = filter_df[~filter_df.file.str.endswith(".txt")]
         filter_df.reset_index(drop=True, inplace=True)
 
     if skip_qc:
@@ -406,6 +424,11 @@ def parse_args():
         help="Do not download XML files.")
 
     parser.add_argument(
+        '--skip-txt',
+        action="store_true",
+        help="Do not download txt files.")
+
+    parser.add_argument(
         '--skip-qc',
         action="store_true",
         help="Do not download the QC plots.")
@@ -476,6 +499,17 @@ def parse_args():
         '--write-template-dropbox-config',
         action="store_true",
         help='Create a template dropbox config file.')
+
+    parser.add_argument(
+        '--legacy-download',
+        type=str,
+        help=(
+            "Select the legacy version to download from. "
+            "Enter with the included 'v', e.g. 'v0.6'."
+            " Using this option will only download the legacy"
+            " data, no other data shall be downloaded."
+        ),
+        default=None)
 
     parser.add_argument(
         '--include-legacy',
@@ -712,6 +746,7 @@ if __name__ == "__main__":
             no_stokesQ=args.no_stokesQ,
             no_stokesU=args.no_stokesU,
             skip_xml=args.skip_xml,
+            skip_txt=args.skip_txt,
             skip_qc=args.skip_qc,
             skip_components=args.skip_components,
             skip_islands=args.skip_islands,
@@ -721,88 +756,97 @@ if __name__ == "__main__":
             skip_all_images=args.skip_all_images,
             combined_only=args.combined_only,
             tile_only=args.tile_only,
-            selected_epochs=args.only_epochs
+            selected_epochs=args.only_epochs,
+            legacy_download=args.legacy_download
         )
 
-        dirs_to_create = np.unique(
-            ["/".join(i.strip().split("/")[1:-1]) for i in files_to_download])
 
-        if not args.dry_run:
-            for i in dirs_to_create:
-                if i == "":
-                    continue
-                os.makedirs(os.path.join(output_dir, i), exist_ok=True)
-
-            logger.info(
-                "Downloading %s files...",
-                len(files_to_download)
-            )
-            if args.download_threads > 1:
-                logger.info(
-                    "Will use %s workers to download data.",
-                    args.download_threads
-                )
-                logger.warning(
-                    'There will be no logging apart from'
-                    ' warning level messages printed to the terminal.'
-                )
-                files_to_download = [[j] for j in files_to_download]
-                multi_download = functools.partial(
-                    vast_dropbox.download_files,
-                    output_dir=output_dir,
-                    shared_url=shared_url,
-                    password=password,
-                    max_retries=args.max_retries,
-                    main_overwrite=args.overwrite,
-                    checksum_check=True
-                )
-                original_sigint_handler = signal.signal(
-                    signal.SIGINT, signal.SIG_IGN
-                )
-                p = Pool(args.download_threads)
-                signal.signal(signal.SIGINT, original_sigint_handler)
-                try:
-                    complete_failures = p.map_async(
-                        multi_download,
-                        files_to_download
-                    ).get()
-                except KeyboardInterrupt:
-                    logger.error(
-                        "Caught KeyboardInterrupt, terminating workers."
-                    )
-                    p.terminate()
-                    sys.exit()
-                else:
-                    logger.info("Normal termination")
-                    p.close()
-                    p.join()
-
-                complete_failures = [
-                    j for i in complete_failures for j in i
+        if len(files_to_download) != 0:
+            dirs_to_create = np.unique(
+                [
+                    "/".join(i.strip().split("/")[1:-1])
+                    for i in files_to_download
                 ]
-            else:
-                complete_failures = vast_dropbox.download_files(
-                    files_to_download,
-                    output_dir,
-                    shared_url,
-                    password,
-                    args.max_retries,
-                    args.overwrite)
-
-            if len(complete_failures) > 0:
-                logger.warning(
-                    "The following files failed to download correctly:"
-                )
-                for fail in complete_failures:
-                    logger.warning(fail)
-                logger.warning("These files may be corrupted!")
-        else:
-            logger.info(
-                "Dry run selected. Would download the follwing"
-                " %s files:", len(files_to_download)
             )
-            for i in files_to_download:
-                logger.info(i)
+
+            if not args.dry_run:
+                for i in dirs_to_create:
+                    if i == "":
+                        continue
+                    os.makedirs(os.path.join(output_dir, i), exist_ok=True)
+
+                logger.info(
+                    "Downloading %s files...",
+                    len(files_to_download)
+                )
+                if args.download_threads > 1:
+                    logger.info(
+                        "Will use %s workers to download data.",
+                        args.download_threads
+                    )
+                    logger.warning(
+                        'There will be no logging apart from'
+                        ' warning level messages printed to the terminal.'
+                    )
+                    files_to_download = [[j] for j in files_to_download]
+                    multi_download = functools.partial(
+                        vast_dropbox.download_files,
+                        output_dir=output_dir,
+                        shared_url=shared_url,
+                        password=password,
+                        max_retries=args.max_retries,
+                        main_overwrite=args.overwrite,
+                        checksum_check=True
+                    )
+                    original_sigint_handler = signal.signal(
+                        signal.SIGINT, signal.SIG_IGN
+                    )
+                    p = Pool(args.download_threads)
+                    signal.signal(signal.SIGINT, original_sigint_handler)
+                    try:
+                        complete_failures = p.map_async(
+                            multi_download,
+                            files_to_download
+                        ).get()
+                    except KeyboardInterrupt:
+                        logger.error(
+                            "Caught KeyboardInterrupt, terminating workers."
+                        )
+                        p.terminate()
+                        sys.exit()
+                    else:
+                        logger.info("Normal termination")
+                        p.close()
+                        p.join()
+
+                    complete_failures = [
+                        j for i in complete_failures for j in i
+                    ]
+                else:
+                    complete_failures = vast_dropbox.download_files(
+                        files_to_download,
+                        output_dir,
+                        shared_url,
+                        password,
+                        args.max_retries,
+                        args.overwrite)
+
+                if len(complete_failures) > 0:
+                    logger.warning(
+                        "The following files failed to download correctly:"
+                    )
+                    for fail in complete_failures:
+                        logger.warning(fail)
+                    logger.warning("These files may be corrupted!")
+            else:
+                logger.info(
+                    "Dry run selected. Would download the follwing"
+                    " %s files:", len(files_to_download)
+                )
+                for i in files_to_download:
+                    logger.info(i)
+        else:
+            logger.info("No files to download with selected filters.")
 
     else:
         logger.info("Nothing to be done!")
