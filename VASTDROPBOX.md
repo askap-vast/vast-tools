@@ -181,7 +181,7 @@ For example if I wanted to download a set of STOKES I COMBINED images from EPOCH
 ```
 Note the leading `/` which is also needed.
 
-I recommened you run `get_vast_pilot_dbx.py --get-available-files` and use this output to build your request (**warning** `--get-available-fiels` will take a while to run, up to 1 hour or more).
+I recommend you run `get_vast_pilot_dbx.py --get-available-files` and use this output to build your request (**warning** `--get-available-fields` will take a while to run, up to 1 hour or more).
 
 ### Parallel Dropbox Downloads (EXPERIMENTAL)
 There is an experimental option of `--download-threads`. This allows multiple Dropbox download commands to be launched in parallel to speed up the download of large requests. However this mode is considered experimental and logging is not set up to use with this mode. Warning level messages will be printed to the terminal but you will not be receiving any feedback on the download until it completes (see issue [#141](https://github.com/askap-vast/vast-tools/issues/141) on Github). Integrity checking is still performed.
@@ -265,4 +265,3 @@ This will place these files in `VAST_DOWNLOAD`. The directory structure will be 
 To download the entire release structure:
 ```get_vast_pilot_dbx.py --download --output VAST_DOWNLOAD```
 This will place all the files in the directory `VAST_DOWNLOAD`. To clarify this will **not** download the legacy directory.
-
