@@ -9,7 +9,7 @@ from vasttools.utils import get_logger
 
 import argparse
 import os
-
+import numexpr
 import datetime
 
 runstart = datetime.datetime.now()
@@ -84,6 +84,9 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
     os.nice(args.nice)
+
+    numexpr.set_num_threads(2)
+    args = parse_args()
 
     logfile = "build_lightcurves_{}.log".format(
         runstart.strftime("%Y%m%d_%H:%M:%S"))

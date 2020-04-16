@@ -304,6 +304,7 @@ class Query:
         survey = EPOCH_INFO.survey
         epoch_str = EPOCH_INFO.epoch_str
         self.logger.info("Querying {}".format(epoch_str))
+        crossmatch_only = EPOCH_INFO.CROSSMATCH_ONLY
 
         fields = Fields(epoch)
         src_fields, coords_mask = fields.find(
@@ -351,6 +352,11 @@ class Query:
             else:
                 fieldname = uf
 
+            if crossmatch_only:
+                self.logger.warning(
+                    "Crossmatch only mode selected."
+                    " Ignore any possible image errors below."
+                )
             image = Image(srcs["sbid"].iloc[0],
                           fieldname,
                           EPOCH_INFO.IMAGE_FOLDER,
@@ -394,13 +400,14 @@ class Query:
                     self.logger.debug(image.rmspath)
                     self.logger.debug(image.imgpath)
                     source.get_background_rms(image.rms_data, image.rms_wcs)
+                else:
+                    source.selavy_info["SELAVY_rms"] = 0.0
 
                 if self.args.process_matches and not source.has_match:
                     self.logger.info("Source does not have a selavy match, "
                                      "not continuing processing")
                     continue
                 else:
-                    crossmatch_only = self.args.crossmatch_only
                     if not crossmatch_only and not image.image_fail:
                         source.make_postagestamp(
                             image.data,
@@ -527,9 +534,15 @@ class EpochInfo:
         self.logger = logging.getLogger('vasttools.find_sources.EpochInfo')
 
         FIND_FIELDS = args.find_fields
+        CROSSMATCH_ONLY = args.crossmatch_only
         if FIND_FIELDS:
             self.logger.info(
-                "find-fields selected, only outputting field catalogue")
+                "find-fields selected, only outputting field catalogue."
+            )
+        elif CROSSMATCH_ONLY:
+            self.logger.info(
+                "crossmatch only selected, only outputting crossmatches."
+            )
 
         BASE_FOLDER = args.base_folder
         IMAGE_FOLDER = args.img_folder
@@ -601,35 +614,11 @@ class EpochInfo:
                                 "COMBINED_MOSAICS/V_mosaic_1.0")
 
         if not os.path.isdir(IMAGE_FOLDER):
-            if not FIND_FIELDS:
+            if not CROSSMATCH_ONLY:
                 self.logger.critical(
                     ("{} does not exist. "
-                     "Only finding fields").format(IMAGE_FOLDER))
-                FIND_FIELDS = True
-
-        if not SELAVY_FOLDER:
-            image_dir = "COMBINED"
-            selavy_dir = "STOKES{}_SELAVY".format(stokes_param)
-
-            SELAVY_FOLDER = os.path.join(
-                BASE_FOLDER,
-                survey_folder,
-                image_dir,
-                selavy_dir)
-            if self.use_tiles:
-                SELAVY_FOLDER = ("/import/ada1/askap/RACS/aug2019_"
-                                 "reprocessing/SELAVY_OUTPUT/stokesI_cat/")
-
-            if racsv:
-                SELAVY_FOLDER = ("/import/ada1/askap/RACS/aug2019_"
-                                 "reprocessing/COMBINED_MOSAICS/racs_catv")
-
-        if not os.path.isdir(SELAVY_FOLDER):
-            if not FIND_FIELDS:
-                self.logger.critical(
-                    ("{} does not exist. "
-                     "Only finding fields").format(SELAVY_FOLDER))
-                FIND_FIELDS = True
+                     "Switching to crossmatch only.").format(IMAGE_FOLDER))
+                CROSSMATCH_ONLY = True
 
         if not RMS_FOLDER:
             if self.use_tiles:
@@ -651,13 +640,38 @@ class EpochInfo:
                               "COMBINED_MOSAICS/V_mosaic_1.0_BANE")
 
         if not os.path.isdir(RMS_FOLDER):
-            if not FIND_FIELDS:
+            if not CROSSMATCH_ONLY:
                 self.logger.critical(
                     ("{} does not exist. "
-                     "Only finding fields").format(RMS_FOLDER))
+                     "Switching to crossmatch only.").format(RMS_FOLDER))
+                CROSSMATCH_ONLY = True
+
+        if not SELAVY_FOLDER:
+            image_dir = "COMBINED"
+            selavy_dir = "STOKES{}_SELAVY".format(stokes_param)
+
+            SELAVY_FOLDER = os.path.join(
+                BASE_FOLDER,
+                survey_folder,
+                image_dir,
+                selavy_dir)
+            if self.use_tiles:
+                SELAVY_FOLDER = ("/import/ada1/askap/RACS/aug2019_"
+                                 "reprocessing/SELAVY_OUTPUT/stokesI_cat/")
+
+            if racsv:
+                SELAVY_FOLDER = ("/import/ada1/askap/RACS/aug2019_"
+                                 "reprocessing/COMBINED_MOSAICS/racs_catv")
+
+        if not os.path.isdir(SELAVY_FOLDER):
+            if not FIND_FIELDS and not CROSSMATCH_ONLY:
+                self.logger.critical(
+                    ("{} does not exist. "
+                     "Only finding fields").format(SELAVY_FOLDER))
                 FIND_FIELDS = True
 
         self.FIND_FIELDS = FIND_FIELDS
+        self.CROSSMATCH_ONLY = CROSSMATCH_ONLY
         self.IMAGE_FOLDER = IMAGE_FOLDER
         self.SELAVY_FOLDER = SELAVY_FOLDER
         self.RMS_FOLDER = RMS_FOLDER
