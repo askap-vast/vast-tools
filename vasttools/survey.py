@@ -409,8 +409,9 @@ class Dropbox:
                     i = i[1:]
                 if i not in RELEASED_EPOCHS:
                     self.logger.warning(
-                        "Epoch '{}' is unknown or not released yet!"
-                        " No files will be found for this selection."
+                        "Epoch '%s' is unknown or not released yet!"
+                        " No files will be found for this "
+                        "selection.", i
                     )
                 else:
                     epoch_dbx_format = "/EPOCH{}/".format(
