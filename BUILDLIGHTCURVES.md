@@ -4,11 +4,11 @@ This script allows you to quickly build lightcurves of sources you have extracte
 
 The script will output a csv file containing:
 * The start and end datetimes of the observation
-* Integrated flux density and associated uncertainty
+* Peak (default) or integrated flux density and associated uncertainty.
 * The image noise in the local region
 * A flag stating whether the measurement is a detection or an upper limit.
 
-By default the script will also plot the lightcurve, although this can be disabled using the `--no-plotting` flag
+By default the script will also plot the lightcurve, although this can be disabled using the `--no-plotting` flag. Also peak fluxes are used by default, integrated fluxes can be used by using the `--use-int-flux` flag.
 
 # Running the script
 Prior to running this script you should query the survey data using `find_sources.py` with the `--vast-pilot` flag set to `all`. Then run `build_lightcurves.py FOLDER` where `FOLDER` is the output folder of the previous query.
@@ -18,9 +18,9 @@ Prior to running this script you should query the survey data using `find_source
 Most options should be self explanatory. The lightcurve plots and csv files are saved in the same directory as the input
 
 ```
-usage: build_lightcurves.py [-h] [--no-plotting] [--quiet] [--debug] [--min-points MIN_POINTS]
-                            [--min-detections MIN_DETECTIONS] [--mjd] [--grid]
-                            [--yaxis-start {auto,0}] [--nice NICE]
+usage: build_lightcurves.py [-h] [--use-int-flux] [--no-plotting] [--quiet] [--debug] [--min-points MIN_POINTS]
+                            [--min-detections MIN_DETECTIONS] [--mjd] [--grid] [--yaxis-start {auto,0}]
+                            [--nice NICE]
                             folder
 
 positional arguments:
@@ -28,6 +28,7 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
+  --use-int-flux        Use the integrated flux, rather than peak flux (default: False)
   --no-plotting         Write lightcurves to file without plotting (default: False)
   --quiet               Turn off non-essential terminal output. (default: False)
   --debug               Turn on debug output. (default: False)
@@ -38,8 +39,7 @@ optional arguments:
   --mjd                 Plot lightcurve in MJD rather than datetime. (default: False)
   --grid                Turn on the 'grid' in the lightcurve plot. (default: False)
   --yaxis-start {auto,0}
-                        Define where the y axis on the lightcurve plot starts from. 'auto' will let
-                        matplotlib decide the best range and '0' will start from 0.
-                        (default: 0)
+                        Define where the y axis on the lightcurve plot starts from. 'auto' will let matplotlib
+                        decide the best range and '0' will start from 0. (default: 0)
   --nice NICE           Set nice level. (default: 5)
 ```
