@@ -177,7 +177,11 @@ class Lightcurve:
             plot_title += " (island)"
         ax.set_title(plot_title)
 
-        ax.set_ylabel('Flux Density (mJy)')
+        if self.int_flux:
+            label = 'Integrated Flux Density (mJy)'
+        else:
+            label = 'Peak Flux Density (mJy)'
+        ax.set_ylabel(label)
 
         self.logger.debug("Plotting upper limit")
         upper_lims = self.observations[
