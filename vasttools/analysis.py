@@ -180,7 +180,7 @@ class Lightcurve:
         if self.int_flux:
             label = 'Integrated Flux Density (mJy)'
         else:
-            label = 'Peak Flux Density (mJy)'
+            label = 'Peak Flux Density (mJy/beam)'
         ax.set_ylabel(label)
 
         self.logger.debug("Plotting upper limit")
