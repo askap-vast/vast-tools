@@ -31,6 +31,10 @@ def parse_args():
         type=str,
         help='')
     parser.add_argument(
+        '--use-int-flux',
+        action="store_true",
+        help='Use the integrated flux, rather than peak flux')
+    parser.add_argument(
         '--no-plotting',
         action="store_true",
         help='Write lightcurves to file without plotting')

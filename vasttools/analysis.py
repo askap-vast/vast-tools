@@ -49,15 +49,20 @@ class Lightcurve:
     :type name: str
     :param num_obs: Total number of observations
     :type num_obs: int
+    :param int_flux: Use the integrated flux density, defaults to False
+    :param int_flux: bool, optional
+    :param islands: Input files are selavy islands, defaults to False
+    :type islands: bool, optional
     '''
 
-    def __init__(self, name, num_obs, islands=False):
+    def __init__(self, name, num_obs, int_flux=False, islands=False):
         '''Constructor method
         '''
         self.logger = logging.getLogger(
             'vasttools.build_lightcurves.Lightcurve')
         self.name = name.strip()
         self.islands = islands
+        self.int_flux = int_flux
         self.observations = pd.DataFrame(
             columns=[
                 'obs_start',
@@ -80,7 +85,11 @@ class Lightcurve:
         and observation date
         :type row: `pandas.core.series.Series`
         '''
-        S_int = row['flux_int']
+        if self.int_flux:
+            S = row['flux_int']
+        else:
+            S = row['flux_peak']
+        
         if self.islands:
             S_err = row['background_noise']
         else:
@@ -89,7 +98,7 @@ class Lightcurve:
         obs_start = pd.to_datetime(row['obs_date'])
         obs_end = pd.to_datetime(row['date_end'])
 
-        if np.isnan(S_int):
+        if np.isnan(S):
             self.logger.debug("Observation is a non-detection")
             upper_lim = True
         else:
@@ -97,7 +106,7 @@ class Lightcurve:
             upper_lim = False
 
         self.observations.iloc[i] = [
-            obs_start, obs_end, S_int, S_err, img_rms, upper_lim]
+            obs_start, obs_end, S, S_err, img_rms, upper_lim]
 
     def _drop_empty(self):
         '''
@@ -268,6 +277,7 @@ class BuildLightcurves:
         self.args = args
 
         self.crossmatch_paths = self.build_paths()
+        self.int_flux = self.args.use_int_flux
 
     def create_lightcurves(self):
         '''
@@ -309,7 +319,7 @@ class BuildLightcurves:
                 name = row['name']
                 if name not in lightcurve_dict.keys():
                     lightcurve_dict[name] = Lightcurve(
-                        name, num_obs, islands=self.islands
+                        name, num_obs, int_flux=self.int_flux, islands=self.islands
                     )
                     self.logger.info("Building lightcurve for {}".format(name))
 
