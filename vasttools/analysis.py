@@ -89,7 +89,7 @@ class Lightcurve:
             S = row['flux_int']
         else:
             S = row['flux_peak']
-        
+
         if self.islands:
             S_err = row['background_noise']
         else:
@@ -215,7 +215,7 @@ class Lightcurve:
             )
             ax.set_ylim(
                 bottom=0,
-                top=max_y*1.1
+                top=max_y * 1.1
             )
 
         if mjd:
@@ -319,8 +319,11 @@ class BuildLightcurves:
                 name = row['name']
                 if name not in lightcurve_dict.keys():
                     lightcurve_dict[name] = Lightcurve(
-                        name, num_obs, int_flux=self.int_flux, islands=self.islands
-                    )
+                                                name,
+                                                num_obs,
+                                                int_flux=self.int_flux,
+                                                islands=self.islands)
+
                     self.logger.info("Building lightcurve for {}".format(name))
 
                 lightcurve_dict[name].add_observation(i, row)
