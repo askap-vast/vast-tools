@@ -268,11 +268,25 @@ class BuildLightcurves:
     This is a class representation of various information about a \
     series of lightcurves.
 
-    :param args: Arguments namespace
-    :type args: `argparse.Namespace`
+    :param folder: Path to the folder containing source information
+    :type folder: str
+    :param use_int_flux: Use the integrated flux, rather than peak flux, defaults to False
+    :type use_int_flux: bool, optional
+    :param yaxis_start: Define where the y axis on the lightcurve plot starts from, defaults to `0`, but `auto` will let matplotlib decide the best range
+    :type yaxis_start: str, optional
+    :param mjd: Plot the lightcurve in MJD rather than date, defaults to False
+    :type mjd: bool, optional
+    :param min_detections: Minimum number of times a source must be detected for it to be processed, defaults to 1
+    :type min_detections: int, optional
+    :param min_points: Minimum number of epochs a source must be covered by for it to be processed, defaults to 2
+    :type min_points: int, optional
+    :param no_plotting: Create lightcurves but do not plot them, defaults to False
+    :type no_plotting: bool, optional
+    :param grid: Turn on the grid in the lightcurve plot, defaults to False
+    :type grid: bool, optional
     '''
 
-    def __init__(self, folder, use_int_flux=False, yaxis_start='0', mjd=False, min_detections=1, min_points=1, no_plotting=False, grid=False):
+    def __init__(self, folder, use_int_flux=False, yaxis_start='0', mjd=False, min_detections=1, min_points=2, no_plotting=False, grid=False):
         '''Constructor method
         '''
 
