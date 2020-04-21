@@ -96,7 +96,7 @@ if __name__ == '__main__':
         runstart.strftime("%Y%m%d_%H:%M:%S"))
     logger = get_logger(args.debug, args.quiet, logfile=logfile)
 
-    query = BuildLightcurves(args)
+    query = BuildLightcurves(args.folder, args.use_int_flux, args.yaxis_start, args.mjd, args.min_detections, args.min_points, args.no_plotting, args.grid)
     query.run_query()
 
     runend = datetime.datetime.now()

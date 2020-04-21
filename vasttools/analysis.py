@@ -272,16 +272,24 @@ class BuildLightcurves:
     :type args: `argparse.Namespace`
     '''
 
-    def __init__(self, args):
+    def __init__(self, folder, use_int_flux=False, yaxis_start='0', mjd=False, min_detections=1, min_points=1, no_plotting=False, grid=False):
         '''Constructor method
         '''
 
         self.logger = logging.getLogger(
             'vasttools.build_lightcurves.BuildLightcurves')
-        self.args = args
+        
+        self.folder = folder
+        self.int_flux = use_int_flux
+        self.yaxis_start = yaxis_start
+        self.mjd = mjd
+        self.min_detections = min_detections
+        self.min_points = min_points
+        self.no_plotting = no_plotting
+        self.grid = grid
+        
 
         self.crossmatch_paths = self.build_paths()
-        self.int_flux = self.args.use_int_flux
 
     def create_lightcurves(self):
         '''
@@ -348,12 +356,12 @@ class BuildLightcurves:
         :type lightcurve_dict: dict
         '''
 
-        min_points = self.args.min_points
-        min_detections = self.args.min_detections
+        min_points = self.min_points
+        min_detections = self.min_detections
 
         self.logger.debug(
             "mjd: {}"
-            "; grid: {}".format(self.args.mjd, self.args.grid)
+            "; grid: {}".format(self.mjd, self.grid)
         )
 
         for name, lightcurve in lightcurve_dict.items():
@@ -364,9 +372,9 @@ class BuildLightcurves:
                 savefile=savefile,
                 min_points=min_points,
                 min_detections=min_detections,
-                mjd=self.args.mjd,
-                grid=self.args.grid,
-                yaxis_start=self.args.yaxis_start
+                mjd=self.mjd,
+                grid=self.grid,
+                yaxis_start=self.yaxis_start
             )
             if success:
                 self.logger.info(
@@ -381,7 +389,7 @@ class BuildLightcurves:
         :type lightcurve_dict: dict
         '''
 
-        min_points = self.args.min_points
+        min_points = self.min_points
 
         for name, lightcurve in lightcurve_dict.items():
             savefile = os.path.join(folder, name + '_lightcurve.csv')
@@ -405,7 +413,7 @@ class BuildLightcurves:
 
         crossmatch_paths = sorted(glob.glob(
             os.path.join(
-                self.args.folder,
+                self.folder,
                 '*crossmatch*.csv')))
         self.logger.info(
             'Getting lightcurve info from:\n{}'.format(
@@ -421,9 +429,9 @@ class BuildLightcurves:
         lightcurve_dict = self.create_lightcurves()
 
         self.logger.info("Writing lightcurves to file")
-        self.write_lightcurves(lightcurve_dict, folder=self.args.folder)
+        self.write_lightcurves(lightcurve_dict, folder=self.folder)
 
-        if self.args.no_plotting:
+        if self.no_plotting:
             self.logger.info("Not plotting lightcurves")
         else:
-            self.plot_lightcurves(lightcurve_dict, folder=self.args.folder)
+            self.plot_lightcurves(lightcurve_dict, folder=self.folder)
