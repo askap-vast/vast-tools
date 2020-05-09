@@ -58,6 +58,14 @@ class Source:
     :type stokes: str, optional
     '''
 
+    # def __init__(
+    #     self,
+    #     coord,
+    #     epochs,
+    #     primary_field,
+    #     field_per_epoch,
+    #     ):
+
     def __init__(
             self,
             field,

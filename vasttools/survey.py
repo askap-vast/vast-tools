@@ -28,6 +28,19 @@ warnings.filterwarnings('ignore',
                         category=AstropyDeprecationWarning, append=True)
 
 
+def get_fields_per_epoch():
+    """
+    Function to create list of fields in each epoch.
+    """
+    epoch_fields = {}
+
+    for e in FIELD_FILES:
+        e_info = pd.read_csv(FIELD_FILES[e])
+        epoch_fields[e] = e_info.FIELD_NAME.unique()
+
+    return epoch_fields
+
+
 RELEASED_EPOCHS = {
     "1": "01",
     "2": "02",
@@ -69,11 +82,15 @@ FIELD_FILES = {
         __name__, "./data/vast_epoch11x_info.csv")
 }
 
+EPOCH_FIELDS = get_fields_per_epoch()
+
 CHECKSUMS_FILE = pkg_resources.resource_filename(
     __name__, "./data/checksums.h5")
 
 DROPBOX_FILE = pkg_resources.resource_filename(
     __name__, "./data/dropbox_files.txt")
+
+NIMBUS_BASE_DIR = "/Users/adam/testing/vast-tools-testing/PSR_J2129-04_data_2"
 
 
 class Dropbox:

@@ -1,6 +1,7 @@
 from vasttools.survey import Fields, Image
-from vasttools.survey import RELEASED_EPOCHS
-from vasttools.survey import FIELD_FILES
+from vasttools.survey import (
+    RELEASED_EPOCHS, FIELD_FILES, NIMBUS_BASE_DIR, EPOCH_FIELDS
+)
 from vasttools.source import Source
 
 import sys
@@ -61,27 +62,239 @@ class Query:
     :type args: `argparse.Namespace`
     '''
 
-    def __init__(self, args):
+    def __init__(
+        self, coords, source_names=[], epochs="all", stokes="I",
+        crossmatch_radius=5.0, max_sep=1.0, use_tiles=False,
+        use_islands=False, base_folder=None, matches_only=False,
+        no_rms=False, output=None
+    ):
         '''Constructor method
         '''
         self.logger = logging.getLogger('vasttools.find_sources.Query')
 
-        self.args = args
+        self.coords = coords
+        self.source_names = source_names
 
-        self.epochs = self.get_epochs()
+        self.query_df = self.build_catalog_2()
 
-        self.catalog = self.build_catalog()
-        self.src_coords = self.build_SkyCoord()
-        self.logger.info(
-            "Finding fields for {} sources...".format(len(self.src_coords)))
+        self.settings = {}
 
-        self.set_stokes_param()
-        self.set_outfile_prefix()
-        self.set_output_directory()
+        self.settings['epochs'] = self.get_epochs(epochs)
+        self.settings['stokes'] = self.get_stokes(stokes)
 
-        self.imsize = Angle(args.imsize, unit=u.arcmin)
-        self.max_sep = args.maxsep
-        self.crossmatch_radius = Angle(args.crossmatch_radius, unit=u.arcsec)
+        self.settings['crossmatch_radius'] = Angle(
+            crossmatch_radius, unit=u.arcsec
+        )
+        self.settings['max_sep'] = max_sep
+
+        self.settings['islands'] = use_islands
+        self.settings['tiles'] = use_tiles
+        self.settings['no_rms'] = no_rms
+
+        if base_folder is None:
+            self.base_folder = NIMBUS_BASE_DIR
+        else:
+            self.base_folder = base_folder
+
+        if not os.path.isdir(self.base_folder):
+            raise ValueError("The base directory {} does not exist!".format(
+                self.base_folder
+            ))
+
+        # self.catalog = self.build_catalog()
+        # self.src_coords = self.build_SkyCoord()
+        # self.logger.info(
+        #     "Finding fields for {} sources...".format(len(self.src_coords)))
+
+        if output is not None:
+            self.set_outfile_prefix()
+            self.set_output_directory()
+
+        # self.imsize = Angle(args.imsize, unit=u.arcmin)
+        # self.max_sep = args.maxsep
+        # self.crossmatch_radius = Angle(args.crossmatch_radius, unit=u.arcsec)
+
+
+    def run_new_query(self):
+        self.find_fields()
+
+        self.query_df[["result"]] = self.query_df.apply(
+            self.find_sources,
+            axis=1
+        )
+
+
+    def find_sources(self):
+        # self.query_df = self.query_df.explode('epochs')
+        self.query_df = self.query_df.explode(
+            'field_per_epoch'
+        ).reset_index(drop=True)
+        self.query_df[['epoch', 'field']] = self.query_df.field_per_epoch.apply(pd.Series)
+        self.query_df[['selavy', 'image', 'rms']] = self.query_df[['field_per_epoch']].apply(
+            self._add_files,
+            axis=1,
+            result_type='expand'
+        )
+        # self.query_df = self.query_df.drop(columns=['epochs', 'field_per_epoch'])
+        grouped_query = self.query_df.groupby('selavy')
+        results = grouped_query.apply(
+            lambda x: self._get_components(x.name, x)
+        )
+        results.index = results.index.droplevel()
+        self.crossmatch_results = self.query_df.merge(
+            results, how='left', left_index=True, right_index=True
+        )
+
+
+    def _get_components(self, selavy_file, group):
+        master = pd.DataFrame()
+
+        selavy_df = pd.read_fwf(
+            selavy_file, skiprows=[1,]
+        )
+        selavy_coords = SkyCoord(
+            selavy_df.ra_deg_cont * u.deg,
+            selavy_df.dec_deg_cont * u.deg
+        )
+        group_coords = SkyCoord(
+            group.ra * u.deg,
+            group.dec * u.deg
+        )
+        idx, d2d, _ = group_coords.match_to_catalog_sky(selavy_coords)
+        mask = d2d < self.settings['crossmatch_radius']
+        idx_matches = idx[mask]
+
+        copy = selavy_df.iloc[idx_matches].reset_index(drop=True)
+        copy.index = group[mask].index.values
+
+        missing = group_coords[~mask]
+        if missing.shape[0] > 0 and self.settings['no_rms'] == False:
+            # Image =
+            pass
+
+        master = master.append(copy)
+
+        return copy
+
+    def _add_files(self, row):
+        if self.settings['islands']:
+            cat_type = 'islands'
+        else:
+            cat_type = 'components'
+        if self.settings['tiles']:
+            pass
+        else:
+            selavy_file = os.path.join(
+                self.base_folder,
+                (
+                    "EPOCH{0}/"
+                    "COMBINED/"
+                    "STOKES{1}_SELAVY/"
+                    "{2}.EPOCH{0}.{1}.selavy.{3}.txt".format(
+                        RELEASED_EPOCHS[row.field_per_epoch[0]],
+                        self.settings['stokes'],
+                        row.field_per_epoch[1],
+                        cat_type
+                    )
+                )
+            )
+            image_file = os.path.join(
+                self.base_folder,
+                (
+                    "EPOCH{0}/"
+                    "COMBINED/"
+                    "STOKES{1}_IMAGES/"
+                    "{2}.EPOCH{0}.{1}.fits".format(
+                        RELEASED_EPOCHS[row.field_per_epoch[0]],
+                        self.settings['stokes'],
+                        row.field_per_epoch[1]
+                    )
+                )
+            )
+            rms_file = os.path.join(
+                self.base_folder,
+                (
+                    "EPOCH{0}/"
+                    "COMBINED/"
+                    "STOKES{1}_RMSMAPS/"
+                    "{2}.EPOCH{0}.{1}_rms.fits".format(
+                        RELEASED_EPOCHS[row.field_per_epoch[0]],
+                        self.settings['stokes'],
+                        row.field_per_epoch[1]
+                    )
+                )
+            )
+
+        return selavy_file, image_file, rms_file
+
+
+    def find_fields(self):
+        fields = Fields('1')
+
+        self.query_df[[
+            'fields',
+            'primary_field',
+            'epochs',
+            'field_per_epoch'
+        ]] = self.query_df.apply(
+            self._field_matching,
+            args=(fields.direction, fields.fields.FIELD_NAME),
+            axis=1,
+            result_type='expand'
+        )
+
+        self.query_df = self.query_df.dropna()
+
+
+    def _field_matching(self, row, fields_coords, fields_names):
+        seps = row.skycoord.separation(fields_coords)
+        accept = seps.deg < self.settings['max_sep']
+        fields = np.unique(fields_names[accept])
+        if fields.shape[0] == 0:
+            warnings.warn(
+                "Source '{}' not in selected footprint. Dropping source.".format(
+                    row['name']
+                )
+            )
+            return np.nan, np.nan, np.nan, np.nan
+        primary_field = fields[0]
+        epochs = []
+        field_per_epochs = []
+        for i in self.settings['epochs']:
+            epoch_fields = EPOCH_FIELDS[i]
+            for j in fields:
+                if j in epoch_fields:
+                    epochs.append(i)
+                    field_per_epochs.append([i,j])
+                    break
+
+        return fields, primary_field, epochs, field_per_epochs
+
+
+
+    def build_catalog_2(self):
+        cols = ['ra', 'dec', 'name', 'skycoord']
+        if self.coords.shape == ():
+            print('here')
+            catalog = pd.DataFrame(
+                [[
+                    self.coords.ra.deg,
+                    self.coords.dec.deg,
+                    self.source_names[0],
+                    self.coords
+                ]], columns = cols
+            )
+        else:
+            catalog = pd.DataFrame(
+                self.source_names,
+                columns = ['name']
+            )
+            catalog['ra'] = self.coords.ra.deg
+            catalog['dec'] = self.coords.dec.deg
+            catalog['skycoord'] = self.coords
+
+        return catalog
+
 
     def build_catalog(self):
         '''
@@ -190,7 +403,7 @@ class Query:
 
         return src_coords
 
-    def get_epochs(self):
+    def get_epochs(self, req_epochs):
         '''
         Parse the list of epochs to query.
 
@@ -201,21 +414,27 @@ class Query:
         available_epochs = sorted(RELEASED_EPOCHS, key=RELEASED_EPOCHS.get)
         self.logger.debug(available_epochs)
 
-        if HOST == HOST_ADA or self.args.find_fields:
-            available_epochs.insert(0, "0")
+        # if HOST == HOST_ADA or self.args.find_fields:
+        #     available_epochs.insert(0, "0")
 
-        epochs = []
-
-        epoch_arg = self.args.vast_pilot
-        if epoch_arg == 'all':
+        if req_epochs == 'all':
             return available_epochs
 
-        for epoch in epoch_arg.split(','):
+        epochs = []
+        for epoch in req_epochs.split(','):
             if epoch in available_epochs:
                 epochs.append(epoch)
             else:
-                self.logger.info(
-                    "Epoch {} is not available. Ignoring.".format(epoch))
+                if self.logger is None:
+                    self.logger.info(
+                        "Epoch {} is not available. Ignoring.".format(epoch)
+                    )
+                else:
+                    warnings.warn(
+                        "Removing Epoch {} as it"
+                        " is not a valid epoch.".format(epoch),
+                        stacklevel=2
+                    )
 
         if len(epochs) == 0:
             self.logger.critical("No requested epochs are available")
@@ -248,12 +467,19 @@ class Query:
 
         self.output_dir = output_dir
 
-    def set_stokes_param(self):
+    def get_stokes(self, req_stokes):
         '''
         Set the stokes Parameter
         '''
+        valid = ["I", "Q", "U", "V"]
 
-        self.stokes_param = self.args.stokes
+        if req_stokes.upper() not in valid:
+            raise ValueError(
+                "Stokes {} is not valid!".format(req_stokes.upper())
+            )
+        else:
+            return req_stokes.upper()
+
 
     def set_outfile_prefix(self):
         '''
@@ -300,11 +526,13 @@ class Query:
         :type epoch: str
         '''
 
-        EPOCH_INFO = EpochInfo(self.args, epoch, self.stokes_param)
+        EPOCH_INFO = EpochInfo(
+             epoch, self.base_folder, self.stokes, self.tiles
+        )
         survey = EPOCH_INFO.survey
         epoch_str = EPOCH_INFO.epoch_str
         self.logger.info("Querying {}".format(epoch_str))
-        crossmatch_only = EPOCH_INFO.CROSSMATCH_ONLY
+        crossmatch_only = False
 
         fields = Fields(epoch)
         src_fields, coords_mask = fields.find(
@@ -530,28 +758,27 @@ class EpochInfo:
     :type stokes_param: str
     '''
 
-    def __init__(self, args, pilot_epoch, stokes_param):
+    def __init__(
+        self, pilot_epoch, base_folder, stokes, tiles
+    ):
         self.logger = logging.getLogger('vasttools.find_sources.EpochInfo')
 
-        FIND_FIELDS = args.find_fields
-        CROSSMATCH_ONLY = args.crossmatch_only
-        if FIND_FIELDS:
-            self.logger.info(
-                "find-fields selected, only outputting field catalogue."
-            )
-        elif CROSSMATCH_ONLY:
-            self.logger.info(
-                "crossmatch only selected, only outputting crossmatches."
-            )
+        # FIND_FIELDS = find_fields
+        # CROSSMATCH_ONLY = args.crossmatch_only
+        # if FIND_FIELDS:
+        #     self.logger.info(
+        #         "find-fields selected, only outputting field catalogue."
+        #     )
+        # elif CROSSMATCH_ONLY:
+        #     self.logger.info(
+        #         "crossmatch only selected, only outputting crossmatches."
+        #     )
 
-        BASE_FOLDER = args.base_folder
-        IMAGE_FOLDER = args.img_folder
-        SELAVY_FOLDER = args.cat_folder
-        RMS_FOLDER = args.rms_folder
+        BASE_FOLDER = base_folder
 
-        self.use_tiles = args.use_tiles
+        self.use_tiles = tiles
         self.pilot_epoch = pilot_epoch
-        self.stokes_param = stokes_param
+        self.stokes_param = stokes
 
         racsv = False
 
@@ -571,107 +798,108 @@ class EpochInfo:
             if stokes_param != "I":
                 self.logger.critical(
                     "Stokes {} is currently unavailable for RACS".format(
-                        stokes_param))
+                        self.stokes_param))
                 sys.exit()
 
         else:
             survey = "vast_pilot"
             epoch_str = "EPOCH{}".format(RELEASED_EPOCHS[pilot_epoch])
-            if not BASE_FOLDER:
-                survey_folder = "PILOT/release/{}".format(epoch_str)
-            else:
-                survey_folder = epoch_str
+            survey_folder = os.path.join(
+                base_folder, "{}".format(epoch_str)
+            )
 
         self.survey = survey
         self.epoch_str = epoch_str
         self.survey_folder = survey_folder
         self.racsv = racsv
 
-        if not BASE_FOLDER:
-            if HOST != HOST_ADA:
-                if not FIND_FIELDS:
-                    self.logger.critical(
-                        "Base folder must be specified if not running on ada")
-                    sys.exit()
-            BASE_FOLDER = "/import/ada1/askap/"
+        # already checked
+        # if not BASE_FOLDER:
+        #     if HOST != HOST_ADA:
+        #         if not FIND_FIELDS:
+        #             self.logger.critical(
+        #                 "Base folder must be specified if not running on ada")
+        #             sys.exit()
+        #     BASE_FOLDER = "/import/ada1/askap/"
 
-        if not IMAGE_FOLDER:
-            if self.use_tiles:
-                image_dir = "FLD_IMAGES/"
-                stokes_dir = "stokesI"
-            else:
-                image_dir = "COMBINED"
-                stokes_dir = "STOKES{}_IMAGES".format(stokes_param)
 
-            IMAGE_FOLDER = os.path.join(
-                BASE_FOLDER,
-                survey_folder,
-                image_dir,
-                stokes_dir)
+        if self.use_tiles:
+            image_dir = "TILES"
+            stokes_dir = "STOKES{}_IMAGES".format(self.stokes_param)
+        else:
+            image_dir = "COMBINED"
+            stokes_dir = "STOKES{}_IMAGES".format(self.stokes_param)
 
-            if self.racsv:
-                IMAGE_FOLDER = ("/import/ada1/askap/RACS/aug2019_reprocessing/"
-                                "COMBINED_MOSAICS/V_mosaic_1.0")
+        IMAGE_FOLDER = os.path.join(
+            BASE_FOLDER,
+            survey_folder,
+            image_dir,
+            stokes_dir)
+
+            # if self.racsv:
+            #     IMAGE_FOLDER = ("/import/ada1/askap/RACS/aug2019_reprocessing/"
+            #                     "COMBINED_MOSAICS/V_mosaic_1.0")
 
         if not os.path.isdir(IMAGE_FOLDER):
-            if not CROSSMATCH_ONLY:
-                self.logger.critical(
-                    ("{} does not exist. "
-                     "Switching to crossmatch only.").format(IMAGE_FOLDER))
-                CROSSMATCH_ONLY = True
+            # if not CROSSMATCH_ONLY:
+            self.logger.warning(
+                "{} does not exist. "
+                "Can only do crossmatching.".format(IMAGE_FOLDER)
+            )
+                # CROSSMATCH_ONLY = True
 
-        if not RMS_FOLDER:
-            if self.use_tiles:
-                self.logger.warning(
-                    "Background noise estimates are not supported for tiles.")
-                self.logger.warning(
-                    "Estimating background from mosaics instead.")
-            image_dir = "COMBINED"
-            rms_dir = "STOKES{}_RMSMAPS".format(stokes_param)
+        if self.use_tiles:
+            self.logger.warning(
+                "Background noise estimates are not supported for tiles.")
+            self.logger.warning(
+                "Estimating background from mosaics instead.")
+        image_dir = "COMBINED"
+        rms_dir = "STOKES{}_RMSMAPS".format(self.stokes_param)
 
-            RMS_FOLDER = os.path.join(
-                BASE_FOLDER,
-                survey_folder,
-                image_dir,
-                rms_dir)
+        RMS_FOLDER = os.path.join(
+            BASE_FOLDER,
+            survey_folder,
+            image_dir,
+            rms_dir)
 
-            if racsv:
-                RMS_FOLDER = ("/import/ada1/askap/RACS/aug2019_reprocessing/"
-                              "COMBINED_MOSAICS/V_mosaic_1.0_BANE")
+            # if racsv:
+            #     RMS_FOLDER = ("/import/ada1/askap/RACS/aug2019_reprocessing/"
+            #                   "COMBINED_MOSAICS/V_mosaic_1.0_BANE")
 
         if not os.path.isdir(RMS_FOLDER):
-            if not CROSSMATCH_ONLY:
-                self.logger.critical(
-                    ("{} does not exist. "
-                     "Switching to crossmatch only.").format(RMS_FOLDER))
-                CROSSMATCH_ONLY = True
+            # if not CROSSMATCH_ONLY:
+            self.logger.critical(
+                ("{} does not exist. "
+                 "Switching to crossmatch only.").format(RMS_FOLDER))
+                # CROSSMATCH_ONLY = True
 
-        if not SELAVY_FOLDER:
-            image_dir = "COMBINED"
-            selavy_dir = "STOKES{}_SELAVY".format(stokes_param)
+        image_dir = "COMBINED"
+        selavy_dir = "STOKES{}_SELAVY".format(self.stokes_param)
 
-            SELAVY_FOLDER = os.path.join(
-                BASE_FOLDER,
-                survey_folder,
-                image_dir,
-                selavy_dir)
-            if self.use_tiles:
-                SELAVY_FOLDER = ("/import/ada1/askap/RACS/aug2019_"
-                                 "reprocessing/SELAVY_OUTPUT/stokesI_cat/")
+        SELAVY_FOLDER = os.path.join(
+            BASE_FOLDER,
+            survey_folder,
+            image_dir,
+            selavy_dir
+        )
 
-            if racsv:
-                SELAVY_FOLDER = ("/import/ada1/askap/RACS/aug2019_"
-                                 "reprocessing/COMBINED_MOSAICS/racs_catv")
+            # if self.use_tiles:
+            #     SELAVY_FOLDER = ("/import/ada1/askap/RACS/aug2019_"
+            #                      "reprocessing/SELAVY_OUTPUT/stokesI_cat/")
+            #
+            # if racsv:
+            #     SELAVY_FOLDER = ("/import/ada1/askap/RACS/aug2019_"
+            #                      "reprocessing/COMBINED_MOSAICS/racs_catv")
 
         if not os.path.isdir(SELAVY_FOLDER):
-            if not FIND_FIELDS and not CROSSMATCH_ONLY:
-                self.logger.critical(
-                    ("{} does not exist. "
-                     "Only finding fields").format(SELAVY_FOLDER))
-                FIND_FIELDS = True
+            # if not FIND_FIELDS and not CROSSMATCH_ONLY:
+            self.logger.critical(
+                ("{} does not exist. "
+                 "Only finding fields").format(SELAVY_FOLDER))
+                # FIND_FIELDS = True
 
-        self.FIND_FIELDS = FIND_FIELDS
-        self.CROSSMATCH_ONLY = CROSSMATCH_ONLY
+        # self.FIND_FIELDS = FIND_FIELDS
+        # self.CROSSMATCH_ONLY = CROSSMATCH_ONLY
         self.IMAGE_FOLDER = IMAGE_FOLDER
         self.SELAVY_FOLDER = SELAVY_FOLDER
         self.RMS_FOLDER = RMS_FOLDER

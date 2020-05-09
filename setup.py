@@ -12,7 +12,7 @@ setup(
     description=('Python module to interact with'
                  ' ASKAP VAST data.'),
     install_requires=[
-        "pandas>=0.25.3,<0.26",
+        "pandas<1.1,>=1.0",
         "numpy>=1.17.4,<1.18",
         "scipy>=1.4.0,<1.5.0",
         "astropy>=3.2,<4.2,!=4.0",
