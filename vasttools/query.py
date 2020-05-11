@@ -101,6 +101,8 @@ class Query:
                 self.base_folder
             ))
 
+        self.fields_found = False
+
         # self.catalog = self.build_catalog()
         # self.src_coords = self.build_SkyCoord()
         # self.logger.info(
@@ -125,17 +127,19 @@ class Query:
 
 
     def find_sources(self):
-        # self.query_df = self.query_df.explode('epochs')
+        if self.fields_found is False:
+            self.find_fields()
+
         self.query_df = self.query_df.explode(
             'field_per_epoch'
         ).reset_index(drop=True)
-        self.query_df[['epoch', 'field']] = self.query_df.field_per_epoch.apply(pd.Series)
+        self.query_df[['epoch', 'field', 'sbid', 'dateobs']] = self.query_df.field_per_epoch.apply(pd.Series)
         self.query_df[['selavy', 'image', 'rms']] = self.query_df[['field_per_epoch']].apply(
             self._add_files,
             axis=1,
             result_type='expand'
         )
-        # self.query_df = self.query_df.drop(columns=['epochs', 'field_per_epoch'])
+
         grouped_query = self.query_df.groupby('selavy')
         results = grouped_query.apply(
             lambda x: self._get_components(x.name, x)
@@ -144,6 +148,61 @@ class Query:
         self.crossmatch_results = self.query_df.merge(
             results, how='left', left_index=True, right_index=True
         )
+
+        grouped_source_query = self.crossmatch_results.groupby('name')
+
+        self.results = grouped_source_query.apply(
+            lambda x: self._init_sources(x.name, x)
+        )
+
+
+    def _init_sources(self, source_name, group):
+        # master = {}
+
+        m = group.iloc[0]
+
+        source_coord = m.skycoord
+        source_name = m['name']
+        source_epochs = m.epochs
+        source_fields = m.fields
+        source_stokes = self.settings['stokes']
+        source_primary_field = m.primary_field
+        source_base_folder = self.base_folder
+        if self.settings['tiles']:
+            source_image_type = "TILES"
+        else:
+            source_image_type = "COMBINED"
+        source_islands=self.settings['islands']
+
+        source_df = group.drop(
+            columns=[
+                'ra',
+                'dec',
+                'fields',
+                'epochs',
+                'field_per_epoch',
+                'sbids',
+                'dates',
+                '#'
+            ]
+        )
+
+        source_df = source_df.reset_index(drop=True)
+
+        thesource = Source(
+            source_coord,
+            source_name,
+            source_epochs,
+            source_fields,
+            source_stokes,
+            source_primary_field,
+            source_df,
+            source_base_folder,
+            source_image_type,
+            islands=source_islands
+        )
+
+        return thesource
 
 
     def _get_components(self, selavy_file, group):
@@ -165,16 +224,34 @@ class Query:
         idx_matches = idx[mask]
 
         copy = selavy_df.iloc[idx_matches].reset_index(drop=True)
+        copy["detection"] = True
         copy.index = group[mask].index.values
-
-        missing = group_coords[~mask]
-        if missing.shape[0] > 0 and self.settings['no_rms'] == False:
-            # Image =
-            pass
 
         master = master.append(copy)
 
-        return copy
+        missing = group_coords[~mask]
+        if missing.shape[0] > 0 and self.settings['no_rms'] == False:
+            image = Image(
+                group.iloc[0].field,
+                group.iloc[0].epoch,
+                self.settings['stokes'],
+                self.base_folder,
+                sbid=group.iloc[0].sbid
+            )
+            rms_values = image.measure_coord_pixel_values(
+                missing, rms=True
+            )
+            # to mJy
+            rms_df = pd.DataFrame(rms_values, columns=['rms_image'])
+
+            rms_df['rms_image'] = rms_df['rms_image'] * 1.e3
+            rms_df['detection'] = False
+
+            rms_df.index = group[~mask].index.values
+
+            master = master.append(rms_df)
+
+        return master
 
     def _add_files(self, row):
         if self.settings['islands']:
@@ -235,7 +312,9 @@ class Query:
             'fields',
             'primary_field',
             'epochs',
-            'field_per_epoch'
+            'field_per_epoch',
+            'sbids',
+            'dates'
         ]] = self.query_df.apply(
             self._field_matching,
             args=(fields.direction, fields.fields.FIELD_NAME),
@@ -244,6 +323,7 @@ class Query:
         )
 
         self.query_df = self.query_df.dropna()
+        self.fields_found = True
 
 
     def _field_matching(self, row, fields_coords, fields_names):
@@ -256,19 +336,25 @@ class Query:
                     row['name']
                 )
             )
-            return np.nan, np.nan, np.nan, np.nan
+            return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
         primary_field = fields[0]
         epochs = []
         field_per_epochs = []
+        sbids = []
+        dateobs = []
         for i in self.settings['epochs']:
-            epoch_fields = EPOCH_FIELDS[i]
+            epoch_fields = EPOCH_FIELDS[i].keys()
             for j in fields:
                 if j in epoch_fields:
                     epochs.append(i)
-                    field_per_epochs.append([i,j])
+                    sbid = EPOCH_FIELDS[i][j]["SBID"]
+                    date = EPOCH_FIELDS[i][j]["DATEOBS"]
+                    sbids.append(sbid)
+                    dateobs.append(date)
+                    field_per_epochs.append([i,j,sbid,date])
                     break
 
-        return fields, primary_field, epochs, field_per_epochs
+        return fields, primary_field, epochs, field_per_epochs, sbids, dateobs
 
 
 

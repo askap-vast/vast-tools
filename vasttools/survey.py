@@ -20,6 +20,7 @@ from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.io import fits
 from astropy.wcs import WCS
+from astropy.wcs.utils import skycoord_to_pixel
 from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
 from radio_beam import Beam
 
@@ -28,15 +29,21 @@ warnings.filterwarnings('ignore',
                         category=AstropyDeprecationWarning, append=True)
 
 
-def get_fields_per_epoch():
+def get_fields_per_epoch_and_info():
     """
     Function to create list of fields in each epoch.
     """
     epoch_fields = {}
 
+
     for e in FIELD_FILES:
         e_info = pd.read_csv(FIELD_FILES[e])
-        epoch_fields[e] = e_info.FIELD_NAME.unique()
+        epoch_fields[e] = {}
+        for f in e_info.FIELD_NAME.unique():
+            epoch_fields[e][f] = {}
+            info = e_info[e_info.FIELD_NAME == f].iloc[0]
+            epoch_fields[e][f]['SBID'] = info.SBID
+            epoch_fields[e][f]['DATEOBS'] = info.DATEOBS
 
     return epoch_fields
 
@@ -82,7 +89,7 @@ FIELD_FILES = {
         __name__, "./data/vast_epoch11x_info.csv")
 }
 
-EPOCH_FIELDS = get_fields_per_epoch()
+EPOCH_FIELDS = get_fields_per_epoch_and_info()
 
 CHECKSUMS_FILE = pkg_resources.resource_filename(
     __name__, "./data/checksums.h5")
@@ -718,8 +725,8 @@ class Image:
     :type tiles: bool, optional
     '''
 
-    def __init__(self, sbid, field, IMAGE_FOLDER,
-                 RMS_FOLDER, vast_pilot, tiles=False):
+    def __init__(self, field, epoch, stokes, base_folder,
+                 tiles=False, sbid=None):
         '''Constructor method
         '''
 
@@ -728,16 +735,32 @@ class Image:
 
         self.sbid = sbid
         self.field = field
-        self.RMS_FOLDER = RMS_FOLDER
-        self.vast_pilot = vast_pilot
+        self.epoch = epoch
+        self.stokes = stokes
+        self.rms_header = None
+
 
         if tiles:
-            img_template = 'image.i.SB{}.cont.{}.linmos.taylor.0.restored.fits'
-            self.imgname = img_template.format(sbid, field)
+            img_folder = os.path.join(
+                base_folder,
+                "EPOCH{}".format(RELEASED_EPOCHS[epoch]),
+                "TILES",
+                "STOKES{}_IMAGES".format(stokes.upper())
+            )
+            img_template = 'image.{}.SB{}.cont.{}.linmos.taylor.0.restored.fits'
+            self.imgname = img_template.format(stokes.lower(), sbid, field)
         else:
-            self.imgname = '{}.fits'.format(field)
+            img_folder = os.path.join(
+                base_folder,
+                "EPOCH{}".format(RELEASED_EPOCHS[epoch]),
+                "COMBINED",
+                "STOKES{}_IMAGES".format(stokes.upper())
+            )
+            self.imgname = '{}.EPOCH{}.{}.fits'.format(
+                field, RELEASED_EPOCHS[epoch], stokes.upper()
+            )
 
-        self.imgpath = os.path.join(IMAGE_FOLDER, self.imgname)
+        self.imgpath = os.path.join(img_folder, self.imgname)
 
         if os.path.isfile(self.imgpath):
             self.image_fail = False
@@ -767,13 +790,14 @@ class Image:
         '''
         Load the noisemap corresponding to the image
         '''
-        if self.vast_pilot == "0":
+        if self.epoch == "0":
             self.rmsname = self.imgname.replace(
                 '.fits', '.taylor.0.noise.fits')
         else:
             self.rmsname = self.imgname.replace('.fits', '_rms.fits')
-
-        self.rmspath = os.path.join(self.RMS_FOLDER, self.rmsname)
+            self.rmspath = self.imgpath.replace(
+                "_IMAGES", "_RMSMAPS"
+            ).replace('.fits', '_rms.fits')
 
         if os.path.isfile(self.rmspath):
             self.rms_fail = False
@@ -792,3 +816,24 @@ class Image:
                 self.rms_data = hdul[0].data[0, 0, :, :]
             except Exception as e:
                 self.rms_data = hdul[0].data
+
+    def measure_coord_pixel_values(self, coords, rms=False):
+
+        if rms is True:
+            if self.rms_header is None:
+                self.get_rms_img()
+
+            pix_coords = np.rint(skycoord_to_pixel(
+                coords, self.rms_wcs)
+            ).astype(int)
+            pix_coords = np.column_stack(pix_coords)
+            values = [self.rms_data[pix_coord[0], pix_coord[1]] for pix_coord in pix_coords]
+
+        else:
+            pix_coords = np.rint(skycoord_to_pixel(
+                coords, self.wcs)).astype(int)
+            values = [self.data[pix_coord[0], pix_coord[1]] for pix_coord in pix_coords]
+
+
+        return values
+

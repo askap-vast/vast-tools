@@ -3,12 +3,15 @@
 import matplotlib
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.axes as maxes
+import matplotlib.dates as mdates
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 from astropy.visualization import LinearStretch
 from astropy.visualization import AsymmetricPercentileInterval
 from astropy.visualization import PercentileInterval
 from astropy.visualization import ZScaleInterval, ImageNormalize
 from mpl_toolkits.axes_grid1.anchored_artists import (AnchoredEllipse,
                                                       AnchoredSizeBar)
+from astropy.coordinates import Angle
 from astropy.visualization.wcsaxes import SphericalCircle
 from matplotlib.collections import PatchCollection
 from astropy.wcs.utils import proj_plane_pixel_scales
@@ -21,6 +24,8 @@ from astropy.io import fits
 from astropy.coordinates import SkyCoord
 from astropy.nddata.utils import Cutout2D
 from astropy import units as u
+from astropy.time import Time
+from astropy.timeseries import TimeSeries
 import matplotlib.pyplot as plt
 import logging.config
 import logging.handlers
@@ -31,6 +36,7 @@ import os
 import numpy as np
 
 from vasttools.utils import crosshair
+from vasttools.survey import Image
 # run crosshair to set up the marker
 crosshair()
 
@@ -58,61 +64,295 @@ class Source:
     :type stokes: str, optional
     '''
 
-    # def __init__(
-    #     self,
-    #     coord,
-    #     epochs,
-    #     primary_field,
-    #     field_per_epoch,
-    #     ):
-
     def __init__(
-            self,
-            field,
-            src_coord,
-            sbid,
-            SELAVY_FOLDER,
-            vast_pilot,
-            tiles=False,
-            stokes="I",
-            islands=False):
+        self,
+        coord,
+        name,
+        epochs,
+        fields,
+        stokes,
+        primary_field,
+        measurements,
+        base_folder,
+        image_type = "COMBINED",
+        islands=False
+        ):
+    # def __init__(
+    #         self,
+    #         field,
+    #         src_coord,
+    #         sbid,
+    #         SELAVY_FOLDER,
+    #         vast_pilot,
+    #         tiles=False,
+    #         stokes="I",
+    #         islands=False):
         '''Constructor method
         '''
         self.logger = logging.getLogger('vasttools.source.Source')
         self.logger.debug('Created Source instance')
 
-        self.src_coord = src_coord
-        self.field = field
-        self.sbid = sbid
+        self.coord = coord
+        self.name = name
+        self.epochs = epochs
+        self.fields = fields
         self.stokes = stokes
+        self.primary_field = primary_field
+        self.measurements = measurements.infer_objects()
+        self.measurements.dateobs = pd.to_datetime(
+            self.measurements.dateobs
+        )
+        self.islands = islands
+        self.base_folder = base_folder
+        self.image_type = image_type
 
-        if islands:
-            self.cat_type = "islands"
-            self.islands = True
+        self.detections = self.measurements[
+            self.measurements.detection == True
+        ].shape[0]
+
+        self.limits = self.measurements[
+            self.measurements.detection == False
+        ].shape[0]
+
+        self._cutouts_got = False
+
+        # if islands:
+        #     self.cat_type = "islands"
+        #     self.islands = True
+        # else:
+        #     self.cat_type = "components"
+        #     self.islands = False
+        #
+        # if tiles:
+        #     selavyname_template = 'selavy-image.i.SB{}.cont.{}.' \
+        #         'linmos.taylor.0.restored.{}.txt'
+        #     self.selavyname = selavyname_template.format(
+        #         self.sbid, self.field, self.cat_type
+        #     )
+        # else:
+        #     if vast_pilot == "0":
+        #         self.selavyname = '{}.taylor.0.{}.txt'.format(
+        #             self.field, self.cat_type)
+        #     else:
+        #         self.selavyname = '{}.selavy.{}.txt'.format(
+        #             self.field, self.cat_type
+        #         )
+        #
+        #     self.nselavyname = 'n{}'.format(self.selavyname)
+        #
+        # self.selavypath = os.path.join(SELAVY_FOLDER, self.selavyname)
+        # if self.stokes != "I":
+        #     self.nselavypath = os.path.join(SELAVY_FOLDER, self.nselavyname)
+
+    def plot_lightcurve(self, sigma_thresh=5, savefile=None, figsize=(8, 4),
+                        min_points=2, min_detections=1, mjd=False,
+                        grid=False, yaxis_start="auto", peak_flux=True):
+        '''
+        Plot source lightcurves and save to file
+
+        :param sigma_thresh: Threshold to use for upper limits, defaults to 5
+        :type sigma_thresh: int or float
+        :param savefile: Filename to save plot, defaults to None
+        :type savefile: str
+        :param min_points: Minimum number of points for plotting, defaults to 2
+        :type min_points: int, optional
+        :param min_detections: Minimum number of detections for plotting, \
+        defaults to 1
+        :type min_detections: int, optional
+        :param mjd: Plot x-axis in MJD rather than datetime, defaults to False
+        :type mjd: bool, optional
+        :param grid: Turn on matplotlib grid, defaults to False
+        :type grid: bool, optional
+        '''
+
+        plot_dates = self.measurements['dateobs']
+        if mjd:
+            plot_dates = Time(plot_dates.to_numpy()).mjd
+
+        fig = plt.figure(figsize=figsize)
+        ax = fig.add_subplot(111)
+        plot_title = self.name
+        if self.islands:
+            plot_title += " (island)"
+        ax.set_title(plot_title)
+
+        if peak_flux:
+            label = 'Peak Flux Density (mJy/beam)'
+            flux_col = "flux_peak"
         else:
-            self.cat_type = "components"
-            self.islands = False
+            label = 'Integrated Flux Density (mJy)'
+            flux_col = "flux_int"
+        ax.set_ylabel(label)
 
-        if tiles:
-            selavyname_template = 'selavy-image.i.SB{}.cont.{}.' \
-                'linmos.taylor.0.restored.{}.txt'
-            self.selavyname = selavyname_template.format(
-                self.sbid, self.field, self.cat_type
+        self.logger.debug("Plotting upper limit")
+        upper_lim_mask = self.measurements.detection==False
+        upper_lims = self.measurements[
+            upper_lim_mask
+        ]
+
+        upperlim_points = ax.errorbar(
+            plot_dates[upper_lim_mask],
+            sigma_thresh *
+            upper_lims['rms_image'],
+            yerr=upper_lims['rms_image'],
+            uplims=True,
+            lolims=False,
+            marker='_',
+            c='k',
+            linestyle="none")
+
+        self.logger.debug("Plotting detection")
+        detections = self.measurements[
+            ~upper_lim_mask
+        ]
+
+        detection_points = ax.errorbar(
+            plot_dates[~upper_lim_mask],
+            detections[flux_col],
+            yerr=detections['rms_image'],
+            marker='o',
+            c='k',
+            linestyle="none")
+
+        if yaxis_start == "0":
+            max_y = np.nanmax(
+                detections[flux_col].tolist() +
+                (sigma_thresh * upper_lims['rms_image']).tolist()
             )
+            ax.set_ylim(
+                bottom=0,
+                top=max_y * 1.1
+            )
+
+        if mjd:
+            ax.set_xlabel('Date (MJD)')
         else:
-            if vast_pilot == "0":
-                self.selavyname = '{}.taylor.0.{}.txt'.format(
-                    self.field, self.cat_type)
-            else:
-                self.selavyname = '{}.selavy.{}.txt'.format(
-                    self.field, self.cat_type
-                )
+            fig.autofmt_xdate()
+            ax.set_xlabel('Date')
 
-            self.nselavyname = 'n{}'.format(self.selavyname)
+            date_form = mdates.DateFormatter("%Y-%m-%d")
+            ax.xaxis.set_major_formatter(date_form)
+            ax.xaxis.set_major_locator(mdates.WeekdayLocator(interval=2))
 
-        self.selavypath = os.path.join(SELAVY_FOLDER, self.selavyname)
-        if self.stokes != "I":
-            self.nselavypath = os.path.join(SELAVY_FOLDER, self.nselavyname)
+        # plt.grid(grid)
+        # plt.savefig(savefile)
+        # plt.close()
+
+        return fig
+
+
+    def get_cutout_data(self, size):
+        '''
+        Make a FITS postagestamp of the source region and write to file
+
+        :param img_data: Numpy array containing the image data
+        :type img_data: `numpy.ndarray`
+        :param header: FITS header data units of the image
+        :type header: `astropy.io.fits.header.Header`
+        :param wcs: World Coordinate System of the image
+        :type wcs: `astropy.wcs.wcs.WCS`
+        :param size: Size of the cutout array along each axis
+        :type size: `astropy.coordinates.angles.Angle`
+            or tuple of two `Angle` objects
+        :param outfile: Name of output FITS file
+        :type outfile: str
+        '''
+
+        self.cutout_df = self.measurements.apply(
+            self._get_cutout,
+            # args=(size),
+            axis=1,
+            result_type='expand'
+        ).rename(columns={
+            0: "data",
+            1: "wcs",
+            2: "header"
+        })
+        self._cutouts_got = True
+
+
+    def _get_cutout(self, row, size=Angle(5 * u.arcmin)):
+
+        image = Image(row.field, row.epoch, self.stokes, self.base_folder)
+
+        cutout = Cutout2D(
+            image.data,
+            position=self.coord,
+            size=size,
+            wcs=image.wcs
+        )
+
+        del image
+
+        return cutout.data, cutout.wcs, cutout.wcs.to_header()
+
+
+    def plot_all_cutouts(self, columns=4, zscale=False, percentile=99.9):
+        if self._cutouts_got is False:
+            self.get_cutout_data()
+
+        num_plots = self.measurements.shape[0]
+        nrows = np.ceil(num_plots/columns)
+
+        fig = plt.figure(figsize=(15,5))
+
+        plots = {}
+
+        target_coords = np.array(
+            ([[self.coord.ra.deg, self.coord.dec.deg]])
+        )
+
+        if self.detections > 0:
+            scale_index = self.measurements[
+                self.measurements.detection == True
+            ].index.values[0]
+        else:
+            scale_index = 0
+
+        scale_data = self.cutout_df.loc[scale_index].data
+
+        if zscale:
+            img_norms = ImageNormalize(
+                scale_data, interval=ZScaleInterval(
+                    contrast=contrast))
+        else:
+            img_norms = ImageNormalize(
+                scale_data,
+                interval=PercentileInterval(percentile),
+                stretch=LinearStretch())
+
+        for i in range(num_plots):
+            cutout_row = self.cutout_df.iloc[i]
+            measurement_row = self.measurements.iloc[i]
+            i+=1
+            plots[i] = fig.add_subplot(
+                nrows,
+                columns,
+                i,
+                projection=cutout_row.wcs
+            )
+
+            im = plots[i].imshow(cutout_row.data, norm=img_norms, cmap="gray_r")
+
+            plots[i].set_title('Epoch {}'.format(measurement_row.epoch))
+
+            cross_target_coords = cutout_row.wcs.wcs_world2pix(target_coords, 0)
+            crosshair_lines = self._create_crosshair_lines(
+                cross_target_coords,
+                0.15,
+                0.15,
+                cutout_row.data.shape
+            )
+
+            [plots[i].plot(
+                l[0], l[1], color="C3", zorder=10, lw=1.5, alpha=0.6
+            ) for l in crosshair_lines]
+
+        return fig
+
+
+
+
 
     def make_postagestamp(self, img_data, header, wcs, size, outfile):
         '''

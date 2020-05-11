@@ -12,17 +12,17 @@ setup(
     description=('Python module to interact with'
                  ' ASKAP VAST data.'),
     install_requires=[
-        "pandas<1.1,>=1.0",
-        "numpy>=1.17.4,<1.18",
-        "scipy>=1.4.0,<1.5.0",
         "astropy>=3.2,<4.2,!=4.0",
-        "matplotlib>=3.1.2,<4.0",
         "colorlog>=4.0.2,<5.0",
         "dropbox>=9.4.0,<9.5.0",
-        "tables>=3.6.1,<3.7.0",
+        "matplotlib>=3.1.2,<4.0",
+        "numexpr>=2.7.1,<2.8",
+        "numpy>=1.17.4,<1.18",
+        "pandas<1.1,>=1.0",
         "radio_beam>=0.3.1,<0.4",
+        "scipy>=1.4.0,<1.5.0",
+        "tables>=3.6.1,<3.7.0",
         "tabulate>=0.8.6,<0.9",
-        "numexpr>=2.7.1,<2.8"
         ],
     scripts=[
         "bin/find_sources.py",
