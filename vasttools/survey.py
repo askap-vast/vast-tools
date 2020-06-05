@@ -37,7 +37,7 @@ def get_fields_per_epoch_and_info():
 
 
     for e in FIELD_FILES:
-        e_info = pd.read_csv(FIELD_FILES[e])
+        e_info = pd.read_csv(FIELD_FILES[e], comment='#')
         epoch_fields[e] = {}
         for f in e_info.FIELD_NAME.unique():
             epoch_fields[e][f] = {}
@@ -623,7 +623,7 @@ class Fields:
         self.logger.debug('Created Fields instance')
         self.logger.debug(FIELD_FILES[epoch])
 
-        self.fields = pd.read_csv(FIELD_FILES[epoch])
+        self.fields = pd.read_csv(FIELD_FILES[epoch], , comment='#')
         # Epoch 99 has some empty beam directions (processing failures)
         # Drop them and any issue rows in the future.
         self.fields.dropna(inplace=True)

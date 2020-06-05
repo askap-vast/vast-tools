@@ -1160,7 +1160,7 @@ class FieldQuery:
         :rtype: bool.
         '''
 
-        epoch_01 = pd.read_csv(FIELD_FILES["1"])
+        epoch_01 = pd.read_csv(FIELD_FILES["1"], , comment='#')
         self.logger.debug("Field name: {}".format(self.field))
         result = epoch_01['FIELD_NAME'].str.contains(
             re.escape(self.field)
@@ -1229,10 +1229,14 @@ class FieldQuery:
             self.logger.debug("Building pilot info file.")
             for i, val in enumerate(sorted(RELEASED_EPOCHS)):
                 if i == 0:
-                    self.pilot_info = pd.read_csv(FIELD_FILES[val])
+                    self.pilot_info = pd.read_csv(
+                        FIELD_FILES[val], , comment='#'
+                    )
                     self.pilot_info["EPOCH"] = RELEASED_EPOCHS[val]
                 else:
-                    to_append = pd.read_csv(FIELD_FILES[val])
+                    to_append = pd.read_csv(
+                        FIELD_FILES[val], comment='#'
+                    )
                     to_append["EPOCH"] = RELEASED_EPOCHS[val]
                     self.pilot_info = self.pilot_info.append(
                         to_append, sort=False
