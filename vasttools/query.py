@@ -1160,7 +1160,7 @@ class FieldQuery:
         :rtype: bool.
         '''
 
-        epoch_01 = pd.read_csv(FIELD_FILES["1"], , comment='#')
+        epoch_01 = pd.read_csv(FIELD_FILES["1"], comment='#')
         self.logger.debug("Field name: {}".format(self.field))
         result = epoch_01['FIELD_NAME'].str.contains(
             re.escape(self.field)
