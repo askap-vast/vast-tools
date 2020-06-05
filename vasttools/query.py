@@ -66,7 +66,7 @@ class Query:
         self, coords, source_names=[], epochs="all", stokes="I",
         crossmatch_radius=5.0, max_sep=1.0, use_tiles=False,
         use_islands=False, base_folder=None, matches_only=False,
-        no_rms=False, output=None
+        no_rms=False, output_dir="."
     ):
         '''Constructor method
         '''
@@ -91,6 +91,8 @@ class Query:
         self.settings['tiles'] = use_tiles
         self.settings['no_rms'] = no_rms
 
+        self.settings['output_dir'] = output_dir
+
         if base_folder is None:
             self.base_folder = NIMBUS_BASE_DIR
         else:
@@ -108,9 +110,9 @@ class Query:
         # self.logger.info(
         #     "Finding fields for {} sources...".format(len(self.src_coords)))
 
-        if output is not None:
-            self.set_outfile_prefix()
-            self.set_output_directory()
+        # if output is not None:
+        #     self.set_outfile_prefix()
+        #     self.set_output_directory()
 
         # self.imsize = Angle(args.imsize, unit=u.arcmin)
         # self.max_sep = args.maxsep
@@ -232,7 +234,7 @@ class Query:
             row.skycoord
         )
 
-        header = image.header
+        header = image.header.copy()
         header.update(cutout.wcs.to_header())
 
         beam = image.beam
@@ -302,6 +304,7 @@ class Query:
         source_primary_field = m.primary_field
         source_base_folder = self.base_folder
         source_crossmatch_radius = self.settings['crossmatch_radius']
+        source_outdir = self.settings['output_dir']
         if self.settings['tiles']:
             source_image_type = "TILES"
         else:
@@ -334,7 +337,8 @@ class Query:
             source_df,
             source_base_folder,
             source_image_type,
-            islands=source_islands
+            islands=source_islands,
+            outdir=source_outdir
         )
 
         return thesource
@@ -346,6 +350,7 @@ class Query:
         selavy_df = pd.read_fwf(
             selavy_file, skiprows=[1,]
         )
+
         selavy_coords = SkyCoord(
             selavy_df.ra_deg_cont * u.deg,
             selavy_df.dec_deg_cont * u.deg
@@ -354,6 +359,7 @@ class Query:
             group.ra * u.deg,
             group.dec * u.deg
         )
+
         idx, d2d, _ = group_coords.match_to_catalog_sky(selavy_coords)
         mask = d2d < self.settings['crossmatch_radius']
         idx_matches = idx[mask]

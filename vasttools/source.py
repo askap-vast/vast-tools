@@ -77,7 +77,8 @@ class Source:
         measurements,
         base_folder,
         image_type = "COMBINED",
-        islands=False
+        islands=False,
+        outdir="."
         ):
     # def __init__(
     #         self,
@@ -110,6 +111,9 @@ class Source:
             self.cat_type = 'islands'
         else:
             self.cat_type = 'components'
+
+        self.outdir = outdir
+
         self.base_folder = base_folder
         self.image_type = image_type
 
@@ -122,6 +126,9 @@ class Source:
         ].shape[0]
 
         self._cutouts_got = False
+
+        self.norms = None
+        self.checked_norms = False
 
         # if islands:
         #     self.cat_type = "islands"
@@ -280,6 +287,34 @@ class Source:
         self._cutouts_got = True
 
 
+    def analyse_norm_level(self, percentile=99.9, zscale=False, z_contrast=0.2):
+        if not self._cutouts_got:
+            self.logger.warning(
+                "Fetch cutout data before running this function!"
+            )
+
+        if self.detections > 0:
+            scale_index = self.measurements[
+                self.measurements.detection == True
+            ].index.values[0]
+        else:
+            scale_index = 0
+
+        scale_data = self.cutout_df.loc[scale_index].data * 1.e3
+
+        if zscale:
+            self.norms = ImageNormalize(
+                scale_data, interval=ZScaleInterval(
+                    contrast=contrast))
+        else:
+            self.norms = ImageNormalize(
+                scale_data,
+                interval=PercentileInterval(percentile),
+                stretch=LinearStretch())
+
+        self.checked_norms = True
+
+
     def _get_cutout(self, row, size=Angle(5 * u.arcmin)):
 
         image = Image(row.field, row.epoch, self.stokes, self.base_folder)
@@ -311,7 +346,7 @@ class Source:
             size
         )
 
-        header = image.header
+        header = image.header.copy()
         header.update(cutout.wcs.to_header())
 
         beam = image.beam
@@ -361,6 +396,11 @@ class Source:
                 self.name.replace(" ", "_"),
                 RELEASED_EPOCHS[epoch]
             )
+        if self.outdir != ".":
+            outfile = os.path.join(
+                self.outdir,
+                outfile
+            )
 
         index = self.epochs.index(epoch)
 
@@ -389,6 +429,9 @@ class Source:
         if self._cutouts_got is False:
             self.get_cutout_data()
 
+        if not self.checked_norms:
+            self.analyse_norm_level()
+
         self.measurements['epoch'].apply(
             self.make_png_2,
             args = (
@@ -400,7 +443,7 @@ class Source:
                 True,
                 "Source",
                 False,
-                "",
+                None,
                 False,
                 False,
                 True
@@ -532,7 +575,7 @@ class Source:
             no_islands=True,
             label="Source",
             no_colorbar=False,
-            title="",
+            title=None,
             crossmatch_overlay=False,
             hide_beam=False,
             save=False
@@ -586,6 +629,11 @@ class Source:
                 self.name.replace(" ", "_"),
                 RELEASED_EPOCHS[epoch]
             )
+        if self.outdir != ".":
+            outfile = os.path.join(
+                self.outdir,
+                outfile
+            )
 
         index = self.epochs.index(epoch)
 
@@ -599,17 +647,20 @@ class Source:
         fig = plt.figure(figsize=(8, 8))
         ax = fig.add_subplot(1, 1, 1, projection=cutout_row.wcs)
         # Get the Image Normalisation from zscale, user contrast.
-        if zscale:
-            self.img_norms = ImageNormalize(
-                cutout_row.data * 1000., interval=ZScaleInterval(
-                    contrast=contrast))
+        if not self.checked_norms:
+            if zscale:
+                img_norms = ImageNormalize(
+                    cutout_row.data * 1000., interval=ZScaleInterval(
+                        contrast=contrast))
+            else:
+                img_norms = ImageNormalize(
+                    cutout_row.data * 1000.,
+                    interval=PercentileInterval(percentile),
+                    stretch=LinearStretch())
         else:
-            self.img_norms = ImageNormalize(
-                cutout_row.data * 1000.,
-                interval=PercentileInterval(percentile),
-                stretch=LinearStretch())
+            img_norms = self.norms
         im = ax.imshow(
-            cutout_row.data * 1000., norm=self.img_norms, cmap="gray_r"
+            cutout_row.data * 1.e3, norm=img_norms, cmap="gray_r"
         )
         # insert crosshair of target
         target_coords = np.array(
@@ -701,8 +752,18 @@ class Source:
                 "right", size="3%", pad=0.1, axes_class=maxes.Axes)
             cb = fig.colorbar(im, cax=cax)
             cb.set_label("mJy/beam")
-        if title != "":
-            ax.set_title(title)
+        if title is None:
+            epoch_time = self.measurements[
+                self.measurements.epoch == epoch
+            ].iloc[0].dateobs
+            title = "{} Epoch {} {}".format(
+                self.name,
+                epoch,
+                epoch_time.strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                )
+            )
+        ax.set_title(title)
         if cutout_row.beam is not None and hide_beam is False:
             img_beam = cutout_row.beam
             if cutout_row.wcs.is_celestial:
@@ -735,6 +796,198 @@ class Source:
             plt.close()
         else:
             return fig
+
+
+    def write_ann(self, epoch, outfile=None, crossmatch_overlay=False):
+        '''
+        Write a kvis annotation file containing all selavy sources
+        within the image.
+
+        :param outfile: Name of the file to write
+        :type outfile: str
+        :param crossmatch_overlay: If True, a circle is added to the
+            annotation file output denoting the crossmatch radius,
+            defaults to False.
+        :type crossmatch_overlay: bool, optional.
+        '''
+        if self._cutouts_got is False:
+            self.get_cutout_data()
+
+        if outfile is None:
+            outfile = "{}_EPOCH{}.ann".format(
+                self.name.replace(" ", "_"),
+                RELEASED_EPOCHS[epoch]
+            )
+        if self.outdir != ".":
+            outfile = os.path.join(
+                self.outdir,
+                outfile
+            )
+
+        neg = False
+        with open(outfile, 'w') as f:
+            f.write("COORD W\n")
+            f.write("PA SKY\n")
+            f.write("FONT hershey14\n")
+            f.write("COLOR BLUE\n")
+            f.write("CROSS {0} {1} {2} {2}\n".format(
+                self.coord.ra.deg,
+                self.coord.dec.deg,
+                3./3600.
+            ))
+            if crossmatch_overlay:
+                try:
+                    f.write("CIRCLE {} {} {}\n".format(
+                        self.coord.ra.deg,
+                        self.coord.dec.deg,
+                        self.crossmatch_radius.deg
+                    ))
+                except Exception as e:
+                    self.logger.warning(
+                        "Crossmatch circle overlay failed!"
+                        " Has the source been crossmatched?")
+            f.write("COLOR GREEN\n")
+
+            index = self.epochs.index(epoch)
+
+            selavy_cat_cut = self.cutout_df.iloc[index].selavy_overlay
+
+            for i, row in selavy_cat_cut.iterrows():
+                if row["island_id"].startswith("n"):
+                    neg = True
+                    f.write("COLOR RED\n")
+                ra = row["ra_deg_cont"]
+                dec = row["dec_deg_cont"]
+                f.write(
+                    "ELLIPSE {} {} {} {} {}\n".format(
+                        ra,
+                        dec,
+                        float(
+                            row["maj_axis"]) /
+                        3600. /
+                        2.,
+                        float(
+                            row["min_axis"]) /
+                        3600. /
+                        2.,
+                        float(
+                            row["pos_ang"])))
+                f.write(
+                    "TEXT {} {} {}\n".format(
+                        ra, dec, self._remove_sbid(
+                            row["island_id"])))
+                if neg:
+                    f.write("COLOR GREEN\n")
+                    neg = False
+
+        self.logger.info("Wrote annotation file {}.".format(outfile))
+
+    def write_reg(self, epoch, outfile=None, crossmatch_overlay=False):
+        '''
+        Write a DS9 region file containing all selavy sources within the image
+
+        :param outfile: Name of the file to write
+        :type outfile: str
+        :param crossmatch_overlay: If True, a circle is added to the region
+            file output denoting the crossmatch radius, defaults to False.
+        :type crossmatch_overlay: bool, optional.
+        '''
+        if self._cutouts_got is False:
+            self.get_cutout_data()
+
+        if outfile is None:
+            outfile = "{}_EPOCH{}.reg".format(
+                self.name.replace(" ", "_"),
+                RELEASED_EPOCHS[epoch]
+            )
+        if self.outdir != ".":
+            outfile = os.path.join(
+                self.outdir,
+                outfile
+            )
+
+        with open(outfile, 'w') as f:
+            f.write("# Region file format: DS9 version 4.0\n")
+            f.write("global color=green font=\"helvetica 10 normal\" "
+                    "select=1 highlite=1 edit=1 "
+                    "move=1 delete=1 include=1 "
+                    "fixed=0 source=1\n")
+            f.write("fk5\n")
+            f.write(
+                "point({} {}) # point=x color=blue\n".format(
+                    self.coord.ra.deg,
+                    self.coord.dec.deg,
+                ))
+            if crossmatch_overlay:
+                try:
+                    f.write("circle({} {} {}) # color=blue\n".format(
+                        self.coord.ra.deg,
+                        self.coord.dec.deg,
+                        self.crossmatch_radius.deg
+                    ))
+                except Exception as e:
+                    self.logger.warning(
+                        "Crossmatch circle overlay failed!"
+                        " Has the source been crossmatched?")
+
+            index = self.epochs.index(epoch)
+
+            selavy_cat_cut = self.cutout_df.iloc[index].selavy_overlay
+
+            for i, row in selavy_cat_cut.iterrows():
+                if row["island_id"].startswith("n"):
+                    color = "red"
+                else:
+                    color = "green"
+                ra = row["ra_deg_cont"]
+                dec = row["dec_deg_cont"]
+                f.write(
+                    "ellipse({} {} {} {} {}) # color={}\n".format(
+                        ra,
+                        dec,
+                        float(
+                            row["maj_axis"]) /
+                        3600. /
+                        2.,
+                        float(
+                            row["min_axis"]) /
+                        3600. /
+                        2.,
+                        float(
+                            row["pos_ang"]) +
+                        90.,
+                        color))
+                f.write(
+                    "text({} {} \"{}\") # color={}\n".format(
+                        ra-(10./3600.), dec, self._remove_sbid(
+                            row["island_id"]), color))
+
+        self.logger.info("Wrote region file {}.".format(outfile))
+
+    def _remove_sbid(self, island):
+        '''
+        Removes the SBID component of the island name. Takes into account
+        negative 'n' label for negative sources.
+
+        :param island: island name.
+        :type island: str
+
+        :returns: truncated island name.
+        :rtype: str
+        '''
+
+        temp = island.split("_")
+        new_val = "_".join(temp[-2:])
+        if temp[0].startswith("n"):
+            new_val = "n" + new_val
+        return new_val
+
+
+
+
+
+
+
 
 
     def make_postagestamp(self, img_data, header, wcs, size, outfile):
@@ -940,155 +1193,6 @@ class Source:
         self.selavy_fail = False
         self.selavy_info["has_match"] = self.has_match
 
-    def write_ann(self, outfile, crossmatch_overlay=False):
-        '''
-        Write a kvis annotation file containing all selavy sources
-        within the image.
-
-        :param outfile: Name of the file to write
-        :type outfile: str
-        :param crossmatch_overlay: If True, a circle is added to the
-            annotation file output denoting the crossmatch radius,
-            defaults to False.
-        :type crossmatch_overlay: bool, optional.
-        '''
-
-        outfile = outfile.replace(".fits", ".ann")
-        neg = False
-        with open(outfile, 'w') as f:
-            f.write("COORD W\n")
-            f.write("PA SKY\n")
-            f.write("FONT hershey14\n")
-            f.write("COLOR BLUE\n")
-            f.write("CROSS {0} {1} {2} {2}\n".format(
-                self.src_coord.ra.deg,
-                self.src_coord.dec.deg,
-                3./3600.
-            ))
-            if crossmatch_overlay:
-                try:
-                    f.write("CIRCLE {} {} {}\n".format(
-                        self.src_coord.ra.deg,
-                        self.src_coord.dec.deg,
-                        self.crossmatch_radius.deg
-                    ))
-                except Exception as e:
-                    self.logger.warning(
-                        "Crossmatch circle overlay failed!"
-                        " Has the source been crossmatched?")
-            f.write("COLOR GREEN\n")
-            for i, row in self.selavy_cat_cut.iterrows():
-                if row["island_id"].startswith("n"):
-                    neg = True
-                    f.write("COLOR RED\n")
-                ra = row["ra_deg_cont"]
-                dec = row["dec_deg_cont"]
-                f.write(
-                    "ELLIPSE {} {} {} {} {}\n".format(
-                        ra,
-                        dec,
-                        float(
-                            row["maj_axis"]) /
-                        3600. /
-                        2.,
-                        float(
-                            row["min_axis"]) /
-                        3600. /
-                        2.,
-                        float(
-                            row["pos_ang"])))
-                f.write(
-                    "TEXT {} {} {}\n".format(
-                        ra, dec, self._remove_sbid(
-                            row["island_id"])))
-                if neg:
-                    f.write("COLOR GREEN\n")
-                    neg = False
-
-        self.logger.info("Wrote annotation file {}.".format(outfile))
-
-    def write_reg(self, outfile, crossmatch_overlay=False):
-        '''
-        Write a DS9 region file containing all selavy sources within the image
-
-        :param outfile: Name of the file to write
-        :type outfile: str
-        :param crossmatch_overlay: If True, a circle is added to the region
-            file output denoting the crossmatch radius, defaults to False.
-        :type crossmatch_overlay: bool, optional.
-        '''
-
-        outfile = outfile.replace(".fits", ".reg")
-        with open(outfile, 'w') as f:
-            f.write("# Region file format: DS9 version 4.0\n")
-            f.write("global color=green font=\"helvetica 10 normal\" "
-                    "select=1 highlite=1 edit=1 "
-                    "move=1 delete=1 include=1 "
-                    "fixed=0 source=1\n")
-            f.write("fk5\n")
-            f.write(
-                "point({} {}) # point=x color=blue\n".format(
-                    self.src_coord.ra.deg,
-                    self.src_coord.dec.deg,
-                ))
-            if crossmatch_overlay:
-                try:
-                    f.write("circle({} {} {}) # color=blue\n".format(
-                        self.src_coord.ra.deg,
-                        self.src_coord.dec.deg,
-                        self.crossmatch_radius.deg
-                    ))
-                except Exception as e:
-                    self.logger.warning(
-                        "Crossmatch circle overlay failed!"
-                        " Has the source been crossmatched?")
-            for i, row in self.selavy_cat_cut.iterrows():
-                if row["island_id"].startswith("n"):
-                    color = "red"
-                else:
-                    color = "green"
-                ra = row["ra_deg_cont"]
-                dec = row["dec_deg_cont"]
-                f.write(
-                    "ellipse({} {} {} {} {}) # color={}\n".format(
-                        ra,
-                        dec,
-                        float(
-                            row["maj_axis"]) /
-                        3600. /
-                        2.,
-                        float(
-                            row["min_axis"]) /
-                        3600. /
-                        2.,
-                        float(
-                            row["pos_ang"]) +
-                        90.,
-                        color))
-                f.write(
-                    "text({} {} \"{}\") # color={}\n".format(
-                        ra-(10./3600.), dec, self._remove_sbid(
-                            row["island_id"]), color))
-
-        self.logger.info("Wrote region file {}.".format(outfile))
-
-    def _remove_sbid(self, island):
-        '''
-        Removes the SBID component of the island name. Takes into account
-        negative 'n' label for negative sources.
-
-        :param island: island name.
-        :type island: str
-
-        :returns: truncated island name.
-        :rtype: str
-        '''
-
-        temp = island.split("_")
-        new_val = "_".join(temp[-2:])
-        if temp[0].startswith("n"):
-            new_val = "n" + new_val
-        return new_val
 
     def filter_selavy_components(self, imsize):
         '''
