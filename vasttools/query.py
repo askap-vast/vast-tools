@@ -1230,7 +1230,7 @@ class FieldQuery:
             for i, val in enumerate(sorted(RELEASED_EPOCHS)):
                 if i == 0:
                     self.pilot_info = pd.read_csv(
-                        FIELD_FILES[val], , comment='#'
+                        FIELD_FILES[val], comment='#'
                     )
                     self.pilot_info["EPOCH"] = RELEASED_EPOCHS[val]
                 else:
