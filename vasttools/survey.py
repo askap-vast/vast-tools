@@ -623,7 +623,7 @@ class Fields:
         self.logger.debug('Created Fields instance')
         self.logger.debug(FIELD_FILES[epoch])
 
-        self.fields = pd.read_csv(FIELD_FILES[epoch], , comment='#')
+        self.fields = pd.read_csv(FIELD_FILES[epoch], comment='#')
         # Epoch 99 has some empty beam directions (processing failures)
         # Drop them and any issue rows in the future.
         self.fields.dropna(inplace=True)
