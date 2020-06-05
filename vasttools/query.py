@@ -126,6 +126,139 @@ class Query:
         )
 
 
+    def create_all_cutouts(self, ):
+        # first get cutout data and selavy sources per image
+        # group by image to do this
+
+        grouped_query = self.query_df.groupby('image')
+        cutouts = grouped_query.apply(
+            lambda x: self._grouped_fetch_cutouts(x.name, x)
+        )
+
+        cutouts.index = cutouts.index.droplevel()
+
+        self.query_df = self.query_df.join(
+            cutouts
+        )
+
+        self.results = self.results.apply(
+            self._add_source_cutout_data,
+        )
+
+        self.results.apply(
+            self._save_all_png_cutouts,
+        )
+
+
+
+    def _save_all_png_cutouts(self, s):
+
+        s.save_all_png_cutouts()
+
+
+
+    def _add_source_cutout_data(self, s):
+        s_name = s.name
+        s_cutout = self.query_df[[
+            'data',
+            'wcs',
+            'header',
+            'selavy_overlay',
+            'beam'
+        ]][self.query_df.name == s_name].reset_index(drop=True)
+
+        s.cutout_df = s_cutout
+        s._cutouts_got = True
+
+        del s_cutout
+
+        return s
+
+
+    def _grouped_fetch_cutouts(self, image_file, group):
+
+        image = Image(
+            group.iloc[0].field,
+            group.iloc[0].epoch,
+            self.settings['stokes'],
+            self.base_folder,
+            sbid=group.iloc[0].sbid
+        )
+
+        cutout_data = group.apply(
+            self._get_cutout,
+            args=(image,),
+            axis=1,
+            result_type='expand'
+        ).rename(columns={
+            0: "data",
+            1: "wcs",
+            2: "header",
+            3: "selavy_overlay",
+            4: "beam"
+        })
+
+        del image
+
+        return cutout_data
+
+    def _get_cutout(self, row, image, size=Angle(5. * u.arcmin)):
+
+        cutout = Cutout2D(
+            image.data,
+            position=row.skycoord,
+            size=size,
+            wcs=image.wcs
+        )
+
+        selavy_components = pd.read_fwf(row.selavy, skiprows=[1,], usecols=[
+            'island_id',
+            'ra_deg_cont',
+            'dec_deg_cont',
+            'maj_axis',
+            'min_axis',
+            'pos_ang'
+        ])
+
+        selavy_coords = SkyCoord(
+            selavy_components.ra_deg_cont.values * u.deg,
+            selavy_components.dec_deg_cont.values * u.deg
+        )
+
+        selavy_components = self.filter_selavy_components_2(
+            selavy_components,
+            selavy_coords,
+            size,
+            row.skycoord
+        )
+
+        header = image.header
+        header.update(cutout.wcs.to_header())
+
+        beam = image.beam
+
+        del selavy_coords
+
+        return (
+            cutout.data, cutout.wcs, header, selavy_components, beam
+        )
+
+    #this needs to be moved to a general script!
+    def filter_selavy_components_2(self, selavy_df, selavy_sc, imsize, target):
+        '''
+        Create a shortened catalogue by filtering out selavy components
+        outside of the image
+
+        :param imsize: Size of the image along each axis
+        :type imsize: `astropy.coordinates.angles.Angle` or tuple of two
+            `Angle` objects
+        '''
+
+        seps = target.separation(selavy_sc)
+        mask = seps <= imsize / 1.4
+        return selavy_df[mask].reset_index(drop=True)
+
+
     def find_sources(self):
         if self.fields_found is False:
             self.find_fields()
@@ -168,6 +301,7 @@ class Query:
         source_stokes = self.settings['stokes']
         source_primary_field = m.primary_field
         source_base_folder = self.base_folder
+        source_crossmatch_radius = self.settings['crossmatch_radius']
         if self.settings['tiles']:
             source_image_type = "TILES"
         else:
@@ -196,6 +330,7 @@ class Query:
             source_fields,
             source_stokes,
             source_primary_field,
+            source_crossmatch_radius,
             source_df,
             source_base_folder,
             source_image_type,
@@ -227,7 +362,7 @@ class Query:
         copy["detection"] = True
         copy.index = group[mask].index.values
 
-        master = master.append(copy)
+        master = master.append(copy, sort=False)
 
         missing = group_coords[~mask]
         if missing.shape[0] > 0 and self.settings['no_rms'] == False:
@@ -241,17 +376,18 @@ class Query:
             rms_values = image.measure_coord_pixel_values(
                 missing, rms=True
             )
-            # to mJy
             rms_df = pd.DataFrame(rms_values, columns=['rms_image'])
 
+            # to mJy
             rms_df['rms_image'] = rms_df['rms_image'] * 1.e3
             rms_df['detection'] = False
 
             rms_df.index = group[~mask].index.values
 
-            master = master.append(rms_df)
+            master = master.append(rms_df, sort=False)
 
         return master
+
 
     def _add_files(self, row):
         if self.settings['islands']:
@@ -357,7 +493,6 @@ class Query:
         return fields, primary_field, epochs, field_per_epochs, sbids, dateobs
 
 
-
     def build_catalog_2(self):
         cols = ['ra', 'dec', 'name', 'skycoord']
         if self.coords.shape == ():
@@ -451,6 +586,7 @@ class Query:
         catalog['name'] = catalog['name'].astype(str)
 
         return catalog
+
 
     def build_SkyCoord(self):
         '''

@@ -37,6 +37,7 @@ import numpy as np
 
 from vasttools.utils import crosshair
 from vasttools.survey import Image
+from vasttools.survey import RELEASED_EPOCHS
 # run crosshair to set up the marker
 crosshair()
 
@@ -72,6 +73,7 @@ class Source:
         fields,
         stokes,
         primary_field,
+        crossmatch_radius,
         measurements,
         base_folder,
         image_type = "COMBINED",
@@ -98,11 +100,16 @@ class Source:
         self.fields = fields
         self.stokes = stokes
         self.primary_field = primary_field
+        self.crossmatch_radius = crossmatch_radius
         self.measurements = measurements.infer_objects()
         self.measurements.dateobs = pd.to_datetime(
             self.measurements.dateobs
         )
         self.islands = islands
+        if self.islands:
+            self.cat_type = 'islands'
+        else:
+            self.cat_type = 'components'
         self.base_folder = base_folder
         self.image_type = image_type
 
@@ -266,7 +273,9 @@ class Source:
         ).rename(columns={
             0: "data",
             1: "wcs",
-            2: "header"
+            2: "header",
+            3: "selavy_overlay",
+            4: "beam"
         })
         self._cutouts_got = True
 
@@ -282,9 +291,121 @@ class Source:
             wcs=image.wcs
         )
 
-        del image
+        selavy_components = pd.read_fwf(row.selavy, skiprows=[1,], usecols=[
+            'island_id',
+            'ra_deg_cont',
+            'dec_deg_cont',
+            'maj_axis',
+            'min_axis',
+            'pos_ang'
+        ])
 
-        return cutout.data, cutout.wcs, cutout.wcs.to_header()
+        selavy_coords = SkyCoord(
+            selavy_components.ra_deg_cont.values * u.deg,
+            selavy_components.dec_deg_cont.values * u.deg
+        )
+
+        selavy_components = self.filter_selavy_components_2(
+            selavy_components,
+            selavy_coords,
+            size
+        )
+
+        header = image.header
+        header.update(cutout.wcs.to_header())
+
+        beam = image.beam
+
+        del image
+        del selavy_coords
+
+        return (
+            cutout.data, cutout.wcs, header, selavy_components, beam
+        )
+
+
+    def filter_selavy_components_2(self, selavy_df, selavy_sc, imsize):
+        '''
+        Create a shortened catalogue by filtering out selavy components
+        outside of the image
+
+        :param imsize: Size of the image along each axis
+        :type imsize: `astropy.coordinates.angles.Angle` or tuple of two
+            `Angle` objects
+        '''
+
+        seps = self.coord.separation(selavy_sc)
+        mask = seps <= imsize / 1.4
+        return selavy_df[mask].reset_index(drop=True)
+
+
+    def show_png_cutout(self, epoch, crossmatch_overlay=False):
+        fig = self.make_png_2(epoch, crossmatch_overlay=crossmatch_overlay)
+
+        return fig
+
+
+    def save_fits_cutout(self, epoch, outfile=None):
+        if self._cutouts_got is False:
+            self.get_cutout_data()
+
+        if epoch not in self.epochs:
+            raise ValueError(
+                "This source does not contain Epoch {}!".format(epoch)
+            )
+
+            return
+
+        if outfile is None:
+            outfile = "{}_EPOCH{}.fits".format(
+                self.name.replace(" ", "_"),
+                RELEASED_EPOCHS[epoch]
+            )
+
+        index = self.epochs.index(epoch)
+
+        cutout_data = self.cutout_df.iloc[index]
+
+        hdu_stamp = fits.PrimaryHDU(
+            data=cutout_data.data,
+            header=cutout_data.header
+        )
+
+        # hdu_stamp.header = cutout_data.header
+        # Update the FITS header with the cutout WCS
+        # hdu_stamp.header.update(cutout_data.wcs.to_header())
+
+        # Write the cutout to a new FITS file
+        hdu_stamp.writeto(outfile, overwrite=True)
+
+
+    def save_png_cutout(self, epoch):
+        fig = self.make_png_2(epoch)
+
+        return fig
+
+
+    def save_all_png_cutouts(self):
+        if self._cutouts_got is False:
+            self.get_cutout_data()
+
+        self.measurements['epoch'].apply(
+            self.make_png_2,
+            args = (
+                True,
+                99.9,
+                False,
+                # contrast,
+                None,
+                True,
+                "Source",
+                False,
+                "",
+                False,
+                False,
+                True
+            )
+        )
 
 
     def plot_all_cutouts(self, columns=4, zscale=False, percentile=99.9):
@@ -344,6 +465,13 @@ class Source:
                 cutout_row.data.shape
             )
 
+            if not cutout_row['selavy_overlay'].empty:
+                plots[i].set_autoscale_on(False)
+                collection = self._gen_overlay_collection(
+                    cutout_row
+                )
+                plots[i].add_collection(collection, autolim=False)
+
             [plots[i].plot(
                 l[0], l[1], color="C3", zorder=10, lw=1.5, alpha=0.6
             ) for l in crosshair_lines]
@@ -351,7 +479,262 @@ class Source:
         return fig
 
 
+    def _gen_overlay_collection(self, cutout_row):
+        wcs = cutout_row.wcs
+        selavy_sources = cutout_row.selavy_overlay
+        pix_scale = proj_plane_pixel_scales(wcs)
+        sx = pix_scale[0]
+        sy = pix_scale[1]
+        degrees_per_pixel = np.sqrt(sx * sy)
 
+        # define ellipse properties for clarity, selavy cut will have
+        # already been created.
+        ww = selavy_sources["maj_axis"].astype(float) / 3600.
+        hh = selavy_sources["min_axis"].astype(float) / 3600.
+        ww /= degrees_per_pixel
+        hh /= degrees_per_pixel
+        aa = selavy_sources["pos_ang"].astype(float)
+        x = selavy_sources["ra_deg_cont"].astype(float)
+        y = selavy_sources["dec_deg_cont"].astype(float)
+
+        coordinates = np.column_stack((x, y))
+
+        coordinates = wcs.wcs_world2pix(coordinates, 0)
+
+        island_names = selavy_sources["island_id"].apply(
+            self._remove_sbid
+        )
+        # Create ellipses, collect them, add to axis.
+        # Also where correction is applied to PA to account for how selavy
+        # defines it vs matplotlib
+        colors = ["C2" if c.startswith(
+            "n") else "C1" for c in island_names]
+        patches = [Ellipse(
+            coordinates[i], hh[i], ww[i],
+            aa[i]) for i in range(len(coordinates))]
+        collection = PatchCollection(
+            patches,
+            facecolors="None",
+            edgecolors=colors,
+            lw=1.5)
+
+        return collection
+
+
+    def make_png_2(
+            self,
+            epoch,
+            selavy=True,
+            percentile=99.9,
+            zscale=False,
+            # contrast,
+            outfile=None,
+            no_islands=True,
+            label="Source",
+            no_colorbar=False,
+            title="",
+            crossmatch_overlay=False,
+            hide_beam=False,
+            save=False
+    ):
+        '''
+        Save a PNG of the image postagestamp
+
+        :param selavy: `True` to overlay selavy components, `False` otherwise
+        :type selavy: bool
+        :param percentile: Percentile level for normalisation.
+        :type percentile: float
+        :param zscale: Use ZScale normalisation instead of linear
+        :type zscale: bool
+        :param contrast: ZScale contrast to use
+        :type contrast: float
+        :param outfile: Name of the file to write to, or the name of the FITS
+            file
+        :type outfile: str
+        :param img_beam: Object containing the beam information of the image,
+            from which the source is being plotted from.
+        :type img_beam: radio_beam.Beam
+        :param no_islands: Disable island lables on the png, defaults to
+            `False`
+        :type no_islands: bool, optional
+        :param label: Figure title (usually the name of the source of
+            interest), defaults to "Source"
+        :type label: str, optional
+        :param no_colorbar: If `True`, do not show the colorbar on the png,
+            defaults to `False`
+        :type no_colorbar: bool, optional
+        :param title: String to set as title,
+            defaults to `` where no title will be used.
+        :type title: str, optional
+        :param crossmatch_overlay: If 'True' then a circle is added to the png
+            plot representing the crossmatch radius, defaults to `False`.
+        :type crossmatch_overlay: bool, optional
+        :param hide_beam: If 'True' then the beam is not plotted onto the png
+            plot, defaults to `False`.
+        :type hide_beam: bool, optional
+        '''
+
+        if epoch not in self.epochs:
+            raise ValueError(
+                "This source does not contain Epoch {}!".format(epoch)
+            )
+
+            return
+
+        if outfile is None:
+            outfile = "{}_EPOCH{}.png".format(
+                self.name.replace(" ", "_"),
+                RELEASED_EPOCHS[epoch]
+            )
+
+        index = self.epochs.index(epoch)
+
+        cutout_row = self.cutout_df.iloc[index]
+        # image has already been loaded to get the fits
+        # outfile = outfile.replace(".fits", ".png")
+        # convert data to mJy in case colorbar is used.
+        # cutout_data = self.cutout.data * 1000.
+        # cutout_wcs = self.cutout.wcs
+        # create figure
+        fig = plt.figure(figsize=(8, 8))
+        ax = fig.add_subplot(1, 1, 1, projection=cutout_row.wcs)
+        # Get the Image Normalisation from zscale, user contrast.
+        if zscale:
+            self.img_norms = ImageNormalize(
+                cutout_row.data * 1000., interval=ZScaleInterval(
+                    contrast=contrast))
+        else:
+            self.img_norms = ImageNormalize(
+                cutout_row.data * 1000.,
+                interval=PercentileInterval(percentile),
+                stretch=LinearStretch())
+        im = ax.imshow(
+            cutout_row.data * 1000., norm=self.img_norms, cmap="gray_r"
+        )
+        # insert crosshair of target
+        target_coords = np.array(
+            ([[self.coord.ra.deg, self.coord.dec.deg]])
+        )
+        target_coords = cutout_row.wcs.wcs_world2pix(target_coords, 0)
+        crosshair_lines = self._create_crosshair_lines(
+            target_coords,
+            0.03,
+            0.03,
+            cutout_row.data.shape
+        )
+        [ax.plot(
+            l[0], l[1], color="C3", zorder=10, lw=1.5, alpha=0.6
+        ) for l in crosshair_lines]
+        # the commented lines below are to use the crosshair
+        # marker directly.
+        # ax.scatter(
+        #     [self.src_coord.ra.deg], [self.src_coord.dec.deg],
+        #     transform=ax.get_transform('world'), marker="c",
+        #     color="C3", zorder=10, label=label, s=1000, lw=1.5,
+        #     alpha=0.5
+        # )
+        if crossmatch_overlay:
+            try:
+                crossmatch_patch = SphericalCircle(
+                    (self.coord.ra, self.coord.dec),
+                    self.crossmatch_radius,
+                    transform=ax.get_transform('world'),
+                    label="Crossmatch radius ({:.1f} arcsec)".format(
+                        self.crossmatch_radius.arcsec
+                    ), edgecolor='C4', facecolor='none', alpha=0.8)
+                ax.add_patch(crossmatch_patch)
+            except Exception as e:
+                self.logger.warning(
+                    "Crossmatch circle png overlay failed!"
+                    " Has the source been crossmatched?")
+                crossmatch_overlay = False
+
+        if not cutout_row['selavy_overlay'].empty:
+            ax.set_autoscale_on(False)
+            collection = self._gen_overlay_collection(
+                cutout_row
+            )
+            ax.add_collection(collection, autolim=False)
+
+            # ax.add_collection(collection, autolim=False)
+            # Add island labels, haven't found a better way other than looping
+            # at the moment.
+            if not no_islands and not self.islands:
+                for i, val in enumerate(patches):
+                    ax.annotate(
+                        island_names[i],
+                        val.center,
+                        annotation_clip=True,
+                        color="C0",
+                        weight="bold")
+        else:
+            self.logger.warning(
+                "PNG: No selavy selected or selavy catalogue failed.")
+        legend_elements = [
+            Line2D(
+                [0], [0], marker='c', color='C3', label=label,
+                markerfacecolor='g', ls="none", markersize=8)]
+        if selavy:
+            legend_elements.append(
+                Line2D(
+                    [0], [0], marker='o', color='C1',
+                    label="Selavy {}".format(self.cat_type),
+                    markerfacecolor='none', ls="none", markersize=10)
+            )
+        if crossmatch_overlay:
+            legend_elements.append(
+                Line2D(
+                    [0], [0], marker='o', color='C4',
+                    label="Crossmatch radius ({:.1f} arcsec)".format(
+                        self.crossmatch_radius.arcsec),
+                    markerfacecolor='none', ls="none",
+                    markersize=10)
+            )
+        ax.legend(handles=legend_elements)
+        lon = ax.coords[0]
+        lat = ax.coords[1]
+        lon.set_axislabel("Right Ascension (J2000)")
+        lat.set_axislabel("Declination (J2000)")
+        if not no_colorbar:
+            divider = make_axes_locatable(ax)
+            cax = divider.append_axes(
+                "right", size="3%", pad=0.1, axes_class=maxes.Axes)
+            cb = fig.colorbar(im, cax=cax)
+            cb.set_label("mJy/beam")
+        if title != "":
+            ax.set_title(title)
+        if cutout_row.beam is not None and hide_beam is False:
+            img_beam = cutout_row.beam
+            if cutout_row.wcs.is_celestial:
+                major = img_beam.major.value
+                minor = img_beam.minor.value
+                pa = img_beam.pa.value
+                pix_scale = proj_plane_pixel_scales(cutout_row.wcs)
+                sx = pix_scale[0]
+                sy = pix_scale[1]
+                degrees_per_pixel = np.sqrt(sx * sy)
+                minor /= degrees_per_pixel
+                major /= degrees_per_pixel
+
+                png_beam = AnchoredEllipse(
+                    ax.transData, width=minor,
+                    height=major, angle=pa, loc="lower right",
+                    pad=0.5, borderpad=0.4,
+                    frameon=False)
+                png_beam.ellipse.set_edgecolor("k")
+                png_beam.ellipse.set_facecolor("w")
+                png_beam.ellipse.set_linewidth(1.5)
+
+                ax.add_artist(png_beam)
+        else:
+            self.logger.debug("Hiding beam.")
+
+        if save:
+            plt.savefig(outfile, bbox_inches="tight")
+            self.logger.info("Saved {}".format(outfile))
+            plt.close()
+        else:
+            return fig
 
 
     def make_postagestamp(self, img_data, header, wcs, size, outfile):
