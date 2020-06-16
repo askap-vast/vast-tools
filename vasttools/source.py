@@ -35,7 +35,8 @@ import pandas as pd
 import os
 import numpy as np
 import gc
-from multiprocessing import Pool
+import signal
+from multiprocessing import Pool, cpu_count
 from functools import partial
 
 from vasttools.utils import crosshair
@@ -434,8 +435,7 @@ class Source:
 
         if not self.checked_norms:
             self.analyse_norm_level()
-        # plt.ioff()
-        # fig = plt.figure(figsize=(8, 8))
+
         multi_plot = partial(
             self.make_png_2,
             selavy=True,
@@ -452,9 +452,28 @@ class Source:
             save=True
         )
 
-        workers = Pool(processes=8)
+        num_cpu = int(cpu_count() / 4)
 
-        workers.map(multi_plot, self.measurements['epoch'].tolist())
+        original_sigint_handler = signal.signal(
+            signal.SIGINT, signal.SIG_IGN
+        )
+
+        workers = Pool(processes=num_cpu)
+
+        signal.signal(signal.SIGINT, original_sigint_handler)
+
+        try:
+            workers.map(multi_plot, self.measurements['epoch'].tolist())
+        except KeyboardInterrupt:
+            self.logger.error(
+                "Caught KeyboardInterrupt, terminating workers."
+            )
+            workers.terminate()
+            sys.exit()
+        else:
+            self.logger.info("Normal termination")
+            workers.close()
+            workers.join()
         # for e in self.measurements['epoch']:
         #     self.make_png_2(
         #         # e,
@@ -473,7 +492,7 @@ class Source:
         #         True
         #     )
             # fig.clf()
-        workers.close()
+
         # self.measurements['epoch'].apply(
         #     self.make_png_2,
         #     args = (

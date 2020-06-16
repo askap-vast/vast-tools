@@ -1,6 +1,6 @@
 from vasttools.survey import Fields, Image
 from vasttools.survey import (
-    RELEASED_EPOCHS, FIELD_FILES, NIMBUS_BASE_DIR, EPOCH_FIELDS
+    RELEASED_EPOCHS, FIELD_FILES, NIMBUS_BASE_DIR, EPOCH_FIELDS, FIELD_CENTRES
 )
 from vasttools.source import Source
 
@@ -44,8 +44,6 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from radio_beam import Beams
 
 from tabulate import tabulate
-
-import dask.dataframe as dd
 
 warnings.filterwarnings('ignore', category=AstropyWarning, append=True)
 warnings.filterwarnings('ignore',
@@ -486,6 +484,13 @@ class Query:
 
     def find_fields(self):
         fields = Fields('1')
+        field_centres_sc = SkyCoord(
+            FIELD_CENTRES["centre-ra"],
+            FIELD_CENTRES["centre-dec"],
+            unit=(u.deg, u.deg)
+        )
+
+        field_centre_names = FIELD_CENTRES.image
 
         self.query_df[[
             'fields',
@@ -496,7 +501,12 @@ class Query:
             'dates'
         ]] = self.query_df.apply(
             self._field_matching,
-            args=(fields.direction, fields.fields.FIELD_NAME),
+            args=(
+                fields.direction,
+                fields.fields.FIELD_NAME,
+                field_centres_sc,
+                field_centre_names
+            ),
             axis=1,
             result_type='expand'
         )
@@ -505,7 +515,14 @@ class Query:
         self.fields_found = True
 
 
-    def _field_matching(self, row, fields_coords, fields_names):
+    def _field_matching(
+        self,
+        row,
+        fields_coords,
+        fields_names,
+        field_centres,
+        field_centre_names
+    ):
         seps = row.skycoord.separation(fields_coords)
         accept = seps.deg < self.settings['max_sep']
         fields = np.unique(fields_names[accept])
@@ -517,22 +534,31 @@ class Query:
             )
             print("Not in VAST")
             return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
-        primary_field = fields[0]
+        centre_seps = row.skycoord.separation(field_centres)
+        primary_field = field_centre_names[np.argmin(centre_seps.deg)]
         epochs = []
         field_per_epochs = []
         sbids = []
         dateobs = []
         for i in self.settings['epochs']:
             epoch_fields = EPOCH_FIELDS[i].keys()
-            for j in fields:
-                if j in epoch_fields:
-                    epochs.append(i)
-                    sbid = EPOCH_FIELDS[i][j]["SBID"]
-                    date = EPOCH_FIELDS[i][j]["DATEOBS"]
-                    sbids.append(sbid)
-                    dateobs.append(date)
-                    field_per_epochs.append([i,j,sbid,date])
-                    break
+            if primary_field in epoch_fields:
+                epochs.append(i)
+                sbid = EPOCH_FIELDS[i][primary_field]["SBID"]
+                date = EPOCH_FIELDS[i][primary_field]["DATEOBS"]
+                sbids.append(sbid)
+                dateobs.append(date)
+                field_per_epochs.append([i,primary_field,sbid,date])
+            else:
+                for j in fields:
+                    if j in epoch_fields:
+                        epochs.append(i)
+                        sbid = EPOCH_FIELDS[i][j]["SBID"]
+                        date = EPOCH_FIELDS[i][j]["DATEOBS"]
+                        sbids.append(sbid)
+                        dateobs.append(date)
+                        field_per_epochs.append([i,j,sbid,date])
+                        break
 
         return fields, primary_field, epochs, field_per_epochs, sbids, dateobs
 

@@ -92,10 +92,18 @@ FIELD_FILES = {
 EPOCH_FIELDS = get_fields_per_epoch_and_info()
 
 CHECKSUMS_FILE = pkg_resources.resource_filename(
-    __name__, "./data/checksums.h5")
+    __name__, "./data/checksums.h5"
+)
 
 DROPBOX_FILE = pkg_resources.resource_filename(
-    __name__, "./data/dropbox_files.txt")
+    __name__, "./data/dropbox_files.txt"
+)
+
+FIELD_CENTRES = pd.read_csv(
+    pkg_resources.resource_filename(
+        __name__, "./data/vast_field_centres.csv"
+    )
+)
 
 NIMBUS_BASE_DIR = "/Users/adam/testing/vast-tools-testing/PSR_J2129-04_data_2"
 
