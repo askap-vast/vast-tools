@@ -14,6 +14,7 @@ import shutil
 import io
 import socket
 import re
+from psutil import cpu_count
 
 import logging
 import logging.handlers
@@ -43,6 +44,8 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from radio_beam import Beams
 
 from tabulate import tabulate
+
+import dask.dataframe as dd
 
 warnings.filterwarnings('ignore', category=AstropyWarning, append=True)
 warnings.filterwarnings('ignore',
@@ -133,6 +136,11 @@ class Query:
         # group by image to do this
 
         grouped_query = self.query_df.groupby('image')
+
+        # cutouts = pd.DataFrame()
+        # for name, group in grouped_query:
+        #     these_cutouts = self._grouped_fetch_cutouts(name, group)
+        #     cutouts = cutouts.append(these_cutouts)
         cutouts = grouped_query.apply(
             lambda x: self._grouped_fetch_cutouts(x.name, x)
         )
@@ -143,20 +151,35 @@ class Query:
             cutouts
         )
 
-        self.results = self.results.apply(
-            self._add_source_cutout_data,
-        )
+        for s in self.results:
+            s_name = s.name
+            s_cutout = self.query_df[[
+                'data',
+                'wcs',
+                'header',
+                'selavy_overlay',
+                'beam'
+            ]][self.query_df.name == s_name].reset_index(drop=True)
 
-        self.results.apply(
-            self._save_all_png_cutouts,
-        )
+            s.cutout_df = s_cutout
+            s._cutouts_got = True
 
+            s.save_all_png_cutouts()
+
+        # del cutouts
+
+        # self.results = self.results.apply(
+        #     self._add_source_cutout_data,
+        # )
+        #
+        # self.results.apply(
+        #     self._save_all_png_cutouts,
+        # )
 
 
     def _save_all_png_cutouts(self, s):
 
         s.save_all_png_cutouts()
-
 
 
     def _add_source_cutout_data(self, s):
@@ -223,8 +246,9 @@ class Query:
         ])
 
         selavy_coords = SkyCoord(
-            selavy_components.ra_deg_cont.values * u.deg,
-            selavy_components.dec_deg_cont.values * u.deg
+            selavy_components.ra_deg_cont.values,
+            selavy_components.dec_deg_cont.values,
+            unit = (u.deg, u.deg)
         )
 
         selavy_components = self.filter_selavy_components_2(
@@ -275,10 +299,21 @@ class Query:
             result_type='expand'
         )
 
+
         grouped_query = self.query_df.groupby('selavy')
+        # I tried an apply function here but met confusing crashes.
+        # I think apply is not suitable here and instead I'm using iterrows unfortunately
+
+        # original
         results = grouped_query.apply(
             lambda x: self._get_components(x.name, x)
         )
+
+        # results = pd.DataFrame()
+        # for name, group in grouped_query:
+        #     group_results = self._get_components(name, group)
+        #     results = results.append(group_results)
+
         results.index = results.index.droplevel()
         self.crossmatch_results = self.query_df.merge(
             results, how='left', left_index=True, right_index=True
@@ -352,12 +387,14 @@ class Query:
         )
 
         selavy_coords = SkyCoord(
-            selavy_df.ra_deg_cont * u.deg,
-            selavy_df.dec_deg_cont * u.deg
+            selavy_df.ra_deg_cont,
+            selavy_df.dec_deg_cont,
+            unit = (u.deg, u.deg)
         )
         group_coords = SkyCoord(
-            group.ra * u.deg,
-            group.dec * u.deg
+            group.ra,
+            group.dec,
+            unit = (u.deg, u.deg)
         )
 
         idx, d2d, _ = group_coords.match_to_catalog_sky(selavy_coords)
@@ -478,6 +515,7 @@ class Query:
                     row['name']
                 )
             )
+            print("Not in VAST")
             return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
         primary_field = fields[0]
         epochs = []

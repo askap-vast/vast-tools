@@ -34,6 +34,9 @@ import warnings
 import pandas as pd
 import os
 import numpy as np
+import gc
+from multiprocessing import Pool
+from functools import partial
 
 from vasttools.utils import crosshair
 from vasttools.survey import Image
@@ -431,24 +434,66 @@ class Source:
 
         if not self.checked_norms:
             self.analyse_norm_level()
-
-        self.measurements['epoch'].apply(
+        # plt.ioff()
+        # fig = plt.figure(figsize=(8, 8))
+        multi_plot = partial(
             self.make_png_2,
-            args = (
-                True,
-                99.9,
-                False,
-                # contrast,
-                None,
-                True,
-                "Source",
-                False,
-                None,
-                False,
-                False,
-                True
-            )
+            selavy=True,
+            percentile=99.9,
+            zscale=False,
+            # contrast,
+            outfile=None,
+            no_islands=True,
+            label="Source",
+            no_colorbar=False,
+            title=None,
+            crossmatch_overlay=False,
+            hide_beam=False,
+            save=True
         )
+
+        workers = Pool(processes=8)
+
+        workers.map(multi_plot, self.measurements['epoch'].tolist())
+        # for e in self.measurements['epoch']:
+        #     self.make_png_2(
+        #         # e,
+        #         fig,
+        #         True,
+        #         99.9,
+        #         False,
+        #         # contrast,
+        #         None,
+        #         True,
+        #         "Source",
+        #         False,
+        #         None,
+        #         False,
+        #         False,
+        #         True
+        #     )
+            # fig.clf()
+        workers.close()
+        # self.measurements['epoch'].apply(
+        #     self.make_png_2,
+        #     args = (
+        #         fig,
+        #         True,
+        #         99.9,
+        #         False,
+        #         # contrast,
+        #         None,
+        #         True,
+        #         "Source",
+        #         False,
+        #         None,
+        #         False,
+        #         False,
+        #         True
+        #     )
+        # )
+        # plt.close(fig)
+        # gc.collect()
 
 
     def plot_all_cutouts(self, columns=4, zscale=False, percentile=99.9):
@@ -637,7 +682,7 @@ class Source:
 
         index = self.epochs.index(epoch)
 
-        cutout_row = self.cutout_df.iloc[index]
+        # cutout_row = self.cutout_df.iloc[index]
         # image has already been loaded to get the fits
         # outfile = outfile.replace(".fits", ".png")
         # convert data to mJy in case colorbar is used.
@@ -645,33 +690,33 @@ class Source:
         # cutout_wcs = self.cutout.wcs
         # create figure
         fig = plt.figure(figsize=(8, 8))
-        ax = fig.add_subplot(1, 1, 1, projection=cutout_row.wcs)
+        ax = fig.add_subplot(1, 1, 1, projection=self.cutout_df.iloc[index].wcs)
         # Get the Image Normalisation from zscale, user contrast.
         if not self.checked_norms:
             if zscale:
                 img_norms = ImageNormalize(
-                    cutout_row.data * 1000., interval=ZScaleInterval(
+                    self.cutout_df.iloc[index].data * 1000., interval=ZScaleInterval(
                         contrast=contrast))
             else:
                 img_norms = ImageNormalize(
-                    cutout_row.data * 1000.,
+                    self.cutout_df.iloc[index].data * 1000.,
                     interval=PercentileInterval(percentile),
                     stretch=LinearStretch())
         else:
             img_norms = self.norms
         im = ax.imshow(
-            cutout_row.data * 1.e3, norm=img_norms, cmap="gray_r"
+            self.cutout_df.iloc[index].data * 1.e3, norm=img_norms, cmap="gray_r"
         )
         # insert crosshair of target
         target_coords = np.array(
             ([[self.coord.ra.deg, self.coord.dec.deg]])
         )
-        target_coords = cutout_row.wcs.wcs_world2pix(target_coords, 0)
+        target_coords = self.cutout_df.iloc[index].wcs.wcs_world2pix(target_coords, 0)
         crosshair_lines = self._create_crosshair_lines(
             target_coords,
             0.03,
             0.03,
-            cutout_row.data.shape
+            self.cutout_df.iloc[index].data.shape
         )
         [ax.plot(
             l[0], l[1], color="C3", zorder=10, lw=1.5, alpha=0.6
@@ -700,12 +745,13 @@ class Source:
                     " Has the source been crossmatched?")
                 crossmatch_overlay = False
 
-        if not cutout_row['selavy_overlay'].empty:
+        if not self.cutout_df.iloc[index]['selavy_overlay'].empty:
             ax.set_autoscale_on(False)
             collection = self._gen_overlay_collection(
-                cutout_row
+                self.cutout_df.iloc[index]
             )
             ax.add_collection(collection, autolim=False)
+            del collection
 
             # ax.add_collection(collection, autolim=False)
             # Add island labels, haven't found a better way other than looping
@@ -764,13 +810,13 @@ class Source:
                 )
             )
         ax.set_title(title)
-        if cutout_row.beam is not None and hide_beam is False:
-            img_beam = cutout_row.beam
-            if cutout_row.wcs.is_celestial:
+        if self.cutout_df.iloc[index].beam is not None and hide_beam is False:
+            img_beam = self.cutout_df.iloc[index].beam
+            if self.cutout_df.iloc[index].wcs.is_celestial:
                 major = img_beam.major.value
                 minor = img_beam.minor.value
                 pa = img_beam.pa.value
-                pix_scale = proj_plane_pixel_scales(cutout_row.wcs)
+                pix_scale = proj_plane_pixel_scales(self.cutout_df.iloc[index].wcs)
                 sx = pix_scale[0]
                 sy = pix_scale[1]
                 degrees_per_pixel = np.sqrt(sx * sy)
@@ -793,7 +839,20 @@ class Source:
         if save:
             plt.savefig(outfile, bbox_inches="tight")
             self.logger.info("Saved {}".format(outfile))
-            plt.close()
+            # fig.clf()
+            # ax.cla()
+            plt.close(fig)
+            # del fig
+            # del ax
+            # del im
+            # del target_coords
+            # del divider
+            # del cax
+            # del png_beam
+            # gc.collect()
+            # gc.collect()
+            # gc.collect()
+            return
         else:
             return fig
 
