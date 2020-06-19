@@ -8,11 +8,17 @@ from vasttools.survey import Fields, Image
 from vasttools.survey import RELEASED_EPOCHS
 from vasttools.source import Source
 from vasttools.query import Query, EpochInfo
-from vasttools.utils import get_logger
+from vasttools.utils import (
+    get_logger,
+    build_catalog,
+    build_SkyCoord
+)
+
 
 import argparse
 import os
 import datetime
+import shutil
 
 runstart = datetime.datetime.now()
 
@@ -40,7 +46,7 @@ def parse_args():
               " See example file for format."))
 
     parser.add_argument(
-        '--vast-pilot',
+        '--epochs',
         type=str,
         help=("Select the VAST Pilot Epoch to query. Epoch 0 is RACS. "
               "All available epochs can be queried using "
@@ -93,18 +99,6 @@ def parse_args():
         '--base-folder',
         type=str,
         help='Path to base folder if using default directory structure')
-    parser.add_argument(
-        '--img-folder',
-        type=str,
-        help='Path to folder where images are stored')
-    parser.add_argument(
-        '--rms-folder',
-        type=str,
-        help='Path to folder where image RMS estimates are stored')
-    parser.add_argument(
-        '--cat-folder',
-        type=str,
-        help='Path to folder where selavy catalogues are stored')
     parser.add_argument(
         '--create-png',
         action="store_true",
@@ -196,17 +190,74 @@ def parse_args():
     return args
 
 
+def check_output_directory(args):
+    '''
+    Build the output directory and store the path
+    '''
+
+    logger = logging.getLogger()
+
+    output_dir = args.out_folder
+
+    if os.path.isdir(output_dir):
+        if args.clobber:
+            logger.warning(("Directory {} already exists "
+                                 "but clobber selected. "
+                                 "Removing current directory."
+                                 ).format(output_dir))
+            shutil.rmtree(output_dir)
+        else:
+            logger.critical(
+                ("Requested output directory '{}' already exists! "
+                 "Will not overwrite.").format(output_dir))
+            return False
+
+    logger.info("Creating directory '{}'.".format(output_dir))
+    os.mkdir(output_dir)
+
+    return True
+
+
 if __name__ == '__main__':
     args = parse_args()
+
     os.nice(args.nice)
 
     logfile = "find_sources_{}.log".format(
-        runstart.strftime("%Y%m%d_%H:%M:%S"))
+        runstart.strftime("%Y%m%d_%H:%M:%S")
+    )
+
     logger = get_logger(args.debug, args.quiet, logfile=logfile)
     logger.debug("Available epochs: {}".format(sorted(RELEASED_EPOCHS.keys())))
 
-    query = Query(args)
-    query.run_query()
+    output_ok = check_output_directory(args)
+
+    if not output_ok:
+        logger.critical("Exiting.")
+        sys.exit()
+
+    catalog = build_catalog(args.coords, args.names)
+
+    sky_coords = build_SkyCoord(catalog)
+
+    query = Query(
+        coords,
+        source_names=catalog.name
+        epochs=args.epochs, # needs parsing
+        stokes=args.stokes,
+        crossmatch_radius=10.,
+        max_sep=args.maxsep,
+        use_tiles=args.use_tiles,
+        use_islands=args.islands,
+        base_folder=args.base_folder,
+        matches_only=args.process_matches,
+        no_rms=args.no_background_rms,
+        output_dir=args.out_folder
+    )
+
+    if args.find_fields:
+        query.find_fields()
+        # query.write_find_fields()
 
     runend = datetime.datetime.now()
     runtime = runend - runstart

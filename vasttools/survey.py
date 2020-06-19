@@ -49,6 +49,7 @@ def get_fields_per_epoch_and_info():
 
 
 RELEASED_EPOCHS = {
+    "0": "00",
     "1": "01",
     "2": "02",
     "3x": "03x",

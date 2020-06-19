@@ -10,11 +10,13 @@ import os
 import datetime
 import pandas as pd
 import warnings
-import shutil
 import io
 import socket
 import re
 from psutil import cpu_count
+
+from multiprocessing import Pool, cpu_count
+from functools import partial
 
 import logging
 import logging.handlers
@@ -76,7 +78,7 @@ class Query:
         self.coords = coords
         self.source_names = source_names
 
-        self.query_df = self.build_catalog_2()
+        self.query_df = self.build_catalog()
 
         self.settings = {}
 
@@ -100,27 +102,50 @@ class Query:
             self.base_folder = base_folder
 
         if not os.path.isdir(self.base_folder):
+            self.logger.critical("The base directory {} does not exist!".format(
+                self.base_folder
+            ))
             raise ValueError("The base directory {} does not exist!".format(
                 self.base_folder
             ))
 
+        settings_ok = self._validate_settings()
+
+        if not settings_ok:
+            self.logger.critical("Problems found in query settings!")
+            self.logger.critical("Please address and try again.")
+            raise ValueError((
+                "Problems found in query settings!"
+                "\nPlease address and try again."
+            ))
+
         self.fields_found = False
 
-        # self.catalog = self.build_catalog()
-        # self.src_coords = self.build_SkyCoord()
-        # self.logger.info(
-        #     "Finding fields for {} sources...".format(len(self.src_coords)))
-
-        # if output is not None:
-        #     self.set_outfile_prefix()
-        #     self.set_output_directory()
-
-        # self.imsize = Angle(args.imsize, unit=u.arcmin)
-        # self.max_sep = args.maxsep
-        # self.crossmatch_radius = Angle(args.crossmatch_radius, unit=u.arcsec)
+        self.cutout_data_got = False
 
 
-    def run_new_query(self):
+    def _validate_settings(self):
+        """Use to check misc details"""
+
+        if self.settings['tiles'] and self.settings['stokes'].lower() != "i":
+            self.logger.critital("Only Stokes I are supported with tiles!")
+            return False
+
+        if self.settings['tiles'] and self.settings['islands']:
+            self.logger.critital(
+                "Only component catalogues are supported with tiles!"
+            )
+            return False
+
+        if self.settings['tiles'] and self.settings['no_rms'] == False:
+            self.logger.warning("RMS measurements are not supported with tiles!")
+            self.logger.warning("Turning RMS measurements off.")
+            self.settings['no_rms'] = True
+
+        return True
+
+
+    def run_query(self):
         self.find_fields()
 
         self.query_df[["result"]] = self.query_df.apply(
@@ -129,7 +154,7 @@ class Query:
         )
 
 
-    def create_all_cutouts(self, ):
+    def get_all_cutout_data(self):
         # first get cutout data and selavy sources per image
         # group by image to do this
 
@@ -162,7 +187,56 @@ class Query:
             s.cutout_df = s_cutout
             s._cutouts_got = True
 
-            s.save_all_png_cutouts()
+        self.cutout_data_got = True
+
+
+    def gen_all_cutout_products(
+        self,
+        png=True,
+        fits=False,
+        ann=False,
+        reg=False
+    ):
+
+        if not self.cutout_data_got:
+            self.get_all_cutout_data()
+
+        num_cpu = int(cpu_count() / 4)
+
+        original_sigint_handler = signal.signal(
+            signal.SIGINT, signal.SIG_IGN
+        )
+
+        workers = Pool(processes=num_cpu)
+
+        signal.signal(signal.SIGINT, original_sigint_handler)
+
+        try:
+            workers.map(save_all_png_cutouts, self.results)
+        except KeyboardInterrupt:
+            self.logger.error(
+                "Caught KeyboardInterrupt, terminating workers."
+            )
+            workers.terminate()
+            sys.exit()
+        else:
+            self.logger.info("Normal termination")
+            workers.close()
+            workers.join()
+
+        #
+        # for s in self.results:
+        #     if png:
+        #         s.save_all_png_cutouts()
+        #
+        #     if fits:
+        #         s.save_all_fits_cutouts()
+        #
+        #     if ann:
+        #         s.save_all_ann()
+        #
+        #     if reg:
+        #         s.save_all_reg()
 
         # del cutouts
 
@@ -173,6 +247,10 @@ class Query:
         # self.results.apply(
         #     self._save_all_png_cutouts,
         # )
+
+
+    def save_fields(self, out_dir=None):
+        pass
 
 
     def _save_all_png_cutouts(self, s):
@@ -290,19 +368,19 @@ class Query:
         self.query_df = self.query_df.explode(
             'field_per_epoch'
         ).reset_index(drop=True)
-        self.query_df[['epoch', 'field', 'sbid', 'dateobs']] = self.query_df.field_per_epoch.apply(pd.Series)
-        self.query_df[['selavy', 'image', 'rms']] = self.query_df[['field_per_epoch']].apply(
+        self.query_df[
+            ['epoch', 'field', 'sbid', 'dateobs']
+        ] = self.query_df.field_per_epoch.apply(pd.Series)
+        self.query_df[
+            ['selavy', 'image', 'rms']
+        ] = self.query_df[['field_per_epoch', 'sbid']].apply(
             self._add_files,
             axis=1,
             result_type='expand'
         )
 
-
         grouped_query = self.query_df.groupby('selavy')
-        # I tried an apply function here but met confusing crashes.
-        # I think apply is not suitable here and instead I'm using iterrows unfortunately
 
-        # original
         results = grouped_query.apply(
             lambda x: self._get_components(x.name, x)
         )
@@ -406,21 +484,28 @@ class Query:
         master = master.append(copy, sort=False)
 
         missing = group_coords[~mask]
-        if missing.shape[0] > 0 and self.settings['no_rms'] == False:
-            image = Image(
-                group.iloc[0].field,
-                group.iloc[0].epoch,
-                self.settings['stokes'],
-                self.base_folder,
-                sbid=group.iloc[0].sbid
-            )
-            rms_values = image.measure_coord_pixel_values(
-                missing, rms=True
-            )
-            rms_df = pd.DataFrame(rms_values, columns=['rms_image'])
+        if missing.shape[0] > 0:
+            if not self.settings['no_rms']:
+                image = Image(
+                    group.iloc[0].field,
+                    group.iloc[0].epoch,
+                    self.settings['stokes'],
+                    self.base_folder,
+                    sbid=group.iloc[0].sbid
+                )
+                rms_values = image.measure_coord_pixel_values(
+                    missing, rms=True
+                )
+                rms_df = pd.DataFrame(rms_values, columns=['rms_image'])
 
-            # to mJy
-            rms_df['rms_image'] = rms_df['rms_image'] * 1.e3
+                # to mJy
+                rms_df['rms_image'] = rms_df['rms_image'] * 1.e3
+            else:
+                rms_df = pd.DataFrame(
+                    [-99 for i in range(missing.shape[0])],
+                    columns=['rms_image']
+                )
+
             rms_df['detection'] = False
 
             rms_df.index = group[~mask].index.values
@@ -431,52 +516,82 @@ class Query:
 
 
     def _add_files(self, row):
+
+        epoch_string = "EPOCH{}".format(
+            RELEASED_EPOCHS[row.field_per_epoch[0]]
+        )
+
         if self.settings['islands']:
             cat_type = 'islands'
         else:
             cat_type = 'components'
+
         if self.settings['tiles']:
-            pass
+
+            dir_name = "TILES"
+
+            selavy_file_fmt = (
+                "selavy-image.i.SB{}.cont.{}."
+                "linmos.taylor.0.restored.components.txt".format(
+                    row.sbid, row.field_per_epoch[1]
+                )
+            )
+
+            image_file_fmt = (
+                "image.i.SB{}.cont.{}"
+                ".linmos.taylor.0.restored.fits".format(
+                    row.sbid, row.field_per_epoch[1]
+                )
+            )
+
         else:
-            selavy_file = os.path.join(
-                self.base_folder,
-                (
-                    "EPOCH{0}/"
-                    "COMBINED/"
-                    "STOKES{1}_SELAVY/"
-                    "{2}.EPOCH{0}.{1}.selavy.{3}.txt".format(
-                        RELEASED_EPOCHS[row.field_per_epoch[0]],
-                        self.settings['stokes'],
-                        row.field_per_epoch[1],
-                        cat_type
-                    )
-                )
+
+            dir_name = "COMBINED"
+
+            selavy_file_fmt = "{}.EPOCH{}.{}.selavy.{}.txt".format(
+                row.field_per_epoch[1],
+                RELEASED_EPOCHS[row.field_per_epoch[0]],
+                self.settings['stokes'],
+                cat_type
             )
-            image_file = os.path.join(
-                self.base_folder,
-                (
-                    "EPOCH{0}/"
-                    "COMBINED/"
-                    "STOKES{1}_IMAGES/"
-                    "{2}.EPOCH{0}.{1}.fits".format(
-                        RELEASED_EPOCHS[row.field_per_epoch[0]],
-                        self.settings['stokes'],
-                        row.field_per_epoch[1]
-                    )
-                )
+
+            image_file_fmt = "{}.EPOCH{}.{}.fits".format(
+                row.field_per_epoch[1],
+                RELEASED_EPOCHS[row.field_per_epoch[0]],
+                self.settings['stokes'],
             )
+
+            rms_file_fmt = "{}.EPOCH{}.{}_rms.fits".format(
+                row.field_per_epoch[1],
+                RELEASED_EPOCHS[row.field_per_epoch[0]],
+                self.settings['stokes'],
+            )
+
+        selavy_file = os.path.join(
+            self.base_folder,
+            epoch_string,
+            dir_name,
+            "STOKES{}_SELAVY".format(self.settings['stokes']),
+            selavy_file_fmt
+        )
+
+        image_file = os.path.join(
+            self.base_folder,
+            epoch_string,
+            dir_name,
+            "STOKES{}_IMAGES".format(self.settings['stokes']),
+            image_file_fmt
+        )
+
+        if self.settings['tiles']:
+            rms_file = "N/A"
+        else:
             rms_file = os.path.join(
                 self.base_folder,
-                (
-                    "EPOCH{0}/"
-                    "COMBINED/"
-                    "STOKES{1}_RMSMAPS/"
-                    "{2}.EPOCH{0}.{1}_rms.fits".format(
-                        RELEASED_EPOCHS[row.field_per_epoch[0]],
-                        self.settings['stokes'],
-                        row.field_per_epoch[1]
-                    )
-                )
+                epoch_string,
+                dir_name,
+                "STOKES{}_RMSMAPS".format(self.settings['stokes']),
+                rms_file_fmt
             )
 
         return selavy_file, image_file, rms_file
@@ -490,7 +605,7 @@ class Query:
             unit=(u.deg, u.deg)
         )
 
-        field_centre_names = FIELD_CENTRES.image
+        field_centre_names = FIELD_CENTRES.field
 
         self.query_df[[
             'fields',
@@ -526,47 +641,58 @@ class Query:
         seps = row.skycoord.separation(fields_coords)
         accept = seps.deg < self.settings['max_sep']
         fields = np.unique(fields_names[accept])
+
         if fields.shape[0] == 0:
             warnings.warn(
                 "Source '{}' not in selected footprint. Dropping source.".format(
                     row['name']
                 )
             )
-            print("Not in VAST")
             return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
+
         centre_seps = row.skycoord.separation(field_centres)
         primary_field = field_centre_names[np.argmin(centre_seps.deg)]
         epochs = []
         field_per_epochs = []
         sbids = []
         dateobs = []
+
         for i in self.settings['epochs']:
             epoch_fields = EPOCH_FIELDS[i].keys()
-            if primary_field in epoch_fields:
-                epochs.append(i)
-                sbid = EPOCH_FIELDS[i][primary_field]["SBID"]
-                date = EPOCH_FIELDS[i][primary_field]["DATEOBS"]
-                sbids.append(sbid)
-                dateobs.append(date)
-                field_per_epochs.append([i,primary_field,sbid,date])
+            available_fields = [f for f in fields if f in epoch_fields]
+
+            if len(available_fields) == 0:
+                continue
+
+            elif primary_field in available_fields:
+                field = primary_field
+
+            elif len(available_fields) == 1:
+                field = fields[0]
+
             else:
-                for j in fields:
-                    if j in epoch_fields:
-                        epochs.append(i)
-                        sbid = EPOCH_FIELDS[i][j]["SBID"]
-                        date = EPOCH_FIELDS[i][j]["DATEOBS"]
-                        sbids.append(sbid)
-                        dateobs.append(date)
-                        field_per_epochs.append([i,j,sbid,date])
-                        break
+                field_indexes = [
+                    field_centre_names.index(f) for f in available_fields
+                ]
+                min_field_index = np.argmin(
+                    centre_seps[field_indexes].deg
+                )
+
+                field = available_fields[min_field_index]
+
+            epochs.append(i)
+            sbid = EPOCH_FIELDS[i][field]["SBID"]
+            date = EPOCH_FIELDS[i][field]["DATEOBS"]
+            sbids.append(sbid)
+            dateobs.append(date)
+            field_per_epochs.append([i,field,sbid,date])
 
         return fields, primary_field, epochs, field_per_epochs, sbids, dateobs
 
 
-    def build_catalog_2(self):
+    def build_catalog(self):
         cols = ['ra', 'dec', 'name', 'skycoord']
         if self.coords.shape == ():
-            print('here')
             catalog = pd.DataFrame(
                 [[
                     self.coords.ra.deg,
@@ -587,113 +713,11 @@ class Query:
         return catalog
 
 
-    def build_catalog(self):
-        '''
-        Build the catalogue of target sources
-
-        :returns: Catalogue of target sources
-        :rtype: `pandas.core.frame.DataFrame`
-        '''
-
-        if " " not in self.args.coords:
-            self.logger.info("Loading file {}".format(self.args.coords))
-            # Give explicit check to file existence
-            user_file = os.path.abspath(self.args.coords)
-            if not os.path.isfile(user_file):
-                self.logger.critical("{} not found!".format(user_file))
-                self.logger.critical("Exiting.")
-                sys.exit()
-            try:
-                catalog = pd.read_csv(user_file, comment="#")
-                catalog.dropna(how="all", inplace=True)
-                self.logger.debug(catalog)
-                catalog.columns = map(str.lower, catalog.columns)
-                self.logger.debug(catalog.columns)
-                no_ra_col = "ra" not in catalog.columns
-                no_dec_col = "dec" not in catalog.columns
-                if no_ra_col or no_dec_col:
-                    self.logger.critical(
-                        "Cannot find one of 'ra' or 'dec' in input file.")
-                    self.logger.critical("Please check column headers!")
-                    sys.exit()
-                if "name" not in catalog.columns:
-                    catalog["name"] = [
-                        "{}_{}".format(
-                            i, j) for i, j in zip(
-                            catalog['ra'], catalog['dec'])]
-            except Exception as e:
-                self.logger.critical(
-                    "Pandas reading of {} failed!".format(self.args.coords))
-                self.logger.critical("Check format!")
-                sys.exit()
-        else:
-            catalog_dict = {'ra': [], 'dec': []}
-            coords = self.args.coords.split(",")
-            for i in coords:
-                ra_str, dec_str = i.split(" ")
-                catalog_dict['ra'].append(ra_str)
-                catalog_dict['dec'].append(dec_str)
-
-            if self.args.source_names != "":
-                source_names = self.args.source_names.split(",")
-                if len(source_names) != len(catalog_dict['ra']):
-                    self.logger.critical(
-                        ("All sources must be named "
-                         "when using '--source-names'."))
-                    self.logger.critical("Please check inputs.")
-                    sys.exit()
-            else:
-                source_names = [
-                    "{}_{}".format(
-                        i, j) for i, j in zip(
-                        catalog_dict['ra'], catalog_dict['dec'])]
-
-            catalog_dict['name'] = source_names
-
-            catalog = pd.DataFrame.from_dict(catalog_dict)
-            catalog = catalog[['name', 'ra', 'dec']]
-
-        catalog['name'] = catalog['name'].astype(str)
-
-        return catalog
 
 
-    def build_SkyCoord(self):
-        '''
-        Create a SkyCoord array for each target source
 
-        :returns: Target source SkyCoord
-        :rtype: `astropy.coordinates.sky_coordinate.SkyCoord`
-        '''
 
-        ra_str = self.catalog['ra'].iloc[0]
-        if self.catalog['ra'].dtype == np.float64:
-            hms = False
-            deg = True
 
-        elif ":" in ra_str or " " in ra_str:
-            hms = True
-            deg = False
-        else:
-            deg = True
-            hms = False
-
-        if hms:
-            src_coords = SkyCoord(
-                self.catalog['ra'],
-                self.catalog['dec'],
-                unit=(
-                    u.hourangle,
-                    u.deg))
-        else:
-            src_coords = SkyCoord(
-                self.catalog['ra'],
-                self.catalog['dec'],
-                unit=(
-                    u.deg,
-                    u.deg))
-
-        return src_coords
 
     def get_epochs(self, req_epochs):
         '''
@@ -734,30 +758,6 @@ class Query:
 
         return epochs
 
-    def set_output_directory(self):
-        '''
-        Build the output directory and store the path
-        '''
-
-        output_dir = self.args.out_folder
-        if os.path.isdir(output_dir):
-            if self.args.clobber:
-                self.logger.warning(("Directory {} already exists "
-                                     "but clobber selected. "
-                                     "Removing current directory."
-                                     ).format(output_dir))
-                shutil.rmtree(output_dir)
-            else:
-                self.logger.critical(
-                    ("Requested output directory '{}' already exists! "
-                     "Will not overwrite.").format(output_dir))
-                self.logger.critical("Exiting.")
-                sys.exit()
-
-        self.logger.info("Creating directory '{}'.".format(output_dir))
-        os.mkdir(output_dir)
-
-        self.output_dir = output_dir
 
     def get_stokes(self, req_stokes):
         '''
@@ -798,17 +798,17 @@ class Query:
 
         self.outfile_prefix = outfile_prefix
 
-    def run_query(self):
-        '''
-        Run the requested query
-        '''
-
-        for epoch in self.epochs:
-            self.run_epoch(epoch)
-        self.logger.info(
-            "-----------------------------------------------------")
-        self.logger.info("Query executed successfully!")
-        self.logger.info("All results in {}.".format(self.output_dir))
+    # def run_query(self):
+    #     '''
+    #     Run the requested query
+    #     '''
+    #
+    #     for epoch in self.epochs:
+    #         self.run_epoch(epoch)
+    #     self.logger.info(
+    #         "-----------------------------------------------------")
+    #     self.logger.info("Query executed successfully!")
+    #     self.logger.info("All results in {}.".format(self.output_dir))
 
     def run_epoch(self, epoch):
         '''

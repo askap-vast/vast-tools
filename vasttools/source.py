@@ -429,6 +429,61 @@ class Source:
         return fig
 
 
+    def save_all_ann(self, crossmatch_overlay=False):
+        self.measurements['epoch'].apply(
+            self.write_ann,
+            args=(
+                None,
+                crossmatch_overlay
+            )
+        )
+
+
+    def save_all_reg(self, crossmatch_overlay=False):
+        self.measurements['epoch'].apply(
+            self.write_reg,
+            args=(
+                None,
+                crossmatch_overlay
+            )
+        )
+
+
+    def save_all_fits_cutouts(self):
+        if self._cutouts_got is False:
+            self.get_cutout_data()
+
+        # multi_save_fits = partial(
+        #     self.save_fits_cutout
+        # )
+        #
+        # num_cpu = int(cpu_count() / 4)
+        #
+        # original_sigint_handler = signal.signal(
+        #     signal.SIGINT, signal.SIG_IGN
+        # )
+        #
+        # workers = Pool(processes=num_cpu)
+        #
+        # signal.signal(signal.SIGINT, original_sigint_handler)
+        #
+        # try:
+        #     workers.map(multi_save_fits, self.measurements['epoch'].tolist())
+        # except KeyboardInterrupt:
+        #     self.logger.error(
+        #         "Caught KeyboardInterrupt, terminating workers."
+        #     )
+        #     workers.terminate()
+        #     sys.exit()
+        # else:
+        #     self.logger.info("Normal termination")
+        #     workers.close()
+        #     workers.join()
+
+        for e in self.measurements['epoch']:
+            self.save_fits_cutout(e)
+
+
     def save_all_png_cutouts(self):
         if self._cutouts_got is False:
             self.get_cutout_data()
@@ -960,6 +1015,7 @@ class Source:
 
         self.logger.info("Wrote annotation file {}.".format(outfile))
 
+
     def write_reg(self, epoch, outfile=None, crossmatch_overlay=False):
         '''
         Write a DS9 region file containing all selavy sources within the image
@@ -1042,6 +1098,52 @@ class Source:
 
         self.logger.info("Wrote region file {}.".format(outfile))
 
+
+    def save_measurements(
+        self,
+        out_dir=None,
+        simple=False,
+        detections_only=False
+    ):
+
+        if simple:
+            to_write = self.measurements[[
+                'name',
+                'field',
+                'epoch',
+                'dateobs',
+                'ra_deg_cont',
+                'dec_deg_cont',
+                'flux_peak',
+                'flux_peak_err',
+                'flux_int',
+                'flux_int_err',
+                'rms_image',
+                'detection'
+            ]].sort_values(
+                by='dateobs'
+            )
+        else:
+            to_write = self.measurements.drop(['skycoord']).sort_values(
+                by='dateobs'
+            )
+
+        if detections_only:
+            to_write = to_write[to_write.detection == True]
+
+        outname = "{}_results.csv".format(
+            self.name.replace(" ", "_")
+        )
+
+        if out_dir is not None:
+            outname = os.join.path(
+                out_dir,
+                outname
+            )
+
+        to_write.to_csv(outname, index=False)
+
+
     def _remove_sbid(self, island):
         '''
         Removes the SBID component of the island name. Takes into account
@@ -1059,6 +1161,8 @@ class Source:
         if temp[0].startswith("n"):
             new_val = "n" + new_val
         return new_val
+
+
 
 
 

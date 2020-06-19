@@ -155,3 +155,115 @@ def check_file(path):
             "Cannot find file '%s'!", path
         )
     return exists
+
+def build_catalog(coords, source_names):
+    '''
+    Build the catalogue of target sources
+
+    :returns: Catalogue of target sources
+    :rtype: `pandas.core.frame.DataFrame`
+    '''
+
+    logger = logging.getLogger()
+
+    if " " not in coords:
+        logger.info("Loading file {}".format(coords))
+        # Give explicit check to file existence
+        user_file = os.path.abspath(coords)
+        if not os.path.isfile(user_file):
+            logger.critical("{} not found!".format(user_file))
+            logger.critical("Exiting.")
+            sys.exit()
+        try:
+            catalog = pd.read_csv(user_file, comment="#")
+            catalog.dropna(how="all", inplace=True)
+            logger.debug(catalog)
+            catalog.columns = map(str.lower, catalog.columns)
+            logger.debug(catalog.columns)
+            no_ra_col = "ra" not in catalog.columns
+            no_dec_col = "dec" not in catalog.columns
+            if no_ra_col or no_dec_col:
+                logger.critical(
+                    "Cannot find one of 'ra' or 'dec' in input file.")
+                logger.critical("Please check column headers!")
+                sys.exit()
+            if "name" not in catalog.columns:
+                catalog["name"] = [
+                    "{}_{}".format(
+                        i, j) for i, j in zip(
+                        catalog['ra'], catalog['dec'])]
+        except Exception as e:
+            logger.critical(
+                "Pandas reading of {} failed!".format(coords))
+            logger.critical("Check format!")
+            sys.exit()
+    else:
+        catalog_dict = {'ra': [], 'dec': []}
+        coords = coords.split(",")
+        for i in coords:
+            ra_str, dec_str = i.split(" ")
+            catalog_dict['ra'].append(ra_str)
+            catalog_dict['dec'].append(dec_str)
+
+        if source_names != "":
+            source_names = source_names.split(",")
+            if len(source_names) != len(catalog_dict['ra']):
+                logger.critical(
+                    ("All sources must be named "
+                     "when using '--source-names'."))
+                logger.critical("Please check inputs.")
+                sys.exit()
+        else:
+            source_names = [
+                "{}_{}".format(
+                    i, j) for i, j in zip(
+                    catalog_dict['ra'], catalog_dict['dec'])]
+
+        catalog_dict['name'] = source_names
+
+        catalog = pd.DataFrame.from_dict(catalog_dict)
+        catalog = catalog[['name', 'ra', 'dec']]
+
+    catalog['name'] = catalog['name'].astype(str)
+
+    return catalog
+
+
+def build_SkyCoord(catalog):
+    '''
+    Create a SkyCoord array for each target source
+
+    :returns: Target source SkyCoord
+    :rtype: `astropy.coordinates.sky_coordinate.SkyCoord`
+    '''
+
+    logger = logging.getLogger()
+
+    ra_str = catalog['ra'].iloc[0]
+    if catalog['ra'].dtype == np.float64:
+        hms = False
+        deg = True
+
+    elif ":" in ra_str or " " in ra_str:
+        hms = True
+        deg = False
+    else:
+        deg = True
+        hms = False
+
+    if hms:
+        src_coords = SkyCoord(
+            catalog['ra'],
+            catalog['dec'],
+            unit=(
+                u.hourangle,
+                u.deg))
+    else:
+        src_coords = SkyCoord(
+            catalog['ra'],
+            catalog['dec'],
+            unit=(
+                u.deg,
+                u.deg))
+
+    return src_coords
