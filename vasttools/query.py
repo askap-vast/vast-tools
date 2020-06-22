@@ -192,10 +192,36 @@ class Query:
 
     def gen_all_cutout_products(
         self,
-        png=True,
-        fits=False,
+        fits=True,
+        png=False,
         ann=False,
-        reg=False
+        reg=False,
+        lightcurve=False,
+        fits_outfile=None,
+        png_selavy=True,
+        png_percentile=99.9,
+        png_zscale=False,
+        png_contrast=0.2,
+        png_outfile=None,
+        png_islands=True,
+        png_label="Source",
+        png_no_colorbar=False,
+        png_title=None,
+        png_crossmatch_overlay=False,
+        png_hide_beam=False,
+        ann_outfile=None,
+        ann_crossmatch_overlay=False,
+        reg_outfile=None,
+        reg_crossmatch_overlay=False,
+        lc_sigma_thresh=5,
+        lc_savefile=None,
+        lc_figsize=(8, 4),
+        lc_min_points=2,
+        lc_min_detections=1,
+        lc_mjd=False,
+        lc_grid=False,
+        lc_yaxis_start="auto",
+        lc_peak_flux=True
     ):
 
         if not self.cutout_data_got:
@@ -211,14 +237,66 @@ class Query:
 
         signal.signal(signal.SIGINT, original_sigint_handler)
 
+        if png:
+            multi_png = partial(
+                self._save_all_png_cutouts,
+                selavy=png_selavy,
+                percentile=png_percentile,
+                zscale=png_use_zscale,
+                contrast=png_zscale_contrast,
+                no_islands=png_no_islands,
+                label=png_label,
+                no_colorbar=png_no_colourbar,
+                title=None,
+                crossmatch_overlay=png_crossmatch_overlay,
+                hide_beam=png_hide_beam
+            )
+
+        if ann:
+            multi_ann = partial(
+                self._save_all_ann,
+                crossmatch_overlay=ann_crossmatch_overlay
+            )
+
+        if reg:
+            multi_reg = partial(
+                self._save_all_reg,
+                crossmatch_overlay=reg_crossmatch_overlay
+            )
+
+        if lightcurve:
+            multi_lc = partial(
+                self._save_all_lc,
+                lc_sigma_thresh=5,
+                lc_savefile=None,
+                lc_figsize=(8, 4),
+                lc_min_points=2,
+                lc_min_detections=1,
+                lc_mjd=False,
+                lc_grid=False,
+                lc_yaxis_start="auto",
+                lc_peak_flux=True
+            )
+
         try:
-            workers.map(save_all_png_cutouts, self.results)
+            if fits:
+                workers.map(multi_fitst, self.results)
+            if png:
+                workers.map(multi_png, self.results)
+            if ann:
+                workers.map(multi_ann, self.results)
+            if reg:
+                workers.map(multi_reg, self.results)
+            if lightcurve:
+                workers.map(multi_lc, self.results)
+
         except KeyboardInterrupt:
             self.logger.error(
                 "Caught KeyboardInterrupt, terminating workers."
             )
             workers.terminate()
             sys.exit()
+
         else:
             self.logger.info("Normal termination")
             workers.close()
@@ -255,7 +333,59 @@ class Query:
 
     def _save_all_png_cutouts(self, s):
 
-        s.save_all_png_cutouts()
+        s.save_all_png_cutouts(
+            selavy=selavy_overlay,
+            percentile=percentile,
+            zscale=use_zscale,
+            contrast=zscale_contrast,
+            no_islands=no_islands,
+            label=label,
+            no_colorbar=no_colourbar,
+            title=None,
+            crossmatch_overlay=crossmatch_overlay,
+            hide_beam=hide_beam
+        )
+
+
+    def _save_all_fits_cutouts(self, s):
+
+        s.save_all_fits_cutouts()
+
+
+    def _save_all_ann(self, s, crossmatch_overlay=False):
+
+        s.save_all_ann(crossmatch_overlay=crossmatch_overlay)
+
+
+    def _save_all_reg(self, s, crossmatch_overlay=False):
+
+        s.save_all_ann(crossmatch_overlay=crossmatch_overlay)
+
+
+    def _save_all_lc(
+        self,
+        s,
+        lc_sigma_thresh=5,
+        lc_savefile=None,
+        lc_figsize=(8, 4),
+        lc_min_points=2,
+        lc_min_detections=1,
+        lc_mjd=False,
+        lc_grid=False,
+        lc_yaxis_start="auto",
+        lc_peak_flux=True
+    ):
+        s.save_all_lc(
+            sigma_thresh=5,
+            savefile=None,
+            figsize=(8, 4),
+            min_points=2,
+            min_detections=1,
+            mjd=False,
+            grid=False,
+            yaxis_start="auto",
+            peak_flux=True
+        )
 
 
     def _add_source_cutout_data(self, s):

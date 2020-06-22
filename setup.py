@@ -14,7 +14,6 @@ setup(
     install_requires=[
         "astropy>=3.2,<4.2,!=4.0",
         "colorlog>=4.0.2,<5.0",
-        "dropbox>=9.4.0,<9.5.0",
         "matplotlib>=3.1.2,<4.0",
         "numexpr>=2.7.1,<2.8",
         "numpy>=1.17.4,<1.18",
