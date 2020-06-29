@@ -748,6 +748,7 @@ class Source:
                 self.name.replace(" ", "_"),
                 RELEASED_EPOCHS[epoch]
             )
+
         if self.outdir != ".":
             outfile = os.path.join(
                 self.outdir,
@@ -764,34 +765,45 @@ class Source:
         # cutout_wcs = self.cutout.wcs
         # create figure
         fig = plt.figure(figsize=(8, 8))
-        ax = fig.add_subplot(1, 1, 1, projection=self.cutout_df.iloc[index].wcs)
+        ax = fig.add_subplot(111, projection=self.cutout_df.iloc[index].wcs)
         # Get the Image Normalisation from zscale, user contrast.
         if not self.checked_norms:
             if zscale:
                 img_norms = ImageNormalize(
-                    self.cutout_df.iloc[index].data * 1000., interval=ZScaleInterval(
-                        contrast=contrast))
+                    self.cutout_df.iloc[index].data * 1.e3,
+                    interval=ZScaleInterval(
+                        contrast=contrast
+                    ))
             else:
                 img_norms = ImageNormalize(
-                    self.cutout_df.iloc[index].data * 1000.,
+                    self.cutout_df.iloc[index].data * 1.e3,
                     interval=PercentileInterval(percentile),
                     stretch=LinearStretch())
         else:
             img_norms = self.norms
+
         im = ax.imshow(
-            self.cutout_df.iloc[index].data * 1.e3, norm=img_norms, cmap="gray_r"
+            self.cutout_df.iloc[index].data * 1.e3,
+            norm=img_norms,
+            cmap="gray_r"
         )
+
         # insert crosshair of target
         target_coords = np.array(
             ([[self.coord.ra.deg, self.coord.dec.deg]])
         )
-        target_coords = self.cutout_df.iloc[index].wcs.wcs_world2pix(target_coords, 0)
+
+        target_coords = self.cutout_df.iloc[index].wcs.wcs_world2pix(
+            target_coords, 0
+        )
+
         crosshair_lines = self._create_crosshair_lines(
             target_coords,
             0.03,
             0.03,
             self.cutout_df.iloc[index].data.shape
         )
+
         [ax.plot(
             l[0], l[1], color="C3", zorder=10, lw=1.5, alpha=0.6
         ) for l in crosshair_lines]
@@ -827,7 +839,6 @@ class Source:
             ax.add_collection(collection, autolim=False)
             del collection
 
-            # ax.add_collection(collection, autolim=False)
             # Add island labels, haven't found a better way other than looping
             # at the moment.
             if not no_islands and not self.islands:
@@ -840,38 +851,50 @@ class Source:
                         weight="bold")
         else:
             self.logger.warning(
-                "PNG: No selavy selected or selavy catalogue failed.")
+                "PNG: No selavy selected or selavy catalogue failed."
+            )
+
         legend_elements = [
             Line2D(
                 [0], [0], marker='c', color='C3', label=label,
-                markerfacecolor='g', ls="none", markersize=8)]
+                markerfacecolor='g', ls="none", markersize=8
+            )
+        ]
+
         if selavy:
             legend_elements.append(
                 Line2D(
                     [0], [0], marker='o', color='C1',
                     label="Selavy {}".format(self.cat_type),
-                    markerfacecolor='none', ls="none", markersize=10)
+                    markerfacecolor='none', ls="none", markersize=10
+                )
             )
+
         if crossmatch_overlay:
             legend_elements.append(
                 Line2D(
                     [0], [0], marker='o', color='C4',
                     label="Crossmatch radius ({:.1f} arcsec)".format(
-                        self.crossmatch_radius.arcsec),
+                        self.crossmatch_radius.arcsec
+                    ),
                     markerfacecolor='none', ls="none",
-                    markersize=10)
+                    markersize=10
+                )
             )
+
         ax.legend(handles=legend_elements)
         lon = ax.coords[0]
         lat = ax.coords[1]
         lon.set_axislabel("Right Ascension (J2000)")
         lat.set_axislabel("Declination (J2000)")
+
         if not no_colorbar:
             divider = make_axes_locatable(ax)
             cax = divider.append_axes(
                 "right", size="3%", pad=0.1, axes_class=maxes.Axes)
             cb = fig.colorbar(im, cax=cax)
             cb.set_label("mJy/beam")
+
         if title is None:
             epoch_time = self.measurements[
                 self.measurements.epoch == epoch
@@ -883,7 +906,9 @@ class Source:
                     "%Y-%m-%d %H:%M:%S"
                 )
             )
+
         ax.set_title(title)
+
         if self.cutout_df.iloc[index].beam is not None and hide_beam is False:
             img_beam = self.cutout_df.iloc[index].beam
             if self.cutout_df.iloc[index].wcs.is_celestial:
@@ -913,19 +938,9 @@ class Source:
         if save:
             plt.savefig(outfile, bbox_inches="tight")
             self.logger.info("Saved {}".format(outfile))
-            # fig.clf()
-            # ax.cla()
+
             plt.close(fig)
-            # del fig
-            # del ax
-            # del im
-            # del target_coords
-            # del divider
-            # del cax
-            # del png_beam
-            # gc.collect()
-            # gc.collect()
-            # gc.collect()
+
             return
         else:
             return fig
@@ -1163,7 +1178,45 @@ class Source:
         return new_val
 
 
+    def _create_crosshair_lines(self, target, pixel_buff, length, img_size):
+        '''
+        Takes the target pixel coordinates and creates the plots
+        that are required to plot a 'crosshair' marker. To keep
+        the crosshair consistent between scales, the values are
+        provided as percentages of the image size.
 
+        :param target: The target in pixel coordinates.
+        :type np.array: array of the pixel values of the target
+            returned by wcs.wcs_world2pix.
+        :param pixel_buff: Percentage of image size that is the buffer
+            of the crosshair, i.e. the distance between the target and
+            beginning of the line.
+        :type pixel_buff: float.
+        :param length: Size of the line of the crosshair, again as a
+            percentage of the image size.
+        :type length: float.
+        :param img_size: Tuple size of the image array.
+        :type img_size: tuple.
+        :returns: list of pairs of pixel coordinates to plot using
+            scatter.
+        :rtype: list.
+        '''
+        x = target[0][0]
+        y = target[0][1]
+
+        min_size = np.min(img_size)
+
+        pixel_buff = int(min_size * pixel_buff)
+        length = int(min_size * length)
+
+        plots = []
+
+        plots.append([[x, x], [y+pixel_buff, y+pixel_buff+length]])
+        plots.append([[x, x], [y-pixel_buff, y-pixel_buff-length]])
+        plots.append([[x+pixel_buff, x+pixel_buff+length], [y, y]])
+        plots.append([[x-pixel_buff, x-pixel_buff-length], [y, y]])
+
+        return plots
 
 
 
@@ -1390,45 +1443,6 @@ class Source:
         mask = seps <= imsize / 1.4
         self.selavy_cat_cut = self.selavy_cat[mask].reset_index(drop=True)
 
-    def _create_crosshair_lines(self, target, pixel_buff, length, img_size):
-        '''
-        Takes the target pixel coordinates and creates the plots
-        that are required to plot a 'crosshair' marker. To keep
-        the crosshair consistent between scales, the values are
-        provided as percentages of the image size.
-
-        :param target: The target in pixel coordinates.
-        :type np.array: array of the pixel values of the target
-            returned by wcs.wcs_world2pix.
-        :param pixel_buff: Percentage of image size that is the buffer
-            of the crosshair, i.e. the distance between the target and
-            beginning of the line.
-        :type pixel_buff: float.
-        :param length: Size of the line of the crosshair, again as a
-            percentage of the image size.
-        :type length: float.
-        :param img_size: Tuple size of the image array.
-        :type img_size: tuple.
-        :returns: list of pairs of pixel coordinates to plot using
-            scatter.
-        :rtype: list.
-        '''
-        x = target[0][0]
-        y = target[0][1]
-
-        min_size = np.min(img_size)
-
-        pixel_buff = int(min_size * pixel_buff)
-        length = int(min_size * length)
-
-        plots = []
-
-        plots.append([[x, x], [y+pixel_buff, y+pixel_buff+length]])
-        plots.append([[x, x], [y-pixel_buff, y-pixel_buff-length]])
-        plots.append([[x+pixel_buff, x+pixel_buff+length], [y, y]])
-        plots.append([[x-pixel_buff, x-pixel_buff-length], [y, y]])
-
-        return plots
 
     def make_png(
             self,

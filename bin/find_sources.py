@@ -242,8 +242,8 @@ if __name__ == '__main__':
 
     query = Query(
         coords,
-        source_names=catalog.name
-        epochs=args.epochs, # needs parsing
+        source_names=catalog.name,
+        epochs=args.epochs,
         stokes=args.stokes,
         crossmatch_radius=10.,
         max_sep=args.maxsep,
@@ -257,7 +257,45 @@ if __name__ == '__main__':
 
     if args.find_fields:
         query.find_fields()
-        # query.write_find_fields()
+        query.write_find_fields()
+
+    # else if find sources or else find surrounding sources?
+    else:
+        query.find_sources()
+
+        query.gen_all_source_products(
+            fits=True,
+            png=args.create_png,
+            ann=args.ann,
+            reg=args.reg,
+            lightcurve=False,
+            fits_outfile=None,
+            png_selavy=True,
+            png_percentile=99.9,
+            png_zscale=False,
+            png_contrast=0.2,
+            png_outfile=None,
+            png_islands=True,
+            png_label="Source",
+            png_no_colorbar=False,
+            png_title=None,
+            png_crossmatch_overlay=False,
+            png_hide_beam=False,
+            ann_outfile=None,
+            ann_crossmatch_overlay=False,
+            reg_outfile=None,
+            reg_crossmatch_overlay=False,
+            lc_sigma_thresh=5,
+            lc_savefile=None,
+            lc_figsize=(8, 4),
+            lc_min_points=2,
+            lc_min_detections=1,
+            lc_mjd=False,
+            lc_grid=False,
+            lc_yaxis_start="auto",
+            lc_peak_flux=True
+        )
+
 
     runend = datetime.datetime.now()
     runtime = runend - runstart

@@ -158,7 +158,7 @@ class Query:
         # first get cutout data and selavy sources per image
         # group by image to do this
 
-        grouped_query = self.query_df.groupby('image')
+        grouped_query = self.sources_df.groupby('image')
 
         # cutouts = pd.DataFrame()
         # for name, group in grouped_query:
@@ -170,19 +170,19 @@ class Query:
 
         cutouts.index = cutouts.index.droplevel()
 
-        self.query_df = self.query_df.join(
+        self.sources_df = self.sources_df.join(
             cutouts
         )
 
         for s in self.results:
             s_name = s.name
-            s_cutout = self.query_df[[
+            s_cutout = self.sources_df[[
                 'data',
                 'wcs',
                 'header',
                 'selavy_overlay',
                 'beam'
-            ]][self.query_df.name == s_name].reset_index(drop=True)
+            ]][self.sources_df.name == s_name].reset_index(drop=True)
 
             s.cutout_df = s_cutout
             s._cutouts_got = True
@@ -390,13 +390,13 @@ class Query:
 
     def _add_source_cutout_data(self, s):
         s_name = s.name
-        s_cutout = self.query_df[[
+        s_cutout = self.sources_df[[
             'data',
             'wcs',
             'header',
             'selavy_overlay',
             'beam'
-        ]][self.query_df.name == s_name].reset_index(drop=True)
+        ]][self.sources_df.name == s_name].reset_index(drop=True)
 
         s.cutout_df = s_cutout
         s._cutouts_got = True
@@ -495,21 +495,21 @@ class Query:
         if self.fields_found is False:
             self.find_fields()
 
-        self.query_df = self.query_df.explode(
+        self.sources_df = self.field_df.explode(
             'field_per_epoch'
         ).reset_index(drop=True)
-        self.query_df[
+        self.sources_df[
             ['epoch', 'field', 'sbid', 'dateobs']
-        ] = self.query_df.field_per_epoch.apply(pd.Series)
-        self.query_df[
+        ] = self.sources_df.field_per_epoch.apply(pd.Series)
+        self.sources_df[
             ['selavy', 'image', 'rms']
-        ] = self.query_df[['field_per_epoch', 'sbid']].apply(
+        ] = self.sources_df[['field_per_epoch', 'sbid']].apply(
             self._add_files,
             axis=1,
             result_type='expand'
         )
 
-        grouped_query = self.query_df.groupby('selavy')
+        grouped_query = self.sources_df.groupby('selavy')
 
         results = grouped_query.apply(
             lambda x: self._get_components(x.name, x)
@@ -521,7 +521,7 @@ class Query:
         #     results = results.append(group_results)
 
         results.index = results.index.droplevel()
-        self.crossmatch_results = self.query_df.merge(
+        self.crossmatch_results = self.sources_df.merge(
             results, how='left', left_index=True, right_index=True
         )
 
@@ -727,6 +727,25 @@ class Query:
         return selavy_file, image_file, rms_file
 
 
+    def write_find_fields(self, outname=None, outdir=None):
+        if self.fields_found is False:
+            self.find_fields()
+
+        if outname is None:
+            name = 'find_fields_result.pkl'
+        else:
+            name = outname+'.pkl'
+
+        if outdir is not None:
+            name = os.path.join(outdir, name)
+
+        self.fields_df.to_pickle(name)
+
+        self.logger.info('Find fields output saved as {}.'.format(
+            name
+        ))
+
+
     def find_fields(self):
         fields = Fields('1')
         field_centres_sc = SkyCoord(
@@ -737,7 +756,7 @@ class Query:
 
         field_centre_names = FIELD_CENTRES.field
 
-        self.query_df[[
+        self.fields_df[[
             'fields',
             'primary_field',
             'epochs',
@@ -756,7 +775,7 @@ class Query:
             result_type='expand'
         )
 
-        self.query_df = self.query_df.dropna()
+        self.fields_df = self.fields_df.dropna()
         self.fields_found = True
 
 
