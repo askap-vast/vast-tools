@@ -61,7 +61,7 @@ def parse_args():
         '--maxsep',
         type=float,
         help='Maximum separation of source from beam centre in degrees.',
-        default=1.0)
+        default=1.5)
     parser.add_argument(
         '--out-folder',
         type=str,
@@ -83,11 +83,6 @@ def parse_args():
         help='Crossmatch radius in arcseconds',
         default=15.0)
     parser.add_argument(
-        '--crossmatch-radius-overlay',
-        action="store_true",
-        help=('A circle is placed on all PNG and region/annotation'
-              ' files to represent the crossmatch radius.'))
-    parser.add_argument(
         '--use-tiles',
         action="store_true",
         help='Use the individual tiles instead of combined mosaics.')
@@ -99,48 +94,6 @@ def parse_args():
         '--base-folder',
         type=str,
         help='Path to base folder if using default directory structure')
-    parser.add_argument(
-        '--create-png',
-        action="store_true",
-        help='Create a png of the fits cutout.')
-    parser.add_argument(
-        '--png-selavy-overlay',
-        action="store_true",
-        help='Overlay selavy components onto the png image.')
-    parser.add_argument(
-        '--png-linear-percentile',
-        type=float,
-        default=99.9,
-        help='Choose the percentile level for the png normalisation.')
-    parser.add_argument(
-        '--png-use-zscale',
-        action="store_true",
-        help='Select ZScale normalisation (default is \'linear\').')
-    parser.add_argument(
-        '--png-zscale-contrast',
-        type=float,
-        default=0.1,
-        help='Select contrast to use for zscale.')
-    parser.add_argument(
-        '--png-hide-beam',
-        action="store_true",
-        help='Select to not show the image synthesised beam on the plot.')
-    parser.add_argument(
-        '--png-no-island-labels',
-        action="store_true",
-        help='Disable island lables on the png.')
-    parser.add_argument(
-        '--png-no-colorbar',
-        action="store_true",
-        help='Do not show the colorbar on the png.')
-    parser.add_argument(
-        '--ann',
-        action="store_true",
-        help='Create a kvis annotation file of the components.')
-    parser.add_argument(
-        '--reg',
-        action="store_true",
-        help='Create a DS9 region file of the components.')
     parser.add_argument(
         '--stokes',
         type=str,
@@ -184,6 +137,97 @@ def parse_args():
         type=int,
         help='Set nice level.',
         default=5)
+    parser.add_argument(
+        '--crossmatch-radius-overlay',
+        action="store_true",
+        help=('A circle is placed on all PNG and region/annotation'
+              ' files to represent the crossmatch radius.'))
+    parser.add_argument(
+        '--no-fits',
+        action="store_true",
+        help='Do not save the FITS cutouts.')
+    parser.add_argument(
+        '--create-png',
+        action="store_true",
+        help='Create a png of the fits cutout.')
+    parser.add_argument(
+        '--png-selavy-overlay',
+        action="store_true",
+        help='Overlay selavy components onto the png image.')
+    parser.add_argument(
+        '--png-linear-percentile',
+        type=float,
+        default=99.9,
+        help='Choose the percentile level for the png normalisation.')
+    parser.add_argument(
+        '--png-use-zscale',
+        action="store_true",
+        help='Select ZScale normalisation (default is \'linear\').')
+    parser.add_argument(
+        '--png-zscale-contrast',
+        type=float,
+        default=0.1,
+        help='Select contrast to use for zscale.')
+    parser.add_argument(
+        '--png-hide-beam',
+        action="store_true",
+        help='Select to not show the image synthesised beam on the plot.')
+    parser.add_argument(
+        '--png-no-island-labels',
+        action="store_true",
+        help='Disable island lables on the png.')
+    parser.add_argument(
+        '--png-no-colorbar',
+        action="store_true",
+        help='Do not show the colorbar on the png.')
+    parser.add_argument(
+        '--ann',
+        action="store_true",
+        help='Create a kvis annotation file of the components.')
+    parser.add_argument(
+        '--reg',
+        action="store_true",
+        help='Create a DS9 region file of the components.')
+    parser.add_argument(
+        '--lightcurves',
+        action="store_true",
+        help='Create lightcurve plots.')
+    parser.add_argument(
+        '--lc-use-int-flux',
+        action="store_true",
+        help='Use the integrated flux, rather than peak flux')
+    parser.add_argument(
+        '--lc-no-plotting',
+        action="store_true",
+        help='Write lightcurves to file without plotting')
+    parser.add_argument(
+        '--lc-min-points',
+        type=int,
+        help='Minimum number of epochs a source must be covered by',
+        default=2)
+    parser.add_argument(
+        '--lc-min-detections',
+        type=int,
+        help='Minimum number of times a source must be detected',
+        default=1)
+    parser.add_argument(
+        '--lc-mjd',
+        action="store_true",
+        help='Plot lightcurve in MJD rather than datetime.')
+    parser.add_argument(
+        '--lc-grid',
+        action="store_true",
+        help="Turn on the 'grid' in the lightcurve plot.")
+    parser.add_argument(
+        '--lc-yaxis-start',
+        type=str,
+        choices=["auto", "0"],
+        default="0",
+        help=(
+            "Define where the y axis on the lightcurve plot starts from."
+            " 'auto' will let matplotlib decide the best range and '0' "
+            " will start from 0."
+        ))
 
     args = parser.parse_args()
 
@@ -263,37 +307,51 @@ if __name__ == '__main__':
     else:
         query.find_sources()
 
-        query.gen_all_source_products(
-            fits=True,
+        if args.crossmatch_only:
+            fits = False
+            png = False
+            ann = False
+            reg = False
+            lightcurve = False
+        else:
+            fits=(not args.no_fits),
             png=args.create_png,
             ann=args.ann,
             reg=args.reg,
-            lightcurve=False,
+            lightcurve=args.lightcurves,
+
+        query.gen_all_source_products(
+            fits=fits,
+            png=png,
+            ann=ann,
+            reg=reg,
+            lightcurve=lightcurve,
             fits_outfile=None,
-            png_selavy=True,
-            png_percentile=99.9,
-            png_zscale=False,
-            png_contrast=0.2,
+            png_selavy=args.png_selavy_overlay,
+            png_percentile=args.png_percentile,
+            png_zscale=args.png_zscale,
+            png_contrast=args.png_zscale,
             png_outfile=None,
-            png_islands=True,
+            png_islands=args.png_islands,
             png_label="Source",
-            png_no_colorbar=False,
+            png_no_colorbar=args.png_no_colorbar,
             png_title=None,
-            png_crossmatch_overlay=False,
-            png_hide_beam=False,
+            png_crossmatch_overlay=args.crossmatch_radius_overlay,
+            png_hide_beam=args.png_hide_beam,
             ann_outfile=None,
-            ann_crossmatch_overlay=False,
+            ann_crossmatch_overlay=args.crossmatch_radius_overlay,
             reg_outfile=None,
-            reg_crossmatch_overlay=False,
+            reg_crossmatch_overlay=args.crossmatch_radius_overlay,
             lc_sigma_thresh=5,
             lc_savefile=None,
             lc_figsize=(8, 4),
-            lc_min_points=2,
-            lc_min_detections=1,
-            lc_mjd=False,
-            lc_grid=False,
-            lc_yaxis_start="auto",
-            lc_peak_flux=True
+            lc_min_points=args.lc_min_points,
+            lc_min_detections=args.lc_min_detections,
+            lc_mjd=args.lc_mjd,
+            lc_grid=args.lc_grid,
+            lc_yaxis_start=args.lc_yaxis_start,
+            lc_peak_flux=(not args.lc_use_int_flux),
+            measurements_simple=args.selavy_simple
         )
 
 

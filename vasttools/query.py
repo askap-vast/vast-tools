@@ -78,8 +78,6 @@ class Query:
         self.coords = coords
         self.source_names = source_names
 
-        self.query_df = self.build_catalog()
-
         self.settings = {}
 
         self.settings['epochs'] = self.get_epochs(epochs)
@@ -118,6 +116,8 @@ class Query:
                 "Problems found in query settings!"
                 "\nPlease address and try again."
             ))
+
+        self.query_df = self.build_catalog()
 
         self.fields_found = False
 
@@ -197,6 +197,7 @@ class Query:
         ann=False,
         reg=False,
         lightcurve=False,
+        measurements=False,
         fits_outfile=None,
         png_selavy=True,
         png_percentile=99.9,
@@ -221,8 +222,14 @@ class Query:
         lc_mjd=False,
         lc_grid=False,
         lc_yaxis_start="auto",
-        lc_peak_flux=True
+        lc_peak_flux=True,
+        measurements_simple=False
+
     ):
+        """
+        This function is not intended to be used interactively.
+        Script only.
+        """
 
         if not self.cutout_data_got:
             self.get_all_cutout_data()
@@ -275,7 +282,16 @@ class Query:
                 lc_mjd=False,
                 lc_grid=False,
                 lc_yaxis_start="auto",
-                lc_peak_flux=True
+                lc_peak_flux=True,
+                save=True
+            )
+
+        if measurements:
+            multi_measurements - partial(
+                self._save_all_measurements,
+                simple=measurements_simple,
+                outname=None,
+                outdir=self.settings['output_dir']
             )
 
         try:
@@ -289,6 +305,8 @@ class Query:
                 workers.map(multi_reg, self.results)
             if lightcurve:
                 workers.map(multi_lc, self.results)
+            if measurements:
+                workers.map(multi_measurements, self.results)
 
         except KeyboardInterrupt:
             self.logger.error(
@@ -362,29 +380,36 @@ class Query:
         s.save_all_ann(crossmatch_overlay=crossmatch_overlay)
 
 
+    def _save_all_measurements(self, s, simple=False):
+
+        s.write_measurements(simple=simple)
+
+
     def _save_all_lc(
         self,
         s,
         lc_sigma_thresh=5,
-        lc_savefile=None,
         lc_figsize=(8, 4),
         lc_min_points=2,
         lc_min_detections=1,
         lc_mjd=False,
         lc_grid=False,
         lc_yaxis_start="auto",
-        lc_peak_flux=True
+        lc_peak_flux=True,
+        save=True
     ):
-        s.save_all_lc(
-            sigma_thresh=5,
-            savefile=None,
-            figsize=(8, 4),
-            min_points=2,
+        s.plot_lightcurve(
+            sigma_thresh=lc_sigma_thresh,
+            figsize=lc_figsize,
+            min_points=lc_min_points,
             min_detections=1,
             mjd=False,
             grid=False,
             yaxis_start="auto",
-            peak_flux=True
+            peak_flux=True,
+            save=False,
+            outfile=None,
+            output_dir=None
         )
 
 
@@ -495,15 +520,11 @@ class Query:
         if self.fields_found is False:
             self.find_fields()
 
-        self.sources_df = self.field_df.explode(
-            'field_per_epoch'
-        ).reset_index(drop=True)
-        self.sources_df[
-            ['epoch', 'field', 'sbid', 'dateobs']
-        ] = self.sources_df.field_per_epoch.apply(pd.Series)
+        self.sources_df = self.fields_df.copy()
+
         self.sources_df[
             ['selavy', 'image', 'rms']
-        ] = self.sources_df[['field_per_epoch', 'sbid']].apply(
+        ] = self.sources_df[['epoch', 'field', 'sbid']].apply(
             self._add_files,
             axis=1,
             result_type='expand'
@@ -539,8 +560,8 @@ class Query:
 
         source_coord = m.skycoord
         source_name = m['name']
-        source_epochs = m.epochs
-        source_fields = m.fields
+        source_epochs = group['epoch'].to_list()
+        source_fields = group['field'].to_list()
         source_stokes = self.settings['stokes']
         source_primary_field = m.primary_field
         source_base_folder = self.base_folder
@@ -554,13 +575,6 @@ class Query:
 
         source_df = group.drop(
             columns=[
-                'ra',
-                'dec',
-                'fields',
-                'epochs',
-                'field_per_epoch',
-                'sbids',
-                'dates',
                 '#'
             ]
         )
@@ -648,7 +662,7 @@ class Query:
     def _add_files(self, row):
 
         epoch_string = "EPOCH{}".format(
-            RELEASED_EPOCHS[row.field_per_epoch[0]]
+            RELEASED_EPOCHS[row.epoch]
         )
 
         if self.settings['islands']:
@@ -663,14 +677,14 @@ class Query:
             selavy_file_fmt = (
                 "selavy-image.i.SB{}.cont.{}."
                 "linmos.taylor.0.restored.components.txt".format(
-                    row.sbid, row.field_per_epoch[1]
+                    row.sbid, row.field
                 )
             )
 
             image_file_fmt = (
                 "image.i.SB{}.cont.{}"
                 ".linmos.taylor.0.restored.fits".format(
-                    row.sbid, row.field_per_epoch[1]
+                    row.sbid, row.field
                 )
             )
 
@@ -679,21 +693,21 @@ class Query:
             dir_name = "COMBINED"
 
             selavy_file_fmt = "{}.EPOCH{}.{}.selavy.{}.txt".format(
-                row.field_per_epoch[1],
-                RELEASED_EPOCHS[row.field_per_epoch[0]],
+                row.field,
+                RELEASED_EPOCHS[row.epoch],
                 self.settings['stokes'],
                 cat_type
             )
 
             image_file_fmt = "{}.EPOCH{}.{}.fits".format(
-                row.field_per_epoch[1],
-                RELEASED_EPOCHS[row.field_per_epoch[0]],
+                row.field,
+                RELEASED_EPOCHS[row.epoch],
                 self.settings['stokes'],
             )
 
             rms_file_fmt = "{}.EPOCH{}.{}_rms.fits".format(
-                row.field_per_epoch[1],
-                RELEASED_EPOCHS[row.field_per_epoch[0]],
+                row.field,
+                RELEASED_EPOCHS[row.epoch],
                 self.settings['stokes'],
             )
 
@@ -732,14 +746,23 @@ class Query:
             self.find_fields()
 
         if outname is None:
-            name = 'find_fields_result.pkl'
+            name = 'find_fields_result.csv'
         else:
             name = outname+'.pkl'
 
         if outdir is not None:
             name = os.path.join(outdir, name)
 
-        self.fields_df.to_pickle(name)
+        self.fields_df[[
+            'name',
+            'ra',
+            'dec',
+            'field',
+            'epoch',
+            'sbid',
+            'dateobs',
+            'primary_field'
+        ]].to_csv(name, index=False)
 
         self.logger.info('Find fields output saved as {}.'.format(
             name
@@ -755,6 +778,8 @@ class Query:
         )
 
         field_centre_names = FIELD_CENTRES.field
+
+        self.fields_df = self.query_df.copy()
 
         self.fields_df[[
             'fields',
@@ -776,6 +801,27 @@ class Query:
         )
 
         self.fields_df = self.fields_df.dropna()
+
+        self.fields_df = self.fields_df.explode(
+            'field_per_epoch'
+        ).reset_index(drop=True)
+        self.fields_df[
+            ['epoch', 'field', 'sbid', 'dateobs']
+        ] = self.fields_df.field_per_epoch.apply(pd.Series)
+
+        to_drop = [
+            'field_per_epoch',
+            'epochs',
+            'sbids',
+            'dates'
+        ]
+
+        self.fields_df = self.fields_df.drop(
+            labels=to_drop, axis=1
+        ).sort_values(
+            by=['name', 'dateobs']
+        ).reset_index(drop=True)
+
         self.fields_found = True
 
 
@@ -840,14 +886,15 @@ class Query:
 
 
     def build_catalog(self):
-        cols = ['ra', 'dec', 'name', 'skycoord']
+        cols = ['ra', 'dec', 'name', 'skycoord', 'stokes']
         if self.coords.shape == ():
             catalog = pd.DataFrame(
                 [[
                     self.coords.ra.deg,
                     self.coords.dec.deg,
                     self.source_names[0],
-                    self.coords
+                    self.coords,
+                    self.settings['stokes']
                 ]], columns = cols
             )
         else:
@@ -858,6 +905,7 @@ class Query:
             catalog['ra'] = self.coords.ra.deg
             catalog['dec'] = self.coords.dec.deg
             catalog['skycoord'] = self.coords
+            catalog['stokes'] = self.settings['stokes']
 
         return catalog
 
