@@ -726,7 +726,7 @@ class Query:
         return selavy_file, image_file, rms_file
 
 
-    def write_find_fields(self, outname=None, outdir=None):
+    def write_find_fields(self, outname=None):
         if self.fields_found is False:
             self.find_fields()
 
@@ -735,6 +735,7 @@ class Query:
         else:
             name = outname+'.pkl'
 
+        outdir = self.settings['output_dir']
         if outdir is not None:
             name = os.path.join(outdir, name)
 
