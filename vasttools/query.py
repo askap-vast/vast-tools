@@ -13,9 +13,11 @@ import warnings
 import io
 import socket
 import re
-from psutil import cpu_count
+import signal
+import numexpr
 
 from multiprocessing import Pool, cpu_count
+from multiprocessing_logging import install_mp_handler
 from functools import partial
 
 import logging
@@ -53,7 +55,7 @@ warnings.filterwarnings('ignore',
 
 HOST = socket.gethostname()
 HOST_ADA = 'ada.physics.usyd.edu.au'
-
+numexpr.set_num_threads(int(cpu_count() / 4))
 
 class Query:
     '''
@@ -74,6 +76,9 @@ class Query:
         '''Constructor method
         '''
         self.logger = logging.getLogger('vasttools.find_sources.Query')
+
+        install_mp_handler(logger=self.logger)
+
 
         self.coords = coords
         self.source_names = source_names
@@ -145,15 +150,6 @@ class Query:
         return True
 
 
-    def run_query(self):
-        self.find_fields()
-
-        self.query_df[["result"]] = self.query_df.apply(
-            self.find_sources,
-            axis=1
-        )
-
-
     def get_all_cutout_data(self):
         # first get cutout data and selavy sources per image
         # group by image to do this
@@ -190,7 +186,7 @@ class Query:
         self.cutout_data_got = True
 
 
-    def gen_all_cutout_products(
+    def gen_all_source_products(
         self,
         fits=True,
         png=False,
@@ -203,19 +199,13 @@ class Query:
         png_percentile=99.9,
         png_zscale=False,
         png_contrast=0.2,
-        png_outfile=None,
         png_islands=True,
-        png_label="Source",
         png_no_colorbar=False,
-        png_title=None,
         png_crossmatch_overlay=False,
         png_hide_beam=False,
-        ann_outfile=None,
         ann_crossmatch_overlay=False,
-        reg_outfile=None,
         reg_crossmatch_overlay=False,
         lc_sigma_thresh=5,
-        lc_savefile=None,
         lc_figsize=(8, 4),
         lc_min_points=2,
         lc_min_detections=1,
@@ -249,12 +239,10 @@ class Query:
                 self._save_all_png_cutouts,
                 selavy=png_selavy,
                 percentile=png_percentile,
-                zscale=png_use_zscale,
-                contrast=png_zscale_contrast,
-                no_islands=png_no_islands,
-                label=png_label,
-                no_colorbar=png_no_colourbar,
-                title=None,
+                zscale=png_zscale,
+                contrast=png_contrast,
+                no_islands=png_islands,
+                no_colorbar=png_no_colorbar,
                 crossmatch_overlay=png_crossmatch_overlay,
                 hide_beam=png_hide_beam
             )
@@ -274,29 +262,28 @@ class Query:
         if lightcurve:
             multi_lc = partial(
                 self._save_all_lc,
-                lc_sigma_thresh=5,
-                lc_savefile=None,
-                lc_figsize=(8, 4),
-                lc_min_points=2,
-                lc_min_detections=1,
-                lc_mjd=False,
-                lc_grid=False,
-                lc_yaxis_start="auto",
-                lc_peak_flux=True,
-                save=True
+                lc_sigma_thresh=lc_sigma_thresh,
+                lc_figsize=lc_figsize,
+                lc_min_points=lc_min_points,
+                lc_min_detections=lc_min_detections,
+                lc_mjd=lc_mjd,
+                lc_grid=lc_grid,
+                lc_yaxis_start=lc_yaxis_start,
+                lc_peak_flux=lc_peak_flux,
+                lc_save=True,
+                lc_outfile=None,
             )
 
         if measurements:
-            multi_measurements - partial(
+            multi_measurements = partial(
                 self._save_all_measurements,
                 simple=measurements_simple,
-                outname=None,
-                outdir=self.settings['output_dir']
+                outfile=None,
             )
 
         try:
             if fits:
-                workers.map(multi_fitst, self.results)
+                workers.map(self._save_all_fits_cutouts, self.results)
             if png:
                 workers.map(multi_png, self.results)
             if ann:
@@ -349,21 +336,22 @@ class Query:
         pass
 
 
-    def _save_all_png_cutouts(self, s):
+    def _save_all_png_cutouts(
+        self, s, selavy, percentile,
+        zscale, contrast, no_islands, no_colorbar,
+        crossmatch_overlay, hide_beam
+    ):
 
         s.save_all_png_cutouts(
-            selavy=selavy_overlay,
+            selavy=selavy,
             percentile=percentile,
-            zscale=use_zscale,
-            contrast=zscale_contrast,
-            no_islands=no_islands,
-            label=label,
-            no_colorbar=no_colourbar,
-            title=None,
+            zscale=zscale,
+            contrast=contrast,
+            islands=no_islands,
+            no_colorbar=no_colorbar,
             crossmatch_overlay=crossmatch_overlay,
             hide_beam=hide_beam
         )
-
 
     def _save_all_fits_cutouts(self, s):
 
@@ -380,9 +368,9 @@ class Query:
         s.save_all_ann(crossmatch_overlay=crossmatch_overlay)
 
 
-    def _save_all_measurements(self, s, simple=False):
+    def _save_all_measurements(self, s, simple=False, outfile=None):
 
-        s.write_measurements(simple=simple)
+        s.write_measurements(simple=simple, outfile=outfile)
 
 
     def _save_all_lc(
@@ -396,20 +384,20 @@ class Query:
         lc_grid=False,
         lc_yaxis_start="auto",
         lc_peak_flux=True,
-        save=True
+        lc_save=True,
+        lc_outfile=None
     ):
         s.plot_lightcurve(
             sigma_thresh=lc_sigma_thresh,
             figsize=lc_figsize,
             min_points=lc_min_points,
-            min_detections=1,
-            mjd=False,
-            grid=False,
-            yaxis_start="auto",
-            peak_flux=True,
-            save=False,
-            outfile=None,
-            output_dir=None
+            min_detections=lc_min_detections,
+            mjd=lc_mjd,
+            grid=lc_grid,
+            yaxis_start=lc_yaxis_start,
+            peak_flux=lc_peak_flux,
+            save=lc_save,
+            outfile=lc_outfile,
         )
 
 
@@ -529,9 +517,7 @@ class Query:
             axis=1,
             result_type='expand'
         )
-
         grouped_query = self.sources_df.groupby('selavy')
-
         results = grouped_query.apply(
             lambda x: self._get_components(x.name, x)
         )
@@ -540,7 +526,6 @@ class Query:
         # for name, group in grouped_query:
         #     group_results = self._get_components(name, group)
         #     results = results.append(group_results)
-
         results.index = results.index.droplevel()
         self.crossmatch_results = self.sources_df.merge(
             results, how='left', left_index=True, right_index=True
@@ -925,7 +910,7 @@ class Query:
         '''
 
         available_epochs = sorted(RELEASED_EPOCHS, key=RELEASED_EPOCHS.get)
-        self.logger.debug(available_epochs)
+        self.logger.debug("Avaialble epochs: " + str(available_epochs))
 
         # if HOST == HOST_ADA or self.args.find_fields:
         #     available_epochs.insert(0, "0")

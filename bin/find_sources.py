@@ -19,6 +19,7 @@ import argparse
 import os
 import datetime
 import shutil
+import logging
 
 runstart = datetime.datetime.now()
 
@@ -209,7 +210,7 @@ def parse_args():
         '--lc-min-detections',
         type=int,
         help='Minimum number of times a source must be detected',
-        default=1)
+        default=0)
     parser.add_argument(
         '--lc-mjd',
         action="store_true",
@@ -280,12 +281,12 @@ if __name__ == '__main__':
         logger.critical("Exiting.")
         sys.exit()
 
-    catalog = build_catalog(args.coords, args.names)
+    catalog = build_catalog(args.coords, args.source_names)
 
     sky_coords = build_SkyCoord(catalog)
 
     query = Query(
-        coords,
+        sky_coords,
         source_names=catalog.name,
         epochs=args.epochs,
         stokes=args.stokes,
@@ -314,11 +315,11 @@ if __name__ == '__main__':
             reg = False
             lightcurve = False
         else:
-            fits=(not args.no_fits),
-            png=args.create_png,
-            ann=args.ann,
-            reg=args.reg,
-            lightcurve=args.lightcurves,
+            fits=(not args.no_fits)
+            png=args.create_png
+            ann=args.ann
+            reg=args.reg
+            lightcurve=args.lightcurves
 
         query.gen_all_source_products(
             fits=fits,
@@ -326,24 +327,19 @@ if __name__ == '__main__':
             ann=ann,
             reg=reg,
             lightcurve=lightcurve,
+            measurements=True,
             fits_outfile=None,
             png_selavy=args.png_selavy_overlay,
-            png_percentile=args.png_percentile,
-            png_zscale=args.png_zscale,
-            png_contrast=args.png_zscale,
-            png_outfile=None,
-            png_islands=args.png_islands,
-            png_label="Source",
+            png_percentile=args.png_linear_percentile,
+            png_zscale=args.png_use_zscale,
+            png_contrast=args.png_zscale_contrast,
+            png_islands=args.png_no_island_labels,
             png_no_colorbar=args.png_no_colorbar,
-            png_title=None,
             png_crossmatch_overlay=args.crossmatch_radius_overlay,
             png_hide_beam=args.png_hide_beam,
-            ann_outfile=None,
             ann_crossmatch_overlay=args.crossmatch_radius_overlay,
-            reg_outfile=None,
             reg_crossmatch_overlay=args.crossmatch_radius_overlay,
             lc_sigma_thresh=5,
-            lc_savefile=None,
             lc_figsize=(8, 4),
             lc_min_points=args.lc_min_points,
             lc_min_detections=args.lc_min_detections,

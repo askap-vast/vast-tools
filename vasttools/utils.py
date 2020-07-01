@@ -14,6 +14,11 @@ from matplotlib.transforms import Affine2D
 from matplotlib.path import Path
 import matplotlib.markers
 import matplotlib.lines
+import pandas as pd
+from astropy import units as u
+from astropy.coordinates import SkyCoord
+import numpy as np
+from multiprocessing_logging import install_mp_handler
 
 
 def get_logger(debug, quiet, logfile=None):
@@ -73,6 +78,7 @@ def get_logger(debug, quiet, logfile=None):
         fh.setFormatter(formatter)
         logger.addHandler(fh)
     logger.setLevel(logging.DEBUG)
+    install_mp_handler(logger=logger)
 
     return logger
 

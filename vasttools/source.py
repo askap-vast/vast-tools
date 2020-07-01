@@ -84,16 +84,6 @@ class Source:
         islands=False,
         outdir="."
         ):
-    # def __init__(
-    #         self,
-    #         field,
-    #         src_coord,
-    #         sbid,
-    #         SELAVY_FOLDER,
-    #         vast_pilot,
-    #         tiles=False,
-    #         stokes="I",
-    #         islands=False):
         '''Constructor method
         '''
         self.logger = logging.getLogger('vasttools.source.Source')
@@ -134,36 +124,8 @@ class Source:
         self.norms = None
         self.checked_norms = False
 
-        # if islands:
-        #     self.cat_type = "islands"
-        #     self.islands = True
-        # else:
-        #     self.cat_type = "components"
-        #     self.islands = False
-        #
-        # if tiles:
-        #     selavyname_template = 'selavy-image.i.SB{}.cont.{}.' \
-        #         'linmos.taylor.0.restored.{}.txt'
-        #     self.selavyname = selavyname_template.format(
-        #         self.sbid, self.field, self.cat_type
-        #     )
-        # else:
-        #     if vast_pilot == "0":
-        #         self.selavyname = '{}.taylor.0.{}.txt'.format(
-        #             self.field, self.cat_type)
-        #     else:
-        #         self.selavyname = '{}.selavy.{}.txt'.format(
-        #             self.field, self.cat_type
-        #         )
-        #
-        #     self.nselavyname = 'n{}'.format(self.selavyname)
-        #
-        # self.selavypath = os.path.join(SELAVY_FOLDER, self.selavyname)
-        # if self.stokes != "I":
-        #     self.nselavypath = os.path.join(SELAVY_FOLDER, self.nselavyname)
 
-
-    def write_measurements(self, simple=False, outname=None, outdir=None):
+    def write_measurements(self, simple=False, outfile=None):
         """
         Write the measurements to a CSV file.
         """
@@ -196,13 +158,25 @@ class Source:
                 labels=cols, axis=1
             )
 
+        # drop any empty values
+        measurements_to_write = measurements_to_write[
+            measurements_to_write['rms_image'] != -99
+        ]
+
+        if measurements_to_write.empty:
+            self.logger.warning(
+                "%s has no measurements! No file will be written.",
+                self.name
+            )
+            return
+
         if outfile is None:
             outfile = "{}_measurements.csv".format(self.name.replace(
                 " ", "_"
             ))
 
         elif not outfile.endswith(".csv"):
-            outname+=".csv"
+            outfile += ".csv"
 
         if self.outdir != ".":
             outfile = os.path.join(
@@ -212,14 +186,14 @@ class Source:
 
         measurements_to_write.to_csv(outfile, index=False)
 
-        self.logger.debug("Wrote {}.".format(outname))
+        self.logger.debug("Wrote {}.".format(outfile))
 
 
 
     def plot_lightcurve(self, sigma_thresh=5, figsize=(8, 4),
-                        min_points=2, min_detections=1, mjd=False,
+                        min_points=2, min_detections=0, mjd=False,
                         grid=False, yaxis_start="auto", peak_flux=True,
-                        save=False, outfile=None, output_dir=None):
+                        save=False, outfile=None):
         '''
         Plot source lightcurves and save to file
 
@@ -237,8 +211,33 @@ class Source:
         :param grid: Turn on matplotlib grid, defaults to False
         :type grid: bool, optional
         '''
+        if self.detections < min_detections:
+            self.logger.error(
+                "Number of detections (%i) lower than minimum required (%i)",
+                self.detections, min_detections
+            )
+            return
 
-        plot_dates = self.measurements['dateobs']
+        if self.measurements.shape[0] < min_points:
+            self.logger.error(
+                "Number of datapoints (%i) lower than minimum required (%i)",
+                self.detections, min_detections
+            )
+            return
+
+        # remove empty values
+        measurements = self.measurements[
+            self.measurements['rms_image'] != -99
+        ]
+
+        if measurements.empty:
+            self.logger.warning(
+                "%s has no measurements! No lightcurve will be produced.",
+                self.name
+            )
+            return
+
+        plot_dates = measurements['dateobs']
         if mjd:
             plot_dates = Time(plot_dates.to_numpy()).mjd
 
@@ -258,8 +257,8 @@ class Source:
         ax.set_ylabel(label)
 
         self.logger.debug("Plotting upper limit")
-        upper_lim_mask = self.measurements.detection==False
-        upper_lims = self.measurements[
+        upper_lim_mask = measurements.detection==False
+        upper_lims = measurements[
             upper_lim_mask
         ]
 
@@ -275,7 +274,7 @@ class Source:
             linestyle="none")
 
         self.logger.debug("Plotting detection")
-        detections = self.measurements[
+        detections = measurements[
             ~upper_lim_mask
         ]
 
@@ -559,7 +558,17 @@ class Source:
             self.save_fits_cutout(e)
 
 
-    def save_all_png_cutouts(self):
+    def save_all_png_cutouts(
+        self,
+        selavy=True,
+        percentile=99.9,
+        zscale=False,
+        contrast=0.2,
+        islands=True,
+        no_colorbar=False,
+        crossmatch_overlay=False,
+        hide_beam=False,
+    ):
         if self._cutouts_got is False:
             self.get_cutout_data()
 
@@ -604,44 +613,43 @@ class Source:
         #     self.logger.info("Normal termination")
         #     workers.close()
         #     workers.join()
-        for e in self.measurements['epoch']:
-            self.make_png_2(
-                # e,
-                fig,
-                True,
-                99.9,
-                False,
-                # contrast,
-                None,
-                True,
-                "Source",
-                False,
-                None,
-                False,
-                False,
-                True
-            )
-            fig.clf()
+        # for e in self.measurements['epoch']:
+        #     self.make_png_2(
+        #         # e,
+        #         fig,
+        #         True,
+        #         99.9,
+        #         False,
+        #         # contrast,
+        #         None,
+        #         True,
+        #         "Source",
+        #         False,
+        #         None,
+        #         False,
+        #         False,
+        #         True
+        #     )
+        #     fig.clf()
 
         self.measurements['epoch'].apply(
             self.make_png_2,
             args = (
-                fig,
-                True,
-                99.9,
-                False,
-                # contrast,
+                selavy,
+                percentile,
+                zscale,
+                contrast,
                 None,
-                True,
+                islands,
                 "Source",
-                False,
+                no_colorbar,
                 None,
-                False,
-                False,
+                crossmatch_overlay,
+                hide_beam,
                 True
             )
         )
-        plt.close(fig)
+        # plt.close(fig)
 
 
     def plot_all_cutouts(self, columns=4, zscale=False, percentile=99.9):
@@ -754,7 +762,7 @@ class Source:
             edgecolors=colors,
             lw=1.5)
 
-        return collection
+        return collection, patches, island_names
 
 
     def make_png_2(
@@ -763,7 +771,7 @@ class Source:
             selavy=True,
             percentile=99.9,
             zscale=False,
-            # contrast,
+            contrast=0.2,
             outfile=None,
             no_islands=True,
             label="Source",
@@ -907,7 +915,7 @@ class Source:
 
         if not self.cutout_df.iloc[index]['selavy_overlay'].empty:
             ax.set_autoscale_on(False)
-            collection = self._gen_overlay_collection(
+            collection, patches, island_names = self._gen_overlay_collection(
                 self.cutout_df.iloc[index]
             )
             ax.add_collection(collection, autolim=False)

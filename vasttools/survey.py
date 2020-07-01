@@ -7,7 +7,6 @@ import warnings
 import pkg_resources
 import dropbox
 import itertools
-import hashlib
 import numpy as np
 import re
 
@@ -92,9 +91,6 @@ FIELD_FILES = {
 
 EPOCH_FIELDS = get_fields_per_epoch_and_info()
 
-CHECKSUMS_FILE = pkg_resources.resource_filename(
-    __name__, "./data/checksums.h5"
-)
 
 DROPBOX_FILE = pkg_resources.resource_filename(
     __name__, "./data/dropbox_files.txt"
@@ -287,6 +283,7 @@ class Image:
             except Exception as e:
                 self.logger.error("Beam information could not be read!")
                 self.beam = None
+
 
     def get_rms_img(self):
         '''
