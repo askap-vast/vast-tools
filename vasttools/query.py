@@ -106,9 +106,11 @@ class Query:
             self.base_folder = base_folder
 
         if not os.path.isdir(self.base_folder):
-            self.logger.critical("The base directory {} does not exist!".format(
-                self.base_folder
-            ))
+            self.logger.critical(
+                "The base directory {} does not exist!".format(
+                    self.base_folder
+                )
+            )
             raise ValueError("The base directory {} does not exist!".format(
                 self.base_folder
             ))
@@ -144,7 +146,9 @@ class Query:
             return False
 
         if self.settings['tiles'] and self.settings['no_rms'] == False:
-            self.logger.warning("RMS measurements are not supported with tiles!")
+            self.logger.warning(
+                "RMS measurements are not supported with tiles!"
+            )
             self.logger.warning("Turning RMS measurements off.")
             self.settings['no_rms'] = True
 

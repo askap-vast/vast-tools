@@ -200,7 +200,8 @@ class Source:
         :type sigma_thresh: int or float
         :param savefile: Filename to save plot, defaults to None
         :type savefile: str
-        :param min_points: Minimum number of points for plotting, defaults to 2
+        :param min_points: Minimum number of points for plotting,
+            defaults to 2
         :type min_points: int, optional
         :param min_detections: Minimum number of detections for plotting, \
         defaults to 1
@@ -368,7 +369,8 @@ class Source:
         self._cutouts_got = True
 
 
-    def analyse_norm_level(self, percentile=99.9, zscale=False, z_contrast=0.2):
+    def analyse_norm_level(self, percentile=99.9,
+        zscale=False, z_contrast=0.2):
         if not self._cutouts_got:
             self.logger.warning(
                 "Fetch cutout data before running this function!"
@@ -556,7 +558,8 @@ class Source:
 
     def plot_all_cutouts(self, columns=4, percentile=99.9, zscale=False,
         contrast=0.1,outfile=None, save=False, size=None, figsize=(10, 5),
-        force=False):
+        force=False
+        ):
         if (self._cutouts_got is False) or (force == True):
             self.get_cutout_data(size)
 
@@ -606,11 +609,17 @@ class Source:
                 projection=cutout_row.wcs
             )
 
-            im = plots[i].imshow(cutout_row.data, norm=img_norms, cmap="gray_r")
+            im = plots[i].imshow(
+                cutout_row.data, norm=img_norms, cmap="gray_r"
+            )
 
-            plots[i].set_title('Epoch {}'.format(measurement_row.epoch))
+            plots[i].set_title('Epoch {}'.format(
+                measurement_row.epoch
+            ))
 
-            cross_target_coords = cutout_row.wcs.wcs_world2pix(target_coords, 0)
+            cross_target_coords = cutout_row.wcs.wcs_world2pix(
+                target_coords, 0
+            )
             crosshair_lines = self._create_crosshair_lines(
                 cross_target_coords,
                 0.15,
@@ -933,7 +942,9 @@ class Source:
                 major = img_beam.major.value
                 minor = img_beam.minor.value
                 pa = img_beam.pa.value
-                pix_scale = proj_plane_pixel_scales(self.cutout_df.iloc[index].wcs)
+                pix_scale = proj_plane_pixel_scales(
+                    self.cutout_df.iloc[index].wcs
+                )
                 sx = pix_scale[0]
                 sy = pix_scale[1]
                 degrees_per_pixel = np.sqrt(sx * sy)

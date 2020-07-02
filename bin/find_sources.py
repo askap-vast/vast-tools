@@ -38,8 +38,8 @@ def parse_args():
     parser.add_argument(
         'coords',
         type=str,
-        help=("Right Ascension and Declination in quotes. Can be formatted as "
-              "\"HH:MM:SS [+/-]DD:MM:SS\" (e.g. \"12:00:00 -20:00:00\") or "
+        help=("Right Ascension and Declination in quotes. Can be formatted as"
+              " \"HH:MM:SS [+/-]DD:MM:SS\" (e.g. \"12:00:00 -20:00:00\") or "
               "decimal degrees (e.g. \"12.123 -20.123\"). Multiple "
               "coordinates are supported by separating with a comma (no space)"
               " e.g. \"12.231 -56.56,123.4 +21.3\"."
@@ -273,7 +273,9 @@ if __name__ == '__main__':
     )
 
     logger = get_logger(args.debug, args.quiet, logfile=logfile)
-    logger.debug("Available epochs: {}".format(sorted(RELEASED_EPOCHS.keys())))
+    logger.debug(
+        "Available epochs: {}".format(sorted(RELEASED_EPOCHS.keys()))
+    )
 
     output_ok = check_output_directory(args)
 
