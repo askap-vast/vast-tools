@@ -3,7 +3,7 @@ from vasttools.survey import (
     RELEASED_EPOCHS, FIELD_FILES, NIMBUS_BASE_DIR, EPOCH_FIELDS, FIELD_CENTRES
 )
 from vasttools.source import Source
-from vasttools.utils import filter_selavy_components
+from vasttools.utils import filter_selavy_components, simbad_search
 
 import sys
 import numpy as np
@@ -69,7 +69,7 @@ class Query:
     '''
 
     def __init__(
-        self, coords, source_names=[], epochs="all", stokes="I",
+        self, coords=None, source_names=[], epochs="all", stokes="I",
         crossmatch_radius=5.0, max_sep=1.0, use_tiles=False,
         use_islands=False, base_folder=None, matches_only=False,
         no_rms=False, output_dir="."
@@ -80,9 +80,38 @@ class Query:
 
         install_mp_handler(logger=self.logger)
 
-
         self.coords = coords
         self.source_names = source_names
+
+        if coords == None and len(source_names) == 0:
+            if self.logger is None:
+                raise ValueError(
+                    "No coordinates or source names have been provided!"
+                    " Check inputs and try again!"
+                )
+
+        if self.coords == None:
+            pre_simbad = len(source_names)
+            self.coords, self.source_names = simbad_search(
+                source_names, logger=self.logger
+            )
+            if self.coords != None:
+                simbad_msg = "SIMBAD search found {}/{} source(s)".format(
+                    len(self.source_names),
+                    pre_simbad
+                )
+                self.logger.info(simbad_msg)
+                self.logger.info('Found:')
+                for i in self.source_names:
+                    self.logger.info(i)
+                warnings.warn(simbad_msg)
+            else:
+                self.logger.error(
+                    "SIMBAD search failed!"
+                )
+                raise ValueError(
+                    "SIMBAD search failed!"
+                )
 
         self.settings = {}
 
@@ -815,18 +844,16 @@ class Query:
         fields = np.unique(fields_names[accept])
 
         if fields.shape[0] == 0:
-            if self.logger is not None:
-                self.logger.warning(
-                    "Source '%s' not in VAST Pilot footprint.",
+            self.logger.warning(
+                "Source '%s' not in VAST Pilot footprint.",
+                row['name']
+            )
+            warnings.warn(
+                "Source '{}' not in selected footprint. "
+                "Dropping source.".format(
                     row['name']
                 )
-            else:
-                warnings.warn(
-                    "Source '{}' not in selected footprint. "
-                    "Dropping source.".format(
-                        row['name']
-                    )
-                )
+            )
             return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
 
         centre_seps = row.skycoord.separation(field_centres)

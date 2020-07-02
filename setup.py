@@ -13,8 +13,10 @@ setup(
                  ' ASKAP VAST data.'),
     install_requires=[
         "astropy>=3.2,<4.2,!=4.0",
+        "astroquery<0.4.1",
         "colorlog>=4.0.2,<5.0",
         "matplotlib>=3.1.2,<4.0",
+        "multiprocessing_logging<=0.3.1",
         "numexpr>=2.7.1,<2.8",
         "numpy>=1.17.4,<1.18",
         "pandas<1.1,>=1.0",
@@ -25,7 +27,6 @@ setup(
         ],
     scripts=[
         "bin/find_sources.py",
-        "bin/get_vast_pilot_dbx.py",
         "bin/build_lightcurves.py",
         "bin/pilot_fields_info.py"
         ],

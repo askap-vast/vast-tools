@@ -20,6 +20,7 @@ import os
 import datetime
 import shutil
 import logging
+import pandas as pd
 
 runstart = datetime.datetime.now()
 
@@ -36,7 +37,7 @@ def parse_args():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument(
-        'coords',
+        '--coords',
         type=str,
         help=("Right Ascension and Declination in quotes. Can be formatted as"
               " \"HH:MM:SS [+/-]DD:MM:SS\" (e.g. \"12:00:00 -20:00:00\") or "
@@ -44,7 +45,8 @@ def parse_args():
               "coordinates are supported by separating with a comma (no space)"
               " e.g. \"12.231 -56.56,123.4 +21.3\"."
               " Finally you can also enter coordinates using a .csv file."
-              " See example file for format."))
+              " See example file for format."),
+        default=None)
 
     parser.add_argument(
         '--epochs',
@@ -277,19 +279,38 @@ if __name__ == '__main__':
         "Available epochs: {}".format(sorted(RELEASED_EPOCHS.keys()))
     )
 
+    if args.coords is None and args.source_names == "":
+        logger.error(
+            "No coordinates or source names have been provided!"
+        )
+        logger.error(
+            "Please check input and try again."
+        )
+        sys.exit()
+
     output_ok = check_output_directory(args)
 
     if not output_ok:
         logger.critical("Exiting.")
         sys.exit()
 
-    catalog = build_catalog(args.coords, args.source_names)
+    # if this is None we'll let the Query search Simbad
+    if args.coords is not None:
+        catalog = build_catalog(args.coords, args.source_names)
 
-    sky_coords = build_SkyCoord(catalog)
+        sky_coords = build_SkyCoord(catalog)
+
+    else:
+        catalog = pd.DataFrame(
+            [args.source_names.split(",")],
+            columns=['name']
+        )
+        sky_coords = None
+
 
     query = Query(
-        sky_coords,
-        source_names=catalog.name,
+        coords=sky_coords,
+        source_names=catalog.name.to_list(),
         epochs=args.epochs,
         stokes=args.stokes,
         crossmatch_radius=10.,

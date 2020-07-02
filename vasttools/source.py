@@ -26,6 +26,9 @@ from astropy.nddata.utils import Cutout2D
 from astropy import units as u
 from astropy.time import Time
 from astropy.timeseries import TimeSeries
+from astropy.stats import sigma_clipped_stats
+from astroquery.skyview import SkyView
+from astropy.wcs import WCS
 import matplotlib.pyplot as plt
 import logging.config
 import logging.handlers
@@ -398,7 +401,7 @@ class Source:
         self.checked_norms = True
 
 
-    def _get_cutout(self, row, size=Angle(5 * u.arcmin)):
+    def _get_cutout(self, row, size=Angle(5. * u.arcmin)):
 
         image = Image(row.field, row.epoch, self.stokes, self.base_folder)
 
@@ -434,6 +437,8 @@ class Source:
         header.update(cutout.wcs.to_header())
 
         beam = image.beam
+
+        self._size = size
 
         del image
         del selavy_coords
@@ -717,6 +722,128 @@ class Source:
         return collection, patches, island_names
 
 
+    def skyview_contour_plot(
+        self,
+        epoch,
+        survey,
+        contour_levels=[3., 5., 10., 15.],
+        percentile=99.9,
+        zscale=False,
+        contrast=0.2,
+        outfile=None,
+        no_colorbar=False,
+        title=None,
+        save=False,
+        size=None,
+        force=False,
+    ):
+        """docstring for skyview_contour_plot"""
+        if (self._cutouts_got is False) or (force == True):
+            self.get_cutout_data(size)
+
+        size = self._size
+
+        if epoch not in self.epochs:
+            raise ValueError(
+                "This source does not contain Epoch {}!".format(epoch)
+            )
+
+            return
+
+        if outfile is None:
+            outfile = "{}_EPOCH{}.png".format(
+                self.name.replace(" ", "_"),
+                RELEASED_EPOCHS[epoch]
+            )
+
+        if self.outdir != ".":
+            outfile = os.path.join(
+                self.outdir,
+                outfile
+            )
+
+        # try:
+        paths = SkyView.get_images(
+            position=self.coord, survey=[survey], radius=size
+        )
+        path_fits = paths[0][0]
+
+        path_wcs = WCS(path_fits.header)
+
+        # except:
+        #     warnings.warn("SkyView fetch failed!")
+        #     return
+
+
+        print(path_fits)
+
+        index = self.epochs.index(epoch)
+
+        fig = plt.figure(figsize=(8, 8))
+        ax = fig.add_subplot(111, projection=path_wcs)
+
+        mean_vast, median_vast, rms_vast = sigma_clipped_stats(
+            self.cutout_df.iloc[index].data
+        )
+
+        levels = [
+            i * rms_vast for i in contour_levels
+        ]
+
+        if zscale:
+            norm = ImageNormalize(
+                path_fits.data,
+                interval=ZScaleInterval(
+                    contrast=contrast
+                )
+            )
+        else:
+            norm = ImageNormalize(
+                path_fits.data,
+                interval=PercentileInterval(percentile),
+                stretch=LinearStretch()
+            )
+
+        im = ax.imshow(path_fits.data, norm=norm, cmap='gray_r')
+
+        ax.contour(
+            self.cutout_df.iloc[index].data,
+            levels=levels,
+            transform=ax.get_transform(self.cutout_df.iloc[index].wcs),
+            colors='C0',
+            zorder=10,
+            label="VAST contours"
+        )
+
+        if title is None:
+            title = "VAST Epoch {} '{}' {}".format(
+                epoch, self.name, survey
+            )
+
+        ax.set_title(title)
+
+        lon = ax.coords[0]
+        lat = ax.coords[1]
+        lon.set_axislabel("Right Ascension (J2000)")
+        lat.set_axislabel("Declination (J2000)")
+
+        if not no_colorbar:
+            divider = make_axes_locatable(ax)
+            cax = divider.append_axes(
+                "right", size="3%", pad=0.1, axes_class=maxes.Axes)
+            cb = fig.colorbar(im, cax=cax)
+
+        if save:
+            plt.savefig(outfile, bbox_inches="tight")
+            self.logger.info("Saved {}".format(outfile))
+
+            plt.close(fig)
+
+            return
+        else:
+            return fig
+
+
     def make_png(
             self,
             epoch,
@@ -731,7 +858,9 @@ class Source:
             title=None,
             crossmatch_overlay=False,
             hide_beam=False,
-            save=False
+            save=False,
+            size=None,
+            force=False,
     ):
         '''
         Save a PNG of the image postagestamp
@@ -769,6 +898,8 @@ class Source:
             plot, defaults to `False`.
         :type hide_beam: bool, optional
         '''
+        if (self._cutouts_got is False) or (force == True):
+            self.get_cutout_data(size)
 
         if epoch not in self.epochs:
             raise ValueError(

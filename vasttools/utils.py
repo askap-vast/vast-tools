@@ -19,6 +19,7 @@ from astropy import units as u
 from astropy.coordinates import SkyCoord
 import numpy as np
 from multiprocessing_logging import install_mp_handler
+from astroquery.simbad import Simbad
 
 
 def get_logger(debug, quiet, logfile=None):
@@ -288,3 +289,31 @@ def filter_selavy_components(selavy_df, selavy_sc, imsize, target):
     seps = target.separation(selavy_sc)
     mask = seps <= imsize / 1.4
     return selavy_df[mask].reset_index(drop=True)
+
+
+def simbad_search(objects, logger=None):
+    """
+    Searches SIMBAD for object coordinates and returns coordinates and names
+    """
+
+    Simbad.add_votable_fields('ra(d)', 'dec(d)')
+
+    try:
+        result_table = Simbad.query_objects(objects)
+        if result_table is None:
+            return None, None
+
+        ra = result_table['RA_d']
+        dec = result_table['DEC_d']
+
+        c = SkyCoord(ra, dec, unit=(u.deg, u.deg))
+
+        names = [i.decode("utf-8") for i in result_table['MAIN_ID']]
+
+        return c, names
+
+    except Exception as e:
+        logger.debug(
+            "Error in performing the SIMBAD object search!", exc_info=True
+        )
+        return None, None
