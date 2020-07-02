@@ -762,20 +762,17 @@ class Source:
                 outfile
             )
 
-        # try:
-        paths = SkyView.get_images(
-            position=self.coord, survey=[survey], radius=size
-        )
-        path_fits = paths[0][0]
+        try:
+            paths = SkyView.get_images(
+                position=self.coord, survey=[survey], radius=size
+            )
+            path_fits = paths[0][0]
 
-        path_wcs = WCS(path_fits.header)
+            path_wcs = WCS(path_fits.header)
 
-        # except:
-        #     warnings.warn("SkyView fetch failed!")
-        #     return
-
-
-        print(path_fits)
+        except:
+            warnings.warn("SkyView fetch failed!")
+            return
 
         index = self.epochs.index(epoch)
 
