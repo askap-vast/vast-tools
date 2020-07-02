@@ -322,17 +322,46 @@ class Image:
             if self.rms_header is None:
                 self.get_rms_img()
 
-            pix_coords = np.rint(skycoord_to_pixel(
-                coords, self.rms_wcs)
-            ).astype(int)
-            pix_coords = np.column_stack(pix_coords)
-            values = [self.rms_data[pix_coord[0], pix_coord[1]] for pix_coord in pix_coords]
+            thewcs = self.rms_wcs
+            thedata = self.rms_data
 
         else:
-            pix_coords = np.rint(skycoord_to_pixel(
-                coords, self.wcs)).astype(int)
-            values = [self.data[pix_coord[0], pix_coord[1]] for pix_coord in pix_coords]
 
+            thewcs = self.wcs
+            thedata = self.data
+
+
+        array_coords = thewcs.world_to_array_index(coords)
+        array_coords = np.array([
+            np.array(array_coords[0]),
+            np.array(array_coords[1]),
+        ])
+
+        # leaving this here just in case for now,
+        # but sources should always be in image range
+
+        # check for pixel wrapping
+        # x_valid = np.logical_or(
+        #     array_coords[0] > thedata.shape[0],
+        #     array_coords[0] < 0
+        # )
+        #
+        # y_valid = np.logical_or(
+        #     array_coords[1] > thedata.shape[1],
+        #     array_coords[1] < 0
+        # )
+        #
+        # valid = ~np.logical_or(
+        #     x_valid, y_valid
+        # )
+        #
+        # valid_indexes = group[valid].index.values
+        # not_valid_indexes = group[~valid].index.values
+
+        values = thedata[
+            array_coords[0],
+            array_coords[1]
+        ]
 
         return values
 
