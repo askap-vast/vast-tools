@@ -273,3 +273,18 @@ def build_SkyCoord(catalog):
                 u.deg))
 
     return src_coords
+
+
+def filter_selavy_components(selavy_df, selavy_sc, imsize, target):
+    '''
+    Create a shortened catalogue by filtering out selavy components
+    outside of the image
+
+    :param imsize: Size of the image along each axis
+    :type imsize: `astropy.coordinates.angles.Angle` or tuple of two
+        `Angle` objects
+    '''
+
+    seps = target.separation(selavy_sc)
+    mask = seps <= imsize / 1.4
+    return selavy_df[mask].reset_index(drop=True)

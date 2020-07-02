@@ -36,12 +36,11 @@ import os
 import numpy as np
 import gc
 import signal
-# from multiprocessing import Pool, cpu_count
-# from functools import partial
 
 from vasttools.utils import crosshair
 from vasttools.survey import Image
 from vasttools.survey import RELEASED_EPOCHS
+from vasttools.utils import filter_selavy_components
 # run crosshair to set up the marker
 crosshair()
 
@@ -333,7 +332,7 @@ class Source:
             return fig
 
 
-    def get_cutout_data(self, size):
+    def get_cutout_data(self, size=None):
         '''
         Make a FITS postagestamp of the source region and write to file
 
@@ -349,10 +348,14 @@ class Source:
         :param outfile: Name of output FITS file
         :type outfile: str
         '''
+        if size is None:
+            args = None
+        else:
+            args = (size,)
 
         self.cutout_df = self.measurements.apply(
             self._get_cutout,
-            # args=(size),
+            args=args,
             axis=1,
             result_type='expand'
         ).rename(columns={
@@ -418,10 +421,11 @@ class Source:
             selavy_components.dec_deg_cont.values * u.deg
         )
 
-        selavy_components = self.filter_selavy_components_2(
+        selavy_components = filter_selavy_components(
             selavy_components,
             selavy_coords,
-            size
+            size,
+            self.coord
         )
 
         header = image.header.copy()
@@ -437,30 +441,15 @@ class Source:
         )
 
 
-    def filter_selavy_components_2(self, selavy_df, selavy_sc, imsize):
-        '''
-        Create a shortened catalogue by filtering out selavy components
-        outside of the image
-
-        :param imsize: Size of the image along each axis
-        :type imsize: `astropy.coordinates.angles.Angle` or tuple of two
-            `Angle` objects
-        '''
-
-        seps = self.coord.separation(selavy_sc)
-        mask = seps <= imsize / 1.4
-        return selavy_df[mask].reset_index(drop=True)
-
-
     def show_png_cutout(self, epoch, crossmatch_overlay=False):
-        fig = self.make_png_2(epoch, crossmatch_overlay=crossmatch_overlay)
+        fig = self.make_png(epoch, crossmatch_overlay=crossmatch_overlay)
 
         return fig
 
 
-    def save_fits_cutout(self, epoch, outfile=None):
-        if self._cutouts_got is False:
-            self.get_cutout_data()
+    def save_fits_cutout(self, epoch, outfile=None, size=None, force=False):
+        if (self._cutouts_got is False) or (force == True):
+            self.get_cutout_data(size)
 
         if epoch not in self.epochs:
             raise ValueError(
@@ -489,16 +478,12 @@ class Source:
             header=cutout_data.header
         )
 
-        # hdu_stamp.header = cutout_data.header
-        # Update the FITS header with the cutout WCS
-        # hdu_stamp.header.update(cutout_data.wcs.to_header())
-
         # Write the cutout to a new FITS file
         hdu_stamp.writeto(outfile, overwrite=True)
 
 
     def save_png_cutout(self, epoch):
-        fig = self.make_png_2(epoch)
+        fig = self.make_png(epoch)
 
         return fig
 
@@ -523,36 +508,9 @@ class Source:
         )
 
 
-    def save_all_fits_cutouts(self):
-        if self._cutouts_got is False:
-            self.get_cutout_data()
-
-        # multi_save_fits = partial(
-        #     self.save_fits_cutout
-        # )
-        #
-        # num_cpu = int(cpu_count() / 4)
-        #
-        # original_sigint_handler = signal.signal(
-        #     signal.SIGINT, signal.SIG_IGN
-        # )
-        #
-        # workers = Pool(processes=num_cpu)
-        #
-        # signal.signal(signal.SIGINT, original_sigint_handler)
-        #
-        # try:
-        #     workers.map(multi_save_fits, self.measurements['epoch'].tolist())
-        # except KeyboardInterrupt:
-        #     self.logger.error(
-        #         "Caught KeyboardInterrupt, terminating workers."
-        #     )
-        #     workers.terminate()
-        #     sys.exit()
-        # else:
-        #     self.logger.info("Normal termination")
-        #     workers.close()
-        #     workers.join()
+    def save_all_fits_cutouts(self, size=None, force=False):
+        if (self._cutouts_got is False) or (force == True):
+            self.get_cutout_data(size)
 
         for e in self.measurements['epoch']:
             self.save_fits_cutout(e)
@@ -568,72 +526,16 @@ class Source:
         no_colorbar=False,
         crossmatch_overlay=False,
         hide_beam=False,
+        size=None
     ):
         if self._cutouts_got is False:
-            self.get_cutout_data()
+            self.get_cutout_data(size)
 
         if not self.checked_norms:
             self.analyse_norm_level()
 
-        # multi_plot = partial(
-        #     self.make_png_2,
-        #     selavy=True,
-        #     percentile=99.9,
-        #     zscale=False,
-        #     # contrast,
-        #     outfile=None,
-        #     no_islands=True,
-        #     label="Source",
-        #     no_colorbar=False,
-        #     title=None,
-        #     crossmatch_overlay=False,
-        #     hide_beam=False,
-        #     save=True
-        # )
-        #
-        # num_cpu = int(cpu_count() / 4)
-        #
-        # original_sigint_handler = signal.signal(
-        #     signal.SIGINT, signal.SIG_IGN
-        # )
-        #
-        # workers = Pool(processes=num_cpu)
-        #
-        # signal.signal(signal.SIGINT, original_sigint_handler)
-        #
-        # try:
-        #     workers.map(multi_plot, self.measurements['epoch'].tolist())
-        # except KeyboardInterrupt:
-        #     self.logger.error(
-        #         "Caught KeyboardInterrupt, terminating workers."
-        #     )
-        #     workers.terminate()
-        #     sys.exit()
-        # else:
-        #     self.logger.info("Normal termination")
-        #     workers.close()
-        #     workers.join()
-        # for e in self.measurements['epoch']:
-        #     self.make_png_2(
-        #         # e,
-        #         fig,
-        #         True,
-        #         99.9,
-        #         False,
-        #         # contrast,
-        #         None,
-        #         True,
-        #         "Source",
-        #         False,
-        #         None,
-        #         False,
-        #         False,
-        #         True
-        #     )
-        #     fig.clf()
-
         self.measurements['epoch'].apply(
-            self.make_png_2,
+            self.make_png,
             args = (
                 selavy,
                 percentile,
@@ -652,14 +554,18 @@ class Source:
         # plt.close(fig)
 
 
-    def plot_all_cutouts(self, columns=4, zscale=False, percentile=99.9):
-        if self._cutouts_got is False:
-            self.get_cutout_data()
+    def plot_all_cutouts(self, columns=4, percentile=99.9, zscale=False,
+        contrast=0.1,outfile=None, save=False, size=None, figsize=(10, 5),
+        force=False):
+        if (self._cutouts_got is False) or (force == True):
+            self.get_cutout_data(size)
 
         num_plots = self.measurements.shape[0]
         nrows = np.ceil(num_plots/columns)
 
-        fig = plt.figure(figsize=(15,5))
+        fig = plt.figure(figsize=figsize)
+
+        fig.tight_layout()
 
         plots = {}
 
@@ -667,24 +573,27 @@ class Source:
             ([[self.coord.ra.deg, self.coord.dec.deg]])
         )
 
-        if self.detections > 0:
-            scale_index = self.measurements[
-                self.measurements.detection == True
-            ].index.values[0]
-        else:
-            scale_index = 0
+        if not self.checked_norms:
+            if self.detections > 0:
+                scale_index = self.measurements[
+                    self.measurements.detection == True
+                ].index.values[0]
+            else:
+                scale_index = 0
 
-        scale_data = self.cutout_df.loc[scale_index].data
+            scale_data = self.cutout_df.loc[scale_index].data
 
-        if zscale:
-            img_norms = ImageNormalize(
-                scale_data, interval=ZScaleInterval(
-                    contrast=contrast))
+            if zscale:
+                img_norms = ImageNormalize(
+                    scale_data, interval=ZScaleInterval(
+                        contrast=contrast))
+            else:
+                img_norms = ImageNormalize(
+                    scale_data,
+                    interval=PercentileInterval(percentile),
+                    stretch=LinearStretch())
         else:
-            img_norms = ImageNormalize(
-                scale_data,
-                interval=PercentileInterval(percentile),
-                stretch=LinearStretch())
+            img_norms = self.norms
 
         for i in range(num_plots):
             cutout_row = self.cutout_df.iloc[i]
@@ -711,7 +620,11 @@ class Source:
 
             if not cutout_row['selavy_overlay'].empty:
                 plots[i].set_autoscale_on(False)
-                collection = self._gen_overlay_collection(
+                (
+                    collection,
+                    patches,
+                    island_names
+                ) = self._gen_overlay_collection(
                     cutout_row
                 )
                 plots[i].add_collection(collection, autolim=False)
@@ -720,7 +633,37 @@ class Source:
                 l[0], l[1], color="C3", zorder=10, lw=1.5, alpha=0.6
             ) for l in crosshair_lines]
 
-        return fig
+            lon = plots[i].coords[0]
+            lat = plots[i].coords[1]
+
+            lon.set_ticks_visible(False)
+            lon.set_ticklabel_visible(False)
+            lat.set_ticks_visible(False)
+            lat.set_ticklabel_visible(False)
+
+
+        if save:
+            if outfile is None:
+                outfile = "{}_EPOCH{}.png".format(
+                    self.name.replace(" ", "_"),
+                    RELEASED_EPOCHS[epoch]
+                )
+
+            if self.outdir != ".":
+                outfile = os.path.join(
+                    self.outdir,
+                    outfile
+                )
+
+            plt.savefig(outfile, bbox_inches=True)
+
+            plt.close()
+
+            return
+
+        else:
+
+            return fig
 
 
     def _gen_overlay_collection(self, cutout_row):
@@ -765,7 +708,7 @@ class Source:
         return collection, patches, island_names
 
 
-    def make_png_2(
+    def make_png(
             self,
             epoch,
             selavy=True,
@@ -839,13 +782,6 @@ class Source:
 
         index = self.epochs.index(epoch)
 
-        # cutout_row = self.cutout_df.iloc[index]
-        # image has already been loaded to get the fits
-        # outfile = outfile.replace(".fits", ".png")
-        # convert data to mJy in case colorbar is used.
-        # cutout_data = self.cutout.data * 1000.
-        # cutout_wcs = self.cutout.wcs
-        # create figure
         fig = plt.figure(figsize=(8, 8))
         ax = fig.add_subplot(111, projection=self.cutout_df.iloc[index].wcs)
         # Get the Image Normalisation from zscale, user contrast.
@@ -1028,7 +964,8 @@ class Source:
             return fig
 
 
-    def write_ann(self, epoch, outfile=None, crossmatch_overlay=False):
+    def write_ann(self, epoch, outfile=None, crossmatch_overlay=False,
+        size=None, force=False):
         '''
         Write a kvis annotation file containing all selavy sources
         within the image.
@@ -1040,8 +977,8 @@ class Source:
             defaults to False.
         :type crossmatch_overlay: bool, optional.
         '''
-        if self._cutouts_got is False:
-            self.get_cutout_data()
+        if (self._cutouts_got is False) or (force == True):
+            self.get_cutout_data(size)
 
         if outfile is None:
             outfile = "{}_EPOCH{}.ann".format(
@@ -1113,7 +1050,8 @@ class Source:
         self.logger.info("Wrote annotation file {}.".format(outfile))
 
 
-    def write_reg(self, epoch, outfile=None, crossmatch_overlay=False):
+    def write_reg(self, epoch, outfile=None, crossmatch_overlay=False,
+        size=None, force=False):
         '''
         Write a DS9 region file containing all selavy sources within the image
 
@@ -1123,8 +1061,8 @@ class Source:
             file output denoting the crossmatch radius, defaults to False.
         :type crossmatch_overlay: bool, optional.
         '''
-        if self._cutouts_got is False:
-            self.get_cutout_data()
+        if (self._cutouts_got is False) or (force == True):
+            self.get_cutout_data(size)
 
         if outfile is None:
             outfile = "{}_EPOCH{}.reg".format(
