@@ -451,10 +451,85 @@ class Source:
         )
 
 
-    def show_png_cutout(self, epoch, crossmatch_overlay=False):
-        fig = self.make_png(epoch, crossmatch_overlay=crossmatch_overlay)
+    def show_png_cutout(
+            self,
+            epoch,
+            selavy=True,
+            percentile=99.9,
+            zscale=False,
+            contrast=0.2,
+            no_islands=True,
+            label="Source",
+            no_colorbar=False,
+            title=None,
+            crossmatch_overlay=False,
+            hide_beam=False,
+            size=None,
+            force=False
+        ):
+        """
+        Wrapper for make_png to make nicer interactive function.
+        No access to save.
+        """
+        fig = self.make_png(
+            epoch,
+            selavy=selavy,
+            percentile=percentile,
+            zscale=zscale,
+            contrast=contrast,
+            no_islands=no_islands,
+            label=label,
+            no_colorbar=no_colorbar,
+            title=title,
+            crossmatch_overlay=crossmatch_overlay,
+            hide_beam=hide_beam,
+            size=size,
+            force=force
+        )
 
         return fig
+
+
+    def save_png_cutout(
+            self,
+            epoch,
+            selavy=True,
+            percentile=99.9,
+            zscale=False,
+            contrast=0.2,
+            no_islands=True,
+            label="Source",
+            no_colorbar=False,
+            title=None,
+            crossmatch_overlay=False,
+            hide_beam=False,
+            size=None,
+            force=False,
+            outfile=None
+        ):
+        """
+        Wrapper for make_png to make nicer interactive function.
+        Always save.
+        """
+        fig = self.make_png(
+            epoch,
+            selavy=selavy,
+            percentile=percentile,
+            zscale=zscale,
+            contrast=contrast,
+            no_islands=no_islands,
+            label=label,
+            no_colorbar=no_colorbar,
+            title=title,
+            crossmatch_overlay=crossmatch_overlay,
+            hide_beam=hide_beam,
+            size=size,
+            force=force,
+            outfile=outfile,
+            save=True
+        )
+
+        return
 
 
     def save_fits_cutout(self, epoch, outfile=None, size=None, force=False):
@@ -566,7 +641,7 @@ class Source:
 
     def plot_all_cutouts(self, columns=4, percentile=99.9, zscale=False,
         contrast=0.1,outfile=None, save=False, size=None, figsize=(10, 5),
-        force=False
+        force=False, no_selavy=False
         ):
         if (self._cutouts_got is False) or (force == True):
             self.get_cutout_data(size)
@@ -637,7 +712,7 @@ class Source:
                 cutout_row.data.shape
             )
 
-            if not cutout_row['selavy_overlay'].empty:
+            if (not cutout_row['selavy_overlay'].empty) and (not no_selavy):
                 plots[i].set_autoscale_on(False)
                 (
                     collection,
@@ -815,7 +890,6 @@ class Source:
             transform=ax.get_transform(self.cutout_df.iloc[index].wcs),
             colors='C0',
             zorder=10,
-            label="VAST contours"
         )
 
         if title is None:
