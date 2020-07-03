@@ -4,7 +4,7 @@ import warnings
 import glob
 
 class Pipeline(object):
-    """Class to interface with VAST Pipelien results"""
+    """Class to interface with VAST Pipeline results"""
     def __init__(self, project_dir):
         super(Pipeline, self).__init__()
 
@@ -23,8 +23,8 @@ class Pipeline(object):
 
         if not os.path.isdir(run_dir):
             raise ValueError(
-                "Job %s does not exist!",
-                jobname
+                "Run '%s' does not exist!",
+                runname
             )
             return
 
