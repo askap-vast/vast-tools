@@ -15,6 +15,7 @@ setup(
         "astropy>=3.2,<4.2,!=4.0",
         "astroquery<0.4.1",
         "colorlog>=4.0.2,<5.0",
+        "dask[dataframe]<=2.20.0",
         "fastparquet<=0.4.0",
         "matplotlib>=3.1.2,<4.0",
         "multiprocessing_logging<=0.3.1",
