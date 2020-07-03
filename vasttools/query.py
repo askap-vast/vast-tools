@@ -1,6 +1,7 @@
 from vasttools.survey import Fields, Image
 from vasttools.survey import (
-    RELEASED_EPOCHS, FIELD_FILES, NIMBUS_BASE_DIR, EPOCH_FIELDS, FIELD_CENTRES
+    RELEASED_EPOCHS, FIELD_FILES, NIMBUS_BASE_DIR,
+    EPOCH_FIELDS, FIELD_CENTRES, OBSERVING_LOCATION, ALLOWED_PLANETS
 )
 from vasttools.source import Source
 from vasttools.utils import filter_selavy_components, simbad_search
@@ -32,9 +33,12 @@ from astropy.coordinates import SkyCoord
 from astropy import units as u
 from astropy.nddata.utils import Cutout2D
 from astropy.coordinates import SkyCoord
+from astropy.coordinates import solar_system_ephemeris
+from astropy.coordinates import get_body, get_moon
 from astropy.io import fits
 from astropy.wcs import WCS
 from astropy.wcs.utils import skycoord_to_pixel
+from astropy.time import Time
 from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
 
 from matplotlib.patches import Ellipse
@@ -72,7 +76,7 @@ class Query:
         self, coords=None, source_names=[], epochs="all", stokes="I",
         crossmatch_radius=5.0, max_sep=1.0, use_tiles=False,
         use_islands=False, base_folder=None, matches_only=False,
-        no_rms=False, output_dir="."
+        no_rms=False, output_dir=".", planets=[]
     ):
         '''Constructor method
         '''
@@ -83,7 +87,7 @@ class Query:
         self.coords = coords
         self.source_names = source_names
 
-        if coords == None and len(source_names) == 0:
+        if coords == None and len(source_names) == 0 and len(planets) == 0:
             if self.logger is None:
                 raise ValueError(
                     "No coordinates or source names have been provided!"
@@ -91,27 +95,43 @@ class Query:
                 )
 
         if self.coords == None:
-            pre_simbad = len(source_names)
-            self.coords, self.source_names = simbad_search(
-                source_names, logger=self.logger
-            )
-            if self.coords != None:
-                simbad_msg = "SIMBAD search found {}/{} source(s)".format(
-                    len(self.source_names),
-                    pre_simbad
+            if len(source_names) != 0:
+                pre_simbad = len(source_names)
+                self.coords, self.source_names = simbad_search(
+                    source_names, logger=self.logger
                 )
-                self.logger.info(simbad_msg)
-                self.logger.info('Found:')
-                for i in self.source_names:
-                    self.logger.info(i)
-                warnings.warn(simbad_msg)
+                if self.coords != None:
+                    simbad_msg = "SIMBAD search found {}/{} source(s)".format(
+                        len(self.source_names),
+                        pre_simbad
+                    )
+                    self.logger.info(simbad_msg)
+                    self.logger.info('Found:')
+                    for i in self.source_names:
+                        self.logger.info(i)
+                    warnings.warn(simbad_msg)
+                else:
+                    self.logger.error(
+                        "SIMBAD search failed!"
+                    )
+                    raise ValueError(
+                        "SIMBAD search failed!"
+                    )
+            if len(planets) != 0:
+                valid_planets = sum([i in ALLOWED_PLANETS for i in planets])
+
+                if valid_planets != len(planets):
+                    self.logger.error(
+                        "Invalid planet object provided!"
+                    )
+                    raise ValueError(
+                        "Invalid planet object provided!"
+                    )
+
+                else:
+                    self.planets = planets
             else:
-                self.logger.error(
-                    "SIMBAD search failed!"
-                )
-                raise ValueError(
-                    "SIMBAD search failed!"
-                )
+                self.planets = None
 
         self.settings = {}
 
@@ -154,7 +174,10 @@ class Query:
                 "\nPlease address and try again."
             ))
 
-        self.query_df = self.build_catalog()
+        if self.coords is not None:
+            self.query_df = self.build_catalog()
+        else:
+            self.query_df = None
 
         self.fields_found = False
 
@@ -557,12 +580,16 @@ class Query:
 
         m = group.iloc[0]
 
-        source_coord = m.skycoord
+        if m['planet']:
+            source_coord = group.skycoord
+            source_primary_field = group.primary_field
+        else:
+            source_coord = m.skycoord
+            source_primary_field = m.primary_field
         source_name = m['name']
         source_epochs = group['epoch'].to_list()
         source_fields = group['field'].to_list()
         source_stokes = self.settings['stokes']
-        source_primary_field = m.primary_field
         source_base_folder = self.base_folder
         source_crossmatch_radius = self.settings['crossmatch_radius']
         source_outdir = self.settings['output_dir']
@@ -779,48 +806,61 @@ class Query:
 
         field_centre_names = FIELD_CENTRES.field
 
-        self.fields_df = self.query_df.copy()
+        if self.query_df is not None:
+            self.fields_df = self.query_df.copy()
 
-        self.fields_df[[
-            'fields',
-            'primary_field',
-            'epochs',
-            'field_per_epoch',
-            'sbids',
-            'dates'
-        ]] = self.query_df.apply(
-            self._field_matching,
-            args=(
-                fields.direction,
-                fields.fields.FIELD_NAME,
-                field_centres_sc,
-                field_centre_names
-            ),
-            axis=1,
-            result_type='expand'
-        )
+            self.fields_df[[
+                'fields',
+                'primary_field',
+                'epochs',
+                'field_per_epoch',
+                'sbids',
+                'dates'
+            ]] = self.query_df.apply(
+                self._field_matching,
+                args=(
+                    fields.direction,
+                    fields.fields.FIELD_NAME,
+                    field_centres_sc,
+                    field_centre_names
+                ),
+                axis=1,
+                result_type='expand'
+            )
 
-        self.fields_df = self.fields_df.dropna()
+            self.fields_df = self.fields_df.dropna()
 
-        self.fields_df = self.fields_df.explode(
-            'field_per_epoch'
-        ).reset_index(drop=True)
-        self.fields_df[
-            ['epoch', 'field', 'sbid', 'dateobs']
-        ] = self.fields_df.field_per_epoch.apply(pd.Series)
+            self.fields_df = self.fields_df.explode(
+                'field_per_epoch'
+            ).reset_index(drop=True)
+            self.fields_df[
+                ['epoch', 'field', 'sbid', 'dateobs']
+            ] = self.fields_df.field_per_epoch.apply(pd.Series)
 
-        to_drop = [
-            'field_per_epoch',
-            'epochs',
-            'sbids',
-            'dates'
-        ]
+            to_drop = [
+                'field_per_epoch',
+                'epochs',
+                'sbids',
+                'dates'
+            ]
 
-        self.fields_df = self.fields_df.drop(
-            labels=to_drop, axis=1
-        ).sort_values(
-            by=['name', 'dateobs']
-        ).reset_index(drop=True)
+            self.fields_df = self.fields_df.drop(
+                labels=to_drop, axis=1
+            ).sort_values(
+                by=['name', 'dateobs']
+            ).reset_index(drop=True)
+
+            self.fields_df['planet'] = False
+
+        if self.planets is not None:
+            planet_fields = self.search_planets()
+
+            if self.fields_df is None:
+                self.fields_df = planet_fields
+            else:
+                self.fields_df = self.fields_df.append(
+                    planet_fields
+                ).reset_index(drop=True)
 
         self.logger.info(
             "%i/%i sources in VAST Pilot footprint.",
@@ -894,6 +934,95 @@ class Query:
             field_per_epochs.append([i,field,sbid,date])
 
         return fields, primary_field, epochs, field_per_epochs, sbids, dateobs
+
+
+    def _get_planets_epoch_df_template(self):
+        epochs = self.settings['epochs']
+
+        planet_epoch_fields = pd.DataFrame.from_dict(
+            EPOCH_FIELDS[epochs[0]], orient='index'
+        ).reset_index().rename(columns={'index':'FIELD_NAME'})
+
+        planet_epoch_fields['epoch'] = epochs[0]
+
+        for e in epochs[1:]:
+            temp = pd.DataFrame.from_dict(
+                EPOCH_FIELDS[e], orient='index'
+            ).reset_index().rename(columns={'index':'FIELD_NAME'})
+            temp['epoch'] = e
+            planet_epoch_fields = planet_epoch_fields.append(
+                temp
+            )
+            del temp
+
+        planet_epoch_fields = planet_epoch_fields.merge(
+            FIELD_CENTRES, left_on='FIELD_NAME',
+            right_on='field', how='left'
+        ).drop('field', axis=1)
+
+        return planet_epoch_fields
+
+
+    def search_planets(self):
+
+        template = self._get_planets_epoch_df_template()
+
+        dates = Time(template['DATEOBS'].tolist())
+        fields_skycoord = SkyCoord(
+            template['centre-ra'].values,
+            template['centre-dec'].values,
+            unit=(u.deg, u.deg)
+        )
+
+        template['planet'] = [self.planets for i in range(template.shape[0])]
+
+        template = template.explode('planet')
+
+        results = template.groupby('planet').apply(
+            lambda x: self._match_planet_to_field(
+                x.name, x, dates, fields_skycoord
+            )
+        )
+
+        results = results.reset_index(drop=True).drop(
+            ['centre-ra', 'centre-dec', 'sep'], axis=1
+        ).rename(columns={
+            'planet': 'name',
+            'FIELD_NAME': 'field',
+            'DATEOBS': 'dateobs',
+            'SBID': 'sbid',
+        })
+
+        results['stokes'] = self.settings['stokes'].upper()
+        results['primary_fields'] = results['field']
+        results['skycoord'] = SkyCoord(
+            results['ra'], results['dec'], unit=(u.deg, u.deg)
+        )
+        results['fields'] = [[i] for i in results['field']]
+        results['planet'] = True
+
+        return results
+
+
+
+    def _match_planet_to_field(self, planet, group, dates, fields_skycoord):
+
+        with solar_system_ephemeris.set('builtin'):
+            planet_coords = get_body(planet, dates, OBSERVING_LOCATION)
+
+        seps = planet_coords.separation(
+            fields_skycoord
+        )
+
+        group['ra'] = planet_coords.ra.deg
+        group['dec'] = planet_coords.dec.deg
+        group['sep'] = seps.deg
+
+        group = group.loc[
+            group['sep'] < 4.1
+        ]
+
+        return group
 
 
     def build_catalog(self):

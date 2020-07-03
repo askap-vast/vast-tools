@@ -21,6 +21,7 @@ import datetime
 import shutil
 import logging
 import pandas as pd
+import sys
 
 runstart = datetime.datetime.now()
 
@@ -47,7 +48,15 @@ def parse_args():
               " Finally you can also enter coordinates using a .csv file."
               " See example file for format."),
         default=None)
-
+    parser.add_argument(
+        '--source-names',
+        type=str,
+        help=("Only for use when entering coordaintes via the command line. "
+              "State the name of the source being searched. "
+              "Use quote marks for names that contain a space. "
+              "For multiple sources separate with a comma with no "
+              "space, e.g. \"SN 1994N,SN 2003D,SN 2019A\"."),
+        default="")
     parser.add_argument(
         '--epochs',
         type=str,
@@ -71,15 +80,6 @@ def parse_args():
         help='Name of the output directory to place all results in.',
         default="find_sources_output_{}".format(
             runstart.strftime("%Y%m%d_%H:%M:%S")))
-    parser.add_argument(
-        '--source-names',
-        type=str,
-        help=("Only for use when entering coordaintes via the command line. "
-              "State the name of the source being searched. "
-              "Use quote marks for names that contain a space. "
-              "For multiple sources separate with a comma with no "
-              "space, e.g. \"SN 1994N,SN 2003D,SN 2019A\"."),
-        default="")
     parser.add_argument(
         '--crossmatch-radius',
         type=float,
@@ -127,6 +127,22 @@ def parse_args():
         '--no-background-rms',
         action="store_true",
         help='Do not estimate the background RMS around each source.')
+    parser.add_argument(
+        '--planets',
+        choices=[
+            'mercury',
+            'venus',
+            'mars',
+            'jupiter',
+            'saturn',
+            'uranus',
+            'neptune',
+            'sun',
+            'moon'
+        ],
+        nargs='*',
+        default=[],
+        help='Also search for solar system objects.')
     parser.add_argument(
         '--find-fields',
         action="store_true",
@@ -279,7 +295,7 @@ if __name__ == '__main__':
         "Available epochs: {}".format(sorted(RELEASED_EPOCHS.keys()))
     )
 
-    if args.coords is None and args.source_names == "":
+    if args.coords is None and args.source_names == "" and len(args.planets) == 0:
         logger.error(
             "No coordinates or source names have been provided!"
         )
@@ -299,18 +315,23 @@ if __name__ == '__main__':
         catalog = build_catalog(args.coords, args.source_names)
 
         sky_coords = build_SkyCoord(catalog)
-
-    else:
+        source_names = catalog.name.to_list()
+    elif args.source_names != "":
         catalog = pd.DataFrame(
             [args.source_names.split(",")],
             columns=['name']
         )
         sky_coords = None
+        source_names = catalog.name.to_list()
 
+    else:
+        sky_coords = None
+        source_names = ""
 
     query = Query(
         coords=sky_coords,
-        source_names=catalog.name.to_list(),
+        source_names=source_names,
+        planets=args.planets,
         epochs=args.epochs,
         stokes=args.stokes,
         crossmatch_radius=10.,

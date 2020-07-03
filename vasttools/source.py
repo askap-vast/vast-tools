@@ -84,7 +84,8 @@ class Source:
         base_folder,
         image_type = "COMBINED",
         islands=False,
-        outdir="."
+        outdir=".",
+        planet=False
         ):
         '''Constructor method
         '''
@@ -125,6 +126,8 @@ class Source:
 
         self.norms = None
         self.checked_norms = False
+
+        self.planet = planet
 
 
     def write_measurements(self, simple=False, outfile=None):
@@ -407,7 +410,7 @@ class Source:
 
         cutout = Cutout2D(
             image.data,
-            position=self.coord,
+            position=row.skycoord,
             size=size,
             wcs=image.wcs
         )
@@ -430,7 +433,7 @@ class Source:
             selavy_components,
             selavy_coords,
             size,
-            self.coord
+            row.coord
         )
 
         header = image.header.copy()
@@ -577,10 +580,6 @@ class Source:
 
         plots = {}
 
-        target_coords = np.array(
-            ([[self.coord.ra.deg, self.coord.dec.deg]])
-        )
-
         if not self.checked_norms:
             if self.detections > 0:
                 scale_index = self.measurements[
@@ -606,6 +605,12 @@ class Source:
         for i in range(num_plots):
             cutout_row = self.cutout_df.iloc[i]
             measurement_row = self.measurements.iloc[i]
+            target_coords = np.array(
+                ([[
+                    measurement_row.skycoord.ra.deg,
+                    measurement_row.skycoord.dec.deg
+                ]])
+            )
             i+=1
             plots[i] = fig.add_subplot(
                 nrows,
@@ -762,9 +767,12 @@ class Source:
                 outfile
             )
 
+        index = self.epochs.index(epoch)
+
         try:
             paths = SkyView.get_images(
-                position=self.coord, survey=[survey], radius=size
+                position=self.measurements.iloc[index]['skycoord'],
+                survey=[survey], radius=size
             )
             path_fits = paths[0][0]
 
@@ -773,8 +781,6 @@ class Source:
         except:
             warnings.warn("SkyView fetch failed!")
             return
-
-        index = self.epochs.index(epoch)
 
         fig = plt.figure(figsize=(8, 8))
         ax = fig.add_subplot(111, projection=path_wcs)
@@ -945,7 +951,10 @@ class Source:
 
         # insert crosshair of target
         target_coords = np.array(
-            ([[self.coord.ra.deg, self.coord.dec.deg]])
+            ([[
+                self.measurements.iloc[index].ra.deg,
+                self.measurements.iloc[index].dec.deg
+            ]])
         )
 
         target_coords = self.cutout_df.iloc[index].wcs.wcs_world2pix(
@@ -973,7 +982,10 @@ class Source:
         if crossmatch_overlay:
             try:
                 crossmatch_patch = SphericalCircle(
-                    (self.coord.ra, self.coord.dec),
+                    (
+                        self.measurements.iloc[index].ra,
+                        self.measurements.iloc[index].dec
+                    ),
                     self.crossmatch_radius,
                     transform=ax.get_transform('world'),
                     label="Crossmatch radius ({:.1f} arcsec)".format(
@@ -1129,7 +1141,7 @@ class Source:
                 self.outdir,
                 outfile
             )
-
+        index = self.epochs.index(epoch)
         neg = False
         with open(outfile, 'w') as f:
             f.write("COORD W\n")
@@ -1137,15 +1149,15 @@ class Source:
             f.write("FONT hershey14\n")
             f.write("COLOR BLUE\n")
             f.write("CROSS {0} {1} {2} {2}\n".format(
-                self.coord.ra.deg,
-                self.coord.dec.deg,
+                self.measurements.iloc[index].ra.deg,
+                self.measurements.iloc[index].ra.deg,
                 3./3600.
             ))
             if crossmatch_overlay:
                 try:
                     f.write("CIRCLE {} {} {}\n".format(
-                        self.coord.ra.deg,
-                        self.coord.dec.deg,
+                        self.measurements.iloc[index].ra.deg,
+                        self.measurements.iloc[index].dec.deg,
                         self.crossmatch_radius.deg
                     ))
                 except Exception as e:
@@ -1154,7 +1166,6 @@ class Source:
                         " Has the source been crossmatched?")
             f.write("COLOR GREEN\n")
 
-            index = self.epochs.index(epoch)
 
             selavy_cat_cut = self.cutout_df.iloc[index].selavy_overlay
 
@@ -1214,6 +1225,7 @@ class Source:
                 outfile
             )
 
+        index = self.epochs.index(epoch)
         with open(outfile, 'w') as f:
             f.write("# Region file format: DS9 version 4.0\n")
             f.write("global color=green font=\"helvetica 10 normal\" "
@@ -1223,22 +1235,20 @@ class Source:
             f.write("fk5\n")
             f.write(
                 "point({} {}) # point=x color=blue\n".format(
-                    self.coord.ra.deg,
-                    self.coord.dec.deg,
+                    self.measurements.iloc[index].ra.deg,
+                    self.measurements.iloc[index].dec.deg,
                 ))
             if crossmatch_overlay:
                 try:
                     f.write("circle({} {} {}) # color=blue\n".format(
-                        self.coord.ra.deg,
-                        self.coord.dec.deg,
+                        self.measurements.iloc[index].ra.deg,
+                        self.measurements.iloc[index].dec.deg,
                         self.crossmatch_radius.deg
                     ))
                 except Exception as e:
                     self.logger.warning(
                         "Crossmatch circle overlay failed!"
                         " Has the source been crossmatched?")
-
-            index = self.epochs.index(epoch)
 
             selavy_cat_cut = self.cutout_df.iloc[index].selavy_overlay
 

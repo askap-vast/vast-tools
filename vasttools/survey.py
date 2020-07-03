@@ -17,6 +17,7 @@ import logging.config
 from astropy.coordinates import Angle
 from astropy import units as u
 from astropy.coordinates import SkyCoord
+from astropy.coordinates import EarthLocation
 from astropy.io import fits
 from astropy.wcs import WCS
 from astropy.wcs.utils import skycoord_to_pixel
@@ -103,6 +104,22 @@ FIELD_CENTRES = pd.read_csv(
 )
 
 NIMBUS_BASE_DIR = "/Users/adam/testing/vast-tools-testing/PSR_J2129-04_data_2"
+
+ASKAP_latitude = Angle("-26:41:46.0", unit=u.deg)
+ASKAP_longitude = Angle("116:38:13.0", unit=u.deg)
+OBSERVING_LOCATION = EarthLocation(lat=ASKAP_latitude, lon=ASKAP_longitude)
+
+ALLOWED_PLANETS = [
+    'mercury',
+    'venus',
+    'mars',
+    'jupiter',
+    'saturn',
+    'uranus',
+    'neptune',
+    'sun',
+    'moon'
+]
 
 
 class Fields:
