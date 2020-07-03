@@ -21,6 +21,7 @@ import numexpr
 from multiprocessing import Pool, cpu_count
 from multiprocessing_logging import install_mp_handler
 from functools import partial
+import dask.dataframe as dd
 
 import logging
 import logging.handlers
@@ -976,21 +977,31 @@ class Query:
 
         template = self._get_planets_epoch_df_template()
 
-        dates = Time(template['DATEOBS'].tolist())
-        fields_skycoord = SkyCoord(
-            template['centre-ra'].values,
-            template['centre-dec'].values,
-            unit=(u.deg, u.deg)
-        )
-
         template['planet'] = [self.planets for i in range(template.shape[0])]
 
         template = template.explode('planet')
 
-        results = template.groupby('planet').apply(
-            lambda x: self._match_planet_to_field(
-                x.name, x, dates, fields_skycoord
-            )
+        meta={
+            'FIELD_NAME': 'U',
+            'SBID': 'i',
+            'DATEOBS': 'datetime64[ns]',
+            'epoch': 'U',
+            'centre-ra': 'f',
+            'centre-dec': 'f',
+            'planet': 'U',
+            'ra': 'f',
+            'dec': 'f',
+            'sep': 'f'
+        }
+
+        n_cpu = 4
+        results = (
+            dd.from_pandas(template, n_cpu)
+            .groupby('planet')
+            .apply(
+                self._match_planet_to_field,
+                meta=meta,
+            ).compute(num_workers=n_cpu, scheduler='processes')
         )
 
         results = results.reset_index(drop=True).drop(
@@ -1013,9 +1024,14 @@ class Query:
         return results
 
 
-
-    def _match_planet_to_field(self, planet, group, dates, fields_skycoord):
-
+    def _match_planet_to_field(self, group):
+        planet = group.iloc[0]['planet']
+        dates = Time(group['DATEOBS'].tolist())
+        fields_skycoord = SkyCoord(
+            group['centre-ra'].values,
+            group['centre-dec'].values,
+            unit=(u.deg, u.deg)
+        )
         with solar_system_ephemeris.set('builtin'):
             planet_coords = get_body(planet, dates, OBSERVING_LOCATION)
 
@@ -1211,7 +1227,6 @@ class EpochInfo:
                 "{} does not exist. "
                 "Can only do crossmatching.".format(IMAGE_FOLDER)
             )
-
 
         if self.use_tiles:
             self.logger.warning(
