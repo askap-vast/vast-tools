@@ -1013,7 +1013,7 @@ class Query:
             'FIELD_NAME': 'field',
             'DATEOBS': 'dateobs',
             'SBID': 'sbid',
-        })
+        }).sort_values(by=['name', 'dateobs'])
 
         results['stokes'] = self.settings['stokes'].upper()
         results['primary_field'] = results['field']
