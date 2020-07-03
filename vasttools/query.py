@@ -851,6 +851,8 @@ class Query:
             ).reset_index(drop=True)
 
             self.fields_df['planet'] = False
+        else:
+            self.fields_df = None
 
         if self.planets is not None:
             planet_fields = self.search_planets()
