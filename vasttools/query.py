@@ -981,6 +981,7 @@ class Query:
         template['planet'] = [self.planets for i in range(template.shape[0])]
 
         template = template.explode('planet')
+        template['planet'] = template['planet'].str.capitalize()
 
         meta={
             'FIELD_NAME': 'U',
