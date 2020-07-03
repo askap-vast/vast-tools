@@ -864,10 +864,17 @@ class Query:
                     planet_fields
                 ).reset_index(drop=True)
 
+        if self.query_df is None:
+            prev_num = 0
+        else:
+            prev_num = self.query_df.shape[0]
+
+        prev_num += len(planets)
+
         self.logger.info(
             "%i/%i sources in VAST Pilot footprint.",
             self.fields_df.name.unique().shape[0],
-            self.query_df.shape[0]
+            prev_num
         )
 
         self.fields_found = True
