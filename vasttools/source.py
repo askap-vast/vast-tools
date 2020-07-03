@@ -1072,7 +1072,7 @@ class Source:
                     " Has the source been crossmatched?")
                 crossmatch_overlay = False
 
-        if not self.cutout_df.iloc[index]['selavy_overlay'].empty:
+        if not self.cutout_df.iloc[index]['selavy_overlay'].empty and not selavy:
             ax.set_autoscale_on(False)
             collection, patches, island_names = self._gen_overlay_collection(
                 self.cutout_df.iloc[index]
