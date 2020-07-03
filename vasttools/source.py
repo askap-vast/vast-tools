@@ -433,7 +433,7 @@ class Source:
             selavy_components,
             selavy_coords,
             size,
-            row.coord
+            row.skycoord
         )
 
         header = image.header.copy()
@@ -607,8 +607,8 @@ class Source:
             measurement_row = self.measurements.iloc[i]
             target_coords = np.array(
                 ([[
-                    measurement_row.skycoord.ra.deg,
-                    measurement_row.skycoord.dec.deg
+                    measurement_row.ra,
+                    measurement_row.dec
                 ]])
             )
             i+=1
@@ -952,8 +952,8 @@ class Source:
         # insert crosshair of target
         target_coords = np.array(
             ([[
-                self.measurements.iloc[index].ra.deg,
-                self.measurements.iloc[index].dec.deg
+                self.measurements.iloc[index].ra,
+                self.measurements.iloc[index].dec
             ]])
         )
 

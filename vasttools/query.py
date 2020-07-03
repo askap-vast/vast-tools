@@ -1003,7 +1003,7 @@ class Query:
         })
 
         results['stokes'] = self.settings['stokes'].upper()
-        results['primary_fields'] = results['field']
+        results['primary_field'] = results['field']
         results['skycoord'] = SkyCoord(
             results['ra'], results['dec'], unit=(u.deg, u.deg)
         )
