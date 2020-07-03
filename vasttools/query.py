@@ -869,7 +869,7 @@ class Query:
         else:
             prev_num = self.query_df.shape[0]
 
-        prev_num += len(planets)
+        prev_num += len(self.planets)
 
         self.logger.info(
             "%i/%i sources in VAST Pilot footprint.",
