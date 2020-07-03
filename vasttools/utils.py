@@ -199,6 +199,8 @@ def build_catalog(coords, source_names):
                     "{}_{}".format(
                         i, j) for i, j in zip(
                         catalog['ra'], catalog['dec'])]
+            else:
+                catalog['name'] = catalog['name'].astype(str)
         except Exception as e:
             logger.critical(
                 "Pandas reading of {} failed!".format(coords))
