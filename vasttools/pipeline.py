@@ -101,8 +101,10 @@ class Pipeline(object):
 
 class PipeRun(object):
     """An individual pipeline run"""
-    def __init__(self, name=None, associations=None, images=None,
-            skyregions=None, sources=None, measurements=None):
+    def __init__(
+        self, name=None, associations=None, images=None,
+        skyregions=None, sources=None, measurements=None
+    ):
         super(PipeRun, self).__init__()
         self.name = name
         self.associations = associations

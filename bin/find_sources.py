@@ -266,8 +266,8 @@ def check_output_directory(args):
         if args.clobber:
             logger.warning((
                 "Directory {} already exists "
-                 "but clobber selected. "
-                 "Removing current directory."
+                "but clobber selected. "
+                "Removing current directory."
             ).format(output_dir))
             shutil.rmtree(output_dir)
         else:
@@ -296,8 +296,8 @@ if __name__ == '__main__':
         "Available epochs: {}".format(sorted(RELEASED_EPOCHS.keys()))
     )
 
-    if (args.coords is None) and
-            (args.source_names == "") and len(args.planets) == 0:
+    if (args.coords is None and
+            args.source_names == "" and len(args.planets) == 0:
         logger.error(
             "No coordinates or source names have been provided!"
         )

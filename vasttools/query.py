@@ -1030,7 +1030,6 @@ class Query:
 
         return group
 
-
     def build_catalog(self):
         cols = ['ra', 'dec', 'name', 'skycoord', 'stokes']
         if self.coords.shape == ():
@@ -1242,7 +1241,7 @@ class EpochInfo:
             # if not FIND_FIELDS and not CROSSMATCH_ONLY:
             self.logger.critical((
                 "{} does not exist. "
-                 "Only finding fields"
+                "Only finding fields"
             ).format(SELAVY_FOLDER))
 
         # self.FIND_FIELDS = FIND_FIELDS

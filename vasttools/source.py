@@ -609,7 +609,7 @@ class Source:
 
         self.measurements['epoch'].apply(
             self.make_png,
-            args = (
+            args=(
                 selavy,
                 percentile,
                 zscale,
@@ -626,7 +626,8 @@ class Source:
         )
         # plt.close(fig)
 
-    def plot_all_cutouts(self, columns=4, percentile=99.9, zscale=False,
+    def plot_all_cutouts(
+        self, columns=4, percentile=99.9, zscale=False,
         contrast=0.1, outfile=None, save=False, size=None, figsize=(10, 5),
         force=False, no_selavy=False
     ):
@@ -1224,7 +1225,6 @@ class Source:
                         "Crossmatch circle overlay failed!"
                         " Has the source been crossmatched?")
             f.write("COLOR GREEN\n")
-
 
             selavy_cat_cut = self.cutout_df.iloc[index].selavy_overlay
 
