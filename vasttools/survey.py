@@ -5,7 +5,6 @@ import os
 import pandas as pd
 import warnings
 import pkg_resources
-import dropbox
 import itertools
 import numpy as np
 import re
@@ -91,11 +90,6 @@ FIELD_FILES = {
 }
 
 EPOCH_FIELDS = get_fields_per_epoch_and_info()
-
-
-DROPBOX_FILE = pkg_resources.resource_filename(
-    __name__, "./data/dropbox_files.txt"
-)
 
 FIELD_CENTRES = pd.read_csv(
     pkg_resources.resource_filename(
