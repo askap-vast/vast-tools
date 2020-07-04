@@ -132,8 +132,8 @@ class Query:
 
                 else:
                     self.planets = planets
-            else:
-                self.planets = None
+        else:
+            self.planets = None
 
         self.settings = {}
 
