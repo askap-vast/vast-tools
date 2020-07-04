@@ -3,13 +3,13 @@ import os
 import warnings
 import glob
 
+
 class Pipeline(object):
     """Class to interface with VAST Pipeline results"""
     def __init__(self, project_dir):
         super(Pipeline, self).__init__()
 
         self.project_dir = os.path.abspath(project_dir)
-
 
     def load_run(self, runname):
         """
@@ -81,7 +81,7 @@ class Pipeline(object):
             'dr_x'
         ], axis=1).rename(
             columns={
-                'source_id':'source',
+                'source_id': 'source',
                 'd2d_y': 'd2d',
                 'dr_y': 'dr'
             }
@@ -102,13 +102,11 @@ class Pipeline(object):
 class PipeRun(object):
     """An individual pipeline run"""
     def __init__(self, name=None, associations=None, images=None,
-    skyregions=None, sources=None, measurements=None):
+            skyregions=None, sources=None, measurements=None):
         super(PipeRun, self).__init__()
-        self.name=name
-        self.associations=associations
-        self.images=images
-        self.skyregions=skyregions
-        self.sources=sources
-        self.measurements=measurements
-
-
+        self.name = name
+        self.associations = associations
+        self.images = images
+        self.skyregions = skyregions
+        self.sources = sources
+        self.measurements = measurements

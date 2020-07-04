@@ -163,6 +163,7 @@ def check_file(path):
         )
     return exists
 
+
 def build_catalog(coords, source_names):
     '''
     Build the catalogue of target sources

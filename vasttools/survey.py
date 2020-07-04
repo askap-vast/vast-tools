@@ -35,7 +35,6 @@ def get_fields_per_epoch_and_info():
     """
     epoch_fields = {}
 
-
     for e in FIELD_FILES:
         e_info = pd.read_csv(FIELD_FILES[e], comment='#')
         epoch_fields[e] = {}
@@ -262,7 +261,9 @@ class Image:
                 "TILES",
                 "STOKES{}_IMAGES".format(stokes.upper())
             )
-            img_template = 'image.{}.SB{}.cont.{}.linmos.taylor.0.restored.fits'
+            img_template = (
+                'image.{}.SB{}.cont.{}.linmos.taylor.0.restored.fits'
+            )
             self.imgname = img_template.format(stokes.lower(), sbid, field)
         else:
             img_folder = os.path.join(
@@ -347,7 +348,6 @@ class Image:
             thewcs = self.wcs
             thedata = self.data
 
-
         array_coords = thewcs.world_to_array_index(coords)
         array_coords = np.array([
             np.array(array_coords[0]),
@@ -381,4 +381,3 @@ class Image:
         ]
 
         return values
-

@@ -82,11 +82,11 @@ class Source:
         crossmatch_radius,
         measurements,
         base_folder,
-        image_type = "COMBINED",
+        image_type="COMBINED",
         islands=False,
         outdir=".",
         planet=False
-        ):
+    ):
         '''Constructor method
         '''
         self.logger = logging.getLogger('vasttools.source.Source')
@@ -128,7 +128,6 @@ class Source:
         self.checked_norms = False
 
         self.planet = planet
-
 
     def write_measurements(self, simple=False, outfile=None):
         """
@@ -192,8 +191,6 @@ class Source:
         measurements_to_write.to_csv(outfile, index=False)
 
         self.logger.debug("Wrote {}.".format(outfile))
-
-
 
     def plot_lightcurve(self, sigma_thresh=5, figsize=(8, 4),
                         min_points=2, min_detections=0, mjd=False,
@@ -263,7 +260,7 @@ class Source:
         ax.set_ylabel(label)
 
         self.logger.debug("Plotting upper limit")
-        upper_lim_mask = measurements.detection==False
+        upper_lim_mask = measurements.detection == False
         upper_lims = measurements[
             upper_lim_mask
         ]
@@ -321,7 +318,7 @@ class Source:
                 ))
 
             elif not outfile.endswith(".png"):
-                outname+=".png"
+                outname += ".png"
 
             if self.outdir != ".":
                 outfile = os.path.join(
@@ -337,7 +334,6 @@ class Source:
         else:
 
             return fig
-
 
     def get_cutout_data(self, size=None):
         '''
@@ -374,9 +370,10 @@ class Source:
         })
         self._cutouts_got = True
 
-
-    def analyse_norm_level(self, percentile=99.9,
-        zscale=False, z_contrast=0.2):
+    def analyse_norm_level(
+        self, percentile=99.9,
+        zscale=False, z_contrast=0.2
+    ):
         if not self._cutouts_got:
             self.logger.warning(
                 "Fetch cutout data before running this function!"
@@ -403,7 +400,6 @@ class Source:
 
         self.checked_norms = True
 
-
     def _get_cutout(self, row, size=Angle(5. * u.arcmin)):
 
         image = Image(row.field, row.epoch, self.stokes, self.base_folder)
@@ -415,7 +411,7 @@ class Source:
             wcs=image.wcs
         )
 
-        selavy_components = pd.read_fwf(row.selavy, skiprows=[1,], usecols=[
+        selavy_components = pd.read_fwf(row.selavy, skiprows=[1, ], usecols=[
             'island_id',
             'ra_deg_cont',
             'dec_deg_cont',
@@ -450,7 +446,6 @@ class Source:
             cutout.data, cutout.wcs, header, selavy_components, beam
         )
 
-
     def show_png_cutout(
             self,
             epoch,
@@ -466,7 +461,7 @@ class Source:
             hide_beam=False,
             size=None,
             force=False
-        ):
+    ):
         """
         Wrapper for make_png to make nicer interactive function.
         No access to save.
@@ -489,7 +484,6 @@ class Source:
 
         return fig
 
-
     def save_png_cutout(
             self,
             epoch,
@@ -506,7 +500,7 @@ class Source:
             size=None,
             force=False,
             outfile=None
-        ):
+    ):
         """
         Wrapper for make_png to make nicer interactive function.
         Always save.
@@ -531,9 +525,8 @@ class Source:
 
         return
 
-
     def save_fits_cutout(self, epoch, outfile=None, size=None, force=False):
-        if (self._cutouts_got is False) or (force == True):
+        if (self._cutouts_got is False) or (force):
             self.get_cutout_data(size)
 
         if epoch not in self.epochs:
@@ -566,12 +559,10 @@ class Source:
         # Write the cutout to a new FITS file
         hdu_stamp.writeto(outfile, overwrite=True)
 
-
     def save_png_cutout(self, epoch):
         fig = self.make_png(epoch)
 
         return fig
-
 
     def save_all_ann(self, crossmatch_overlay=False):
         self.measurements['epoch'].apply(
@@ -582,7 +573,6 @@ class Source:
             )
         )
 
-
     def save_all_reg(self, crossmatch_overlay=False):
         self.measurements['epoch'].apply(
             self.write_reg,
@@ -592,14 +582,12 @@ class Source:
             )
         )
 
-
     def save_all_fits_cutouts(self, size=None, force=False):
-        if (self._cutouts_got is False) or (force == True):
+        if (self._cutouts_got is False) or (force):
             self.get_cutout_data(size)
 
         for e in self.measurements['epoch']:
             self.save_fits_cutout(e)
-
 
     def save_all_png_cutouts(
         self,
@@ -638,12 +626,11 @@ class Source:
         )
         # plt.close(fig)
 
-
     def plot_all_cutouts(self, columns=4, percentile=99.9, zscale=False,
-        contrast=0.1,outfile=None, save=False, size=None, figsize=(10, 5),
+        contrast=0.1, outfile=None, save=False, size=None, figsize=(10, 5),
         force=False, no_selavy=False
-        ):
-        if (self._cutouts_got is False) or (force == True):
+    ):
+        if (self._cutouts_got is False) or (force):
             self.get_cutout_data(size)
 
         num_plots = self.measurements.shape[0]
@@ -686,7 +673,7 @@ class Source:
                     measurement_row.dec
                 ]])
             )
-            i+=1
+            i += 1
             plots[i] = fig.add_subplot(
                 nrows,
                 columns,
@@ -735,7 +722,6 @@ class Source:
             lat.set_ticks_visible(False)
             lat.set_ticklabel_visible(False)
 
-
         if save:
             if outfile is None:
                 outfile = "{}_EPOCH{}.png".format(
@@ -758,7 +744,6 @@ class Source:
         else:
 
             return fig
-
 
     def _gen_overlay_collection(self, cutout_row):
         wcs = cutout_row.wcs
@@ -801,7 +786,6 @@ class Source:
 
         return collection, patches, island_names
 
-
     def skyview_contour_plot(
         self,
         epoch,
@@ -818,7 +802,7 @@ class Source:
         force=False,
     ):
         """docstring for skyview_contour_plot"""
-        if (self._cutouts_got is False) or (force == True):
+        if (self._cutouts_got is False) or (force):
             self.get_cutout_data(size)
 
         size = self._size
@@ -853,8 +837,9 @@ class Source:
 
             path_wcs = WCS(path_fits.header)
 
-        except:
+        except Exception as e:
             warnings.warn("SkyView fetch failed!")
+            warnings.warn(e)
             return
 
         fig = plt.figure(figsize=(8, 8))
@@ -920,7 +905,6 @@ class Source:
         else:
             return fig
 
-
     def make_png(
             self,
             epoch,
@@ -975,7 +959,7 @@ class Source:
             plot, defaults to `False`.
         :type hide_beam: bool, optional
         '''
-        if (self._cutouts_got is False) or (force == True):
+        if (self._cutouts_got is False) or (force):
             self.get_cutout_data(size)
 
         if epoch not in self.epochs:
@@ -1188,9 +1172,10 @@ class Source:
         else:
             return fig
 
-
-    def write_ann(self, epoch, outfile=None, crossmatch_overlay=False,
-        size=None, force=False):
+    def write_ann(
+        self, epoch, outfile=None, crossmatch_overlay=False,
+        size=None, force=False
+    ):
         '''
         Write a kvis annotation file containing all selavy sources
         within the image.
@@ -1202,7 +1187,7 @@ class Source:
             defaults to False.
         :type crossmatch_overlay: bool, optional.
         '''
-        if (self._cutouts_got is False) or (force == True):
+        if (self._cutouts_got is False) or (force):
             self.get_cutout_data(size)
 
         if outfile is None:
@@ -1273,9 +1258,10 @@ class Source:
 
         self.logger.info("Wrote annotation file {}.".format(outfile))
 
-
-    def write_reg(self, epoch, outfile=None, crossmatch_overlay=False,
-        size=None, force=False):
+    def write_reg(
+            self, epoch, outfile=None, crossmatch_overlay=False,
+            size=None, force=False
+    ):
         '''
         Write a DS9 region file containing all selavy sources within the image
 
@@ -1285,7 +1271,7 @@ class Source:
             file output denoting the crossmatch radius, defaults to False.
         :type crossmatch_overlay: bool, optional.
         '''
-        if (self._cutouts_got is False) or (force == True):
+        if (self._cutouts_got is False) or (force):
             self.get_cutout_data(size)
 
         if outfile is None:
@@ -1356,7 +1342,6 @@ class Source:
 
         self.logger.info("Wrote region file {}.".format(outfile))
 
-
     def save_measurements(
         self,
         out_dir=None,
@@ -1401,7 +1386,6 @@ class Source:
 
         to_write.to_csv(outname, index=False)
 
-
     def _remove_sbid(self, island):
         '''
         Removes the SBID component of the island name. Takes into account
@@ -1419,7 +1403,6 @@ class Source:
         if temp[0].startswith("n"):
             new_val = "n" + new_val
         return new_val
-
 
     def _create_crosshair_lines(self, target, pixel_buff, length, img_size):
         '''

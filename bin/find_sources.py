@@ -264,10 +264,11 @@ def check_output_directory(args):
 
     if os.path.isdir(output_dir):
         if args.clobber:
-            logger.warning(("Directory {} already exists "
-                                 "but clobber selected. "
-                                 "Removing current directory."
-                                 ).format(output_dir))
+            logger.warning((
+                "Directory {} already exists "
+                 "but clobber selected. "
+                 "Removing current directory."
+            ).format(output_dir))
             shutil.rmtree(output_dir)
         else:
             logger.critical(
@@ -295,7 +296,8 @@ if __name__ == '__main__':
         "Available epochs: {}".format(sorted(RELEASED_EPOCHS.keys()))
     )
 
-    if args.coords is None and args.source_names == "" and len(args.planets) == 0:
+    if (args.coords is None) and
+            (args.source_names == "") and len(args.planets) == 0:
         logger.error(
             "No coordinates or source names have been provided!"
         )
@@ -359,11 +361,11 @@ if __name__ == '__main__':
             reg = False
             lightcurve = False
         else:
-            fits=(not args.no_fits)
-            png=args.create_png
-            ann=args.ann
-            reg=args.reg
-            lightcurve=args.lightcurves
+            fits = (not args.no_fits)
+            png = args.create_png
+            ann = args.ann
+            reg = args.reg
+            lightcurve = args.lightcurves
 
         query.gen_all_source_products(
             fits=fits,
