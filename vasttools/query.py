@@ -1,6 +1,6 @@
 from vasttools.survey import Fields, Image
 from vasttools.survey import (
-    RELEASED_EPOCHS, FIELD_FILES, NIMBUS_BASE_DIR,
+    RELEASED_EPOCHS, FIELD_FILES, ADA_BASE_DIR, NIMBUS_BASE_DIR,
     EPOCH_FIELDS, FIELD_CENTRES, OBSERVING_LOCATION, ALLOWED_PLANETS
 )
 from vasttools.source import Source
@@ -61,6 +61,7 @@ warnings.filterwarnings('ignore',
 
 HOST = socket.gethostname()
 HOST_ADA = 'ada.physics.usyd.edu.au'
+HOST_NIMBUS = 'nimbus.pawsey.org.au'
 numexpr.set_num_threads(int(cpu_count() / 4))
 
 class Query:
@@ -151,7 +152,10 @@ class Query:
         self.settings['output_dir'] = output_dir
 
         if base_folder is None:
-            self.base_folder = NIMBUS_BASE_DIR
+            if HOST == HOST_ADA:
+                self.base_folder = ADA_BASE_DIR
+            elif HOST == HOST_NIMBUS:
+                self.base_folder = NIMBUS_BASE_DIR
         else:
             self.base_folder = base_folder
 
