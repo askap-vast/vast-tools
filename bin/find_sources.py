@@ -297,7 +297,7 @@ if __name__ == '__main__':
     )
 
     if (args.coords is None and
-            args.source_names == "" and len(args.planets) == 0:
+            args.source_names == "" and len(args.planets) == 0):
         logger.error(
             "No coordinates or source names have been provided!"
         )
