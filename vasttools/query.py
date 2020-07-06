@@ -118,21 +118,21 @@ class Query:
                     raise ValueError(
                         "SIMBAD search failed!"
                     )
-            if len(planets) != 0:
-                valid_planets = sum([i in ALLOWED_PLANETS for i in planets])
+        if len(planets) != 0:
+            valid_planets = sum([i in ALLOWED_PLANETS for i in planets])
 
-                if valid_planets != len(planets):
-                    self.logger.error(
-                        "Invalid planet object provided!"
-                    )
-                    raise ValueError(
-                        "Invalid planet object provided!"
-                    )
+            if valid_planets != len(planets):
+                self.logger.error(
+                    "Invalid planet object provided!"
+                )
+                raise ValueError(
+                    "Invalid planet object provided!"
+                )
 
-                else:
-                    self.planets = planets
             else:
-                self.planets = None
+                self.planets = planets
+        else:
+            self.planets = None
 
         self.settings = {}
 
@@ -793,6 +793,16 @@ class Query:
         if self.query_df is not None:
             self.fields_df = self.query_df.copy()
 
+            meta = {
+                0: 'O',
+                1: 'U',
+                2: 'O',
+                3: 'O',
+                4: 'O',
+                5: 'O',
+            }
+
+            n_cpu = 4
             self.fields_df[[
                 'fields',
                 'primary_field',
@@ -800,17 +810,40 @@ class Query:
                 'field_per_epoch',
                 'sbids',
                 'dates'
-            ]] = self.query_df.apply(
-                self._field_matching,
-                args=(
-                    fields.direction,
-                    fields.fields.FIELD_NAME,
-                    field_centres_sc,
-                    field_centre_names
-                ),
-                axis=1,
-                result_type='expand'
+            ]] = (
+                dd.from_pandas(self.fields_df, n_cpu)
+                .apply(
+                    self._field_matching,
+                    args=(
+                        fields.direction,
+                        fields.fields.FIELD_NAME,
+                        field_centres_sc,
+                        field_centre_names
+                    ),
+                    meta=meta,
+                    axis=1,
+                    result_type='expand'
+                ).compute(num_workers=n_cpu, scheduler='processes')
             )
+
+            # self.fields_df[[
+            #     'fields',
+            #     'primary_field',
+            #     'epochs',
+            #     'field_per_epoch',
+            #     'sbids',
+            #     'dates'
+            # ]] = self.query_df.apply(
+            #     self._field_matching,
+            #     args=(
+            #         fields.direction,
+            #         fields.fields.FIELD_NAME,
+            #         field_centres_sc,
+            #         field_centre_names
+            #     ),
+            #     axis=1,
+            #     result_type='expand'
+            # )
 
             self.fields_df = self.fields_df.dropna()
 
