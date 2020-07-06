@@ -895,6 +895,10 @@ class Query:
             prev_num
         )
 
+        self.fields_df['dateobs'] = pd.to_datetime(
+            self.fields_df['dateobs']
+        )
+
         self.fields_found = True
 
     def _field_matching(
