@@ -5,7 +5,7 @@
 # ./find_sources.py "16:16:00.22 +22:16:04.83" --create-png --imsize 5.0
 # --png-zscale-contrast 0.1 --png-selavy-overlay --use-combined
 from vasttools.survey import Fields, Image
-from vasttools.survey import RELEASED_EPOCHS
+from vasttools.survey import RELEASED_EPOCHS, ALLOWED_PLANETS
 from vasttools.source import Source
 from vasttools.query import Query, EpochInfo
 from vasttools.utils import (
@@ -134,20 +134,11 @@ def parse_args():
         help='Do not estimate the background RMS around each source.')
     parser.add_argument(
         '--planets',
-        choices=[
-            'mercury',
-            'venus',
-            'mars',
-            'jupiter',
-            'saturn',
-            'uranus',
-            'neptune',
-            'sun',
-            'moon'
-        ],
-        nargs='*',
         default=[],
-        help='Also search for solar system objects.')
+        help=(
+            "Also search for solar system objects. "
+            "Enter as a comma separated list, e.g. 'jupiter,venus,moon'. "
+            "Allowed choices are: {}".format(ALLOWED_PLANETS)))
     parser.add_argument(
         '--find-fields',
         action="store_true",
@@ -300,6 +291,9 @@ if __name__ == '__main__':
     logger.debug(
         "Available epochs: {}".format(sorted(RELEASED_EPOCHS.keys()))
     )
+
+    if len(args.planets) > 0:
+        args.planets = args.planets.split(",")
 
     if (args.coords is None and
             args.source_names == "" and len(args.planets) == 0):
