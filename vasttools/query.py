@@ -552,10 +552,6 @@ class Query:
             axis=1,
             result_type='expand'
         )
-        # grouped_query = self.sources_df.groupby('selavy')
-        # results = grouped_query.apply(
-        #     lambda x: self._get_components(x.name, x)
-        # )
 
         meta = {
             '#': 'f',
