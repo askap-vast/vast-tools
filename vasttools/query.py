@@ -610,13 +610,18 @@ class Query:
             results, how='left', left_index=True, right_index=True
         )
 
-        grouped_source_query = self.crossmatch_results.groupby('name')
+        meta = {'name': 'O'}
 
-        self.results = grouped_source_query.apply(
-            lambda x: self._init_sources(x.name, x)
+        self.results = (
+            dd.from_pandas(self.crossmatch_results, self.ncpu)
+            .groupby('name')
+            .apply(
+                self._init_sources,
+                meta=meta,
+            ).compute(num_workers=self.ncpu, scheduler='processes')
         )
 
-    def _init_sources(self, source_name, group):
+    def _init_sources(self, group):
 
         m = group.iloc[0]
 
