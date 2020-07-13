@@ -220,11 +220,27 @@ class Query:
         # first get cutout data and selavy sources per image
         # group by image to do this
 
-        grouped_query = self.sources_df.groupby('image')
+        # grouped_query = self.sources_df.groupby('image')
 
-        cutouts = grouped_query.apply(
-            lambda x: self._grouped_fetch_cutouts(x.name, x)
+        meta = {
+            'data': 'O',
+            'wcs': 'O',
+            'header': 'O',
+            'selavy_overlay': 'O',
+            'beam': 'O'
+        }
+
+        cutouts = (
+            dd.from_pandas(self.sources_df, self.ncpu)
+            .groupby('image')
+            .apply(
+                self._grouped_fetch_cutouts,
+                meta=meta,
+            ).compute(num_workers=self.ncpu, scheduler='processes')
         )
+        # cutouts = grouped_query.apply(
+        #     lambda x: self._grouped_fetch_cutouts(x.name, x)
+        # )
 
         cutouts.index = cutouts.index.droplevel()
 
@@ -470,7 +486,9 @@ class Query:
 
         return s
 
-    def _grouped_fetch_cutouts(self, image_file, group):
+    def _grouped_fetch_cutouts(self, group):
+
+        image_file = group.iloc[0]['image']
 
         image = Image(
             group.iloc[0].field,
@@ -982,11 +1000,13 @@ class Query:
                 field = primary_field
 
             elif len(available_fields) == 1:
-                field = fields[0]
+                field = available_fields[0]
 
             else:
                 field_indexes = [
-                    field_centre_names.index(f) for f in available_fields
+                    field_centre_names[
+                        field_centre_names == f
+                    ].index[0] for f in available_fields
                 ]
                 min_field_index = np.argmin(
                     centre_seps[field_indexes].deg

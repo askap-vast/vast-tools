@@ -348,7 +348,8 @@ if __name__ == '__main__':
         base_folder=args.base_folder,
         matches_only=args.process_matches,
         no_rms=args.no_background_rms,
-        output_dir=args.out_folder
+        output_dir=args.out_folder,
+        ncpu=args.ncpu
     )
 
     if args.find_fields:
