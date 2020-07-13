@@ -61,7 +61,8 @@ warnings.filterwarnings('ignore',
 
 HOST = socket.gethostname()
 HOST_ADA = 'ada.physics.usyd.edu.au'
-numexpr.set_num_threads(int(cpu_count() / 4))
+HOST_NCPU = cpu_count()
+numexpr.set_num_threads(int(HOST_NCPU / 4))
 
 class Query:
     '''
@@ -77,7 +78,7 @@ class Query:
         self, coords=None, source_names=[], epochs="all", stokes="I",
         crossmatch_radius=5.0, max_sep=1.0, use_tiles=False,
         use_islands=False, base_folder=None, matches_only=False,
-        no_rms=False, output_dir=".", planets=[]
+        no_rms=False, output_dir=".", planets=[], ncpu=2
     ):
         '''Constructor method
         '''
@@ -87,6 +88,15 @@ class Query:
 
         self.coords = coords
         self.source_names = source_names
+        if ncpu > HOST_NCPU:
+            raise ValueError(
+                "Number of CPUs requested ({}) "
+                "exceeds number available ({})".format(
+                    ncpu,
+                    HOST_NCPU
+                )
+            )
+        self.ncpu = ncpu
 
         if coords is None and len(source_names) == 0 and len(planets) == 0:
             if self.logger is None:
@@ -275,13 +285,11 @@ class Query:
         if not self.cutout_data_got:
             self.get_all_cutout_data()
 
-        num_cpu = int(cpu_count() / 4)
-
         original_sigint_handler = signal.signal(
             signal.SIGINT, signal.SIG_IGN
         )
 
-        workers = Pool(processes=num_cpu)
+        workers = Pool(processes=self.ncpu)
 
         signal.signal(signal.SIGINT, original_sigint_handler)
 
@@ -544,15 +552,63 @@ class Query:
             axis=1,
             result_type='expand'
         )
-        grouped_query = self.sources_df.groupby('selavy')
-        results = grouped_query.apply(
-            lambda x: self._get_components(x.name, x)
+        # grouped_query = self.sources_df.groupby('selavy')
+        # results = grouped_query.apply(
+        #     lambda x: self._get_components(x.name, x)
+        # )
+
+        meta = {
+            '#': 'f',
+            'island_id': 'U',
+            'component_id': 'U',
+            'component_name': 'U',
+            'ra_hms_cont': 'U',
+            'dec_dms_cont': 'U',
+            'ra_deg_cont': 'f',
+            'dec_deg_cont': 'f',
+            'ra_err': 'f',
+            'dec_err': 'f',
+            'freq': 'f',
+            'flux_peak': 'f',
+            'flux_peak_err': 'f',
+            'flux_int': 'f',
+            'flux_int_err': 'f',
+            'maj_axis': 'f',
+            'min_axis': 'f',
+            'pos_ang': 'f',
+            'maj_axis_err': 'f',
+            'min_axis_err': 'f',
+            'pos_ang_err': 'f',
+            'maj_axis_deconv': 'f',
+            'min_axis_deconv': 'f',
+            'pos_ang_deconv': 'f',
+            'maj_axis_deconv_err': 'f',
+            'min_axis_deconv_err': 'f',
+            'pos_ang_deconv_err': 'f',
+            'chi_squared_fit': 'f',
+            'rms_fit_gauss': 'f',
+            'spectral_index': 'f',
+            'spectral_curvature': 'f',
+            'spectral_index_err': 'f',
+            'spectral_curvature_err': 'f',
+            'rms_image': 'f',
+            'has_siblings': 'f',
+            'fit_is_estimate': 'f',
+            'spectral_index_from_TT': 'f',
+            'flag_c4': 'f',
+            'comment': 'f',
+            'detection': '?',
+        }
+
+        results = (
+            dd.from_pandas(self.sources_df, self.ncpu)
+            .groupby('selavy')
+            .apply(
+                self._get_components,
+                meta=meta,
+            ).compute(num_workers=self.ncpu, scheduler='processes')
         )
 
-        # results = pd.DataFrame()
-        # for name, group in grouped_query:
-        #     group_results = self._get_components(name, group)
-        #     results = results.append(group_results)
         results.index = results.index.droplevel()
         self.crossmatch_results = self.sources_df.merge(
             results, how='left', left_index=True, right_index=True
@@ -612,7 +668,8 @@ class Query:
 
         return thesource
 
-    def _get_components(self, selavy_file, group):
+    def _get_components(self, group):
+        selavy_file = group.iloc[0]['selavy']
         master = pd.DataFrame()
 
         selavy_df = pd.read_fwf(
@@ -802,7 +859,6 @@ class Query:
                 5: 'O',
             }
 
-            n_cpu = 4
             self.fields_df[[
                 'fields',
                 'primary_field',
@@ -811,7 +867,7 @@ class Query:
                 'sbids',
                 'dates'
             ]] = (
-                dd.from_pandas(self.fields_df, n_cpu)
+                dd.from_pandas(self.fields_df, self.ncpu)
                 .apply(
                     self._field_matching,
                     args=(
@@ -823,27 +879,8 @@ class Query:
                     meta=meta,
                     axis=1,
                     result_type='expand'
-                ).compute(num_workers=n_cpu, scheduler='processes')
+                ).compute(num_workers=self.ncpu, scheduler='processes')
             )
-
-            # self.fields_df[[
-            #     'fields',
-            #     'primary_field',
-            #     'epochs',
-            #     'field_per_epoch',
-            #     'sbids',
-            #     'dates'
-            # ]] = self.query_df.apply(
-            #     self._field_matching,
-            #     args=(
-            #         fields.direction,
-            #         fields.fields.FIELD_NAME,
-            #         field_centres_sc,
-            #         field_centre_names
-            #     ),
-            #     axis=1,
-            #     result_type='expand'
-            # )
 
             self.fields_df = self.fields_df.dropna()
 
@@ -1013,14 +1050,13 @@ class Query:
             'sep': 'f'
         }
 
-        n_cpu = 4
         results = (
-            dd.from_pandas(template, n_cpu)
+            dd.from_pandas(template, self.ncpu)
             .groupby('planet')
             .apply(
                 self._match_planet_to_field,
                 meta=meta,
-            ).compute(num_workers=n_cpu, scheduler='processes')
+            ).compute(num_workers=self.ncpu, scheduler='processes')
         )
 
         results = results.reset_index(drop=True).drop(

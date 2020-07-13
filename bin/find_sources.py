@@ -58,6 +58,11 @@ def parse_args():
               "space, e.g. \"SN 1994N,SN 2003D,SN 2019A\"."),
         default="")
     parser.add_argument(
+        '--ncpu',
+        type=int,
+        help="Number of cpus to use in queries",
+        default=2)
+    parser.add_argument(
         '--epochs',
         type=str,
         help=("Select the VAST Pilot Epoch to query. Epoch 0 is RACS. "
