@@ -29,6 +29,7 @@ from astropy.stats import sigma_clip, mad_std
 from astropy.coordinates import SkyCoord
 from astropy import units as u
 from vasttools.source import Source
+from multiprocessing import cpu_count
 
 
 class Pipeline(object):
@@ -50,7 +51,7 @@ class Pipeline(object):
 
         return pd.Series(d)
 
-    def load_run(self, runname, use_dask=False):
+    def load_run(self, runname, use_dask=False, n_workers=cpu_count() - 1):
         """
         Load a pipeline run.
         If use_dask is True used then the data is loaded into
@@ -172,15 +173,21 @@ class Pipeline(object):
         )
 
         if not use_dask:
-            images = images.compute()
-            associations = associations.compute()
+            images = images.compute(
+                scheduler='processes',
+                n_workers=n_workers
+            )
+            associations = associations.compute(
+                scheduler='processes',
+                n_workers=n_workers
+            )
             measurements = measurements.compute(
                 scheduler='processes',
-                n_workers=4
+                n_workers=n_workers
             )
             sources = sources.compute(
                 scheduler='processes',
-                n_workers=4
+                n_workers=n_workers
             )
 
 
@@ -202,7 +209,7 @@ class PipeRun(object):
     def __init__(
         self, name=None, associations=None, images=None,
         skyregions=None, sources=None, measurements=None,
-        dask=None
+        dask=None, n_workers=cpu_count() - 1
     ):
         super(PipeRun, self).__init__()
         self.name = name
@@ -222,7 +229,7 @@ class PipeRun(object):
         if self.dask:
             measurements = measurements.compute(
                 scheduler='processes',
-                n_workers=4
+                n_workers=n_workers
             )
 
         measurements = measurements.rename(
