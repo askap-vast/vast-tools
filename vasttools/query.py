@@ -480,7 +480,7 @@ class Query:
 
         return s
 
-    def _grouped_fetch_cutouts(self, image_file):
+    def _grouped_fetch_cutouts(self, group):
 
         image_file = group.iloc[0]['image']
 
