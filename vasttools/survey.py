@@ -240,7 +240,8 @@ class Image:
     '''
 
     def __init__(self, field, epoch, stokes, base_folder,
-                 tiles=False, sbid=None, path=None, rmspath=None):
+                 tiles=False, sbid=None, path=None, rmspath=None,
+                 rms_header=None):
         '''Constructor method
         '''
 
@@ -251,8 +252,9 @@ class Image:
         self.field = field
         self.epoch = epoch
         self.stokes = stokes
-        self.rms_header = None
+        self.rms_header = rms_header
         self.path = path
+        self.rmspath = rmspath
 
         if self.path is None:
             if tiles:
