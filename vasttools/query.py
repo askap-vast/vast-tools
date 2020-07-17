@@ -76,7 +76,7 @@ class Query:
 
     def __init__(
         self, coords=None, source_names=[], epochs="all", stokes="I",
-        crossmatch_radius=5.0, max_sep=1.0, use_tiles=False,
+        racs=False, crossmatch_radius=5.0, max_sep=1.0, use_tiles=False,
         use_islands=False, base_folder=None, matches_only=False,
         no_rms=False, output_dir=".", planets=[], ncpu=2
     ):
@@ -146,8 +146,8 @@ class Query:
 
         self.settings = {}
 
-        self.settings['epochs'] = self.get_epochs(epochs)
-        self.settings['stokes'] = self.get_stokes(stokes)
+        self.settings['epochs'] = self.get_epochs(epochs, racs)
+        self.settings['stokes'] = self.get_stokes(stokes, racs)
 
         self.settings['crossmatch_radius'] = Angle(
             crossmatch_radius, unit=u.arcsec
@@ -220,27 +220,11 @@ class Query:
         # first get cutout data and selavy sources per image
         # group by image to do this
 
-        # grouped_query = self.sources_df.groupby('image')
+        grouped_query = self.sources_df.groupby('image')
 
-        meta = {
-            'data': 'O',
-            'wcs': 'O',
-            'header': 'O',
-            'selavy_overlay': 'O',
-            'beam': 'O'
-        }
-
-        cutouts = (
-            dd.from_pandas(self.sources_df, self.ncpu)
-            .groupby('image')
-            .apply(
-                self._grouped_fetch_cutouts,
-                meta=meta,
-            ).compute(num_workers=self.ncpu, scheduler='processes')
+        cutouts = grouped_query.apply(
+            lambda x: self._grouped_fetch_cutouts(x.name, x)
         )
-        # cutouts = grouped_query.apply(
-        #     lambda x: self._grouped_fetch_cutouts(x.name, x)
-        # )
 
         cutouts.index = cutouts.index.droplevel()
 
@@ -486,9 +470,7 @@ class Query:
 
         return s
 
-    def _grouped_fetch_cutouts(self, group):
-
-        image_file = group.iloc[0]['image']
+    def _grouped_fetch_cutouts(self, image_file, group):
 
         image = Image(
             group.iloc[0].field,
@@ -1000,13 +982,11 @@ class Query:
                 field = primary_field
 
             elif len(available_fields) == 1:
-                field = available_fields[0]
+                field = fields[0]
 
             else:
                 field_indexes = [
-                    field_centre_names[
-                        field_centre_names == f
-                    ].index[0] for f in available_fields
+                    field_centre_names.index(f) for f in available_fields
                 ]
                 min_field_index = np.argmin(
                     centre_seps[field_indexes].deg
@@ -1148,7 +1128,7 @@ class Query:
 
         return catalog
 
-    def get_epochs(self, req_epochs):
+    def get_epochs(self, req_epochs, racs):
         '''
         Parse the list of epochs to query.
 
