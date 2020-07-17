@@ -51,7 +51,11 @@ class Pipeline(object):
 
         return pd.Series(d)
 
-    def load_run(self, runname, use_dask=False, n_workers=cpu_count() - 1):
+    def load_run(
+        self, runname,
+        use_dask=False, n_workers=cpu_count() - 1,
+        no_counts=False
+    ):
         """
         Load a pipeline run.
         If use_dask is True used then the data is loaded into
@@ -107,6 +111,14 @@ class Pipeline(object):
             engine='pyarrow'
         )
 
+        relations = dd.read_parquet(
+            os.path.join(
+                run_dir,
+                'relations.parquet'
+            ),
+            engine='pyarrow'
+        )
+
         sources = dd.read_parquet(
             os.path.join(
                 run_dir,
@@ -131,46 +143,67 @@ class Pipeline(object):
             }
         )
 
-        measurements = measurements.merge(
-            images[[
-                'id',
-                'path',
-                'noise_path',
-                'measurements_path'
-            ]], how='left',
-            left_on='image_id',
-            right_on='id'
-        ).rename(
-            columns={
-                'path': 'image',
-                'noise_path': 'rms',
-                'measurements_path': 'selavy'
-            }
-        )
 
-        meta = {
-            'n_detections': 'i',
-            'n_selavy': 'i',
-            'n_forced': 'i',
-            'has_siblings': 'b',
-        }
-
-        source_counts = (
-            measurements[[
-                'source',
-                'forced',
-                'has_siblings'
-            ]].groupby('source')
-            .apply(
-                self._get_source_counts,
-                meta=meta
+        if not no_counts:
+            measurements = measurements.merge(
+                images[[
+                    'id',
+                    'path',
+                    'noise_path',
+                    'measurements_path'
+                ]], how='left',
+                left_on='image_id',
+                right_on='id'
+            ).drop(
+                'id_y',
+                axis=1
+            ).rename(
+                columns={
+                    'id_x': 'id',
+                    'path': 'image',
+                    'noise_path': 'rms',
+                    'measurements_path': 'selavy'
+                }
             )
-        )
 
-        sources = sources.merge(
-            source_counts,
-            how='left',
-        )
+            meta = {
+                'n_detections': 'i',
+                'n_selavy': 'i',
+                'n_forced': 'i',
+                'has_siblings': 'b',
+            }
+
+            source_counts = (
+                measurements[[
+                    'source',
+                    'forced',
+                    'has_siblings'
+                ]].groupby('source')
+                .apply(
+                    self._get_source_counts,
+                    meta=meta
+                )
+            )
+
+            sources = sources.merge(
+                source_counts,
+                how='left',
+            )
+
+            relations = relations[relations['relation'] != -1]
+
+            sources = sources.merge(
+                relations.groupby('id').count(),
+                how='left',
+            ).fillna(0).rename(
+                columns={
+                    'relation': 'n_relations'
+                }
+            )
+
+            sources['n_relations'] = sources[
+                'n_relations'
+            ].astype(int)
 
         if not use_dask:
             images = images.compute(
@@ -178,6 +211,10 @@ class Pipeline(object):
                 n_workers=n_workers
             )
             associations = associations.compute(
+                scheduler='processes',
+                n_workers=n_workers
+            )
+            relations = relations.compute(
                 scheduler='processes',
                 n_workers=n_workers
             )
@@ -190,12 +227,12 @@ class Pipeline(object):
                 n_workers=n_workers
             )
 
-
         piperun = PipeRun(
             name=runname,
             associations=associations,
             images=images,
             skyregions=skyregions,
+            relations=relations,
             sources=sources,
             measurements=measurements,
             dask=use_dask
@@ -208,8 +245,8 @@ class PipeRun(object):
     """An individual pipeline run"""
     def __init__(
         self, name=None, associations=None, images=None,
-        skyregions=None, sources=None, measurements=None,
-        dask=None, n_workers=cpu_count() - 1
+        skyregions=None, relations=None, sources=None,
+        measurements=None, dask=None, n_workers=cpu_count() - 1
     ):
         super(PipeRun, self).__init__()
         self.name = name
@@ -218,6 +255,7 @@ class PipeRun(object):
         self.skyregions = skyregions
         self.sources = sources
         self.measurements = measurements
+        self.relations = relations
         self.dask = dask
 
     def get_source(self, id, field=None, stokes='I', outdir='.'):
