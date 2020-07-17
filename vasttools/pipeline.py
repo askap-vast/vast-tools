@@ -31,6 +31,7 @@ from astropy import units as u
 from vasttools.source import Source
 from vasttools.utils import match_planet_to_field
 from multiprocessing import cpu_count
+from datetime import timedelta
 
 
 class Pipeline(object):
@@ -346,6 +347,28 @@ class PipeRun(object):
 
         return thesource
 
+    def _add_times(self, row, duration=True, every_hour=False):
+        if row['duration'] == 0:
+            return row['DATEOBS']
+
+        elif duration:
+            return [
+                row['DATEOBS'],
+                row['DATEOBS'] + timedelta(
+                    seconds=row['duration']
+                )
+            ]
+
+        elif every_hour:
+            hours = int(row['duration'] / 3600.)
+            times = [
+                row['DATEOBS'] + timedelta(
+                    seconds=row['duration'] * h
+                )
+                for h in range(hours + 1)
+            ]
+            return times
+
     def check_for_planets(self):
 
         from vasttools.survey import ALLOWED_PLANETS
@@ -354,6 +377,7 @@ class PipeRun(object):
         planets_df = self.images.loc[:, [
             'id',
             'datetime',
+            'duration',
             'centre_ra',
             'centre_dec',
             'xtr_radius'
@@ -372,9 +396,36 @@ class PipeRun(object):
                 n_workers=self.n_workers
             )
 
+        # Split off a sun and moon df so we can check more times
+        sun_moon_df = planets_df.copy()
+        ap.remove('sun')
+        ap.remove('moon')
+
+        # check planets at start and end of observation
+        planets_df['DATEOBS'] = planets_df[['DATEOBS', 'duration']].apply(
+            self._add_times,
+            axis=1
+        )
         planets_df['planet'] = [ap for i in range(planets_df.shape[0])]
 
-        planets_df = planets_df.explode('planet')
+        # check sun and moon every hour
+        sun_moon_df['DATEOBS'] = sun_moon_df[['DATEOBS', 'duration']].apply(
+            self._add_times,
+            args=(False, True),
+            axis=1
+        )
+
+        sun_moon_df['planet'] = [
+            ['sun', 'moon'] for i in range(sun_moon_df.shape[0])
+        ]
+
+        planets_df = planets_df.append(sun_moon_df, ignore_index=True)
+
+        del sun_moon_df
+
+        planets_df = planets_df.explode('planet').explode('DATEOBS').drop(
+            'duration', axis=1
+        )
         planets_df['planet'] = planets_df['planet'].str.capitalize()
 
         meta = {
@@ -404,7 +455,6 @@ class PipeRun(object):
             warnings.warn("No planets found.")
 
         return result
-
 
 
 def plot_eta_v(
