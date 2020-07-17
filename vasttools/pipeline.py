@@ -53,6 +53,25 @@ class Pipeline(object):
 
         return pd.Series(d)
 
+    def list_piperuns(self):
+        jobs = sorted(glob.glob(
+            os.path.join(self.project_dir, "*")
+        ))
+
+        jobs = [i.split("/")[-1] for i in jobs]
+        jobs.remove('images')
+
+        return jobs
+
+    def list_images(self):
+        img_list = sorted(glob.glob(
+            os.path.join(self.project_dir, "images", "*")
+        ))
+
+        img_list = [i.split("/")[-1] for i in img_list]
+
+        return img_list
+
     def load_run(
         self, runname,
         use_dask=False, n_workers=cpu_count() - 1,
@@ -247,7 +266,8 @@ class Pipeline(object):
                 n_workers=n_workers
             )
 
-        piperun = PipeRun(
+        piperun = PipeAnalysis(
+            test="no",
             name=runname,
             associations=associations,
             images=images,
@@ -264,9 +284,9 @@ class Pipeline(object):
 class PipeRun(object):
     """An individual pipeline run"""
     def __init__(
-        self, name=None, associations=None, images=None,
-        skyregions=None, relations=None, sources=None,
-        measurements=None, dask=None, n_workers=cpu_count() - 1
+        self, name, associations, images,
+        skyregions, relations, sources,
+        measurements, dask, n_workers=cpu_count() - 1
     ):
         super(PipeRun, self).__init__()
         self.name = name
@@ -288,7 +308,7 @@ class PipeRun(object):
         if self.dask:
             measurements = measurements.compute(
                 scheduler='processes',
-                n_workers=n_workers
+                n_workers=self.n_workers
             )
 
         measurements = measurements.rename(
@@ -455,6 +475,21 @@ class PipeRun(object):
             warnings.warn("No planets found.")
 
         return result
+
+
+class PipeAnalysis(PipeRun):
+    """docstring for PipeAnalysis"""
+    def __init__(
+        self, test, name, associations, images,
+        skyregions, relations, sources,
+        measurements, dask, n_workers=cpu_count() - 1
+    ):
+        super().__init__(
+            name, associations, images,
+            skyregions, relations, sources,
+            measurements, dask, n_workers
+        )
+        self.test = test
 
 
 def plot_eta_v(

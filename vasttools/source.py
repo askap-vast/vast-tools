@@ -26,6 +26,9 @@ from astropy.nddata.utils import Cutout2D
 from astropy import units as u
 from astropy.time import Time
 from astropy.timeseries import TimeSeries
+from astroquery.simbad import Simbad
+from astroquery.ned import Ned
+from astroquery.casda import Casda
 from astropy.stats import sigma_clipped_stats
 from astroquery.skyview import SkyView
 from astropy.wcs import WCS
@@ -1513,3 +1516,73 @@ class Source:
         plots.append([[x-pixel_buff, x-pixel_buff-length], [y, y]])
 
         return plots
+
+    def simbad_search(self, radius=Angle(20. * u.arcsec)):
+        """
+        Searches SIMBAD for object coordinates and returns matches.
+        """
+
+        Simbad.add_votable_fields('ra(d)', 'dec(d)')
+
+        try:
+            result_table = Simbad.query_region(self.coord, radius=radius)
+            if result_table is None:
+                return None
+
+            return result_table
+
+        except Exception as e:
+            raise ValueError(
+                "Error in performing the SIMBAD region search! Error: %s", e
+            )
+            return None
+
+    def ned_search(self, radius=Angle(20. * u.arcsec)):
+        """
+        Searches NED for object coordinates and returns matches.
+        """
+
+        try:
+            result_table = Ned.query_region(self.coord, radius=radius)
+
+            return result_table
+
+        except Exception as e:
+            raise ValueError(
+                "Error in performing the NED region search! Error: %s", e
+            )
+            return None
+
+    def casda_search(
+        self,
+        radius=Angle(20. * u.arcsec),
+        filter_out_unreleased=False,
+        show_all=False
+    ):
+        """
+        Searches NED for object coordinates and returns matches.
+        """
+        try:
+            result_table = Casda.query_region(self.coord, radius=radius)
+
+            if filter_out_unreleased:
+                result_table = Casda.filter_out_unreleased(result_table)
+            if not show_all:
+                mask = result_table[
+                    'dataproduct_subtype'
+                ] == 'cont.restored.t0'
+                result_table = result_table[mask]
+                mask = [(
+                    ("image.i" in i) & ("taylor.0.res" in i)
+                ) for i in result_table[
+                    'filename'
+                ]]
+                result_table = result_table[mask]
+
+            return result_table
+
+        except Exception as e:
+            raise ValueError(
+                "Error in performing the NED region search! Error: %s", e
+            )
+            return None
