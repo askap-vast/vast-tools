@@ -50,7 +50,6 @@ class Pipeline(object):
 
         return pd.Series(d)
 
-
     def load_run(self, runname, use_dask=False):
         """
         Load a pipeline run.
@@ -282,6 +281,7 @@ class PipeRun(object):
 
         return thesource
 
+
 def plot_eta_v(
     df: pd.DataFrame,
     v_sigma: float = 2.0,
@@ -299,7 +299,9 @@ def plot_eta_v(
     eta_peak_log_clipped = sigma_clip(
         eta_peak_log, masked=False, stdfunc=mad_std, sigma=2
     )
-    v_peak_log_clipped = sigma_clip(v_peak_log, masked=False, stdfunc=mad_std, sigma=2)
+    v_peak_log_clipped = sigma_clip(
+        v_peak_log, masked=False, stdfunc=mad_std, sigma=2
+    )
 
     eta_peak_fit_mean, eta_peak_fit_sigma = norm.fit(eta_peak_log_clipped)
     v_peak_fit_mean, v_peak_fit_sigma = norm.fit(v_peak_log_clipped)
@@ -339,7 +341,8 @@ def plot_eta_v(
         df["n_selavy"].max(),
     )
     fig.scatter(
-        x="eta_peak", y="v_peak", color=cmap, marker="circle", size=5, source=df
+        x="eta_peak", y="v_peak", color=cmap,
+        marker="circle", size=5, source=df
     )
 
     # axis histograms
@@ -414,4 +417,3 @@ def plot_eta_v(
     grid.css_classes.append("mx-auto")
 
     return grid, 10 ** eta_cutoff, 10 ** v_cutoff
-

@@ -478,14 +478,16 @@ class Source:
                 }
             )
         else:
-            selavy_components = pd.read_fwf(row.selavy, skiprows=[1, ], usecols=[
-                'island_id',
-                'ra_deg_cont',
-                'dec_deg_cont',
-                'maj_axis',
-                'min_axis',
-                'pos_ang'
-            ])
+            selavy_components = pd.read_fwf(
+                row.selavy, skiprows=[1, ], usecols=[
+                    'island_id',
+                    'ra_deg_cont',
+                    'dec_deg_cont',
+                    'maj_axis',
+                    'min_axis',
+                    'pos_ang'
+                ]
+            )
 
         selavy_coords = SkyCoord(
             selavy_components.ra_deg_cont.values,
