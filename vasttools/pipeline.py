@@ -29,6 +29,7 @@ from astropy.stats import sigma_clip, mad_std
 from astropy.coordinates import SkyCoord
 from astropy import units as u
 from vasttools.source import Source
+from vasttools.utils import match_planet_to_field
 from multiprocessing import cpu_count
 
 
@@ -109,6 +110,21 @@ class Pipeline(object):
                 'skyregions.parquet'
             ),
             engine='pyarrow'
+        )
+
+        images = images.merge(
+            skyregions[[
+                'id',
+                'centre_ra',
+                'centre_dec',
+                'xtr_radius'
+            ]], how='left',
+            left_on='skyreg_id',
+            right_on='id'
+        ).drop(
+            'id_y', axis=1
+        ).rename(
+            columns={'id_x': 'id'}
         )
 
         relations = dd.read_parquet(
@@ -213,6 +229,10 @@ class Pipeline(object):
                 scheduler='processes',
                 n_workers=n_workers
             )
+            skyregions = skyregions.compute(
+                scheduler='processes',
+                n_workers=n_workers
+            )
             relations = relations.compute(
                 scheduler='processes',
                 n_workers=n_workers
@@ -256,6 +276,7 @@ class PipeRun(object):
         self.measurements = measurements
         self.relations = relations
         self.dask = dask
+        self.n_workers = n_workers
 
     def get_source(self, id, field=None, stokes='I', outdir='.'):
 
@@ -324,6 +345,66 @@ class PipeRun(object):
         )
 
         return thesource
+
+    def check_for_planets(self):
+
+        from vasttools.survey import ALLOWED_PLANETS
+        ap = ALLOWED_PLANETS
+
+        planets_df = self.images.loc[:, [
+            'id',
+            'datetime',
+            'centre_ra',
+            'centre_dec',
+            'xtr_radius'
+        ]].rename(
+            columns={
+                'datetime': 'DATEOBS',
+                'centre_ra': 'centre-ra',
+                'centre_dec': 'centre-dec'
+            }
+        )
+
+        # we need to add a column so if dasked we need to undask it
+        if self.dask:
+            planets_df = planets_df.compute(
+                scheduler='processes',
+                n_workers=self.n_workers
+            )
+
+        planets_df['planet'] = [ap for i in range(planets_df.shape[0])]
+
+        planets_df = planets_df.explode('planet')
+        planets_df['planet'] = planets_df['planet'].str.capitalize()
+
+        meta = {
+            'id': 'i',
+            'DATEOBS': 'datetime64[ns]',
+            'centre-ra': 'f',
+            'centre-dec': 'f',
+            'planet': 'U',
+            'ra': 'f',
+            'dec': 'f',
+            'sep': 'f'
+        }
+
+        result = (
+            dd.from_pandas(planets_df, self.n_workers)
+            .groupby('planet')
+            .apply(
+                match_planet_to_field,
+                meta=meta
+            ).compute(
+                scheduler='processes',
+                n_workers=self.n_workers
+            )
+        )
+
+        if result.empty:
+            warnings.warn("No planets found.")
+
+        return result
+
 
 
 def plot_eta_v(

@@ -4,7 +4,9 @@ from vasttools.survey import (
     EPOCH_FIELDS, FIELD_CENTRES, OBSERVING_LOCATION, ALLOWED_PLANETS
 )
 from vasttools.source import Source
-from vasttools.utils import filter_selavy_components, simbad_search
+from vasttools.utils import (
+    filter_selavy_components, simbad_search, match_planet_to_field
+)
 
 import sys
 import numpy as np
@@ -34,12 +36,9 @@ from astropy.coordinates import SkyCoord
 from astropy import units as u
 from astropy.nddata.utils import Cutout2D
 from astropy.coordinates import SkyCoord
-from astropy.coordinates import solar_system_ephemeris
-from astropy.coordinates import get_body, get_moon
 from astropy.io import fits
 from astropy.wcs import WCS
 from astropy.wcs.utils import skycoord_to_pixel
-from astropy.time import Time
 from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
 
 from matplotlib.patches import Ellipse
@@ -1055,7 +1054,7 @@ class Query:
             dd.from_pandas(template, self.ncpu)
             .groupby('planet')
             .apply(
-                self._match_planet_to_field,
+                match_planet_to_field,
                 meta=meta,
             ).compute(num_workers=self.ncpu, scheduler='processes')
         )
@@ -1078,31 +1077,6 @@ class Query:
         results['planet'] = True
 
         return results
-
-    def _match_planet_to_field(self, group):
-        planet = group.iloc[0]['planet']
-        dates = Time(group['DATEOBS'].tolist())
-        fields_skycoord = SkyCoord(
-            group['centre-ra'].values,
-            group['centre-dec'].values,
-            unit=(u.deg, u.deg)
-        )
-        with solar_system_ephemeris.set('builtin'):
-            planet_coords = get_body(planet, dates, OBSERVING_LOCATION)
-
-        seps = planet_coords.separation(
-            fields_skycoord
-        )
-
-        group['ra'] = planet_coords.ra.deg
-        group['dec'] = planet_coords.dec.deg
-        group['sep'] = seps.deg
-
-        group = group.loc[
-            group['sep'] < 4.0
-        ]
-
-        return group
 
     def build_catalog(self):
         cols = ['ra', 'dec', 'name', 'skycoord', 'stokes']

@@ -20,6 +20,10 @@ from astropy.coordinates import SkyCoord
 import numpy as np
 from multiprocessing_logging import install_mp_handler
 from astroquery.simbad import Simbad
+from vasttools.survey import OBSERVING_LOCATION
+from astropy.time import Time
+from astropy.coordinates import solar_system_ephemeris
+from astropy.coordinates import get_body, get_moon
 
 
 def get_logger(debug, quiet, logfile=None):
@@ -320,3 +324,28 @@ def simbad_search(objects, logger=None):
             "Error in performing the SIMBAD object search!", exc_info=True
         )
         return None, None
+
+def match_planet_to_field(group):
+    planet = group.iloc[0]['planet']
+    dates = Time(group['DATEOBS'].tolist())
+    fields_skycoord = SkyCoord(
+        group['centre-ra'].values,
+        group['centre-dec'].values,
+        unit=(u.deg, u.deg)
+    )
+    with solar_system_ephemeris.set('builtin'):
+        planet_coords = get_body(planet, dates, OBSERVING_LOCATION)
+
+    seps = planet_coords.separation(
+        fields_skycoord
+    )
+
+    group['ra'] = planet_coords.ra.deg
+    group['dec'] = planet_coords.dec.deg
+    group['sep'] = seps.deg
+
+    group = group.loc[
+        group['sep'] < 4.0
+    ]
+
+    return group
