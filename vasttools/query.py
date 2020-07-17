@@ -75,7 +75,7 @@ class Query:
 
     def __init__(
         self, coords=None, source_names=[], epochs="all", stokes="I",
-        racs=False, crossmatch_radius=5.0, max_sep=1.0, use_tiles=False,
+        crossmatch_radius=5.0, max_sep=1.0, use_tiles=False,
         use_islands=False, base_folder=None, matches_only=False,
         no_rms=False, output_dir=".", planets=[], ncpu=2
     ):
@@ -145,8 +145,8 @@ class Query:
 
         self.settings = {}
 
-        self.settings['epochs'] = self.get_epochs(epochs, racs)
-        self.settings['stokes'] = self.get_stokes(stokes, racs)
+        self.settings['epochs'] = self.get_epochs(epochs)
+        self.settings['stokes'] = self.get_stokes(stokes)
 
         self.settings['crossmatch_radius'] = Angle(
             crossmatch_radius, unit=u.arcsec
@@ -1117,7 +1117,7 @@ class Query:
 
         return catalog
 
-    def get_epochs(self, req_epochs, racs):
+    def get_epochs(self, req_epochs):
         '''
         Parse the list of epochs to query.
 
