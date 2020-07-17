@@ -143,7 +143,6 @@ class Pipeline(object):
             }
         )
 
-
         if not no_counts:
             measurements = measurements.merge(
                 images[[
