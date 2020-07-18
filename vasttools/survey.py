@@ -5,7 +5,6 @@ import os
 import pandas as pd
 import warnings
 import pkg_resources
-import dropbox
 import itertools
 import numpy as np
 import re
@@ -91,11 +90,6 @@ FIELD_FILES = {
 
 EPOCH_FIELDS = get_fields_per_epoch_and_info()
 
-
-DROPBOX_FILE = pkg_resources.resource_filename(
-    __name__, "./data/dropbox_files.txt"
-)
-
 FIELD_CENTRES = pd.read_csv(
     pkg_resources.resource_filename(
         __name__, "./data/vast_field_centres.csv"
@@ -103,6 +97,7 @@ FIELD_CENTRES = pd.read_csv(
 )
 
 NIMBUS_BASE_DIR = "/Users/adam/testing/vast-tools-testing/PSR_J2129-04_data_2"
+ADA_BASE_DIR = "/import/ada1/askap/PILOT/release/"
 
 ASKAP_latitude = Angle("-26:41:46.0", unit=u.deg)
 ASKAP_longitude = Angle("116:38:13.0", unit=u.deg)
