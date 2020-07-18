@@ -5,7 +5,7 @@
 # ./find_sources.py "16:16:00.22 +22:16:04.83" --create-png --imsize 5.0
 # --png-zscale-contrast 0.1 --png-selavy-overlay --use-combined
 from vasttools.survey import Fields, Image
-from vasttools.survey import RELEASED_EPOCHS
+from vasttools.survey import RELEASED_EPOCHS, ALLOWED_PLANETS
 from vasttools.source import Source
 from vasttools.query import Query, EpochInfo
 from vasttools.utils import (
@@ -57,6 +57,11 @@ def parse_args():
               "For multiple sources separate with a comma with no "
               "space, e.g. \"SN 1994N,SN 2003D,SN 2019A\"."),
         default="")
+    parser.add_argument(
+        '--ncpu',
+        type=int,
+        help="Number of cpus to use in queries",
+        default=2)
     parser.add_argument(
         '--epochs',
         type=str,
@@ -129,20 +134,11 @@ def parse_args():
         help='Do not estimate the background RMS around each source.')
     parser.add_argument(
         '--planets',
-        choices=[
-            'mercury',
-            'venus',
-            'mars',
-            'jupiter',
-            'saturn',
-            'uranus',
-            'neptune',
-            'sun',
-            'moon'
-        ],
-        nargs='*',
         default=[],
-        help='Also search for solar system objects.')
+        help=(
+            "Also search for solar system objects. "
+            "Enter as a comma separated list, e.g. 'jupiter,venus,moon'. "
+            "Allowed choices are: {}".format(ALLOWED_PLANETS)))
     parser.add_argument(
         '--find-fields',
         action="store_true",
@@ -264,10 +260,11 @@ def check_output_directory(args):
 
     if os.path.isdir(output_dir):
         if args.clobber:
-            logger.warning(("Directory {} already exists "
-                                 "but clobber selected. "
-                                 "Removing current directory."
-                                 ).format(output_dir))
+            logger.warning((
+                "Directory {} already exists "
+                "but clobber selected. "
+                "Removing current directory."
+            ).format(output_dir))
             shutil.rmtree(output_dir)
         else:
             logger.critical(
@@ -295,7 +292,11 @@ if __name__ == '__main__':
         "Available epochs: {}".format(sorted(RELEASED_EPOCHS.keys()))
     )
 
-    if args.coords is None and args.source_names == "" and len(args.planets) == 0:
+    if len(args.planets) > 0:
+        args.planets = args.planets.split(",")
+
+    if (args.coords is None and
+            args.source_names == "" and len(args.planets) == 0):
         logger.error(
             "No coordinates or source names have been provided!"
         )
@@ -341,7 +342,8 @@ if __name__ == '__main__':
         base_folder=args.base_folder,
         matches_only=args.process_matches,
         no_rms=args.no_background_rms,
-        output_dir=args.out_folder
+        output_dir=args.out_folder,
+        ncpu=args.ncpu
     )
 
     if args.find_fields:
@@ -359,11 +361,11 @@ if __name__ == '__main__':
             reg = False
             lightcurve = False
         else:
-            fits=(not args.no_fits)
-            png=args.create_png
-            ann=args.ann
-            reg=args.reg
-            lightcurve=args.lightcurves
+            fits = (not args.no_fits)
+            png = args.create_png
+            ann = args.ann
+            reg = args.reg
+            lightcurve = args.lightcurves
 
         query.gen_all_source_products(
             fits=fits,

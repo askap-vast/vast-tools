@@ -62,7 +62,10 @@ warnings.filterwarnings('ignore',
 HOST = socket.gethostname()
 HOST_ADA = 'ada.physics.usyd.edu.au'
 HOST_NIMBUS = 'nimbus.pawsey.org.au'
-numexpr.set_num_threads(int(cpu_count() / 4))
+
+HOST_NCPU = cpu_count()
+numexpr.set_num_threads(int(HOST_NCPU / 4))
+
 
 class Query:
     '''
@@ -78,7 +81,7 @@ class Query:
         self, coords=None, source_names=[], epochs="all", stokes="I",
         crossmatch_radius=5.0, max_sep=1.0, use_tiles=False,
         use_islands=False, base_folder=None, matches_only=False,
-        no_rms=False, output_dir=".", planets=[]
+        no_rms=False, output_dir=".", planets=[], ncpu=2
     ):
         '''Constructor method
         '''
@@ -88,21 +91,30 @@ class Query:
 
         self.coords = coords
         self.source_names = source_names
+        if ncpu > HOST_NCPU:
+            raise ValueError(
+                "Number of CPUs requested ({}) "
+                "exceeds number available ({})".format(
+                    ncpu,
+                    HOST_NCPU
+                )
+            )
+        self.ncpu = ncpu
 
-        if coords == None and len(source_names) == 0 and len(planets) == 0:
+        if coords is None and len(source_names) == 0 and len(planets) == 0:
             if self.logger is None:
                 raise ValueError(
                     "No coordinates or source names have been provided!"
                     " Check inputs and try again!"
                 )
 
-        if self.coords == None:
+        if self.coords is None:
             if len(source_names) != 0:
                 pre_simbad = len(source_names)
                 self.coords, self.source_names = simbad_search(
                     source_names, logger=self.logger
                 )
-                if self.coords != None:
+                if self.coords is not None:
                     simbad_msg = "SIMBAD search found {}/{} source(s)".format(
                         len(self.source_names),
                         pre_simbad
@@ -119,19 +131,18 @@ class Query:
                     raise ValueError(
                         "SIMBAD search failed!"
                     )
-            if len(planets) != 0:
-                valid_planets = sum([i in ALLOWED_PLANETS for i in planets])
+        if len(planets) != 0:
+            valid_planets = sum([i in ALLOWED_PLANETS for i in planets])
 
-                if valid_planets != len(planets):
-                    self.logger.error(
-                        "Invalid planet object provided!"
-                    )
-                    raise ValueError(
-                        "Invalid planet object provided!"
-                    )
-
-                else:
-                    self.planets = planets
+            if valid_planets != len(planets):
+                self.logger.error(
+                    "Invalid planet object provided!"
+                )
+                raise ValueError(
+                    "Invalid planet object provided!"
+                )
+            else:
+                self.planets = planets
         else:
             self.planets = None
 
@@ -188,7 +199,6 @@ class Query:
 
         self.cutout_data_got = False
 
-
     def _validate_settings(self):
         """Use to check misc details"""
 
@@ -202,7 +212,7 @@ class Query:
             )
             return False
 
-        if self.settings['tiles'] and self.settings['no_rms'] == False:
+        if self.settings['tiles'] and not self.settings['no_rms']:
             self.logger.warning(
                 "RMS measurements are not supported with tiles!"
             )
@@ -211,16 +221,31 @@ class Query:
 
         return True
 
-
     def get_all_cutout_data(self):
         # first get cutout data and selavy sources per image
         # group by image to do this
 
-        grouped_query = self.sources_df.groupby('image')
+        # grouped_query = self.sources_df.groupby('image')
 
-        cutouts = grouped_query.apply(
-            lambda x: self._grouped_fetch_cutouts(x.name, x)
+        meta = {
+            'data': 'O',
+            'wcs': 'O',
+            'header': 'O',
+            'selavy_overlay': 'O',
+            'beam': 'O'
+        }
+
+        cutouts = (
+            dd.from_pandas(self.sources_df, self.ncpu)
+            .groupby('image')
+            .apply(
+                self._grouped_fetch_cutouts,
+                meta=meta,
+            ).compute(num_workers=self.ncpu, scheduler='processes')
         )
+        # cutouts = grouped_query.apply(
+        #     lambda x: self._grouped_fetch_cutouts(x.name, x)
+        # )
 
         cutouts.index = cutouts.index.droplevel()
 
@@ -242,7 +267,6 @@ class Query:
             s._cutouts_got = True
 
         self.cutout_data_got = True
-
 
     def gen_all_source_products(
         self,
@@ -282,13 +306,11 @@ class Query:
         if not self.cutout_data_got:
             self.get_all_cutout_data()
 
-        num_cpu = int(cpu_count() / 4)
-
         original_sigint_handler = signal.signal(
             signal.SIGINT, signal.SIG_IGN
         )
 
-        workers = Pool(processes=num_cpu)
+        workers = Pool(processes=self.ncpu)
 
         signal.signal(signal.SIGINT, original_sigint_handler)
 
@@ -389,10 +411,8 @@ class Query:
             )
         self.logger.info("-------------------------")
 
-
     def save_fields(self, out_dir=None):
         pass
-
 
     def _save_all_png_cutouts(
         self, s, selavy, percentile,
@@ -415,21 +435,17 @@ class Query:
 
         s.save_all_fits_cutouts()
 
-
     def _save_all_ann(self, s, crossmatch_overlay=False):
 
         s.save_all_ann(crossmatch_overlay=crossmatch_overlay)
-
 
     def _save_all_reg(self, s, crossmatch_overlay=False):
 
         s.save_all_ann(crossmatch_overlay=crossmatch_overlay)
 
-
     def _save_all_measurements(self, s, simple=False, outfile=None):
 
         s.write_measurements(simple=simple, outfile=outfile)
-
 
     def _save_all_lc(
         self,
@@ -458,7 +474,6 @@ class Query:
             outfile=lc_outfile,
         )
 
-
     def _add_source_cutout_data(self, s):
         s_name = s.name
         s_cutout = self.sources_df[[
@@ -476,8 +491,9 @@ class Query:
 
         return s
 
+    def _grouped_fetch_cutouts(self, group):
 
-    def _grouped_fetch_cutouts(self, image_file, group):
+        image_file = group.iloc[0]['image']
 
         image = Image(
             group.iloc[0].field,
@@ -513,7 +529,7 @@ class Query:
             wcs=image.wcs
         )
 
-        selavy_components = pd.read_fwf(row.selavy, skiprows=[1,], usecols=[
+        selavy_components = pd.read_fwf(row.selavy, skiprows=[1, ], usecols=[
             'island_id',
             'ra_deg_cont',
             'dec_deg_cont',
@@ -525,7 +541,7 @@ class Query:
         selavy_coords = SkyCoord(
             selavy_components.ra_deg_cont.values,
             selavy_components.dec_deg_cont.values,
-            unit = (u.deg, u.deg)
+            unit=(u.deg, u.deg)
         )
 
         selavy_components = filter_selavy_components(
@@ -546,7 +562,6 @@ class Query:
             cutout.data, cutout.wcs, header, selavy_components, beam
         )
 
-
     def find_sources(self):
         if self.fields_found is False:
             self.find_fields()
@@ -560,28 +575,76 @@ class Query:
             axis=1,
             result_type='expand'
         )
-        grouped_query = self.sources_df.groupby('selavy')
-        results = grouped_query.apply(
-            lambda x: self._get_components(x.name, x)
+
+        meta = {
+            '#': 'f',
+            'island_id': 'U',
+            'component_id': 'U',
+            'component_name': 'U',
+            'ra_hms_cont': 'U',
+            'dec_dms_cont': 'U',
+            'ra_deg_cont': 'f',
+            'dec_deg_cont': 'f',
+            'ra_err': 'f',
+            'dec_err': 'f',
+            'freq': 'f',
+            'flux_peak': 'f',
+            'flux_peak_err': 'f',
+            'flux_int': 'f',
+            'flux_int_err': 'f',
+            'maj_axis': 'f',
+            'min_axis': 'f',
+            'pos_ang': 'f',
+            'maj_axis_err': 'f',
+            'min_axis_err': 'f',
+            'pos_ang_err': 'f',
+            'maj_axis_deconv': 'f',
+            'min_axis_deconv': 'f',
+            'pos_ang_deconv': 'f',
+            'maj_axis_deconv_err': 'f',
+            'min_axis_deconv_err': 'f',
+            'pos_ang_deconv_err': 'f',
+            'chi_squared_fit': 'f',
+            'rms_fit_gauss': 'f',
+            'spectral_index': 'f',
+            'spectral_curvature': 'f',
+            'spectral_index_err': 'f',
+            'spectral_curvature_err': 'f',
+            'rms_image': 'f',
+            'has_siblings': 'f',
+            'fit_is_estimate': 'f',
+            'spectral_index_from_TT': 'f',
+            'flag_c4': 'f',
+            'comment': 'f',
+            'detection': '?',
+        }
+
+        results = (
+            dd.from_pandas(self.sources_df, self.ncpu)
+            .groupby('selavy')
+            .apply(
+                self._get_components,
+                meta=meta,
+            ).compute(num_workers=self.ncpu, scheduler='processes')
         )
 
-        # results = pd.DataFrame()
-        # for name, group in grouped_query:
-        #     group_results = self._get_components(name, group)
-        #     results = results.append(group_results)
         results.index = results.index.droplevel()
         self.crossmatch_results = self.sources_df.merge(
             results, how='left', left_index=True, right_index=True
         )
 
-        grouped_source_query = self.crossmatch_results.groupby('name')
+        meta = {'name': 'O'}
 
-        self.results = grouped_source_query.apply(
-            lambda x: self._init_sources(x.name, x)
+        self.results = (
+            dd.from_pandas(self.crossmatch_results, self.ncpu)
+            .groupby('name')
+            .apply(
+                self._init_sources,
+                meta=meta,
+            ).compute(num_workers=self.ncpu, scheduler='processes')
         )
 
-
-    def _init_sources(self, source_name, group):
+    def _init_sources(self, group):
 
         m = group.iloc[0]
 
@@ -602,7 +665,7 @@ class Query:
             source_image_type = "TILES"
         else:
             source_image_type = "COMBINED"
-        source_islands=self.settings['islands']
+        source_islands = self.settings['islands']
 
         source_df = group.drop(
             columns=[
@@ -629,23 +692,23 @@ class Query:
 
         return thesource
 
-
-    def _get_components(self, selavy_file, group):
+    def _get_components(self, group):
+        selavy_file = group.iloc[0]['selavy']
         master = pd.DataFrame()
 
         selavy_df = pd.read_fwf(
-            selavy_file, skiprows=[1,]
+            selavy_file, skiprows=[1, ]
         )
 
         selavy_coords = SkyCoord(
             selavy_df.ra_deg_cont,
             selavy_df.dec_deg_cont,
-            unit = (u.deg, u.deg)
+            unit=(u.deg, u.deg)
         )
         group_coords = SkyCoord(
             group.ra,
             group.dec,
-            unit = (u.deg, u.deg)
+            unit=(u.deg, u.deg)
         )
 
         idx, d2d, _ = group_coords.match_to_catalog_sky(selavy_coords)
@@ -688,7 +751,6 @@ class Query:
             master = master.append(rms_df, sort=False)
 
         return master
-
 
     def _add_files(self, row):
 
@@ -771,7 +833,6 @@ class Query:
 
         return selavy_file, image_file, rms_file
 
-
     def write_find_fields(self, outname=None):
         if self.fields_found is False:
             self.find_fields()
@@ -800,7 +861,6 @@ class Query:
             name
         ))
 
-
     def find_fields(self):
         fields = Fields('1')
         field_centres_sc = SkyCoord(
@@ -814,6 +874,15 @@ class Query:
         if self.query_df is not None:
             self.fields_df = self.query_df.copy()
 
+            meta = {
+                0: 'O',
+                1: 'U',
+                2: 'O',
+                3: 'O',
+                4: 'O',
+                5: 'O',
+            }
+
             self.fields_df[[
                 'fields',
                 'primary_field',
@@ -821,16 +890,20 @@ class Query:
                 'field_per_epoch',
                 'sbids',
                 'dates'
-            ]] = self.query_df.apply(
-                self._field_matching,
-                args=(
-                    fields.direction,
-                    fields.fields.FIELD_NAME,
-                    field_centres_sc,
-                    field_centre_names
-                ),
-                axis=1,
-                result_type='expand'
+            ]] = (
+                dd.from_pandas(self.fields_df, self.ncpu)
+                .apply(
+                    self._field_matching,
+                    args=(
+                        fields.direction,
+                        fields.fields.FIELD_NAME,
+                        field_centres_sc,
+                        field_centre_names
+                    ),
+                    meta=meta,
+                    axis=1,
+                    result_type='expand'
+                ).compute(num_workers=self.ncpu, scheduler='processes')
             )
 
             self.fields_df = self.fields_df.dropna()
@@ -883,8 +956,11 @@ class Query:
             prev_num
         )
 
-        self.fields_found = True
+        self.fields_df['dateobs'] = pd.to_datetime(
+            self.fields_df['dateobs']
+        )
 
+        self.fields_found = True
 
     def _field_matching(
         self,
@@ -929,11 +1005,13 @@ class Query:
                 field = primary_field
 
             elif len(available_fields) == 1:
-                field = fields[0]
+                field = available_fields[0]
 
             else:
                 field_indexes = [
-                    field_centre_names.index(f) for f in available_fields
+                    field_centre_names[
+                        field_centre_names == f
+                    ].index[0] for f in available_fields
                 ]
                 min_field_index = np.argmin(
                     centre_seps[field_indexes].deg
@@ -946,24 +1024,23 @@ class Query:
             date = EPOCH_FIELDS[i][field]["DATEOBS"]
             sbids.append(sbid)
             dateobs.append(date)
-            field_per_epochs.append([i,field,sbid,date])
+            field_per_epochs.append([i, field, sbid, date])
 
         return fields, primary_field, epochs, field_per_epochs, sbids, dateobs
-
 
     def _get_planets_epoch_df_template(self):
         epochs = self.settings['epochs']
 
         planet_epoch_fields = pd.DataFrame.from_dict(
             EPOCH_FIELDS[epochs[0]], orient='index'
-        ).reset_index().rename(columns={'index':'FIELD_NAME'})
+        ).reset_index().rename(columns={'index': 'FIELD_NAME'})
 
         planet_epoch_fields['epoch'] = epochs[0]
 
         for e in epochs[1:]:
             temp = pd.DataFrame.from_dict(
                 EPOCH_FIELDS[e], orient='index'
-            ).reset_index().rename(columns={'index':'FIELD_NAME'})
+            ).reset_index().rename(columns={'index': 'FIELD_NAME'})
             temp['epoch'] = e
             planet_epoch_fields = planet_epoch_fields.append(
                 temp
@@ -977,7 +1054,6 @@ class Query:
 
         return planet_epoch_fields
 
-
     def search_planets(self):
 
         template = self._get_planets_epoch_df_template()
@@ -987,7 +1063,7 @@ class Query:
         template = template.explode('planet')
         template['planet'] = template['planet'].str.capitalize()
 
-        meta={
+        meta = {
             'FIELD_NAME': 'U',
             'SBID': 'i',
             'DATEOBS': 'datetime64[ns]',
@@ -1000,14 +1076,13 @@ class Query:
             'sep': 'f'
         }
 
-        n_cpu = 4
         results = (
-            dd.from_pandas(template, n_cpu)
+            dd.from_pandas(template, self.ncpu)
             .groupby('planet')
             .apply(
                 self._match_planet_to_field,
                 meta=meta,
-            ).compute(num_workers=n_cpu, scheduler='processes')
+            ).compute(num_workers=self.ncpu, scheduler='processes')
         )
 
         results = results.reset_index(drop=True).drop(
@@ -1029,7 +1104,6 @@ class Query:
 
         return results
 
-
     def _match_planet_to_field(self, group):
         planet = group.iloc[0]['planet']
         dates = Time(group['DATEOBS'].tolist())
@@ -1050,11 +1124,10 @@ class Query:
         group['sep'] = seps.deg
 
         group = group.loc[
-            group['sep'] < 4.1
+            group['sep'] < 4.0
         ]
 
         return group
-
 
     def build_catalog(self):
         cols = ['ra', 'dec', 'name', 'skycoord', 'stokes']
@@ -1066,12 +1139,12 @@ class Query:
                     self.source_names[0],
                     self.coords,
                     self.settings['stokes']
-                ]], columns = cols
+                ]], columns=cols
             )
         else:
             catalog = pd.DataFrame(
                 self.source_names,
-                columns = ['name']
+                columns=['name']
             )
             catalog['ra'] = self.coords.ra.deg
             catalog['dec'] = self.coords.dec.deg
@@ -1079,7 +1152,6 @@ class Query:
             catalog['stokes'] = self.settings['stokes']
 
         return catalog
-
 
     def get_epochs(self, req_epochs):
         '''
@@ -1119,7 +1191,6 @@ class Query:
             sys.exit()
 
         return epochs
-
 
     def get_stokes(self, req_stokes):
         '''
@@ -1250,10 +1321,10 @@ class EpochInfo:
 
         if not os.path.isdir(RMS_FOLDER):
             # if not CROSSMATCH_ONLY:
-            self.logger.critical(
-                ("{} does not exist. "
-                 "Switching to crossmatch only.").format(RMS_FOLDER))
-                # CROSSMATCH_ONLY = True
+            self.logger.critical((
+                "{} does not exist. "
+                "Switching to crossmatch only."
+            ).format(RMS_FOLDER))
 
         image_dir = "COMBINED"
         selavy_dir = "STOKES{}_SELAVY".format(self.stokes_param)
@@ -1267,10 +1338,10 @@ class EpochInfo:
 
         if not os.path.isdir(SELAVY_FOLDER):
             # if not FIND_FIELDS and not CROSSMATCH_ONLY:
-            self.logger.critical(
-                ("{} does not exist. "
-                 "Only finding fields").format(SELAVY_FOLDER))
-                # FIND_FIELDS = True
+            self.logger.critical((
+                "{} does not exist. "
+                "Only finding fields"
+            ).format(SELAVY_FOLDER))
 
         # self.FIND_FIELDS = FIND_FIELDS
         # self.CROSSMATCH_ONLY = CROSSMATCH_ONLY
