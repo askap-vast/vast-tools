@@ -461,7 +461,7 @@ class PipeAnalysis(PipeRun):
         )
         self.test = test
 
-    def _get_source_two_epochs(self, group):
+    def _get_two_epoch_df(self):
         image_ids = self.images['id'].tolist()
 
         combs = combinations(
@@ -547,7 +547,7 @@ class PipeAnalysis(PipeRun):
 
         self._calculate_metrics(use_int_flux=use_int_flux)
 
-        return pairs
+        return self.pairs
 
 
 def plot_eta_v(
