@@ -462,16 +462,25 @@ class PipeAnalysis(PipeRun):
         )
         self.test = test
 
-    def _get_two_epoch_df(self):
+    def _get_two_epoch_df(self, allowed_sources=[]):
         image_ids = self.images['id'].tolist()
 
         combs = combinations(
             image_ids, 2
         )
 
+        if len(allowed_sources) > 0:
+            measurements = self.measurements.loc[
+                self.measurements['source'].isin(
+                    allowed_sources
+                )
+            ]
+        else:
+            measurements = self.measurements
+
         measurements_images = {}
         for i in image_ids:
-            measurements_images[i] = self.measurements[[
+            measurements_images[i] = measurements[[
                 'image_id',
                 'source',
                 'id',
@@ -482,7 +491,7 @@ class PipeAnalysis(PipeRun):
                 'has_siblings',
                 'forced'
             ]].loc[
-                self.measurements['image_id'] == i
+                measurements['image_id'] == i
             ]
 
         pairs = {}
@@ -511,13 +520,13 @@ class PipeAnalysis(PipeRun):
             ].sum(axis=1)
 
             if i == 0:
-                self.two_epoch_df = first_set
+                two_epoch_df = first_set
             else:
-                self.two_epoch_df = self.two_epoch_df.append(first_set)
+                two_epoch_df = two_epoch_df.append(first_set)
 
-        return pairs
+        return pairs, two_epoch_df
 
-    def _calculate_metrics(self, use_int_flux=False):
+    def _calculate_metrics(self, df, use_int_flux=False):
 
         if use_int_flux:
             flux = 'int'
@@ -529,169 +538,240 @@ class PipeAnalysis(PipeRun):
         flux_y_label = "flux_{}_y".format(flux)
         flux_err_y_label = "flux_{}_err_y".format(flux)
 
-        self.two_epoch_df["Vs"] = np.abs(
+        df["Vs"] = np.abs(
             (
-                self.two_epoch_df[flux_x_label]
-                - self.two_epoch_df[flux_y_label]
+                df[flux_x_label]
+                - df[flux_y_label]
             )
             / np.hypot(
-                self.two_epoch_df[flux_err_x_label],
-                self.two_epoch_df[flux_err_y_label]
+                df[flux_err_x_label],
+                df[flux_err_y_label]
             )
         )
 
-        self.two_epoch_df["m"] = np.abs(
+        df["m"] = np.abs(
             (
-                self.two_epoch_df[flux_x_label]
-                - self.two_epoch_df[flux_y_label]
+                df[flux_x_label]
+                - df[flux_y_label]
             )
             / ((
-                self.two_epoch_df[flux_x_label]
-                + self.two_epoch_df[flux_y_label]
+                df[flux_x_label]
+                + df[flux_y_label]
             ) / 2.)
         )
 
-    def two_epoch_search(self, v, m, use_int_flux=False):
+        return df
 
-        self.pairs = self._get_two_epoch_df()
+    def run_two_epoch_analysis(
+        self, v, m, query=None,
+        df=None, use_int_flux=False
+    ):
+        if df is None:
+            df = self.sources
 
-        self._calculate_metrics(use_int_flux=use_int_flux)
+        if query is not None:
+            df = df.query(query)
 
-        return self.pairs
+        allowed_sources = df.index.tolist()
 
+        pairs, df = self._get_two_epoch_df(
+            allowed_sources=allowed_sources
+        )
 
-def plot_eta_v(
-    df: pd.DataFrame,
-    v_sigma: float = 2.0,
-    eta_sigma: float = 2.0
-):
-    v_sigma = v_sigma
-    eta_sigma = eta_sigma
+        df = self._calculate_metrics(df, use_int_flux=use_int_flux)
 
-    # source = df['id']
-    # source_selavy = ColumnDataSource(data)
+        candidates = df.query("Vs > {} & m > {}".format(
+            v, m
+        ))
 
-    eta_peak_log = np.log10(df['eta_peak'])
-    v_peak_log = np.log10(df['v_peak'])
+        return pairs, df, candidates
 
-    eta_peak_log_clipped = sigma_clip(
-        eta_peak_log, masked=False, stdfunc=mad_std, sigma=2
-    )
-    v_peak_log_clipped = sigma_clip(
-        v_peak_log, masked=False, stdfunc=mad_std, sigma=2
-    )
+    def _fit_eta_v(self, df, use_int_flux=False):
 
-    eta_peak_fit_mean, eta_peak_fit_sigma = norm.fit(eta_peak_log_clipped)
-    v_peak_fit_mean, v_peak_fit_sigma = norm.fit(v_peak_log_clipped)
+        if use_int_flux:
+            eta_label = 'eta_peak'
+            v_label = 'v_peak'
+        else:
+            eta_label = 'eta_int'
+            v_label = 'v_int'
 
-    v_cutoff = v_peak_fit_mean + v_sigma * v_peak_fit_sigma
-    eta_cutoff = eta_peak_fit_mean + eta_sigma * eta_peak_fit_sigma
+        eta_log = np.log10(df[eta_label])
+        v_log = np.log10(df[v_label])
 
-    # generate fitted curve data for plotting
-    eta_x = np.linspace(
-        norm.ppf(0.001, loc=eta_peak_fit_mean, scale=eta_peak_fit_sigma),
-        norm.ppf(0.999, loc=eta_peak_fit_mean, scale=eta_peak_fit_sigma),
-    )
-    eta_y = norm.pdf(eta_x, loc=eta_peak_fit_mean, scale=eta_peak_fit_sigma)
+        eta_log_clipped = sigma_clip(
+            eta_log, masked=False, stdfunc=mad_std, sigma=2
+        )
+        v_log_clipped = sigma_clip(
+            v_log, masked=False, stdfunc=mad_std, sigma=2
+        )
 
-    v_x = np.linspace(
-        norm.ppf(0.001, loc=v_peak_fit_mean, scale=v_peak_fit_sigma),
-        norm.ppf(0.999, loc=v_peak_fit_mean, scale=v_peak_fit_sigma),
-    )
-    v_y = norm.pdf(v_x, loc=v_peak_fit_mean, scale=v_peak_fit_sigma)
+        eta_fit_mean, eta_fit_sigma = norm.fit(eta_log_clipped)
+        v_fit_mean, v_fit_sigma = norm.fit(v_log_clipped)
 
-    PLOT_WIDTH = 700
-    PLOT_HEIGHT = PLOT_WIDTH
-    fig = figure(
-        plot_width=PLOT_WIDTH,
-        plot_height=PLOT_HEIGHT,
-        aspect_scale=1,
-        x_axis_type="log",
-        y_axis_type="log",
-        x_axis_label="eta",
-        y_axis_label="V",
-        tooltips=[("source", "@id")],
-    )
-    cmap = linear_cmap(
-        "n_selavy",
-        'Viridis256',
-        df["n_selavy"].min(),
-        df["n_selavy"].max(),
-    )
-    fig.scatter(
-        x="eta_peak", y="v_peak", color=cmap,
-        marker="circle", size=5, source=df
-    )
+        return (eta_fit_mean, eta_fit_sigma, v_fit_mean, v_fit_sigma)
 
-    # axis histograms
-    # filter out any forced-phot points for these
-    x_hist = figure(
-        plot_width=PLOT_WIDTH,
-        plot_height=100,
-        x_range=fig.x_range,
-        y_axis_type=None,
-        x_axis_type="log",
-        x_axis_location="above",
-        title="VAST eta-V",
-        tools="",
-    )
-    x_hist_data, x_hist_edges = np.histogram(
-        np.log10(df["eta_peak"]), density=True, bins=50,
-    )
-    x_hist.quad(
-        top=x_hist_data,
-        bottom=0,
-        left=10 ** x_hist_edges[:-1],
-        right=10 ** x_hist_edges[1:],
-    )
-    x_hist.line(10 ** eta_x, eta_y, color="black")
-    x_hist_sigma_span = Span(
-        location=10 ** eta_cutoff,
-        dimension="height",
-        line_color="black",
-        line_dash="dashed",
-    )
-    x_hist.add_layout(x_hist_sigma_span)
-    fig.add_layout(x_hist_sigma_span)
+    def plot_eta_v(
+        self, df, eta_fit_mean, eta_fit_sigma,
+        v_fit_mean, v_fit_sigma, eta_cutoff, v_cutoff,
+        use_int_flux=False
+    ):
+        # generate fitted curve data for plotting
+        eta_x = np.linspace(
+            norm.ppf(0.001, loc=eta_fit_mean, scale=eta_fit_sigma),
+            norm.ppf(0.999, loc=eta_fit_mean, scale=eta_fit_sigma),
+        )
+        eta_y = norm.pdf(eta_x, loc=eta_fit_mean, scale=eta_fit_sigma)
 
-    y_hist = figure(
-        plot_height=PLOT_HEIGHT,
-        plot_width=100,
-        y_range=fig.y_range,
-        x_axis_type=None,
-        y_axis_type="log",
-        y_axis_location="right",
-        tools="",
-    )
-    y_hist_data, y_hist_edges = np.histogram(
-        np.log10(df["v_peak"]), density=True, bins=50,
-    )
-    y_hist.quad(
-        right=y_hist_data,
-        left=0,
-        top=10 ** y_hist_edges[:-1],
-        bottom=10 ** y_hist_edges[1:],
-    )
-    y_hist.line(v_y, 10 ** v_x, color="black")
-    y_hist_sigma_span = Span(
-        location=10 ** v_cutoff,
-        dimension="width",
-        line_color="black",
-        line_dash="dashed",
-    )
-    y_hist.add_layout(y_hist_sigma_span)
-    fig.add_layout(y_hist_sigma_span)
+        v_x = np.linspace(
+            norm.ppf(0.001, loc=v_fit_mean, scale=v_fit_sigma),
+            norm.ppf(0.999, loc=v_fit_mean, scale=v_fit_sigma),
+        )
+        v_y = norm.pdf(v_x, loc=v_fit_mean, scale=v_fit_sigma)
 
-    variable_region = BoxAnnotation(
-        left=10 ** eta_cutoff,
-        bottom=10 ** v_cutoff,
-        fill_color="orange",
-        level="underlay",
-    )
-    fig.add_layout(variable_region)
-    # slider = Slider(start=0, end=7., step=0.5, value=2)
-    # slider.js_link('value', r.left, 'radius')
-    grid = gridplot([[x_hist, Spacer(width=100, height=100)], [fig, y_hist]])
-    grid.css_classes.append("mx-auto")
+        PLOT_WIDTH = 700
+        PLOT_HEIGHT = PLOT_WIDTH
+        fig = figure(
+            plot_width=PLOT_WIDTH,
+            plot_height=PLOT_HEIGHT,
+            aspect_scale=1,
+            x_axis_type="log",
+            y_axis_type="log",
+            x_axis_label="eta",
+            y_axis_label="V",
+            tooltips=[("source", "@id")],
+        )
+        cmap = linear_cmap(
+            "n_selavy",
+            'Viridis256',
+            df["n_selavy"].min(),
+            df["n_selavy"].max(),
+        )
 
-    return grid, 10 ** eta_cutoff, 10 ** v_cutoff
+        if use_int_flux:
+            x_label = 'eta_int'
+            y_label = 'v_int'
+            title = "Int. Flux"
+        else:
+            x_label = 'eta_peak'
+            y_label = 'v_peak'
+            title = 'Peak Flux'
+
+        fig.scatter(
+            x=x_label, y=y_label, color=cmap,
+            marker="circle", size=5, source=df
+        )
+
+        # axis histograms
+        # filter out any forced-phot points for these
+        x_hist = figure(
+            plot_width=PLOT_WIDTH,
+            plot_height=100,
+            x_range=fig.x_range,
+            y_axis_type=None,
+            x_axis_type="log",
+            x_axis_location="above",
+            title="VAST eta-V {}".format(title),
+            tools="",
+        )
+        x_hist_data, x_hist_edges = np.histogram(
+            np.log10(df["eta_peak"]), density=True, bins=50,
+        )
+        x_hist.quad(
+            top=x_hist_data,
+            bottom=0,
+            left=10 ** x_hist_edges[:-1],
+            right=10 ** x_hist_edges[1:],
+        )
+        x_hist.line(10 ** eta_x, eta_y, color="black")
+        x_hist_sigma_span = Span(
+            location=eta_cutoff,
+            dimension="height",
+            line_color="black",
+            line_dash="dashed",
+        )
+        x_hist.add_layout(x_hist_sigma_span)
+        fig.add_layout(x_hist_sigma_span)
+
+        y_hist = figure(
+            plot_height=PLOT_HEIGHT,
+            plot_width=100,
+            y_range=fig.y_range,
+            x_axis_type=None,
+            y_axis_type="log",
+            y_axis_location="right",
+            tools="",
+        )
+        y_hist_data, y_hist_edges = np.histogram(
+            np.log10(df["v_peak"]), density=True, bins=50,
+        )
+        y_hist.quad(
+            right=y_hist_data,
+            left=0,
+            top=10 ** y_hist_edges[:-1],
+            bottom=10 ** y_hist_edges[1:],
+        )
+        y_hist.line(v_y, 10 ** v_x, color="black")
+        y_hist_sigma_span = Span(
+            location=v_cutoff,
+            dimension="width",
+            line_color="black",
+            line_dash="dashed",
+        )
+        y_hist.add_layout(y_hist_sigma_span)
+        fig.add_layout(y_hist_sigma_span)
+
+        variable_region = BoxAnnotation(
+            left=eta_cutoff,
+            bottom=v_cutoff,
+            fill_color="orange",
+            fill_alpha=0.3,
+            level="underlay",
+        )
+        fig.add_layout(variable_region)
+        grid = gridplot(
+            [[x_hist, Spacer(width=100, height=100)], [fig, y_hist]]
+        )
+        grid.css_classes.append("mx-auto")
+
+        return grid
+
+    def run_eta_v_analysis(
+        self, eta_sigma, v_sigma,
+        query=None, df=None, use_int_flux=False
+    ):
+
+        if df is None:
+            df = self.sources
+
+        if query is not None:
+            df = df.query(query)
+
+        (
+            eta_fit_mean, eta_fit_sigma,
+            v_fit_mean, v_fit_sigma
+        ) = self._fit_eta_v(df, use_int_flux=use_int_flux)
+
+        v_cutoff = 10 ** (v_fit_mean + v_sigma * v_fit_sigma)
+        eta_cutoff = 10 ** (eta_fit_mean + eta_sigma * eta_fit_sigma)
+
+        plot = self.plot_eta_v(
+            df, eta_fit_mean, eta_fit_sigma,
+            v_fit_mean, v_fit_sigma, eta_cutoff, v_cutoff,
+            use_int_flux=use_int_flux
+        )
+
+        if use_int_flux:
+            label = 'int'
+        else:
+            label = 'peak'
+
+        candidates = df.query(
+            "v_{0} > {1} "
+            "& eta_{0} > {2}".format(
+                label,
+                v_cutoff,
+                eta_cutoff
+            )
+        )
+
+        return eta_cutoff, v_cutoff, candidates, plot
