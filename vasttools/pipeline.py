@@ -32,6 +32,7 @@ from vasttools.source import Source
 from vasttools.utils import match_planet_to_field
 from multiprocessing import cpu_count
 from datetime import timedelta
+from itertools import combinations
 
 
 class Pipeline(object):
@@ -40,18 +41,6 @@ class Pipeline(object):
         super(Pipeline, self).__init__()
 
         self.project_dir = os.path.abspath(project_dir)
-
-    def _get_source_counts(self, df):
-
-        d = {}
-
-        d['n_detections'] = df.shape[0]
-        force_mask = (df['forced'] == True)
-        d['n_selavy'] = df[~force_mask].shape[0]
-        d['n_forced'] = df.shape[0] - d['n_selavy']
-        d['has_siblings'] = df['has_siblings'].any()
-
-        return pd.Series(d)
 
     def list_piperuns(self):
         jobs = sorted(glob.glob(
@@ -73,9 +62,7 @@ class Pipeline(object):
         return img_list
 
     def load_run(
-        self, runname,
-        use_dask=False, n_workers=cpu_count() - 1,
-        no_counts=False
+        self, runname, n_workers=cpu_count() - 1
     ):
         """
         Load a pipeline run.
@@ -108,15 +95,7 @@ class Pipeline(object):
             "forced_measurements*.parquet"
         )))
 
-        images = dd.read_parquet(
-            os.path.join(
-                run_dir,
-                'images.parquet'
-            ),
-            engine='pyarrow'
-        )
-
-        associations = dd.read_parquet(
+        associations = pd.read_parquet(
             os.path.join(
                 run_dir,
                 'associations.parquet'
@@ -124,7 +103,7 @@ class Pipeline(object):
             engine='pyarrow'
         )
 
-        skyregions = dd.read_parquet(
+        skyregions = pd.read_parquet(
             os.path.join(
                 run_dir,
                 'skyregions.parquet'
@@ -147,7 +126,7 @@ class Pipeline(object):
             columns={'id_x': 'id'}
         )
 
-        relations = dd.read_parquet(
+        relations = pd.read_parquet(
             os.path.join(
                 run_dir,
                 'relations.parquet'
@@ -155,7 +134,7 @@ class Pipeline(object):
             engine='pyarrow'
         )
 
-        sources = dd.read_parquet(
+        sources = pd.read_parquet(
             os.path.join(
                 run_dir,
                 'sources.parquet'
@@ -163,10 +142,15 @@ class Pipeline(object):
             engine='pyarrow'
         ).set_index('id')
 
-        measurements = dd.read_parquet(
-            m_files,
+        measurements = pd.read_parquet(
+            m_files[0],
             engine='pyarrow'
         )
+
+        for m in m_files[1:]:
+            measurements = measurements.append(
+                pd.read_parquet(m)
+            )
 
         measurements = measurements.merge(
             associations, left_on='id', right_on='meas_id',
@@ -179,103 +163,83 @@ class Pipeline(object):
             }
         )
 
-        if not no_counts:
-            measurements = measurements.merge(
-                images[[
-                    'id',
-                    'path',
-                    'noise_path',
-                    'measurements_path'
-                ]], how='left',
-                left_on='image_id',
-                right_on='id'
-            ).drop(
-                'id_y',
-                axis=1
-            ).rename(
-                columns={
-                    'id_x': 'id',
-                    'path': 'image',
-                    'noise_path': 'rms',
-                    'measurements_path': 'selavy'
-                }
-            )
-
-            meta = {
-                'n_detections': 'i',
-                'n_selavy': 'i',
-                'n_forced': 'i',
-                'has_siblings': 'b',
+        measurements = measurements.merge(
+            images[[
+                'id',
+                'path',
+                'noise_path',
+                'measurements_path'
+            ]], how='left',
+            left_on='image_id',
+            right_on='id'
+        ).drop(
+            'id_y',
+            axis=1
+        ).rename(
+            columns={
+                'id_x': 'id',
+                'path': 'image',
+                'noise_path': 'rms',
+                'measurements_path': 'selavy'
             }
+        )
 
-            source_counts = (
-                measurements[[
-                    'source',
-                    'forced',
-                    'has_siblings'
-                ]].groupby('source')
-                .apply(
-                    self._get_source_counts,
-                    meta=meta
-                )
-            )
-
-            sources = sources.merge(
-                source_counts,
-                how='left',
-            )
-
-            relations = relations[relations['relation'] != -1]
-
-            sources = sources.merge(
-                relations.groupby('id').count(),
-                how='left',
-            ).fillna(0).rename(
-                columns={
-                    'relation': 'n_relations'
+        sources = sources.join(
+            measurements[[
+                'source',
+                'forced',
+            ]].groupby('source').count(),
+            how='left'
+        ).rename(columns={
+            'forced': 'n_datapoints'
+        })
+        sources = sources.merge(
+            measurements[[
+                'source',
+                'forced',
+                'has_siblings'
+            ]].groupby('source').agg(
+                {
+                    'forced': sum,
+                    # below works in pandas but not Dask
+                    'has_siblings': any
                 }
-            )
+            ),
+            how='left', right_index=True, left_index=True
+        ).rename(columns={
+            'forced': 'n_forced',
+        })
 
-            sources['n_relations'] = sources[
-                'n_relations'
-            ].astype(int)
+        sources['n_forced'] = sources['n_forced'].astype(int)
+        sources['n_datapoints'] = sources['n_datapoints'].astype(int)
 
-        if not use_dask:
-            images = images.compute(
-                scheduler='processes',
-                n_workers=n_workers
-            )
-            associations = associations.compute(
-                scheduler='processes',
-                n_workers=n_workers
-            )
-            skyregions = skyregions.compute(
-                scheduler='processes',
-                n_workers=n_workers
-            )
-            relations = relations.compute(
-                scheduler='processes',
-                n_workers=n_workers
-            )
-            measurements = measurements.compute(
-                scheduler='processes',
-                n_workers=n_workers
-            )
-            sources = sources.compute(
-                scheduler='processes',
-                n_workers=n_workers
-            )
+        sources['n_selavy'] = (
+            sources['n_datapoints'] - sources['n_forced']
+        )
+
+        relations = relations[relations['relation'] != -1]
+
+        sources = sources.merge(
+            relations.groupby('id').count(),
+            how='left', left_index=True, right_index=True
+        ).fillna(0).rename(
+            columns={
+                'relation': 'n_relations'
+            }
+        )
+
+        sources['n_relations'] = sources[
+            'n_relations'
+        ].astype(int)
 
         piperun = PipeAnalysis(
             test="no",
             name=runname,
-            associations=associations,
             images=images,
             skyregions=skyregions,
             relations=relations,
             sources=sources,
             measurements=measurements,
-            dask=use_dask
         )
 
         return piperun
@@ -284,19 +248,17 @@ class Pipeline(object):
 class PipeRun(object):
     """An individual pipeline run"""
     def __init__(
-        self, name, associations, images,
+        self, name, images,
         skyregions, relations, sources,
-        measurements, dask, n_workers=cpu_count() - 1
+        measurements, n_workers=cpu_count() - 1
     ):
         super(PipeRun, self).__init__()
         self.name = name
-        self.associations = associations
         self.images = images
         self.skyregions = skyregions
         self.sources = sources
         self.measurements = measurements
         self.relations = relations
-        self.dask = dask
         self.n_workers = n_workers
 
     def get_source(self, id, field=None, stokes='I', outdir='.'):
@@ -304,12 +266,6 @@ class PipeRun(object):
         measurements = self.measurements.groupby(
             'source'
         ).get_group(id)
-
-        if self.dask:
-            measurements = measurements.compute(
-                scheduler='processes',
-                n_workers=self.n_workers
-            )
 
         measurements = measurements.rename(
             columns={
@@ -321,7 +277,10 @@ class PipeRun(object):
 
         s = self.sources.loc[id]
 
-        num_measurements = s['n_detections']
+        if 'n_datapoints' in measurements.columns:
+            num_measurements = s['n_datapoints']
+        else:
+            num_measurements = measurements.shape[0]
 
         source_coord = SkyCoord(
             s['wavg_ra'],
@@ -409,13 +368,6 @@ class PipeRun(object):
             }
         )
 
-        # we need to add a column so if dasked we need to undask it
-        if self.dask:
-            planets_df = planets_df.compute(
-                scheduler='processes',
-                n_workers=self.n_workers
-            )
-
         # Split off a sun and moon df so we can check more times
         sun_moon_df = planets_df.copy()
         ap.remove('sun')
@@ -480,16 +432,104 @@ class PipeRun(object):
 class PipeAnalysis(PipeRun):
     """docstring for PipeAnalysis"""
     def __init__(
-        self, test, name, associations, images,
+        self, test, name, images,
         skyregions, relations, sources,
-        measurements, dask, n_workers=cpu_count() - 1
+        measurements, n_workers=cpu_count() - 1
     ):
         super().__init__(
-            name, associations, images,
+            name, images,
             skyregions, relations, sources,
-            measurements, dask, n_workers
+            measurements, n_workers
         )
         self.test = test
+
+    def _get_source_two_epochs(self, group):
+        image_ids = self.images['id'].tolist()
+
+        combs = combinations(
+            image_ids, 2
+        )
+
+        measurements_images = {}
+        for i in image_ids:
+            measurements_images[i] = self.measurements[[
+                'image_id',
+                'source',
+                'id',
+                'flux_peak',
+                'flux_peak_err',
+                'flux_int',
+                'flux_int_err',
+                'has_siblings',
+                'forced'
+            ]].loc[
+                self.measurements['image_id'] == i
+            ]
+
+        pairs = {}
+
+        for i, c in enumerate(combs):
+            img_1 = c[0]
+            img_2 = c[1]
+
+            pair_key = i+1
+
+            pairs["{}_{}".format(
+                img_1, img_2
+            )] = pair_key
+
+            first_set = measurements_images[img_1]
+            second_set = measurements_images[img_2]
+
+            first_set = first_set.merge(second_set, on='source')
+
+            first_set['pair'] = pair_key
+            first_set['forced_count'] = first_set[
+                ['forced_x', 'forced_y']
+            ].sum(axis=1)
+            first_set['siblings_count'] = first_set[
+                ['has_siblings_x', 'has_siblings_y']
+            ].sum(axis=1)
+
+            if i == 0:
+                self.two_epoch_df = first_set
+            else:
+                self.two_epoch_df = self.two_epoch_df.append(first_set)
+
+        return pairs
+
+    def _calculate_metrics(self, use_int_flux=False):
+
+        if use_int_flux:
+            flux = 'int'
+        else:
+            flux = 'peak'
+
+        flux_x_label = "flux_{}_x".format(flux)
+        flux_err_x_label = "flux_{}_err_x".format(flux)
+        flux_y_label = "flux_{}_y".format(flux)
+        flux_err_y_label = "flux_{}_err_y".format(flux)
+
+        self.two_epoch_df["Vs"] = np.abs(
+            (self.two_epoch_df[flux_x_label] - self.two_epoch_df[flux_y_label])
+            / np.hypot(
+                self.two_epoch_df[flux_err_x_label],
+                self.two_epoch_df[flux_err_y_label]
+            )
+        )
+
+        self.two_epoch_df["m"] = np.abs(
+            (self.two_epoch_df[flux_x_label] - self.two_epoch_df[flux_y_label]) /
+            ((self.two_epoch_df[flux_x_label] + self.two_epoch_df[flux_y_label]) / 2.)
+        )
+
+    def two_epoch_search(self, v, m, use_int_flux=False):
+
+        self.pairs = self._get_two_epoch_df()
+
+        self._calculate_metrics(use_int_flux=use_int_flux)
+
+        return pairs
 
 
 def plot_eta_v(
