@@ -295,10 +295,7 @@ class PipeRun(object):
 
         s = self.sources.loc[id]
 
-        if 'n_datapoints' in measurements.columns:
-            num_measurements = s['n_datapoints']
-        else:
-            num_measurements = measurements.shape[0]
+        num_measurements = s['n_datapoints']
 
         source_coord = SkyCoord(
             s['wavg_ra'],
