@@ -132,7 +132,7 @@ class Pipeline(object):
             'id_y', axis=1
         ).rename(
             columns={'id_x': 'id'}
-        ).merge( # second merge for band
+        ).merge(  # second merge for band
             bands[['id', 'frequency', 'bandwidth']],
             how='left',
             left_on='band_id',
@@ -526,7 +526,10 @@ class PipeAnalysis(PipeRun):
         flux_err_y_label = "flux_{}_err_y".format(flux)
 
         self.two_epoch_df["Vs"] = np.abs(
-            (self.two_epoch_df[flux_x_label] - self.two_epoch_df[flux_y_label])
+            (
+                self.two_epoch_df[flux_x_label]
+                - self.two_epoch_df[flux_y_label]
+            )
             / np.hypot(
                 self.two_epoch_df[flux_err_x_label],
                 self.two_epoch_df[flux_err_y_label]
@@ -534,8 +537,14 @@ class PipeAnalysis(PipeRun):
         )
 
         self.two_epoch_df["m"] = np.abs(
-            (self.two_epoch_df[flux_x_label] - self.two_epoch_df[flux_y_label]) /
-            ((self.two_epoch_df[flux_x_label] + self.two_epoch_df[flux_y_label]) / 2.)
+            (
+                self.two_epoch_df[flux_x_label]
+                - self.two_epoch_df[flux_y_label]
+            )
+            / (
+                (self.two_epoch_df[flux_x_label]
+                + self.two_epoch_df[flux_y_label]
+            ) / 2.)
         )
 
     def two_epoch_search(self, v, m, use_int_flux=False):
