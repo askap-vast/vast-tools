@@ -111,6 +111,14 @@ class Pipeline(object):
             engine='pyarrow'
         )
 
+        bands = pd.read_parquet(
+            os.path.join(
+                run_dir,
+                'bands.parquet'
+            ),
+            engine='pyarrow'
+        )
+
         images = images.merge(
             skyregions[[
                 'id',
@@ -119,6 +127,15 @@ class Pipeline(object):
                 'xtr_radius'
             ]], how='left',
             left_on='skyreg_id',
+            right_on='id'
+        ).drop(
+            'id_y', axis=1
+        ).rename(
+            columns={'id_x': 'id'}
+        ).merge( # second merge for band
+            bands[['id', 'frequency', 'bandwidth']],
+            how='left',
+            left_on='band_id',
             right_on='id'
         ).drop(
             'id_y', axis=1
@@ -168,7 +185,8 @@ class Pipeline(object):
                 'id',
                 'path',
                 'noise_path',
-                'measurements_path'
+                'measurements_path',
+                'frequency'
             ]], how='left',
             left_on='image_id',
             right_on='id'
@@ -217,14 +235,14 @@ class Pipeline(object):
             sources['n_datapoints'] - sources['n_forced']
         )
 
-        relations = relations[relations['relation'] != -1]
+        relations = relations[relations['related_with'] != -1]
 
         sources = sources.merge(
             relations.groupby('id').count(),
             how='left', left_index=True, right_index=True
         ).fillna(0).rename(
             columns={
-                'relation': 'n_relations'
+                'related_with': 'n_relations'
             }
         )
 
