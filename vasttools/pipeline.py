@@ -541,8 +541,8 @@ class PipeAnalysis(PipeRun):
                 self.two_epoch_df[flux_x_label]
                 - self.two_epoch_df[flux_y_label]
             )
-            / (
-                (self.two_epoch_df[flux_x_label]
+            / ((
+                self.two_epoch_df[flux_x_label]
                 + self.two_epoch_df[flux_y_label]
             ) / 2.)
         )
