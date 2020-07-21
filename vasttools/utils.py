@@ -325,6 +325,7 @@ def simbad_search(objects, logger=None):
         )
         return None, None
 
+
 def match_planet_to_field(group):
     planet = group.iloc[0]['planet']
     dates = Time(group['DATEOBS'].tolist())
