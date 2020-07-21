@@ -304,7 +304,11 @@ class PipeRun(object):
         )
 
         source_name = "VAST {}".format(
-            source_coord.to_string("hmsdms")
+            source_coord.to_string(
+                "hmsdms", sep='', precision=1
+            ).replace(
+                " ", ""
+            )[:15]
         )
         source_epochs = range(
             1, num_measurements + 1
