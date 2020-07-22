@@ -686,12 +686,15 @@ class Query:
         '''
         Create cutout centered on a source location
         
-        :param row: 
-        :type row: 
-        :param image: 
-        :type image: 
+        :param row: Row of query catalogue corresponding to the source of interest
+        :type row: `pandas.core.series.Series`
+        :param image: Image to create cutout from
+        :type image: `vasttools.survey.Image`
         :param size: Size of the cutout, defaults to Angle(5.*u.arcmin)
         :type size: `astropy.coordinates.Angle`, optional
+        
+        :returns: Tuple containing cutout data, WCS, image header, associated selavy components and beam information
+        :rtype: tuple
         '''
         
         
@@ -737,6 +740,10 @@ class Query:
         )
 
     def find_sources(self):
+        '''
+        
+        '''
+        
         if self.fields_found is False:
             self.find_fields()
 
@@ -819,6 +826,14 @@ class Query:
         )
 
     def _init_sources(self, group):
+        '''
+        
+        :param group:
+        :type group:
+        
+        :returns: Source of interest
+        :rtype: vasttools.source.Source
+        '''
 
         m = group.iloc[0]
 
@@ -867,6 +882,14 @@ class Query:
         return thesource
 
     def _get_components(self, group):
+        '''
+        
+        :param group:
+        :type group:
+        
+        :returns: 
+        :rtype: `pandas.core.frame.DataFrame`
+        '''
         selavy_file = group.iloc[0]['selavy']
         master = pd.DataFrame()
 
