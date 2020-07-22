@@ -303,7 +303,7 @@ class Query:
         png_percentile=99.9,
         png_zscale=False,
         png_contrast=0.2,
-        png_islands=True,
+        png_no_islands=True,
         png_no_colorbar=False,
         png_crossmatch_overlay=False,
         png_hide_beam=False,
@@ -346,8 +346,8 @@ class Query:
         :type png_zscale: bool, optional
         :param png_contrast: Z-scale constrast, defaults to 0.2
         :type png_contrast: float, optional
-        :param png_islands: , defaults to `True`
-        :type png_islands: bool, optional
+        :param png_no_islands: Don't overlay selavy islands on png postagestamps, defaults to `True`
+        :type png_no_islands: bool, optional
         :param png_no_colorbar: , defaults to `False`
         :type png_no_colorbar: bool, optional
         :param png_crossmatch_overlay: , defaults to `False`
@@ -396,7 +396,7 @@ class Query:
                 percentile=png_percentile,
                 zscale=png_zscale,
                 contrast=png_contrast,
-                no_islands=png_islands,
+                no_islands=png_no_islands,
                 no_colorbar=png_no_colorbar,
                 crossmatch_overlay=png_crossmatch_overlay,
                 hide_beam=png_hide_beam
