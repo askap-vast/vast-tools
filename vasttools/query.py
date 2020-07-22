@@ -348,33 +348,33 @@ class Query:
         :type png_contrast: float, optional
         :param png_no_islands: Don't overlay selavy islands on png postagestamps, defaults to `True`
         :type png_no_islands: bool, optional
-        :param png_no_colorbar: , defaults to `False`
+        :param png_no_colorbar: Don't include colourbar on png output, defaults to `False`
         :type png_no_colorbar: bool, optional
-        :param png_crossmatch_overlay: , defaults to `False`
+        :param png_crossmatch_overlay: Overlay the crossmatch radius on png postagestamps, defaults to `False`
         :type png_crossmatch_overlay: bool, optional
-        :param png_hide_beam: , defaults to `False`
+        :param png_hide_beam: Do not show the beam shape on png postagestamps, defaults to `False`
         :type png_hide_beam: bool, optional
-        :param ann_crossmatch_overlay: , defaults to `False`
+        :param ann_crossmatch_overlay: Include crossmatch radius in ann output, defaults to `False`
         :type ann_crossmatch_overlay: bool, optional
-        :param reg_crossmatch_overlay: , defaults to `False`
+        :param reg_crossmatch_overlay: Include crossmatch radius in reg output, defaults to `False`
         :type reg_crossmatch_overlay: bool, optional
-        :param lc_sigma_thresh: , defaults to 5
+        :param lc_sigma_thresh: Detection threshold (in sigma) for lightcurves, defaults to 5
         :type lc_sigma_thresh: float, optional
-        :param lc_figsize: , defaults to (8, 4)
-        :type lc_figsize: , optional
-        :param lc_min_points: , defaults to 2
-        :type lc_min_points: float, optional
-        :param lc_min_detections: , defaults to 1
-        :type lc_min_detections: float, optional
-        :param lc_mjd: , defaults to `False`
+        :param lc_figsize: Size of lightcurve figure, defaults to (8, 4)
+        :type lc_figsize: tuple, optional
+        :param lc_min_points: Minimum number of source observations required for a lightcurve to be generated, defaults to 2
+        :type lc_min_points: int, optional
+        :param lc_min_detections: Minimum number of source detections required for a lightcurve to be generated, defaults to 1
+        :type lc_min_detections: int, optional
+        :param lc_mjd: Use MJD for lightcurve x-axis, defaults to `False`
         :type lc_mjd: bool, optional
-        :param lc_grid: , defaults to `False`
+        :param lc_grid: Include grid on lightcurve plot, defaults to `False`
         :type lc_grid: bool, optional
-        :param lc_yaxis_start: , defaults to "auto"
+        :param lc_yaxis_start: Start the lightcurve y-axis at 0 ("0") or use the matpotlib default ("auto"). Defaults to "auto"
         :type lc_yaxis_start: str, optional
-        :param lc_peak_flux: , defaults to `True`
+        :param lc_peak_flux: Generate lightcurve using peak flux density rather than integrated flux density, defaults to `True`
         :type lc_peak_flux: bool, optional
-        :param measurements_simple: , defaults to `False`
+        :param measurements_simple: Use simple schema for measurement output, defaults to `False`
         :type measurements_simple: bool, optional
         """
 
