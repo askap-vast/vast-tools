@@ -71,9 +71,35 @@ class Query:
     This is a class representation of various information about a particular
     query including the catalogue of target sources, the Stokes parameter,
     crossmatch radius and output parameters.
-
-    :param args: Arguments namespace
-    :type args: `argparse.Namespace`
+    
+    :param coords: List of coordinates to query, defaults to None
+    :type coords: `astropy.coordinates.sky_coordinate.SkyCoord`, optional
+    :param source_names: List of source names, defaults to []
+    :type source_names: list, optional
+    :param epochs: Comma-separated list of epochs to query. All available epochs can be queried by passsing "all". Defaults to "all"
+    :type epochs: str, optional
+    :param stokes: Stokes parameter to query, defaults to "I"
+    :type stokes: str, optional
+    :param crossmatch_radius: Crossmatch radius in arcsec, defaults to 5.0
+    :type crossmatch_radius: float, optional
+    :param max_sep: Maximum separation of source from beam centre in degrees, defaults to 1.0
+    :type max_sep: float, optional
+    :param use_tiles: Query tiles rather than combined mosaics, defaults to `False`
+    :type use_tiles: bool, optional
+    :param use_islands: Use selavy islands rather than components, defaults to `False`
+    :type use_islands: bool, optional
+    :param base_folder: Path to base folder if using default directory structure, defaults to None
+    :type base_folder: str, optional
+    :param matches_only: Only produce data products for sources with a selavy match, defaults to `False`
+    :type matches_only: bool, optional
+    :param no_rms: Estimate the background RMS around each source, defaults to `False`
+    :type no_rms: bool, optional
+    :param output_dir: Output directory to place all results in, defaults to "."
+    :type output_dir: str, optional
+    :param planets: List of planets to search for, defaults to []
+    :type planets: list, optional
+    :param ncpu: Number of CPUs to use, defaults to 2
+    :type ncpu: float, optional
     '''
 
     def __init__(
@@ -100,7 +126,7 @@ class Query:
             )
         self.ncpu = ncpu
 
-        if coords is None and len(source_names) == 0 and len(planets) == 0:
+        if self.coords is None and len(self.source_names) == 0 and len(self.planets) == 0:
             if self.logger is None:
                 raise ValueError(
                     "No coordinates or source names have been provided!"
@@ -199,7 +225,7 @@ class Query:
         self.cutout_data_got = False
 
     def _validate_settings(self):
-        """Use to check misc details"""
+        '''Use to check misc details'''
 
         if self.settings['tiles'] and self.settings['stokes'].lower() != "i":
             self.logger.critital("Only Stokes I are supported with tiles!")
@@ -221,6 +247,8 @@ class Query:
         return True
 
     def get_all_cutout_data(self):
+        '''Get cutout data'''
+        
         # first get cutout data and selavy sources per image
         # group by image to do this
 
@@ -295,6 +323,59 @@ class Query:
         """
         This function is not intended to be used interactively.
         Script only.
+        
+        :param fits: Create and save fits cutouts, defaults to `True`
+        :type fits: bool, optional
+        :param png: Create and save png postagestamps, defaults to `False`
+        :type png: bool, optional
+        :param ann: Create and save kvis annotation files for all components, defaults to `False`
+        :type ann: bool, optional
+        :param reg: Create and save DS9 annotation files for all components, defaults to `False`
+        :type reg: bool, optional
+        :param lightcurve: Create and save lightcurves for all sources, defaults to `False`
+        :type lightcurve: bool, optional
+        :param measurements: Create and save measurements for all sources, defaults to `False`
+        :type measurements: bool, optional
+        :param fits_outfile: File to save fits cutout to, defaults to None
+        :type fits_outfile: str, optional
+        :param png_selavy: Overlay selavy components onto png postagestamp, defaults to `True`
+        :type png_selavy: bool, optional
+        :param png_percentile: Percentile level for the png normalisation, defaults to 99.9
+        :type png_percentile: float, optional
+        :param png_zscale: Use z-scale normalisation rather than linear, defaults to `False`
+        :type png_zscale: bool, optional
+        :param png_contrast: Z-scale constrast, defaults to 0.2
+        :type png_contrast: float, optional
+        :param png_islands: , defaults to `True`
+        :type png_islands: bool, optional
+        :param png_no_colorbar: , defaults to `False`
+        :type png_no_colorbar: bool, optional
+        :param png_crossmatch_overlay: , defaults to `False`
+        :type png_crossmatch_overlay: bool, optional
+        :param png_hide_beam: , defaults to `False`
+        :type png_hide_beam: bool, optional
+        :param ann_crossmatch_overlay: , defaults to `False`
+        :type ann_crossmatch_overlay: bool, optional
+        :param reg_crossmatch_overlay: , defaults to `False`
+        :type reg_crossmatch_overlay: bool, optional
+        :param lc_sigma_thresh: , defaults to 5
+        :type lc_sigma_thresh: float, optional
+        :param lc_figsize: , defaults to (8, 4)
+        :type lc_figsize: , optional
+        :param lc_min_points: , defaults to 2
+        :type lc_min_points: float, optional
+        :param lc_min_detections: , defaults to 1
+        :type lc_min_detections: float, optional
+        :param lc_mjd: , defaults to `False`
+        :type lc_mjd: bool, optional
+        :param lc_grid: , defaults to `False`
+        :type lc_grid: bool, optional
+        :param lc_yaxis_start: , defaults to "auto"
+        :type lc_yaxis_start: str, optional
+        :param lc_peak_flux: , defaults to `True`
+        :type lc_peak_flux: bool, optional
+        :param measurements_simple: , defaults to `False`
+        :type measurements_simple: bool, optional
         """
 
         if not self.cutout_data_got:
@@ -1131,7 +1212,7 @@ class Query:
         '''
 
         available_epochs = sorted(RELEASED_EPOCHS, key=RELEASED_EPOCHS.get)
-        self.logger.debug("Avaialble epochs: " + str(available_epochs))
+        self.logger.debug("Available epochs: " + str(available_epochs))
 
         # if HOST == HOST_ADA or self.args.find_fields:
         #     available_epochs.insert(0, "0")
