@@ -495,7 +495,7 @@ class Query:
         crossmatch_overlay, hide_beam
     ):
         '''
-        Save all png cutouts
+        Save png cutouts for all available images of the source of interest
         
         :param s: Source of interest
         :type s: `vasttools.Source`
@@ -529,18 +529,49 @@ class Query:
         )
 
     def _save_all_fits_cutouts(self, s):
-
+        '''
+        Save fits cutouts for all available images of the source of interest
+        
+        :param s: Source of interest
+        :type s: `vasttools.Source`
+        '''
         s.save_all_fits_cutouts()
 
     def _save_all_ann(self, s, crossmatch_overlay=False):
+        '''
+        Save kvis annotations for all available images of the source of interest
+        
+        :param s: Source of interest
+        :type s: `vasttools.Source`
+        :param crossmatch_overlay: Include the crossmatch radius, defaults to `False`
+        :type crossmatch_overlay: bool, optional
+        '''
 
         s.save_all_ann(crossmatch_overlay=crossmatch_overlay)
 
     def _save_all_reg(self, s, crossmatch_overlay=False):
+        '''
+        Save DS9 overlays for all available images of the source of interest
+        
+        :param s: Source of interest
+        :type s: `vasttools.Source`
+        :param crossmatch_overlay: Include the crossmatch radius, defaults to `False`
+        :type crossmatch_overlay: bool, optional
+        '''
 
         s.save_all_ann(crossmatch_overlay=crossmatch_overlay)
 
     def _save_all_measurements(self, s, simple=False, outfile=None):
+        '''
+        Save all measurements of the source of interest
+        
+        :param s: Source of interest
+        :type s: `vasttools.Source`
+        :param simple: Only save simple measurement info, defaults to `False`
+        :type simple: bool, optional
+        :param outfile: File to write measurements to, defaults to None
+        :type outfile: str, optional
+        '''
 
         s.write_measurements(simple=simple, outfile=outfile)
 
@@ -558,6 +589,33 @@ class Query:
         lc_save=True,
         lc_outfile=None
     ):
+        '''
+        Plot the lightcurve of the source of interest, and save to file.
+        
+        :param s: Source of interest
+        :type s: `vasttools.Source`
+        :param lc_sigma_thresh: Detection threshold (in sigma) for lightcurves, defaults to 5
+        :type lc_sigma_thresh: float, optional
+        :param lc_figsize: Size of lightcurve figure, defaults to (8, 4)
+        :type lc_figsize: tuple, optional
+        :param lc_min_points: Minimum number of source observations required for a lightcurve to be generated, defaults to 2
+        :type lc_min_points: int, optional
+        :param lc_min_detections: Minimum number of source detections required for a lightcurve to be generated, defaults to 1
+        :type lc_min_detections: int, optional
+        :param lc_mjd: Use MJD for lightcurve x-axis, defaults to `False`
+        :type lc_mjd: bool, optional
+        :param lc_grid: Include grid on lightcurve plot, defaults to `False`
+        :type lc_grid: bool, optional
+        :param lc_yaxis_start: Start the lightcurve y-axis at 0 ("0") or use the matpotlib default ("auto"). Defaults to "auto"
+        :type lc_yaxis_start: str, optional
+        :param lc_peak_flux: Generate lightcurve using peak flux density rather than integrated flux density, defaults to `True`
+        :type lc_peak_flux: bool, optional
+        :param lc_save: Save the lightcurve plot to file, defaults to `True`
+        :type lc_save: bool, optional
+        :param lc_outfile: File to save the lightcurve plot to, defaults to None
+        :type lc_outfile: str, optional
+        '''
+        
         s.plot_lightcurve(
             sigma_thresh=lc_sigma_thresh,
             figsize=lc_figsize,
@@ -572,6 +630,13 @@ class Query:
         )
 
     def _add_source_cutout_data(self, s):
+        '''
+        Add cutout data to the source of interest
+        
+        :param s: Source of interest
+        :type s: `vasttools.Source`
+        '''
+        
         s_name = s.name
         s_cutout = self.sources_df[[
             'data',
@@ -618,7 +683,19 @@ class Query:
         return cutout_data
 
     def _get_cutout(self, row, image, size=Angle(5. * u.arcmin)):
-
+        '''
+        Create cutout centered on a source location
+        
+        :param row: 
+        :type row: 
+        :param image: 
+        :type image: 
+        :param size: Size of the cutout, defaults to Angle(5.*u.arcmin)
+        :type size: `astropy.coordinates.Angle`, optional
+        '''
+        
+        
+        
         cutout = Cutout2D(
             image.data,
             position=row.skycoord,
