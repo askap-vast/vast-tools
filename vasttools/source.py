@@ -26,6 +26,9 @@ from astropy.nddata.utils import Cutout2D
 from astropy import units as u
 from astropy.time import Time
 from astropy.timeseries import TimeSeries
+from astroquery.simbad import Simbad
+from astroquery.ned import Ned
+from astroquery.casda import Casda
 from astropy.stats import sigma_clipped_stats
 from astroquery.skyview import SkyView
 from astropy.wcs import WCS
@@ -85,13 +88,14 @@ class Source:
         image_type="COMBINED",
         islands=False,
         outdir=".",
-        planet=False
+        planet=False,
+        pipeline=False
     ):
         '''Constructor method
         '''
         self.logger = logging.getLogger('vasttools.source.Source')
         self.logger.debug('Created Source instance')
-
+        self.pipeline = pipeline
         self.coord = coord
         self.name = name
         self.epochs = epochs
@@ -114,13 +118,26 @@ class Source:
         self.base_folder = base_folder
         self.image_type = image_type
 
-        self.detections = self.measurements[
-            self.measurements.detection == True
-        ].shape[0]
+        if self.pipeline:
+            self.detections = self.measurements[
+                self.measurements.forced == False
+            ].shape[0]
 
-        self.limits = self.measurements[
-            self.measurements.detection == False
-        ].shape[0]
+            self.forced = self.measurements[
+                self.measurements.forced == False
+            ].shape[0]
+
+            self.limits = None
+        else:
+            self.detections = self.measurements[
+                self.measurements.detection == True
+            ].shape[0]
+
+            self.limits = self.measurements[
+                self.measurements.detection == False
+            ].shape[0]
+
+            self.forced = None
 
         self._cutouts_got = False
 
@@ -163,9 +180,10 @@ class Source:
             )
 
         # drop any empty values
-        measurements_to_write = measurements_to_write[
-            measurements_to_write['rms_image'] != -99
-        ]
+        if not self.pipeline:
+            measurements_to_write = measurements_to_write[
+                measurements_to_write['rms_image'] != -99
+            ]
 
         if measurements_to_write.empty:
             self.logger.warning(
@@ -229,9 +247,11 @@ class Source:
             return
 
         # remove empty values
-        measurements = self.measurements[
-            self.measurements['rms_image'] != -99
-        ]
+        measurements = self.measurements
+        if not self.pipeline:
+            measurements = self.measurements[
+                self.measurements['rms_image'] != -99
+            ]
 
         if measurements.empty:
             self.logger.warning(
@@ -260,19 +280,35 @@ class Source:
         ax.set_ylabel(label)
 
         self.logger.debug("Plotting upper limit")
-        upper_lim_mask = measurements.detection == False
+        if self.pipeline:
+            upper_lim_mask = measurements.forced == True
+        else:
+            upper_lim_mask = measurements.detection == False
         upper_lims = measurements[
             upper_lim_mask
         ]
-
+        if self.pipeline:
+            if peak_flux:
+                value_col = 'flux_peak'
+                err_value_col = 'flux_peak_err'
+            else:
+                value_col = 'flux_int'
+                err_value_col = 'flux_int_err'
+            marker = "D"
+            uplims = False
+            sigma_thresh = 1.0
+        else:
+            value_col = err_value_col = 'rms_image'
+            marker = "_"
+            uplims = True
         upperlim_points = ax.errorbar(
             plot_dates[upper_lim_mask],
             sigma_thresh *
-            upper_lims['rms_image'],
-            yerr=upper_lims['rms_image'],
-            uplims=True,
+            upper_lims[value_col],
+            yerr=upper_lims[err_value_col],
+            uplims=uplims,
             lolims=False,
-            marker='_',
+            marker=marker,
             c='k',
             linestyle="none")
 
@@ -281,10 +317,17 @@ class Source:
             ~upper_lim_mask
         ]
 
+        if self.pipeline:
+            if peak_flux:
+                err_value_col = 'flux_peak_err'
+            else:
+                err_value_col = 'flux_int_err'
+        else:
+            err_value_col = 'rms_image'
         detection_points = ax.errorbar(
             plot_dates[~upper_lim_mask],
             detections[flux_col],
-            yerr=detections['rms_image'],
+            yerr=detections[err_value_col],
             marker='o',
             c='k',
             linestyle="none")
@@ -292,7 +335,7 @@ class Source:
         if yaxis_start == "0":
             max_y = np.nanmax(
                 detections[flux_col].tolist() +
-                (sigma_thresh * upper_lims['rms_image']).tolist()
+                (sigma_thresh * upper_lims[err_value_col]).tolist()
             )
             ax.set_ylim(
                 bottom=0,
@@ -402,7 +445,13 @@ class Source:
 
     def _get_cutout(self, row, size=Angle(5. * u.arcmin)):
 
-        image = Image(row.field, row.epoch, self.stokes, self.base_folder)
+        if self.pipeline:
+            image = Image(
+                row.field, row.epoch, self.stokes, self.base_folder,
+                path=row.image, rmspath=row.rms
+            )
+        else:
+            image = Image(row.field, row.epoch, self.stokes, self.base_folder)
 
         cutout = Cutout2D(
             image.data,
@@ -411,18 +460,42 @@ class Source:
             wcs=image.wcs
         )
 
-        selavy_components = pd.read_fwf(row.selavy, skiprows=[1, ], usecols=[
-            'island_id',
-            'ra_deg_cont',
-            'dec_deg_cont',
-            'maj_axis',
-            'min_axis',
-            'pos_ang'
-        ])
+        if self.pipeline:
+            selavy_components = pd.read_parquet(
+                row.selavy,
+                columns=[
+                    'island_id',
+                    'ra',
+                    'dec',
+                    'bmaj',
+                    'bmin',
+                    'pa'
+                ]
+            ).rename(
+                columns={
+                    'ra': 'ra_deg_cont',
+                    'dec': 'dec_deg_cont',
+                    'bmaj': 'maj_axis',
+                    'bmin': 'min_axis',
+                    'pa': 'pos_ang'
+                }
+            )
+        else:
+            selavy_components = pd.read_fwf(
+                row.selavy, skiprows=[1, ], usecols=[
+                    'island_id',
+                    'ra_deg_cont',
+                    'dec_deg_cont',
+                    'maj_axis',
+                    'min_axis',
+                    'pos_ang'
+                ]
+            )
 
         selavy_coords = SkyCoord(
-            selavy_components.ra_deg_cont.values * u.deg,
-            selavy_components.dec_deg_cont.values * u.deg
+            selavy_components.ra_deg_cont.values,
+            selavy_components.dec_deg_cont.values,
+            unit=(u.deg, u.deg)
         )
 
         selavy_components = filter_selavy_components(
@@ -525,6 +598,19 @@ class Source:
 
         return
 
+    def _get_save_name(self, epoch, ext):
+        if self.pipeline:
+            name_epoch = epoch
+        else:
+            name_epoch = RELEASED_EPOCHS[epoch]
+        outfile = "{}_EPOCH{}{}".format(
+            self.name.replace(" ", "_"),
+            name_epoch,
+            ext
+        )
+        return outfile
+
+
     def save_fits_cutout(self, epoch, outfile=None, size=None, force=False):
         if (self._cutouts_got is False) or (force):
             self.get_cutout_data(size)
@@ -537,10 +623,7 @@ class Source:
             return
 
         if outfile is None:
-            outfile = "{}_EPOCH{}.fits".format(
-                self.name.replace(" ", "_"),
-                RELEASED_EPOCHS[epoch]
-            )
+            outfile = self._get_save_name(epoch, ".fits")
         if self.outdir != ".":
             outfile = os.path.join(
                 self.outdir,
@@ -725,10 +808,7 @@ class Source:
 
         if save:
             if outfile is None:
-                outfile = "{}_EPOCH{}.png".format(
-                    self.name.replace(" ", "_"),
-                    RELEASED_EPOCHS[epoch]
-                )
+                outfile = self._get_save_name(epoch, ".png")
 
             if self.outdir != ".":
                 outfile = os.path.join(
@@ -816,10 +896,7 @@ class Source:
             return
 
         if outfile is None:
-            outfile = "{}_EPOCH{}.png".format(
-                self.name.replace(" ", "_"),
-                RELEASED_EPOCHS[epoch]
-            )
+            outfile = self._get_save_name(epoch, ".png")
 
         if self.outdir != ".":
             outfile = os.path.join(
@@ -879,9 +956,14 @@ class Source:
         )
 
         if title is None:
-            title = "VAST Epoch {} '{}' {}".format(
-                epoch, self.name, survey
-            )
+            if self.pipeline:
+                title = "'{}' Epoch {} {}".format(
+                    self.name, epoch, survey
+                )
+            else:
+                title = "VAST Epoch {} '{}' {}".format(
+                    epoch, self.name, survey
+                )
 
         ax.set_title(title)
 
@@ -971,10 +1053,7 @@ class Source:
             return
 
         if outfile is None:
-            outfile = "{}_EPOCH{}.png".format(
-                self.name.replace(" ", "_"),
-                RELEASED_EPOCHS[epoch]
-            )
+            outfile = self._get_save_name(epoch, ".png")
 
         if self.outdir != ".":
             outfile = os.path.join(
@@ -1192,10 +1271,7 @@ class Source:
             self.get_cutout_data(size)
 
         if outfile is None:
-            outfile = "{}_EPOCH{}.ann".format(
-                self.name.replace(" ", "_"),
-                RELEASED_EPOCHS[epoch]
-            )
+            outfile = self._get_save_name(epoch, ".ann")
         if self.outdir != ".":
             outfile = os.path.join(
                 self.outdir,
@@ -1275,10 +1351,7 @@ class Source:
             self.get_cutout_data(size)
 
         if outfile is None:
-            outfile = "{}_EPOCH{}.reg".format(
-                self.name.replace(" ", "_"),
-                RELEASED_EPOCHS[epoch]
-            )
+            outfile = self._get_save_name(epoch, ".reg")
         if self.outdir != ".":
             outfile = os.path.join(
                 self.outdir,
@@ -1443,3 +1516,73 @@ class Source:
         plots.append([[x-pixel_buff, x-pixel_buff-length], [y, y]])
 
         return plots
+
+    def simbad_search(self, radius=Angle(20. * u.arcsec)):
+        """
+        Searches SIMBAD for object coordinates and returns matches.
+        """
+
+        Simbad.add_votable_fields('ra(d)', 'dec(d)')
+
+        try:
+            result_table = Simbad.query_region(self.coord, radius=radius)
+            if result_table is None:
+                return None
+
+            return result_table
+
+        except Exception as e:
+            raise ValueError(
+                "Error in performing the SIMBAD region search! Error: %s", e
+            )
+            return None
+
+    def ned_search(self, radius=Angle(20. * u.arcsec)):
+        """
+        Searches NED for object coordinates and returns matches.
+        """
+
+        try:
+            result_table = Ned.query_region(self.coord, radius=radius)
+
+            return result_table
+
+        except Exception as e:
+            raise ValueError(
+                "Error in performing the NED region search! Error: %s", e
+            )
+            return None
+
+    def casda_search(
+        self,
+        radius=Angle(20. * u.arcsec),
+        filter_out_unreleased=False,
+        show_all=False
+    ):
+        """
+        Searches NED for object coordinates and returns matches.
+        """
+        try:
+            result_table = Casda.query_region(self.coord, radius=radius)
+
+            if filter_out_unreleased:
+                result_table = Casda.filter_out_unreleased(result_table)
+            if not show_all:
+                mask = result_table[
+                    'dataproduct_subtype'
+                ] == 'cont.restored.t0'
+                result_table = result_table[mask]
+                mask = [(
+                    ("image.i" in i) & ("taylor.0.res" in i)
+                ) for i in result_table[
+                    'filename'
+                ]]
+                result_table = result_table[mask]
+
+            return result_table
+
+        except Exception as e:
+            raise ValueError(
+                "Error in performing the NED region search! Error: %s", e
+            )
+            return None

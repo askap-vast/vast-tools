@@ -235,7 +235,8 @@ class Image:
     '''
 
     def __init__(self, field, epoch, stokes, base_folder,
-                 tiles=False, sbid=None):
+                 tiles=False, sbid=None, path=None, rmspath=None,
+                 rms_header=None):
         '''Constructor method
         '''
 
@@ -246,32 +247,36 @@ class Image:
         self.field = field
         self.epoch = epoch
         self.stokes = stokes
-        self.rms_header = None
+        self.rms_header = rms_header
+        self.path = path
+        self.rmspath = rmspath
 
+        if self.path is None:
+            if tiles:
+                img_folder = os.path.join(
+                    base_folder,
+                    "EPOCH{}".format(RELEASED_EPOCHS[epoch]),
+                    "TILES",
+                    "STOKES{}_IMAGES".format(stokes.upper())
+                )
+                img_template = (
+                    'image.{}.SB{}.cont.{}.linmos.taylor.0.restored.fits'
+                )
+                self.imgname = img_template.format(stokes.lower(), sbid, field)
+            else:
+                img_folder = os.path.join(
+                    base_folder,
+                    "EPOCH{}".format(RELEASED_EPOCHS[epoch]),
+                    "COMBINED",
+                    "STOKES{}_IMAGES".format(stokes.upper())
+                )
+                self.imgname = '{}.EPOCH{}.{}.fits'.format(
+                    field, RELEASED_EPOCHS[epoch], stokes.upper()
+                )
 
-        if tiles:
-            img_folder = os.path.join(
-                base_folder,
-                "EPOCH{}".format(RELEASED_EPOCHS[epoch]),
-                "TILES",
-                "STOKES{}_IMAGES".format(stokes.upper())
-            )
-            img_template = (
-                'image.{}.SB{}.cont.{}.linmos.taylor.0.restored.fits'
-            )
-            self.imgname = img_template.format(stokes.lower(), sbid, field)
+            self.imgpath = os.path.join(img_folder, self.imgname)
         else:
-            img_folder = os.path.join(
-                base_folder,
-                "EPOCH{}".format(RELEASED_EPOCHS[epoch]),
-                "COMBINED",
-                "STOKES{}_IMAGES".format(stokes.upper())
-            )
-            self.imgname = '{}.EPOCH{}.{}.fits'.format(
-                field, RELEASED_EPOCHS[epoch], stokes.upper()
-            )
-
-        self.imgpath = os.path.join(img_folder, self.imgname)
+            self.imgpath = path
 
         if os.path.isfile(self.imgpath):
             self.image_fail = False
@@ -302,14 +307,15 @@ class Image:
         '''
         Load the noisemap corresponding to the image
         '''
-        if self.epoch == "0":
-            self.rmsname = self.imgname.replace(
-                '.fits', '.taylor.0.noise.fits')
-        else:
-            self.rmsname = self.imgname.replace('.fits', '_rms.fits')
-            self.rmspath = self.imgpath.replace(
-                "_IMAGES", "_RMSMAPS"
-            ).replace('.fits', '_rms.fits')
+        if self.rmspath is None:
+            if self.epoch == "0":
+                self.rmsname = self.imgname.replace(
+                    '.fits', '.taylor.0.noise.fits')
+            else:
+                self.rmsname = self.imgname.replace('.fits', '_rms.fits')
+                self.rmspath = self.imgpath.replace(
+                    "_IMAGES", "_RMSMAPS"
+                ).replace('.fits', '_rms.fits')
 
         if os.path.isfile(self.rmspath):
             self.rms_fail = False
