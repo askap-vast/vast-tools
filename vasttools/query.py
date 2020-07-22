@@ -494,6 +494,28 @@ class Query:
         zscale, contrast, no_islands, no_colorbar,
         crossmatch_overlay, hide_beam
     ):
+        '''
+        Save all png cutouts
+        
+        :param s: Source of interest
+        :type s: `vasttools.Source`
+        :param selavy: Overlay selavy components onto png postagestamp
+        :type selavy: bool
+        :param percentile: Percentile level for the png normalisation
+        :type percentile: float
+        :param zscale: Use z-scale normalisation rather than linear
+        :type zscale: bool
+        :param contrast: Z-scale constrast
+        :type contrast: float
+        :param no_islands: Don't overlay selavy islands
+        :type no_islands: bool
+        :param no_colorbar: Don't use a colourbar
+        :type no_colorbar: bool
+        :param crossmatch_overlay: Overlay crossmatch radius 
+        :type crossmatch_overlay: bool
+        :param hide_beam: Don't show the beam shape
+        :type hide_beam: bool
+        '''
 
         s.save_all_png_cutouts(
             selavy=selavy,
