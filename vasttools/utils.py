@@ -354,3 +354,7 @@ def match_planet_to_field(group):
     ]
 
     return group
+
+
+def check_racs_exists(base_dir):
+    return os.path.isdir(os.path.join(base_dir, "EPOCH00"))

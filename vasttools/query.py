@@ -5,7 +5,8 @@ from vasttools.survey import (
 )
 from vasttools.source import Source
 from vasttools.utils import (
-    filter_selavy_components, simbad_search, match_planet_to_field
+    filter_selavy_components, simbad_search, match_planet_to_field,
+    check_racs_exists
 )
 
 import sys
@@ -147,6 +148,15 @@ class Query:
 
         self.settings = {}
 
+        if base_folder is None:
+            # We can hardcode in paths we control
+            if HOST == HOST_ADA:
+                self.base_folder = ADA_BASE_DIR
+            elif HOST == HOST_NIMBUS:
+                self.base_folder = NIMBUS_BASE_DIR
+        else:
+            self.base_folder = base_folder
+
         self.settings['epochs'] = self.get_epochs(epochs)
         self.settings['stokes'] = self.get_stokes(stokes)
 
@@ -163,14 +173,6 @@ class Query:
 
         # Going to need this so load it now
         self._epoch_fields = get_fields_per_epoch_info()
-
-        if base_folder is None:
-            if HOST == HOST_ADA:
-                self.base_folder = ADA_BASE_DIR
-            elif HOST == HOST_NIMBUS:
-                self.base_folder = NIMBUS_BASE_DIR
-        else:
-            self.base_folder = base_folder
 
         if not os.path.isdir(self.base_folder):
             self.logger.critical(
@@ -1127,27 +1129,37 @@ class Query:
         available_epochs = sorted(RELEASED_EPOCHS, key=RELEASED_EPOCHS.get)
         self.logger.debug("Avaialble epochs: " + str(available_epochs))
 
-        # if HOST == HOST_ADA or self.args.find_fields:
-        #     available_epochs.insert(0, "0")
-
         if req_epochs == 'all':
-            return available_epochs
-
-        epochs = []
-        for epoch in req_epochs.split(','):
-            if epoch in available_epochs:
-                epochs.append(epoch)
-            else:
-                if self.logger is None:
-                    self.logger.info(
-                        "Epoch {} is not available. Ignoring.".format(epoch)
-                    )
+            epochs = available_epochs
+        else:
+            epochs = []
+            for epoch in req_epochs.split(','):
+                if epoch in available_epochs:
+                    epochs.append(epoch)
                 else:
-                    warnings.warn(
-                        "Removing Epoch {} as it"
-                        " is not a valid epoch.".format(epoch),
-                        stacklevel=2
-                    )
+                    if self.logger is None:
+                        self.logger.info(
+                            "Epoch {} is not available. Ignoring.".format(epoch)
+                        )
+                    else:
+                        warnings.warn(
+                            "Removing Epoch {} as it"
+                            " is not a valid epoch.".format(epoch),
+                            stacklevel=2
+                        )
+
+        # RACS check
+        if '0' in epochs:
+            if not check_racs_exists(self.base_folder):
+                self.logger.warning('RACS EPOCH00 directory not found!')
+                self.logger.warning('Removing RACS from requested epochs.')
+                epochs.remove('0')
+            else:
+                self.logger.warning('RACS data selected!')
+                self.logger.warning(
+                    'Remember RACS data supplied by VAST is not final '
+                    'and results may vary.'
+                )
 
         if len(epochs) == 0:
             self.logger.critical("No requested epochs are available")
@@ -1165,9 +1177,12 @@ class Query:
             raise ValueError(
                 "Stokes {} is not valid!".format(req_stokes.upper())
             )
+        elif '0' in self.epochs and req_stokes.upper() == 'V':
+            raise ValueError(
+                "Stokes V is not supported with RACS!"
+            )
         else:
             return req_stokes.upper()
-
 
     def set_outfile_prefix(self):
         '''
@@ -1220,33 +1235,18 @@ class EpochInfo:
         self.pilot_epoch = pilot_epoch
         self.stokes_param = stokes
 
-        racsv = False
-
         if pilot_epoch == "0":
             survey = "racs"
-            epoch_str = "RACS"
-            if not BASE_FOLDER:
-                survey_folder = "RACS/release/racs_v3/"
-            else:
-                survey_folder = "racs_v3"
-
-            if stokes_param != "I":
-                self.logger.critical(
-                    "Stokes {} is currently unavailable for RACS".format(
-                        self.stokes_param))
-                sys.exit()
-
         else:
             survey = "vast_pilot"
-            epoch_str = "EPOCH{}".format(RELEASED_EPOCHS[pilot_epoch])
-            survey_folder = os.path.join(
-                base_folder, "{}".format(epoch_str)
-            )
+        epoch_str = "EPOCH{}".format(RELEASED_EPOCHS[pilot_epoch])
+        survey_folder = os.path.join(
+            base_folder, "{}".format(epoch_str)
+        )
 
         self.survey = survey
         self.epoch_str = epoch_str
         self.survey_folder = survey_folder
-        self.racsv = racsv
 
         if self.use_tiles:
             image_dir = "TILES"

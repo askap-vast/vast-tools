@@ -69,7 +69,7 @@ def get_askap_observing_location():
 
 
 RELEASED_EPOCHS = {
-    "0": "00",
+    "0": "00", # RACS, needs check that it exists, not part of VAST release
     "1": "01",
     "2": "02",
     "3x": "03x",
