@@ -1179,7 +1179,7 @@ class Query:
             raise ValueError(
                 "Stokes {} is not valid!".format(req_stokes.upper())
             )
-        elif '0' in self.epochs and req_stokes.upper() == 'V':
+        elif '0' in self.settings['epochs'] and req_stokes.upper() == 'V':
             raise ValueError(
                 "Stokes V is not supported with RACS!"
             )
@@ -1361,7 +1361,7 @@ class FieldQuery:
         :rtype: dict.
         '''
         epoch_beams = {}
-        for e in self.epochs:
+        for e in self.settings['epochs']:
             epoch_cut = self.field_info[self.field_info.EPOCH == e]
             epoch_beams[e] = Beams(
                 epoch_cut.BMAJ.values * u.arcsec,
