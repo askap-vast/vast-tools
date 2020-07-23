@@ -299,7 +299,9 @@ class Image:
             self.image_fail = True
             self.logger.error(
                 "{} does not exist! Unable to create postagestamps".format(
-                    self.imgpath))
+                    self.imgpath
+                )
+            )
             return
 
         with fits.open(self.imgpath) as hdul:
