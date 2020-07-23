@@ -1139,7 +1139,9 @@ class Query:
                 else:
                     if self.logger is None:
                         self.logger.info(
-                            "Epoch {} is not available. Ignoring.".format(epoch)
+                            "Epoch {} is not available. Ignoring.".format(
+                                epoch
+                            )
                         )
                     else:
                         warnings.warn(
