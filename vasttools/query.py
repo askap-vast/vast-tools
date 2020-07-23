@@ -1,7 +1,7 @@
 from vasttools.survey import Fields, Image
 from vasttools.survey import (
     RELEASED_EPOCHS, FIELD_FILES, ADA_BASE_DIR, NIMBUS_BASE_DIR,
-    EPOCH_FIELDS, FIELD_CENTRES, OBSERVING_LOCATION, ALLOWED_PLANETS
+    FIELD_CENTRES, ALLOWED_PLANETS, get_fields_per_epoch_info
 )
 from vasttools.source import Source
 from vasttools.utils import (
@@ -160,6 +160,9 @@ class Query:
         self.settings['no_rms'] = no_rms
 
         self.settings['output_dir'] = output_dir
+
+        # Going to need this so load it now
+        self._epoch_fields = get_fields_per_epoch_info()
 
         if base_folder is None:
             if HOST == HOST_ADA:
@@ -989,8 +992,11 @@ class Query:
         dateobs = []
 
         for i in self.settings['epochs']:
-            epoch_fields = EPOCH_FIELDS[i].keys()
-            available_fields = [f for f in fields if f in epoch_fields]
+            available_fields = [
+                f for f in fields if f in self._epoch_fields.loc[
+                    i
+                ].index.to_list()
+            ]
 
             if len(available_fields) == 0:
                 continue
@@ -1014,8 +1020,8 @@ class Query:
                 field = available_fields[min_field_index]
 
             epochs.append(i)
-            sbid = EPOCH_FIELDS[i][field]["SBID"]
-            date = EPOCH_FIELDS[i][field]["DATEOBS"]
+            sbid = self._epoch_fields.loc[i, field]["SBID"]
+            date = self._epoch_fields.loc[i, field]["DATEOBS"]
             sbids.append(sbid)
             dateobs.append(date)
             field_per_epochs.append([i, field, sbid, date])
@@ -1025,26 +1031,14 @@ class Query:
     def _get_planets_epoch_df_template(self):
         epochs = self.settings['epochs']
 
-        planet_epoch_fields = pd.DataFrame.from_dict(
-            EPOCH_FIELDS[epochs[0]], orient='index'
-        ).reset_index().rename(columns={'index': 'FIELD_NAME'})
-
-        planet_epoch_fields['epoch'] = epochs[0]
-
-        for e in epochs[1:]:
-            temp = pd.DataFrame.from_dict(
-                EPOCH_FIELDS[e], orient='index'
-            ).reset_index().rename(columns={'index': 'FIELD_NAME'})
-            temp['epoch'] = e
-            planet_epoch_fields = planet_epoch_fields.append(
-                temp
-            )
-            del temp
+        planet_epoch_fields = self._epoch_fields.loc[epochs].reset_index()
 
         planet_epoch_fields = planet_epoch_fields.merge(
             FIELD_CENTRES, left_on='FIELD_NAME',
             right_on='field', how='left'
-        ).drop('field', axis=1)
+        ).drop('field', axis=1).rename(
+            columns={'EPOCH': 'epoch'}
+        )
 
         return planet_epoch_fields
 
@@ -1058,10 +1052,10 @@ class Query:
         template['planet'] = template['planet'].str.capitalize()
 
         meta = {
+            'epoch': 'U',
             'FIELD_NAME': 'U',
             'SBID': 'i',
             'DATEOBS': 'datetime64[ns]',
-            'epoch': 'U',
             'centre-ra': 'f',
             'centre-dec': 'f',
             'planet': 'U',

@@ -20,10 +20,13 @@ from astropy.coordinates import SkyCoord
 import numpy as np
 from multiprocessing_logging import install_mp_handler
 from astroquery.simbad import Simbad
-from vasttools.survey import OBSERVING_LOCATION
+from vasttools.survey import get_askap_observing_location
 from astropy.time import Time
 from astropy.coordinates import solar_system_ephemeris
 from astropy.coordinates import get_body, get_moon
+
+
+solar_system_ephemeris.set('builtin')
 
 
 def get_logger(debug, quiet, logfile=None):
@@ -334,8 +337,9 @@ def match_planet_to_field(group):
         group['centre-dec'].values,
         unit=(u.deg, u.deg)
     )
-    with solar_system_ephemeris.set('builtin'):
-        planet_coords = get_body(planet, dates, OBSERVING_LOCATION)
+
+    ol = get_askap_observing_location()
+    planet_coords = get_body(planet, dates, ol)
 
     seps = planet_coords.separation(
         fields_skycoord
