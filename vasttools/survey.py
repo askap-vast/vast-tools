@@ -53,6 +53,7 @@ def get_fields_per_epoch_info():
 
     return epoch_fields
 
+
 def get_askap_observing_location():
     """
     Function to return ASKAP observing location.
