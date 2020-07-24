@@ -651,7 +651,7 @@ class Query:
         m = group.iloc[0]
 
         if self.settings['matches_only']:
-            if group[group['detection']==True].shape[0] == 0:
+            if group['detection'].sum() == 0:
                 return
         if m['planet']:
             source_coord = group.skycoord
