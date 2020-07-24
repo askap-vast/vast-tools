@@ -328,7 +328,7 @@ if __name__ == '__main__':
     else:
         sky_coords = None
         source_names = ""
-
+    logger.debug(args.epochs)
     query = Query(
         coords=sky_coords,
         source_names=source_names,
@@ -379,7 +379,7 @@ if __name__ == '__main__':
             png_percentile=args.png_linear_percentile,
             png_zscale=args.png_use_zscale,
             png_contrast=args.png_zscale_contrast,
-            png_islands=args.png_no_island_labels,
+            png_no_islands=args.png_no_island_labels,
             png_no_colorbar=args.png_no_colorbar,
             png_crossmatch_overlay=args.crossmatch_radius_overlay,
             png_hide_beam=args.png_hide_beam,

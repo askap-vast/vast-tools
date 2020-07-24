@@ -173,7 +173,8 @@ class Query:
             self.planets = None
 
         self.settings = {}
-
+        
+        self.logger.debug(epochs)
         self.settings['epochs'] = self.get_epochs(epochs)
         self.settings['stokes'] = self.get_stokes(stokes)
 
@@ -1108,10 +1109,14 @@ class Query:
             )
 
             self.fields_df = self.fields_df.dropna()
+            if self.fields_df.empty:
+                raise Exception(
+                "No requested sources are within the requested footprint!")
 
             self.fields_df = self.fields_df.explode(
                 'field_per_epoch'
             ).reset_index(drop=True)
+
             self.fields_df[
                 ['epoch', 'field', 'sbid', 'dateobs']
             ] = self.fields_df.field_per_epoch.apply(pd.Series)
