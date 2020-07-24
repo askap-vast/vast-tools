@@ -293,7 +293,7 @@ if __name__ == '__main__':
     )
 
     if len(args.planets) > 0:
-        args.planets = args.planets.split(",")
+        args.planets = args.planets.replace(" ","").split(",")
 
     if (args.coords is None and
             args.source_names == "" and len(args.planets) == 0):
