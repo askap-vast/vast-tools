@@ -861,14 +861,32 @@ class Query:
         ))
 
     def find_fields(self):
-        fields = Fields('1')
+        if self.racs:
+            base_epoch = '0'
+            base_fc = 'RACS'
+        else:
+            base_epoch = '1'
+            base_fc = 'VAST'
+
+        fields = Fields(base_epoch)
+        field_centres = FIELD_CENTRES.loc[
+            FIELD_CENTRES['field'].str.contains(base_fc)
+        ]
+
         field_centres_sc = SkyCoord(
-            FIELD_CENTRES["centre-ra"],
-            FIELD_CENTRES["centre-dec"],
+            field_centres["centre-ra"],
+            field_centres["centre-dec"],
             unit=(u.deg, u.deg)
         )
 
-        field_centre_names = FIELD_CENTRES.field
+        # if RACS is being use we convert all the names to 'VAST'
+        # to match the VAST field names, makes matching easier.
+        if self.racs:
+            field_centre_names = [
+                f.replace("RACS", "VAST") for f in field_centres.field
+            ]
+        else:
+            field_centre_names = field_centres.field
 
         if self.query_df is not None:
             self.fields_df = self.query_df.copy()
@@ -994,6 +1012,7 @@ class Query:
         dateobs = []
 
         for i in self.settings['epochs']:
+
             available_fields = [
                 f for f in fields if f in self._epoch_fields.loc[
                     i
@@ -1021,6 +1040,9 @@ class Query:
 
                 field = available_fields[min_field_index]
 
+            # Change VAST back to RACS
+            if i == '0':
+                field = field.replace("VAST", "RACS")
             epochs.append(i)
             sbid = self._epoch_fields.loc[i, field]["SBID"]
             date = self._epoch_fields.loc[i, field]["DATEOBS"]
@@ -1156,12 +1178,16 @@ class Query:
                 self.logger.warning('RACS EPOCH00 directory not found!')
                 self.logger.warning('Removing RACS from requested epochs.')
                 epochs.remove('0')
+                self.racs = False
             else:
                 self.logger.warning('RACS data selected!')
                 self.logger.warning(
                     'Remember RACS data supplied by VAST is not final '
                     'and results may vary.'
                 )
+                self.racs = True
+        else:
+            self.racs = False
 
         if len(epochs) == 0:
             self.logger.critical("No requested epochs are available")
@@ -1179,7 +1205,7 @@ class Query:
             raise ValueError(
                 "Stokes {} is not valid!".format(req_stokes.upper())
             )
-        elif '0' in self.settings['epochs'] and req_stokes.upper() == 'V':
+        elif self.racs and req_stokes.upper() == 'V':
             raise ValueError(
                 "Stokes V is not supported with RACS!"
             )
