@@ -420,6 +420,8 @@ class Query:
         zscale, contrast, no_islands, no_colorbar,
         crossmatch_overlay, hide_beam
     ):
+        if s is None:
+            return
 
         s.save_all_png_cutouts(
             selavy=selavy,
@@ -433,18 +435,27 @@ class Query:
         )
 
     def _save_all_fits_cutouts(self, s):
+        if s is None:
+            return
 
         s.save_all_fits_cutouts()
 
     def _save_all_ann(self, s, crossmatch_overlay=False):
+        if s is None:
+            return
 
         s.save_all_ann(crossmatch_overlay=crossmatch_overlay)
 
     def _save_all_reg(self, s, crossmatch_overlay=False):
+        if s is None:
+            return
 
         s.save_all_ann(crossmatch_overlay=crossmatch_overlay)
 
     def _save_all_measurements(self, s, simple=False, outfile=None):
+
+        if s is None:
+            return
 
         s.write_measurements(simple=simple, outfile=outfile)
 
@@ -462,6 +473,9 @@ class Query:
         lc_save=True,
         lc_outfile=None
     ):
+        if s is None:
+            return
+
         s.plot_lightcurve(
             sigma_thresh=lc_sigma_thresh,
             figsize=lc_figsize,
