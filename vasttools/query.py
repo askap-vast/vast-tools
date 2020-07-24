@@ -116,6 +116,7 @@ class Query:
 
         self.coords = coords
         self.source_names = source_names
+        self.planets = planets
         if ncpu > HOST_NCPU:
             raise ValueError(
                 "Number of CPUs requested ({}) "
