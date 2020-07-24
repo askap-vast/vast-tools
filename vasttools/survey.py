@@ -28,22 +28,44 @@ warnings.filterwarnings('ignore',
                         category=AstropyDeprecationWarning, append=True)
 
 
-def get_fields_per_epoch_and_info():
+def get_fields_per_epoch_info():
     """
-    Function to create list of fields in each epoch.
+    Function to create a dataframe suitable for fast,
+    field querying per epoch.
     """
-    epoch_fields = {}
 
-    for e in FIELD_FILES:
-        e_info = pd.read_csv(FIELD_FILES[e], comment='#')
-        epoch_fields[e] = {}
-        for f in e_info.FIELD_NAME.unique():
-            epoch_fields[e][f] = {}
-            info = e_info[e_info.FIELD_NAME == f].iloc[0]
-            epoch_fields[e][f]['SBID'] = info.SBID
-            epoch_fields[e][f]['DATEOBS'] = info.DATEOBS
+    for i, e in enumerate(FIELD_FILES):
+        temp = pd.read_csv(FIELD_FILES[e], comment='#')
+        temp['EPOCH'] = e
+        if i == 0:
+            epoch_fields = temp
+        else:
+            epoch_fields = epoch_fields.append(temp)
+
+    epoch_fields = epoch_fields.drop_duplicates(
+        ['FIELD_NAME', 'EPOCH']
+    ).set_index(
+        ['EPOCH', 'FIELD_NAME']
+    ).drop(columns=[
+        'BEAM', 'RA_HMS', 'DEC_DMS', 'DATEEND',
+        'NINT', 'BMAJ', 'BMIN', 'BPA'
+    ])
 
     return epoch_fields
+
+
+def get_askap_observing_location():
+    """
+    Function to return ASKAP observing location.
+    """
+    ASKAP_latitude = Angle("-26:41:46.0", unit=u.deg)
+    ASKAP_longitude = Angle("116:38:13.0", unit=u.deg)
+
+    observing_location = EarthLocation(
+        lat=ASKAP_latitude, lon=ASKAP_longitude
+    )
+
+    return observing_location
 
 
 RELEASED_EPOCHS = {
@@ -88,8 +110,6 @@ FIELD_FILES = {
         __name__, "./data/vast_epoch11x_info.csv")
 }
 
-EPOCH_FIELDS = get_fields_per_epoch_and_info()
-
 FIELD_CENTRES = pd.read_csv(
     pkg_resources.resource_filename(
         __name__, "./data/vast_field_centres.csv"
@@ -98,10 +118,6 @@ FIELD_CENTRES = pd.read_csv(
 
 NIMBUS_BASE_DIR = "/Users/adam/testing/vast-tools-testing/PSR_J2129-04_data_2"
 ADA_BASE_DIR = "/import/ada1/askap/PILOT/release/"
-
-ASKAP_latitude = Angle("-26:41:46.0", unit=u.deg)
-ASKAP_longitude = Angle("116:38:13.0", unit=u.deg)
-OBSERVING_LOCATION = EarthLocation(lat=ASKAP_latitude, lon=ASKAP_longitude)
 
 ALLOWED_PLANETS = [
     'mercury',
@@ -284,7 +300,9 @@ class Image:
             self.image_fail = True
             self.logger.error(
                 "{} does not exist! Unable to create postagestamps".format(
-                    self.imgpath))
+                    self.imgpath
+                )
+            )
             return
 
         with fits.open(self.imgpath) as hdul:
