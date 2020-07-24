@@ -296,7 +296,6 @@ class Query:
         lc_yaxis_start="auto",
         lc_peak_flux=True,
         measurements_simple=False
-
     ):
         """
         This function is not intended to be used interactively.
@@ -400,20 +399,20 @@ class Query:
             workers.close()
             workers.join()
 
+    def summary_log(self):
         self.logger.info("-------------------------")
         self.logger.info("Summary:")
         self.logger.info("-------------------------")
-        for s in self.results:
-            self.logger.info(
-                "Source %s - Matches: %i, Limits %i.",
-                s.name,
-                s.detections,
-                s.limits
+        self.logger.info(
+            "Number of sources within footprint: %i",
+            self.num_sources_searched
+        )
+        self.logger.info(
+            "Number of sources with detections: %i",
+            self.num_sources_detected
+        )
             )
         self.logger.info("-------------------------")
-
-    def save_fields(self, out_dir=None):
-        pass
 
     def _save_all_png_cutouts(
         self, s, selavy, percentile,
@@ -584,6 +583,8 @@ class Query:
 
         self.sources_df = self.fields_df.copy()
 
+        self.num_sources_searched = self.sources_df.shape[0]
+
         self.sources_df[
             ['selavy', 'image', 'rms']
         ] = self.sources_df[['epoch', 'field', 'sbid']].apply(
@@ -650,6 +651,11 @@ class Query:
         )
 
         meta = {'name': 'O'}
+
+        self.num_sources_detected = (
+            self.self.crossmatch_results.groupby('name').agg({
+                'detection': any
+            }).sum()
 
         self.results = (
             dd.from_pandas(self.crossmatch_results, self.ncpu)
