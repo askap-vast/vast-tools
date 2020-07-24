@@ -168,6 +168,7 @@ class Query:
         self.settings['islands'] = use_islands
         self.settings['tiles'] = use_tiles
         self.settings['no_rms'] = no_rms
+        self.settings['matches_only'] = matches_only
 
         self.settings['output_dir'] = output_dir
 
@@ -302,8 +303,9 @@ class Query:
         Script only.
         """
 
-        if not self.cutout_data_got:
-            self.get_all_cutout_data()
+        if sum([fits, png, ann, reg]) > 0:
+            if not self.cutout_data_got:
+                self.get_all_cutout_data()
 
         original_sigint_handler = signal.signal(
             signal.SIGINT, signal.SIG_IGN
@@ -648,6 +650,9 @@ class Query:
 
         m = group.iloc[0]
 
+        if self.settings['matches_only']:
+            if group[group['detection']==True].shape[0] == 0:
+                return
         if m['planet']:
             source_coord = group.skycoord
             source_primary_field = group.primary_field
@@ -688,7 +693,6 @@ class Query:
             source_image_type,
             islands=source_islands,
             outdir=source_outdir,
-
         )
 
         return thesource
@@ -1010,16 +1014,16 @@ class Query:
             )
 
         if fields.shape[0] == 0:
-            self.logger.warning(
-                "Source '%s' not in VAST Pilot footprint.",
-                row['name']
-            )
-            warnings.warn(
-                "Source '{}' not in selected footprint. "
-                "Dropping source.".format(
+            if self.racs:
+                self.logger.info(
+                    "Source '%s' not in RACS & VAST Pilot footprint.",
                     row['name']
                 )
-            )
+            else:
+                self.logger.info(
+                    "Source '%s' not in VAST Pilot footprint.",
+                    row['name']
+                )
             return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
 
         centre_seps = row.skycoord.separation(field_centres)
