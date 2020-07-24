@@ -26,9 +26,6 @@ from astropy.coordinates import solar_system_ephemeris
 from astropy.coordinates import get_body, get_moon
 
 
-solar_system_ephemeris.set('builtin')
-
-
 def get_logger(debug, quiet, logfile=None):
     '''
     Set up the logger
@@ -339,7 +336,8 @@ def match_planet_to_field(group):
     )
 
     ol = get_askap_observing_location()
-    planet_coords = get_body(planet, dates, ol)
+    with solar_system_ephemeris.set('builtin'):
+        planet_coords = get_body(planet, dates, ol)
 
     seps = planet_coords.separation(
         fields_skycoord

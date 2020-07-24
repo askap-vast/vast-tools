@@ -16,7 +16,6 @@ import logging.config
 from astropy.coordinates import Angle
 from astropy import units as u
 from astropy.coordinates import SkyCoord
-from astropy.coordinates import EarthLocation
 from astropy.io import fits
 from astropy.wcs import WCS
 from astropy.wcs.utils import skycoord_to_pixel
@@ -55,6 +54,7 @@ def get_fields_per_epoch_info():
 
 
 def get_askap_observing_location():
+    from astropy.coordinates import EarthLocation
     """
     Function to return ASKAP observing location.
     """
@@ -326,14 +326,10 @@ class Image:
         Load the noisemap corresponding to the image
         '''
         if self.rmspath is None:
-            if self.epoch == "0":
-                self.rmsname = self.imgname.replace(
-                    '.fits', '.taylor.0.noise.fits')
-            else:
-                self.rmsname = self.imgname.replace('.fits', '_rms.fits')
-                self.rmspath = self.imgpath.replace(
-                    "_IMAGES", "_RMSMAPS"
-                ).replace('.fits', '_rms.fits')
+            self.rmsname = self.imgname.replace('.fits', '_rms.fits')
+            self.rmspath = self.imgpath.replace(
+                "_IMAGES", "_RMSMAPS"
+            ).replace('.fits', '_rms.fits')
 
         if os.path.isfile(self.rmspath):
             self.rms_fail = False

@@ -89,7 +89,8 @@ class Source:
         islands=False,
         outdir=".",
         planet=False,
-        pipeline=False
+        pipeline=False,
+        tiles=False,
     ):
         '''Constructor method
         '''
@@ -117,6 +118,10 @@ class Source:
 
         self.base_folder = base_folder
         self.image_type = image_type
+        if image_type == 'TILES':
+            self.tiles = True
+        else:
+            self.tiles = False
 
         if self.pipeline:
             self.detections = self.measurements[
@@ -451,7 +456,11 @@ class Source:
                 path=row.image, rmspath=row.rms
             )
         else:
-            image = Image(row.field, row.epoch, self.stokes, self.base_folder)
+            image = Image(
+                row.field, row.epoch, self.stokes,
+                self.base_folder, tiles=self.tiles,
+                sbid=row.sbid
+            )
 
         cutout = Cutout2D(
             image.data,

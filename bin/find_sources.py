@@ -13,8 +13,6 @@ from vasttools.utils import (
     build_catalog,
     build_SkyCoord
 )
-
-
 import argparse
 import os
 import datetime
@@ -335,7 +333,7 @@ if __name__ == '__main__':
         planets=args.planets,
         epochs=args.epochs,
         stokes=args.stokes,
-        crossmatch_radius=10.,
+        crossmatch_radius=args.crossmatch_radius,
         max_sep=args.maxsep,
         use_tiles=args.use_tiles,
         use_islands=args.islands,

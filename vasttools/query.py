@@ -499,7 +499,8 @@ class Query:
             group.iloc[0].epoch,
             self.settings['stokes'],
             self.base_folder,
-            sbid=group.iloc[0].sbid
+            sbid=group.iloc[0].sbid,
+            tiles=self.settings['tiles']
         )
 
         cutout_data = group.apply(
@@ -686,13 +687,18 @@ class Query:
             source_base_folder,
             source_image_type,
             islands=source_islands,
-            outdir=source_outdir
+            outdir=source_outdir,
+
         )
 
         return thesource
 
     def _get_components(self, group):
-        selavy_file = group.iloc[0]['selavy']
+        selavy_file = str(group.name)
+        if selavy_file is None:
+            return
+        # if type(selavy_file) != str:
+        #     selavy_file = group.iloc[0]['name']
         master = pd.DataFrame()
 
         selavy_df = pd.read_fwf(
@@ -728,7 +734,8 @@ class Query:
                     group.iloc[0].epoch,
                     self.settings['stokes'],
                     self.base_folder,
-                    sbid=group.iloc[0].sbid
+                    sbid=group.iloc[0].sbid,
+                    tiles=self.settings['tiles']
                 )
                 rms_values = image.measure_coord_pixel_values(
                     missing, rms=True
@@ -871,7 +878,7 @@ class Query:
         fields = Fields(base_epoch)
         field_centres = FIELD_CENTRES.loc[
             FIELD_CENTRES['field'].str.contains(base_fc)
-        ]
+        ].reset_index()
 
         field_centres_sc = SkyCoord(
             field_centres["centre-ra"],
@@ -882,11 +889,11 @@ class Query:
         # if RACS is being use we convert all the names to 'VAST'
         # to match the VAST field names, makes matching easier.
         if self.racs:
-            field_centre_names = [
+            field_centres['field'] = [
                 f.replace("RACS", "VAST") for f in field_centres.field
             ]
-        else:
-            field_centre_names = field_centres.field
+
+        field_centre_names = field_centres.field
 
         if self.query_df is not None:
             self.fields_df = self.query_df.copy()
@@ -967,11 +974,18 @@ class Query:
         if self.planets is not None:
             prev_num += len(self.planets)
 
-        self.logger.info(
-            "%i/%i sources in VAST Pilot footprint.",
-            self.fields_df.name.unique().shape[0],
-            prev_num
-        )
+        if self.racs:
+            self.logger.info(
+                "%i/%i sources in RACS & VAST Pilot footprint.",
+                self.fields_df.name.unique().shape[0],
+                prev_num
+            )
+        else:
+            self.logger.info(
+                "%i/%i sources in VAST Pilot footprint.",
+                self.fields_df.name.unique().shape[0],
+                prev_num
+            )
 
         self.fields_df['dateobs'] = pd.to_datetime(
             self.fields_df['dateobs']
@@ -990,6 +1004,10 @@ class Query:
         seps = row.skycoord.separation(fields_coords)
         accept = seps.deg < self.settings['max_sep']
         fields = np.unique(fields_names[accept])
+        if self.racs:
+            vast_fields = np.array(
+                [f.replace("RACS", "VAST") for f in fields]
+            )
 
         if fields.shape[0] == 0:
             self.logger.warning(
@@ -1005,7 +1023,7 @@ class Query:
             return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
 
         centre_seps = row.skycoord.separation(field_centres)
-        primary_field = field_centre_names[np.argmin(centre_seps.deg)]
+        primary_field = field_centre_names.iloc[np.argmin(centre_seps.deg)]
         epochs = []
         field_per_epochs = []
         sbids = []
@@ -1013,11 +1031,21 @@ class Query:
 
         for i in self.settings['epochs']:
 
+            if i != '0' and self.racs:
+                the_fields = vast_fields
+            else:
+                the_fields = fields
+
             available_fields = [
-                f for f in fields if f in self._epoch_fields.loc[
+                f for f in the_fields if f in self._epoch_fields.loc[
                     i
                 ].index.to_list()
             ]
+
+            if i == '0':
+                available_fields = [
+                    j.replace("RACS", "VAST") for j in available_fields
+                ]
 
             if len(available_fields) == 0:
                 continue
