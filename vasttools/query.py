@@ -583,8 +583,6 @@ class Query:
 
         self.sources_df = self.fields_df.copy()
 
-        self.num_sources_searched = self.sources_df.shape[0]
-
         self.sources_df[
             ['selavy', 'image', 'rms']
         ] = self.sources_df[['epoch', 'field', 'sbid']].apply(
@@ -998,16 +996,18 @@ class Query:
         if self.planets is not None:
             prev_num += len(self.planets)
 
+        self.num_sources_searched = self.fields_df.name.unique().shape[0]
+
         if self.racs:
             self.logger.info(
                 "%i/%i sources in RACS & VAST Pilot footprint.",
-                self.fields_df.name.unique().shape[0],
+                self.num_sources_searched,
                 prev_num
             )
         else:
             self.logger.info(
                 "%i/%i sources in VAST Pilot footprint.",
-                self.fields_df.name.unique().shape[0],
+                self.num_sources_searched,
                 prev_num
             )
 
