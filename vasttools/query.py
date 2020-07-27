@@ -72,30 +72,38 @@ class Query:
     This is a class representation of various information about a particular
     query including the catalogue of target sources, the Stokes parameter,
     crossmatch radius and output parameters.
-    
+
     :param coords: List of coordinates to query, defaults to None
     :type coords: `astropy.coordinates.sky_coordinate.SkyCoord`, optional
     :param source_names: List of source names, defaults to []
     :type source_names: list, optional
-    :param epochs: Comma-separated list of epochs to query. All available epochs can be queried by passsing "all". Defaults to "all"
+    :param epochs: Comma-separated list of epochs to query. \
+    All available epochs can be queried by passsing "all". Defaults to "all"
     :type epochs: str, optional
     :param stokes: Stokes parameter to query, defaults to "I"
     :type stokes: str, optional
     :param crossmatch_radius: Crossmatch radius in arcsec, defaults to 5.0
     :type crossmatch_radius: float, optional
-    :param max_sep: Maximum separation of source from beam centre in degrees, defaults to 1.0
+    :param max_sep: Maximum separation of source from beam centre in degrees, \
+    defaults to 1.0
     :type max_sep: float, optional
-    :param use_tiles: Query tiles rather than combined mosaics, defaults to `False`
+    :param use_tiles: Query tiles rather than combined mosaics, \
+    defaults to `False`
     :type use_tiles: bool, optional
-    :param use_islands: Use selavy islands rather than components, defaults to `False`
+    :param use_islands: Use selavy islands rather than components, \
+    defaults to `False`
     :type use_islands: bool, optional
-    :param base_folder: Path to base folder if using default directory structure, defaults to None
+    :param base_folder: Path to base folder if using default directory \
+    structure, defaults to None
     :type base_folder: str, optional
-    :param matches_only: Only produce data products for sources with a selavy match, defaults to `False`
+    :param matches_only: Only produce data products for sources with a selavy \
+    match, defaults to `False`
     :type matches_only: bool, optional
-    :param no_rms: Estimate the background RMS around each source, defaults to `False`
+    :param no_rms: Estimate the background RMS around each source, \
+    defaults to `False`
     :type no_rms: bool, optional
-    :param output_dir: Output directory to place all results in, defaults to "."
+    :param output_dir: Output directory to place all results in, \
+    defaults to "."
     :type output_dir: str, optional
     :param planets: List of planets to search for, defaults to []
     :type planets: list, optional
@@ -128,7 +136,8 @@ class Query:
             )
         self.ncpu = ncpu
 
-        if self.coords is None and len(self.source_names) == 0 and len(self.planets) == 0:
+        if self.coords is None and len(
+                self.source_names) == 0 and len(self.planets) == 0:
             if self.logger is None:
                 raise ValueError(
                     "No coordinates or source names have been provided!"
@@ -255,7 +264,7 @@ class Query:
 
     def get_all_cutout_data(self):
         '''Get cutout data'''
-        
+
         # first get cutout data and selavy sources per image
         # group by image to do this
 
@@ -329,58 +338,77 @@ class Query:
         """
         This function is not intended to be used interactively.
         Script only.
-        
+
         :param fits: Create and save fits cutouts, defaults to `True`
         :type fits: bool, optional
         :param png: Create and save png postagestamps, defaults to `False`
         :type png: bool, optional
-        :param ann: Create and save kvis annotation files for all components, defaults to `False`
+        :param ann: Create and save kvis annotation files for all components, \
+        defaults to `False`
         :type ann: bool, optional
-        :param reg: Create and save DS9 annotation files for all components, defaults to `False`
+        :param reg: Create and save DS9 annotation files for all components, \
+        defaults to `False`
         :type reg: bool, optional
-        :param lightcurve: Create and save lightcurves for all sources, defaults to `False`
+        :param lightcurve: Create and save lightcurves for all sources, \
+        defaults to `False`
         :type lightcurve: bool, optional
-        :param measurements: Create and save measurements for all sources, defaults to `False`
+        :param measurements: Create and save measurements for all sources, \
+        defaults to `False`
         :type measurements: bool, optional
         :param fits_outfile: File to save fits cutout to, defaults to None
         :type fits_outfile: str, optional
-        :param png_selavy: Overlay selavy components onto png postagestamp, defaults to `True`
+        :param png_selavy: Overlay selavy components onto png postagestamp, \
+        defaults to `True`
         :type png_selavy: bool, optional
-        :param png_percentile: Percentile level for the png normalisation, defaults to 99.9
+        :param png_percentile: Percentile level for the png normalisation, \
+        defaults to 99.9
         :type png_percentile: float, optional
-        :param png_zscale: Use z-scale normalisation rather than linear, defaults to `False`
+        :param png_zscale: Use z-scale normalisation rather than linear, \
+        defaults to `False`
         :type png_zscale: bool, optional
         :param png_contrast: Z-scale constrast, defaults to 0.2
         :type png_contrast: float, optional
-        :param png_no_islands: Don't overlay selavy islands on png postagestamps, defaults to `True`
+        :param png_no_islands: Don't overlay selavy islands on png \
+        postagestamps, defaults to `True`
         :type png_no_islands: bool, optional
-        :param png_no_colorbar: Don't include colourbar on png output, defaults to `False`
+        :param png_no_colorbar: Don't include colourbar on png output, \
+        defaults to `False`
         :type png_no_colorbar: bool, optional
-        :param png_crossmatch_overlay: Overlay the crossmatch radius on png postagestamps, defaults to `False`
+        :param png_crossmatch_overlay: Overlay the crossmatch radius on png \
+        postagestamps, defaults to `False`
         :type png_crossmatch_overlay: bool, optional
-        :param png_hide_beam: Do not show the beam shape on png postagestamps, defaults to `False`
+        :param png_hide_beam: Do not show the beam shape on png postagestamps,\
+         defaults to `False`
         :type png_hide_beam: bool, optional
-        :param ann_crossmatch_overlay: Include crossmatch radius in ann output, defaults to `False`
+        :param ann_crossmatch_overlay: Include crossmatch radius in ann, \
+        defaults to `False`
         :type ann_crossmatch_overlay: bool, optional
-        :param reg_crossmatch_overlay: Include crossmatch radius in reg output, defaults to `False`
+        :param reg_crossmatch_overlay: Include crossmatch radius in reg, \
+        defaults to `False`
         :type reg_crossmatch_overlay: bool, optional
-        :param lc_sigma_thresh: Detection threshold (in sigma) for lightcurves, defaults to 5
+        :param lc_sigma_thresh: Detection threshold (in sigma) for \
+        lightcurves, defaults to 5
         :type lc_sigma_thresh: float, optional
         :param lc_figsize: Size of lightcurve figure, defaults to (8, 4)
         :type lc_figsize: tuple, optional
-        :param lc_min_points: Minimum number of source observations required for a lightcurve to be generated, defaults to 2
+        :param lc_min_points: Minimum number of source observations required\
+        for a lightcurve to be generated, defaults to 2
         :type lc_min_points: int, optional
-        :param lc_min_detections: Minimum number of source detections required for a lightcurve to be generated, defaults to 1
+        :param lc_min_detections: Minimum number of source detections required\
+         for a lightcurve to be generated, defaults to 1
         :type lc_min_detections: int, optional
         :param lc_mjd: Use MJD for lightcurve x-axis, defaults to `False`
         :type lc_mjd: bool, optional
         :param lc_grid: Include grid on lightcurve plot, defaults to `False`
         :type lc_grid: bool, optional
-        :param lc_yaxis_start: Start the lightcurve y-axis at 0 ("0") or use the matpotlib default ("auto"). Defaults to "auto"
+        :param lc_yaxis_start: Start the lightcurve y-axis at 0 ("0") or use \
+        the matpotlib default ("auto"). Defaults to "auto"
         :type lc_yaxis_start: str, optional
-        :param lc_peak_flux: Generate lightcurve using peak flux density rather than integrated flux density, defaults to `True`
+        :param lc_peak_flux: Generate lightcurve using peak flux density \
+        rather than integrated flux density, defaults to `True`
         :type lc_peak_flux: bool, optional
-        :param measurements_simple: Use simple schema for measurement output, defaults to `False`
+        :param measurements_simple: Use simple schema for measurement output, \
+        defaults to `False`
         :type measurements_simple: bool, optional
         """
 
@@ -502,7 +530,7 @@ class Query:
     ):
         '''
         Save png cutouts for all available images of the source of interest
-        
+
         :param s: Source of interest
         :type s: `vasttools.Source`
         :param selavy: Overlay selavy components onto png postagestamp
@@ -517,7 +545,7 @@ class Query:
         :type no_islands: bool
         :param no_colorbar: Don't use a colourbar
         :type no_colorbar: bool
-        :param crossmatch_overlay: Overlay crossmatch radius 
+        :param crossmatch_overlay: Overlay crossmatch radius
         :type crossmatch_overlay: bool
         :param hide_beam: Don't show the beam shape
         :type hide_beam: bool
@@ -537,7 +565,7 @@ class Query:
     def _save_all_fits_cutouts(self, s):
         '''
         Save fits cutouts for all available images of the source of interest
-        
+
         :param s: Source of interest
         :type s: `vasttools.Source`
         '''
@@ -545,11 +573,13 @@ class Query:
 
     def _save_all_ann(self, s, crossmatch_overlay=False):
         '''
-        Save kvis annotations for all available images of the source of interest
-        
+        Save kvis annotations for all available images of the source of \
+        interest
+
         :param s: Source of interest
         :type s: `vasttools.Source`
-        :param crossmatch_overlay: Include the crossmatch radius, defaults to `False`
+        :param crossmatch_overlay: Include the crossmatch radius, \
+        defaults to `False`
         :type crossmatch_overlay: bool, optional
         '''
 
@@ -558,10 +588,11 @@ class Query:
     def _save_all_reg(self, s, crossmatch_overlay=False):
         '''
         Save DS9 overlays for all available images of the source of interest
-        
+
         :param s: Source of interest
         :type s: `vasttools.Source`
-        :param crossmatch_overlay: Include the crossmatch radius, defaults to `False`
+        :param crossmatch_overlay: Include the crossmatch radius, \
+        defaults to `False`
         :type crossmatch_overlay: bool, optional
         '''
 
@@ -570,7 +601,7 @@ class Query:
     def _save_all_measurements(self, s, simple=False, outfile=None):
         '''
         Save all measurements of the source of interest
-        
+
         :param s: Source of interest
         :type s: `vasttools.Source`
         :param simple: Only save simple measurement info, defaults to `False`
@@ -597,31 +628,37 @@ class Query:
     ):
         '''
         Plot the lightcurve of the source of interest, and save to file.
-        
+
         :param s: Source of interest
         :type s: `vasttools.Source`
-        :param lc_sigma_thresh: Detection threshold (in sigma) for lightcurves, defaults to 5
+        :param lc_sigma_thresh: Detection threshold (in sigma) for \
+        lightcurves, defaults to 5
         :type lc_sigma_thresh: float, optional
         :param lc_figsize: Size of lightcurve figure, defaults to (8, 4)
         :type lc_figsize: tuple, optional
-        :param lc_min_points: Minimum number of source observations required for a lightcurve to be generated, defaults to 2
+        :param lc_min_points: Minimum number of source observations required \
+        for a lightcurve to be generated, defaults to 2
         :type lc_min_points: int, optional
-        :param lc_min_detections: Minimum number of source detections required for a lightcurve to be generated, defaults to 1
+        :param lc_min_detections: Minimum number of source detections \
+        required for a lightcurve to be generated, defaults to 1
         :type lc_min_detections: int, optional
         :param lc_mjd: Use MJD for lightcurve x-axis, defaults to `False`
         :type lc_mjd: bool, optional
         :param lc_grid: Include grid on lightcurve plot, defaults to `False`
         :type lc_grid: bool, optional
-        :param lc_yaxis_start: Start the lightcurve y-axis at 0 ("0") or use the matpotlib default ("auto"). Defaults to "auto"
+        :param lc_yaxis_start: Start the lightcurve y-axis at 0 ("0") or use \
+        the matpotlib default ("auto"). Defaults to "auto"
         :type lc_yaxis_start: str, optional
-        :param lc_peak_flux: Generate lightcurve using peak flux density rather than integrated flux density, defaults to `True`
+        :param lc_peak_flux: Generate lightcurve using peak flux density \
+        rather than integrated flux density, defaults to `True`
         :type lc_peak_flux: bool, optional
         :param lc_save: Save the lightcurve plot to file, defaults to `True`
         :type lc_save: bool, optional
-        :param lc_outfile: File to save the lightcurve plot to, defaults to None
+        :param lc_outfile: File to save the lightcurve plot to, \
+        defaults to None
         :type lc_outfile: str, optional
         '''
-        
+
         s.plot_lightcurve(
             sigma_thresh=lc_sigma_thresh,
             figsize=lc_figsize,
@@ -638,11 +675,11 @@ class Query:
     def _add_source_cutout_data(self, s):
         '''
         Add cutout data to the source of interest
-        
+
         :param s: Source of interest
         :type s: `vasttools.Source`
         '''
-        
+
         s_name = s.name
         s_cutout = self.sources_df[[
             'data',
@@ -692,20 +729,20 @@ class Query:
     def _get_cutout(self, row, image, size=Angle(5. * u.arcmin)):
         '''
         Create cutout centered on a source location
-        
-        :param row: Row of query catalogue corresponding to the source of interest
+
+        :param row: Row of query catalogue corresponding to the source of \
+        interest
         :type row: `pandas.core.series.Series`
         :param image: Image to create cutout from
         :type image: `vasttools.survey.Image`
         :param size: Size of the cutout, defaults to Angle(5.*u.arcmin)
         :type size: `astropy.coordinates.Angle`, optional
-        
-        :returns: Tuple containing cutout data, WCS, image header, associated selavy components and beam information
+
+        :returns: Tuple containing cutout data, WCS, image header, \
+        associated selavy components and beam information
         :rtype: tuple
         '''
-        
-        
-        
+
         cutout = Cutout2D(
             image.data,
             position=row.skycoord,
@@ -748,9 +785,9 @@ class Query:
 
     def find_sources(self):
         '''
-        
+
         '''
-        
+
         if self.fields_found is False:
             self.find_fields()
 
@@ -842,10 +879,10 @@ class Query:
 
     def _init_sources(self, group):
         '''
-        
+
         :param group:
         :type group:
-        
+
         :returns: Source of interest
         :rtype: vasttools.source.Source
         '''
@@ -901,11 +938,11 @@ class Query:
 
     def _get_components(self, group):
         '''
-        
+
         :param group:
         :type group:
-        
-        :returns: 
+
+        :returns:
         :rtype: `pandas.core.frame.DataFrame`
         '''
         selavy_file = str(group.name)
@@ -1060,7 +1097,7 @@ class Query:
         if outname is None:
             name = 'find_fields_result.csv'
         else:
-            name = outname+'.pkl'
+            name = outname + '.pkl'
 
         outdir = self.settings['output_dir']
         if outdir is not None:
@@ -1147,7 +1184,7 @@ class Query:
             self.fields_df = self.fields_df.dropna()
             if self.fields_df.empty:
                 raise Exception(
-                "No requested sources are within the requested footprint!")
+                    "No requested sources are within the requested footprint!")
 
             self.fields_df = self.fields_df.explode(
                 'field_per_epoch'
