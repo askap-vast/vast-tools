@@ -500,7 +500,6 @@ class Query:
         zscale, contrast, no_islands, no_colorbar,
         crossmatch_overlay, hide_beam
     ):
-<<<<<<< HEAD
         '''
         Save png cutouts for all available images of the source of interest
         
@@ -524,8 +523,6 @@ class Query:
         :type hide_beam: bool
         '''
 
-=======
->>>>>>> notebook-v2.0
         s.save_all_png_cutouts(
             selavy=selavy,
             percentile=percentile,
@@ -538,7 +535,6 @@ class Query:
         )
 
     def _save_all_fits_cutouts(self, s):
-<<<<<<< HEAD
         '''
         Save fits cutouts for all available images of the source of interest
         
@@ -583,17 +579,6 @@ class Query:
         :type outfile: str, optional
         '''
 
-=======
-        s.save_all_fits_cutouts()
-
-    def _save_all_ann(self, s, crossmatch_overlay=False):
-        s.save_all_ann(crossmatch_overlay=crossmatch_overlay)
-
-    def _save_all_reg(self, s, crossmatch_overlay=False):
-        s.save_all_ann(crossmatch_overlay=crossmatch_overlay)
-
-    def _save_all_measurements(self, s, simple=False, outfile=None):
->>>>>>> notebook-v2.0
         s.write_measurements(simple=simple, outfile=outfile)
 
     def _save_all_lc(
