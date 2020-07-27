@@ -679,6 +679,10 @@ class Query:
 
     def save_search_around_results(self, sort_output=False):
         meta = {}
+        # also have the sort output setting as a function
+        # input in case of interactive use.
+        if self.settings['sort_output']:
+            sort_output = True
         result = (
             dd.from_pandas(self.results, self.ncpu)
             .groupby('name')
