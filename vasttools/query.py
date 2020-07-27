@@ -82,7 +82,7 @@ class Query:
         crossmatch_radius=5.0, max_sep=1.0, use_tiles=False,
         use_islands=False, base_folder=None, matches_only=False,
         no_rms=False, search_around_coordinates=False,
-        output_dir=".", planets=[], ncpu=2,
+        output_dir=".", planets=[], ncpu=2, sort_output=False
     ):
         '''Constructor method
         '''
@@ -176,6 +176,7 @@ class Query:
         self.settings['no_rms'] = no_rms
         self.settings['matches_only'] = matches_only
         self.settings['search_around'] = search_around_coordinates
+        self.settings['sort_output'] = sort_output
 
         self.settings['output_dir'] = output_dir
 
@@ -676,19 +677,22 @@ class Query:
             )
             self.results = self.results.dropna()
 
-    def save_search_around_results(self):
+    def save_search_around_results(self, sort_output=False):
         meta = {}
         result = (
             dd.from_pandas(self.results, self.ncpu)
             .groupby('name')
             .apply(
                 self._write_search_around_results,
+                sort_output=sort_output,
                 meta=meta,
             ).compute(num_workers=self.ncpu, scheduler='processes')
         )
 
-    def _write_search_around_results(self, group):
-        source_name = group.iloc[0]['name']
+    def _write_search_around_results(self, group, sort_output):
+        source_name = group.iloc[0]['name'].replace(
+            " ", "_"
+        ).replace("/", "_")
 
         matches_df = group.drop(
             columns=[
@@ -703,11 +707,19 @@ class Query:
         ).sort_values(by=['dateobs', 'component_id'])
 
         outname = "{}_matches_around.csv".format(
-            source_name.replace(" ", "_").replace("/", "_")
+            source_name
         )
 
+        if sort_output:
+            base = os.path.join(
+                self.settings['output_dir'],
+                source_name
+            )
+        else:
+            base = self.settings['output_dir'],
+
         outname = os.path.join(
-            self.settings['output_dir'],
+            base,
             outname
         )
 
@@ -733,6 +745,11 @@ class Query:
         source_base_folder = self.base_folder
         source_crossmatch_radius = self.settings['crossmatch_radius']
         source_outdir = self.settings['output_dir']
+        if self.settings['sort_output']:
+            source_outdir = os.path.join(
+                source_outdir,
+                source_name.replace(" ", "_").replace("/", "_")
+            )
         if self.settings['tiles']:
             source_image_type = "TILES"
         else:

@@ -11,7 +11,8 @@ from vasttools.query import Query, EpochInfo
 from vasttools.utils import (
     get_logger,
     build_catalog,
-    build_SkyCoord
+    build_SkyCoord,
+    create_source_directories
 )
 import argparse
 import os
@@ -152,6 +153,13 @@ def parse_args():
         '--clobber',
         action="store_true",
         help=("Overwrite the output directory if it already exists."))
+    parser.add_argument(
+        '--sort-output',
+        action="store_true",
+        help=(
+            "Place results into individual source directories within the "
+            "main output directory."
+        ))
     parser.add_argument(
         '--nice',
         type=int,
@@ -349,7 +357,8 @@ if __name__ == '__main__':
         no_rms=args.no_background_rms,
         output_dir=args.out_folder,
         ncpu=args.ncpu,
-        search_around_coordinates=args.search_around_coordinates
+        search_around_coordinates=args.search_around_coordinates,
+        sort_output=args.sort_output
     )
 
     if args.find_fields:
@@ -366,8 +375,17 @@ if __name__ == '__main__':
                 ' No other output will be wrtten apart from the'
                 ' matches csv files.'
             )
-            query.save_search_around_results()
+            create_source_directories(
+                args.out_folder,
+                query.results.name.unique()
+            )
+            query.save_search_around_results(args.sort_output)
         else:
+            if args.sort_output:
+                create_source_directories(
+                    args.out_folder,
+                    query.results.index.values
+                )
             if args.crossmatch_only:
                 fits = False
                 png = False
