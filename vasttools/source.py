@@ -200,6 +200,8 @@ class Source:
         if outfile is None:
             outfile = "{}_measurements.csv".format(self.name.replace(
                 " ", "_"
+            ).replace(
+                    "/", "_"
             ))
 
         elif not outfile.endswith(".csv"):
@@ -363,6 +365,8 @@ class Source:
             if outfile is None:
                 outfile = "{}_lc.png".format(self.name.replace(
                     " ", "_"
+                ).replace(
+                    "/", "_"
                 ))
 
             elif not outfile.endswith(".png"):
@@ -613,7 +617,9 @@ class Source:
         else:
             name_epoch = RELEASED_EPOCHS[epoch]
         outfile = "{}_EPOCH{}{}".format(
-            self.name.replace(" ", "_"),
+            self.name.replace(" ", "_").replace(
+                "/", "_"
+            ),
             name_epoch,
             ext
         )
@@ -1457,7 +1463,9 @@ class Source:
             to_write = to_write[to_write.detection == True]
 
         outname = "{}_results.csv".format(
-            self.name.replace(" ", "_")
+            self.name.replace(" ", "_").replace(
+                "/", "_"
+            )
         )
 
         if out_dir is not None:
