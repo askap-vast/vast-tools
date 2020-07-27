@@ -4,6 +4,8 @@
 
 # ./find_sources.py "16:16:00.22 +22:16:04.83" --create-png --imsize 5.0
 # --png-zscale-contrast 0.1 --png-selavy-overlay --use-combined
+from astropy import units as u
+from astropy.coordinates import Angle
 from vasttools.survey import Fields, Image
 from vasttools.survey import RELEASED_EPOCHS, ALLOWED_PLANETS
 from vasttools.source import Source
@@ -407,7 +409,8 @@ if __name__ == '__main__':
                 lc_grid=args.lc_grid,
                 lc_yaxis_start=args.lc_yaxis_start,
                 lc_peak_flux=(not args.lc_use_int_flux),
-                measurements_simple=args.selavy_simple
+                measurements_simple=args.selavy_simple,
+                imsize=Angle(args.imsize * u.arcmin)
             )
 
     query.summary_log()

@@ -443,7 +443,7 @@ class Source:
         if zscale:
             self.norms = ImageNormalize(
                 scale_data, interval=ZScaleInterval(
-                    contrast=contrast))
+                    contrast=z_contrast))
         else:
             self.norms = ImageNormalize(
                 scale_data,
@@ -703,7 +703,11 @@ class Source:
             self.get_cutout_data(size)
 
         if not self.checked_norms:
-            self.analyse_norm_level()
+            self.analyse_norm_level(
+                percentile=percentile,
+                zscale=zscale,
+                z_contrast=contrast
+            )
 
         self.measurements['epoch'].apply(
             self.make_png,
@@ -741,26 +745,12 @@ class Source:
         plots = {}
 
         if not self.checked_norms:
-            if self.detections > 0:
-                scale_index = self.measurements[
-                    self.measurements.detection == True
-                ].index.values[0]
-            else:
-                scale_index = 0
-
-            scale_data = self.cutout_df.loc[scale_index].data
-
-            if zscale:
-                img_norms = ImageNormalize(
-                    scale_data, interval=ZScaleInterval(
-                        contrast=contrast))
-            else:
-                img_norms = ImageNormalize(
-                    scale_data,
-                    interval=PercentileInterval(percentile),
-                    stretch=LinearStretch())
-        else:
-            img_norms = self.norms
+            self.analyse_norm_level(
+                percentile=percentile,
+                zscale=zscale,
+                z_contrast=contrast
+            )
+        img_norms = self.norms
 
         for i in range(num_plots):
             cutout_row = self.cutout_df.iloc[i]
