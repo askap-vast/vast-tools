@@ -290,6 +290,8 @@ class Query:
         self.sources_df = self.sources_df.join(
             cutouts
         )
+        with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+            self.logger.debug(print(self.sources_df))
 
         for s in self.results:
             s_name = s.name
@@ -917,7 +919,7 @@ class Query:
             ]
         )
 
-        source_df = source_df.reset_index(drop=True)
+        source_df = source_df.sort_values('dateobs').reset_index(drop=True)
 
         thesource = Source(
             source_coord,
@@ -1211,6 +1213,7 @@ class Query:
         else:
             self.fields_df = None
 
+        # Handle Planets
         if self.planets is not None:
             planet_fields = self.search_planets()
 
@@ -1220,6 +1223,8 @@ class Query:
                 self.fields_df = self.fields_df.append(
                     planet_fields
                 ).reset_index(drop=True)
+
+        self.logger.debug(self.fields_df)
 
         if self.query_df is None:
             prev_num = 0
@@ -1398,6 +1403,10 @@ class Query:
         )
         results['fields'] = [[i] for i in results['field']]
         results['planet'] = True
+        
+        with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+            print(results)
+        #exit()
 
         return results
 
