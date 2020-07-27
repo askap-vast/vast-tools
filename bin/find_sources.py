@@ -349,7 +349,7 @@ if __name__ == '__main__':
         no_rms=args.no_background_rms,
         output_dir=args.out_folder,
         ncpu=args.ncpu,
-        search_around_coordinates = args.search_around_coordinates
+        search_around_coordinates=args.search_around_coordinates
     )
 
     if args.find_fields:
@@ -366,6 +366,7 @@ if __name__ == '__main__':
                 ' No other output will be wrtten apart from the'
                 ' matches csv files.'
             )
+            query.save_search_around_results()
         else:
             if args.crossmatch_only:
                 fits = False

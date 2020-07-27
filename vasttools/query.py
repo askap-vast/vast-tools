@@ -667,16 +667,6 @@ class Query:
 
         if self.settings['search_around']:
             self.results = self.crossmatch_results
-            meta = {}
-            result = (
-                dd.from_pandas(self.crossmatch_results, self.ncpu)
-                .groupby('name')
-                .apply(
-                    self._write_search_around_results,
-                    meta=meta,
-                ).compute(num_workers=self.ncpu, scheduler='processes')
-            )
-
         else:
             self.results = (
                 dd.from_pandas(self.crossmatch_results, self.ncpu)
@@ -688,6 +678,17 @@ class Query:
             )
 
         self.results = self.results.dropna()
+
+    def save_search_around_results(self):
+        meta = {}
+        result = (
+            dd.from_pandas(self.results, self.ncpu)
+            .groupby('name')
+            .apply(
+                self._write_search_around_results,
+                meta=meta,
+            ).compute(num_workers=self.ncpu, scheduler='processes')
+        )
 
     def _write_search_around_results(self, group):
         m = group.iloc[0]
