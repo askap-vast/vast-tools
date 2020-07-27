@@ -676,8 +676,7 @@ class Query:
                     meta=meta,
                 ).compute(num_workers=self.ncpu, scheduler='processes')
             )
-
-        self.results = self.results.dropna()
+            self.results = self.results.dropna()
 
     def save_search_around_results(self):
         meta = {}
@@ -691,8 +690,7 @@ class Query:
         )
 
     def _write_search_around_results(self, group):
-        m = group.iloc[0]
-        source_name = m['name']
+        source_name = group.iloc[0]['name']
 
         matches_df = group.drop(
             columns=[
