@@ -81,7 +81,8 @@ class Query:
         self, coords=None, source_names=[], epochs="all", stokes="I",
         crossmatch_radius=5.0, max_sep=1.0, use_tiles=False,
         use_islands=False, base_folder=None, matches_only=False,
-        no_rms=False, output_dir=".", planets=[], ncpu=2
+        no_rms=False, search_around_coordinates=False,
+        output_dir=".", planets=[], ncpu=2,
     ):
         '''Constructor method
         '''
@@ -123,7 +124,8 @@ class Query:
                     self.logger.info('Found:')
                     for i in self.source_names:
                         self.logger.info(i)
-                    warnings.warn(simbad_msg)
+                    if self.logger is None:
+                        warnings.warn(simbad_msg)
                 else:
                     self.logger.error(
                         "SIMBAD search failed!"
@@ -154,6 +156,10 @@ class Query:
                 self.base_folder = ADA_BASE_DIR
             elif HOST == HOST_NIMBUS:
                 self.base_folder = NIMBUS_BASE_DIR
+            else:
+                raise Exception(
+                    "No base folder has been provided!"
+                )
         else:
             self.base_folder = base_folder
 
@@ -169,6 +175,7 @@ class Query:
         self.settings['tiles'] = use_tiles
         self.settings['no_rms'] = no_rms
         self.settings['matches_only'] = matches_only
+        self.settings['search_around'] = search_around_coordinates
 
         self.settings['output_dir'] = output_dir
 
@@ -229,6 +236,13 @@ class Query:
     def get_all_cutout_data(self):
         # first get cutout data and selavy sources per image
         # group by image to do this
+
+        if self.settings['search_around']:
+            raise Exception(
+                'Getting cutout data cannot be run when'
+                ' search around coordinates mode has been'
+                ' used.'
+            )
 
         meta = {
             'data': 'O',
@@ -301,6 +315,13 @@ class Query:
         This function is not intended to be used interactively.
         Script only.
         """
+
+        if self.settings['search_around']:
+            raise Exception(
+                'Getting source products cannot be run when'
+                ' search around coordinates mode has been'
+                ' used.'
+            )
 
         if sum([fits, png, ann, reg]) > 0:
             if not self.cutout_data_got:
@@ -624,8 +645,14 @@ class Query:
         )
 
         results.index = results.index.droplevel()
+
+        if self.settings['search_around']:
+            how = 'inner'
+        else:
+            how = 'left'
+
         self.crossmatch_results = self.sources_df.merge(
-            results, how='left', left_index=True, right_index=True
+            results, how=how, left_index=True, right_index=True
         )
 
         meta = {'name': 'O'}
@@ -636,16 +663,55 @@ class Query:
             }).sum()
         )
 
-        self.results = (
-            dd.from_pandas(self.crossmatch_results, self.ncpu)
+        if self.settings['search_around']:
+            self.results = self.crossmatch_results
+        else:
+            self.results = (
+                dd.from_pandas(self.crossmatch_results, self.ncpu)
+                .groupby('name')
+                .apply(
+                    self._init_sources,
+                    meta=meta,
+                ).compute(num_workers=self.ncpu, scheduler='processes')
+            )
+            self.results = self.results.dropna()
+
+    def save_search_around_results(self):
+        meta = {}
+        result = (
+            dd.from_pandas(self.results, self.ncpu)
             .groupby('name')
             .apply(
-                self._init_sources,
+                self._write_search_around_results,
                 meta=meta,
             ).compute(num_workers=self.ncpu, scheduler='processes')
         )
 
-        self.results = self.results.dropna()
+    def _write_search_around_results(self, group):
+        source_name = group.iloc[0]['name']
+
+        matches_df = group.drop(
+            columns=[
+                'fields',
+                'stokes',
+                'skycoord',
+                'selavy',
+                'image',
+                'rms',
+                '#'
+            ]
+        ).sort_values(by=['dateobs', 'component_id'])
+
+        outname = "{}_matches_around.csv".format(
+            source_name.replace(" ", "_").replace("/", "_")
+        )
+
+        outname = os.path.join(
+            self.settings['output_dir'],
+            outname
+        )
+
+        matches_df.to_csv(outname, index=False)
 
     def _init_sources(self, group):
 
@@ -702,8 +768,7 @@ class Query:
         selavy_file = str(group.name)
         if selavy_file is None:
             return
-        # if type(selavy_file) != str:
-        #     selavy_file = group.iloc[0]['name']
+
         master = pd.DataFrame()
 
         selavy_df = pd.read_fwf(
@@ -721,45 +786,56 @@ class Query:
             unit=(u.deg, u.deg)
         )
 
-        idx, d2d, _ = group_coords.match_to_catalog_sky(selavy_coords)
-        mask = d2d < self.settings['crossmatch_radius']
-        idx_matches = idx[mask]
+        if self.settings['search_around']:
+            idxselavy, idxc, d2d, _ = group_coords.search_around_sky(
+                selavy_coords, self.settings['crossmatch_radius']
+            )
+            if idxc.shape[0] == 0:
+                return
+            copy = selavy_df.iloc[idxselavy].reset_index(drop=True)
+            copy['detection'] = True
+            copy.index = group.iloc[idxc].index.values
+            master = master.append(copy, sort=False)
+        else:
+            idx, d2d, _ = group_coords.match_to_catalog_sky(selavy_coords)
+            mask = d2d < self.settings['crossmatch_radius']
+            idx_matches = idx[mask]
 
-        copy = selavy_df.iloc[idx_matches].reset_index(drop=True)
-        copy["detection"] = True
-        copy.index = group[mask].index.values
+            copy = selavy_df.iloc[idx_matches].reset_index(drop=True)
+            copy['detection'] = True
+            copy.index = group[mask].index.values
 
-        master = master.append(copy, sort=False)
+            master = master.append(copy, sort=False)
 
-        missing = group_coords[~mask]
-        if missing.shape[0] > 0:
-            if not self.settings['no_rms']:
-                image = Image(
-                    group.iloc[0].field,
-                    group.iloc[0].epoch,
-                    self.settings['stokes'],
-                    self.base_folder,
-                    sbid=group.iloc[0].sbid,
-                    tiles=self.settings['tiles']
-                )
-                rms_values = image.measure_coord_pixel_values(
-                    missing, rms=True
-                )
-                rms_df = pd.DataFrame(rms_values, columns=['rms_image'])
+            missing = group_coords[~mask]
+            if missing.shape[0] > 0:
+                if not self.settings['no_rms']:
+                    image = Image(
+                        group.iloc[0].field,
+                        group.iloc[0].epoch,
+                        self.settings['stokes'],
+                        self.base_folder,
+                        sbid=group.iloc[0].sbid,
+                        tiles=self.settings['tiles']
+                    )
+                    rms_values = image.measure_coord_pixel_values(
+                        missing, rms=True
+                    )
+                    rms_df = pd.DataFrame(rms_values, columns=['rms_image'])
 
-                # to mJy
-                rms_df['rms_image'] = rms_df['rms_image'] * 1.e3
-            else:
-                rms_df = pd.DataFrame(
-                    [-99 for i in range(missing.shape[0])],
-                    columns=['rms_image']
-                )
+                    # to mJy
+                    rms_df['rms_image'] = rms_df['rms_image'] * 1.e3
+                else:
+                    rms_df = pd.DataFrame(
+                        [-99 for i in range(missing.shape[0])],
+                        columns=['rms_image']
+                    )
 
-            rms_df['detection'] = False
+                rms_df['detection'] = False
 
-            rms_df.index = group[~mask].index.values
+                rms_df.index = group[~mask].index.values
 
-            master = master.append(rms_df, sort=False)
+                master = master.append(rms_df, sort=False)
 
         return master
 
