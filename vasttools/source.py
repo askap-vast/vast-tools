@@ -705,9 +705,9 @@ class Source:
         if not self.checked_norms:
             self.analyse_norm_level()
 
-        self.measurements['epoch'].apply(
-            self.make_png,
-            args=(
+        for e in self.measurements['epoch']:
+            self.make_png(
+                e,
                 selavy,
                 percentile,
                 zscale,
@@ -721,8 +721,23 @@ class Source:
                 hide_beam,
                 True
             )
-        )
-        # plt.close(fig)
+        # self.measurements['epoch'].apply(
+        #     self.make_png,
+        #     args=(
+        #         selavy,
+        #         percentile,
+        #         zscale,
+        #         contrast,
+        #         None,
+        #         islands,
+        #         "Source",
+        #         no_colorbar,
+        #         None,
+        #         crossmatch_overlay,
+        #         hide_beam,
+        #         True
+        #     )
+        # )
 
     def plot_all_cutouts(
         self, columns=4, percentile=99.9, zscale=False,
@@ -1258,7 +1273,8 @@ class Source:
             self.logger.debug("Hiding beam.")
 
         if save:
-            plt.savefig(outfile, bbox_inches="tight")
+            # plt.savefig(outfile, bbox_inches="tight")
+            fig.savefig(outfile, bbox_inches="tight")
             self.logger.info("Saved {}".format(outfile))
 
             plt.close(fig)

@@ -274,8 +274,8 @@ class Query:
                 'wcs',
                 'header',
                 'selavy_overlay',
-                'beam'
-            ]][self.sources_df.name == s_name].reset_index(drop=True)
+                'beam',
+            ]][self.sources_df.name == s_name]
 
             s.cutout_df = s_cutout
             s._cutouts_got = True
@@ -582,7 +582,9 @@ class Query:
         if self.fields_found is False:
             self.find_fields()
 
-        self.sources_df = self.fields_df.copy()
+        self.sources_df = self.fields_df.sort_values(
+            by=['name', 'dateobs']
+        ).reset_index(drop=True)
 
         self.sources_df[
             ['selavy', 'image', 'rms']
