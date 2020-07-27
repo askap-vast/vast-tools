@@ -274,7 +274,7 @@ class Query:
                 'wcs',
                 'header',
                 'selavy_overlay',
-                'beam',
+                'beam'
             ]][self.sources_df.name == s_name]
 
             s.cutout_df = s_cutout
