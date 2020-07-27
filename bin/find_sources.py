@@ -394,9 +394,12 @@ if __name__ == '__main__':
             measurements_simple=args.selavy_simple
         )
 
+    query.summary_log()
 
     runend = datetime.datetime.now()
     runtime = runend - runstart
     logger.info(
         "Processing took {:.1f} minutes.".format(
-            runtime.seconds / 60.))
+            runtime.seconds / 60.
+        )
+    )

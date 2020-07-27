@@ -168,6 +168,7 @@ class Query:
         self.settings['islands'] = use_islands
         self.settings['tiles'] = use_tiles
         self.settings['no_rms'] = no_rms
+        self.settings['matches_only'] = matches_only
 
         self.settings['output_dir'] = output_dir
 
@@ -295,15 +296,15 @@ class Query:
         lc_yaxis_start="auto",
         lc_peak_flux=True,
         measurements_simple=False
-
     ):
         """
         This function is not intended to be used interactively.
         Script only.
         """
 
-        if not self.cutout_data_got:
-            self.get_all_cutout_data()
+        if sum([fits, png, ann, reg]) > 0:
+            if not self.cutout_data_got:
+                self.get_all_cutout_data()
 
         original_sigint_handler = signal.signal(
             signal.SIGINT, signal.SIG_IGN
@@ -398,27 +399,25 @@ class Query:
             workers.close()
             workers.join()
 
+    def summary_log(self):
         self.logger.info("-------------------------")
         self.logger.info("Summary:")
         self.logger.info("-------------------------")
-        for s in self.results:
-            self.logger.info(
-                "Source %s - Matches: %i, Limits %i.",
-                s.name,
-                s.detections,
-                s.limits
-            )
+        self.logger.info(
+            "Number of sources within footprint: %i",
+            self.num_sources_searched
+        )
+        self.logger.info(
+            "Number of sources with detections: %i",
+            self.num_sources_detected
+        )
         self.logger.info("-------------------------")
-
-    def save_fields(self, out_dir=None):
-        pass
 
     def _save_all_png_cutouts(
         self, s, selavy, percentile,
         zscale, contrast, no_islands, no_colorbar,
         crossmatch_overlay, hide_beam
     ):
-
         s.save_all_png_cutouts(
             selavy=selavy,
             percentile=percentile,
@@ -431,19 +430,15 @@ class Query:
         )
 
     def _save_all_fits_cutouts(self, s):
-
         s.save_all_fits_cutouts()
 
     def _save_all_ann(self, s, crossmatch_overlay=False):
-
         s.save_all_ann(crossmatch_overlay=crossmatch_overlay)
 
     def _save_all_reg(self, s, crossmatch_overlay=False):
-
         s.save_all_ann(crossmatch_overlay=crossmatch_overlay)
 
     def _save_all_measurements(self, s, simple=False, outfile=None):
-
         s.write_measurements(simple=simple, outfile=outfile)
 
     def _save_all_lc(
@@ -635,6 +630,12 @@ class Query:
 
         meta = {'name': 'O'}
 
+        self.num_sources_detected = (
+            self.crossmatch_results.groupby('name').agg({
+                'detection': any
+            }).sum()
+        )
+
         self.results = (
             dd.from_pandas(self.crossmatch_results, self.ncpu)
             .groupby('name')
@@ -644,10 +645,15 @@ class Query:
             ).compute(num_workers=self.ncpu, scheduler='processes')
         )
 
+        self.results = self.results.dropna()
+
     def _init_sources(self, group):
 
         m = group.iloc[0]
 
+        if self.settings['matches_only']:
+            if group['detection'].sum() == 0:
+                return
         if m['planet']:
             source_coord = group.skycoord
             source_primary_field = group.primary_field
@@ -688,7 +694,6 @@ class Query:
             source_image_type,
             islands=source_islands,
             outdir=source_outdir,
-
         )
 
         return thesource
@@ -974,16 +979,18 @@ class Query:
         if self.planets is not None:
             prev_num += len(self.planets)
 
+        self.num_sources_searched = self.fields_df.name.unique().shape[0]
+
         if self.racs:
             self.logger.info(
                 "%i/%i sources in RACS & VAST Pilot footprint.",
-                self.fields_df.name.unique().shape[0],
+                self.num_sources_searched,
                 prev_num
             )
         else:
             self.logger.info(
                 "%i/%i sources in VAST Pilot footprint.",
-                self.fields_df.name.unique().shape[0],
+                self.num_sources_searched,
                 prev_num
             )
 
@@ -1010,16 +1017,16 @@ class Query:
             )
 
         if fields.shape[0] == 0:
-            self.logger.warning(
-                "Source '%s' not in VAST Pilot footprint.",
-                row['name']
-            )
-            warnings.warn(
-                "Source '{}' not in selected footprint. "
-                "Dropping source.".format(
+            if self.racs:
+                self.logger.info(
+                    "Source '%s' not in RACS & VAST Pilot footprint.",
                     row['name']
                 )
-            )
+            else:
+                self.logger.info(
+                    "Source '%s' not in VAST Pilot footprint.",
+                    row['name']
+                )
             return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
 
         centre_seps = row.skycoord.separation(field_centres)
