@@ -238,12 +238,11 @@ class Query:
         # group by image to do this
 
         if self.settings['search_around']:
-            if self.logger is None:
-                raise Exception(
-                    'Getting cutout data cannot be run when'
-                    ' search around coordinates mode has been'
-                    ' used.'
-                )
+            raise Exception(
+                'Getting cutout data cannot be run when'
+                ' search around coordinates mode has been'
+                ' used.'
+            )
 
         meta = {
             'data': 'O',
@@ -318,12 +317,11 @@ class Query:
         """
 
         if self.settings['search_around']:
-            if self.logger is None:
-                raise Exception(
-                    'Getting source products cannot be run when'
-                    ' search around coordinates mode has been'
-                    ' used.'
-                )
+            raise Exception(
+                'Getting source products cannot be run when'
+                ' search around coordinates mode has been'
+                ' used.'
+            )
 
         if sum([fits, png, ann, reg]) > 0:
             if not self.cutout_data_got:
