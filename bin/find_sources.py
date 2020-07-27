@@ -142,6 +142,13 @@ def parse_args():
         action="store_true",
         help='Only return the associated field for each source.')
     parser.add_argument(
+        '--search-around-coordinates',
+        action="store_true",
+        help=(
+            'Return all crossmatches within the queried crossmatch radius.'
+            'Plotting options will be unavailable.'
+        ))
+    parser.add_argument(
         '--clobber',
         action="store_true",
         help=("Overwrite the output directory if it already exists."))
@@ -341,7 +348,8 @@ if __name__ == '__main__':
         matches_only=args.process_matches,
         no_rms=args.no_background_rms,
         output_dir=args.out_folder,
-        ncpu=args.ncpu
+        ncpu=args.ncpu,
+        search_around_coordinates = args.search_around_coordinates
     )
 
     if args.find_fields:
@@ -352,47 +360,54 @@ if __name__ == '__main__':
     else:
         query.find_sources()
 
-        if args.crossmatch_only:
-            fits = False
-            png = False
-            ann = False
-            reg = False
-            lightcurve = False
+        if args.search_around_coordinates:
+            logger.info(
+                'Search around coordinates mode selected.'
+                ' No other output will be wrtten apart from the'
+                ' matches csv files.'
+            )
         else:
-            fits = (not args.no_fits)
-            png = args.create_png
-            ann = args.ann
-            reg = args.reg
-            lightcurve = args.lightcurves
+            if args.crossmatch_only:
+                fits = False
+                png = False
+                ann = False
+                reg = False
+                lightcurve = False
+            else:
+                fits = (not args.no_fits)
+                png = args.create_png
+                ann = args.ann
+                reg = args.reg
+                lightcurve = args.lightcurves
 
-        query.gen_all_source_products(
-            fits=fits,
-            png=png,
-            ann=ann,
-            reg=reg,
-            lightcurve=lightcurve,
-            measurements=True,
-            fits_outfile=None,
-            png_selavy=args.png_selavy_overlay,
-            png_percentile=args.png_linear_percentile,
-            png_zscale=args.png_use_zscale,
-            png_contrast=args.png_zscale_contrast,
-            png_islands=args.png_no_island_labels,
-            png_no_colorbar=args.png_no_colorbar,
-            png_crossmatch_overlay=args.crossmatch_radius_overlay,
-            png_hide_beam=args.png_hide_beam,
-            ann_crossmatch_overlay=args.crossmatch_radius_overlay,
-            reg_crossmatch_overlay=args.crossmatch_radius_overlay,
-            lc_sigma_thresh=5,
-            lc_figsize=(8, 4),
-            lc_min_points=args.lc_min_points,
-            lc_min_detections=args.lc_min_detections,
-            lc_mjd=args.lc_mjd,
-            lc_grid=args.lc_grid,
-            lc_yaxis_start=args.lc_yaxis_start,
-            lc_peak_flux=(not args.lc_use_int_flux),
-            measurements_simple=args.selavy_simple
-        )
+            query.gen_all_source_products(
+                fits=fits,
+                png=png,
+                ann=ann,
+                reg=reg,
+                lightcurve=lightcurve,
+                measurements=True,
+                fits_outfile=None,
+                png_selavy=args.png_selavy_overlay,
+                png_percentile=args.png_linear_percentile,
+                png_zscale=args.png_use_zscale,
+                png_contrast=args.png_zscale_contrast,
+                png_islands=args.png_no_island_labels,
+                png_no_colorbar=args.png_no_colorbar,
+                png_crossmatch_overlay=args.crossmatch_radius_overlay,
+                png_hide_beam=args.png_hide_beam,
+                ann_crossmatch_overlay=args.crossmatch_radius_overlay,
+                reg_crossmatch_overlay=args.crossmatch_radius_overlay,
+                lc_sigma_thresh=5,
+                lc_figsize=(8, 4),
+                lc_min_points=args.lc_min_points,
+                lc_min_detections=args.lc_min_detections,
+                lc_mjd=args.lc_mjd,
+                lc_grid=args.lc_grid,
+                lc_yaxis_start=args.lc_yaxis_start,
+                lc_peak_flux=(not args.lc_use_int_flux),
+                measurements_simple=args.selavy_simple
+            )
 
     query.summary_log()
 
