@@ -1289,15 +1289,15 @@ class Source:
             f.write("FONT hershey14\n")
             f.write("COLOR BLUE\n")
             f.write("CROSS {0} {1} {2} {2}\n".format(
-                self.measurements.iloc[index].ra.deg,
-                self.measurements.iloc[index].ra.deg,
+                self.measurements.iloc[index].ra,
+                self.measurements.iloc[index].dec,
                 3./3600.
             ))
             if crossmatch_overlay:
                 try:
                     f.write("CIRCLE {} {} {}\n".format(
-                        self.measurements.iloc[index].ra.deg,
-                        self.measurements.iloc[index].dec.deg,
+                        self.measurements.iloc[index].ra,
+                        self.measurements.iloc[index].dec,
                         self.crossmatch_radius.deg
                     ))
                 except Exception as e:
@@ -1372,14 +1372,14 @@ class Source:
             f.write("fk5\n")
             f.write(
                 "point({} {}) # point=x color=blue\n".format(
-                    self.measurements.iloc[index].ra.deg,
-                    self.measurements.iloc[index].dec.deg,
+                    self.measurements.iloc[index].ra,
+                    self.measurements.iloc[index].dec,
                 ))
             if crossmatch_overlay:
                 try:
                     f.write("circle({} {} {}) # color=blue\n".format(
-                        self.measurements.iloc[index].ra.deg,
-                        self.measurements.iloc[index].dec.deg,
+                        self.measurements.iloc[index].ra,
+                        self.measurements.iloc[index].dec,
                         self.crossmatch_radius.deg
                     ))
                 except Exception as e:
