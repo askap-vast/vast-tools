@@ -114,6 +114,13 @@ def parse_args():
         action="store_true",
         help='Turn off non-essential terminal output.')
     parser.add_argument(
+        '--forced-fits',
+        action="store_true",
+        help=(
+            'Perform forced fits at the locations requested. No selavy'
+            ' information or rms limits will be obtained.'
+        ))
+    parser.add_argument(
         '--crossmatch-only',
         action="store_true",
         help='Only run crossmatch, do not generate any fits or png files.')
@@ -320,6 +327,26 @@ if __name__ == '__main__':
         )
         sys.exit()
 
+    if args.forced_fits and args.search_around:
+        logger.error(
+            "Forced fits and search around mode are both selected!"
+        )
+        logger.error(
+            "These modes cannot be used together, "
+            "please check input and try again."
+        )
+        sys.exit()
+
+    if args.forced_fits and args.use_tiles:
+        logger.error(
+            "Forced fits and use tiles are both selected!"
+        )
+        logger.error(
+            "These modes cannot be used together, "
+            "please check input and try again."
+        )
+        sys.exit()
+
     output_ok = check_output_directory(args)
 
     if not output_ok:
@@ -360,7 +387,8 @@ if __name__ == '__main__':
         output_dir=args.out_folder,
         ncpu=args.ncpu,
         search_around_coordinates=args.search_around_coordinates,
-        sort_output=args.sort_output
+        sort_output=args.sort_output,
+        forced_fits=args.forced_fits
     )
 
     if args.find_fields:

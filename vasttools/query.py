@@ -8,6 +8,7 @@ from vasttools.utils import (
     filter_selavy_components, simbad_search, match_planet_to_field,
     check_racs_exists
 )
+from vasttools import forced_phot
 
 import sys
 import numpy as np
@@ -82,7 +83,8 @@ class Query:
         crossmatch_radius=5.0, max_sep=1.0, use_tiles=False,
         use_islands=False, base_folder=None, matches_only=False,
         no_rms=False, search_around_coordinates=False,
-        output_dir=".", planets=[], ncpu=2, sort_output=False
+        output_dir=".", planets=[], ncpu=2, sort_output=False,
+        forced_fits=False
     ):
         '''Constructor method
         '''
@@ -177,6 +179,7 @@ class Query:
         self.settings['matches_only'] = matches_only
         self.settings['search_around'] = search_around_coordinates
         self.settings['sort_output'] = sort_output
+        self.settings['forced_fits'] = forced_fits
 
         self.settings['output_dir'] = output_dir
 
@@ -597,57 +600,91 @@ class Query:
             result_type='expand'
         )
 
-        meta = {
-            '#': 'f',
-            'island_id': 'U',
-            'component_id': 'U',
-            'component_name': 'U',
-            'ra_hms_cont': 'U',
-            'dec_dms_cont': 'U',
-            'ra_deg_cont': 'f',
-            'dec_deg_cont': 'f',
-            'ra_err': 'f',
-            'dec_err': 'f',
-            'freq': 'f',
-            'flux_peak': 'f',
-            'flux_peak_err': 'f',
-            'flux_int': 'f',
-            'flux_int_err': 'f',
-            'maj_axis': 'f',
-            'min_axis': 'f',
-            'pos_ang': 'f',
-            'maj_axis_err': 'f',
-            'min_axis_err': 'f',
-            'pos_ang_err': 'f',
-            'maj_axis_deconv': 'f',
-            'min_axis_deconv': 'f',
-            'pos_ang_deconv': 'f',
-            'maj_axis_deconv_err': 'f',
-            'min_axis_deconv_err': 'f',
-            'pos_ang_deconv_err': 'f',
-            'chi_squared_fit': 'f',
-            'rms_fit_gauss': 'f',
-            'spectral_index': 'f',
-            'spectral_curvature': 'f',
-            'spectral_index_err': 'f',
-            'spectral_curvature_err': 'f',
-            'rms_image': 'f',
-            'has_siblings': 'f',
-            'fit_is_estimate': 'f',
-            'spectral_index_from_TT': 'f',
-            'flag_c4': 'f',
-            'comment': 'f',
-            'detection': '?',
-        }
+        if self.settings['forced_fits']:
+            meta = {
+                'island_id': 'U',
+                'component_id': 'U',
+                'ra_deg_cont': 'f',
+                'dec_deg_cont': 'f',
+                'flux_peak': 'f',
+                'flux_peak_err': 'f',
+                'flux_int': 'f',
+                'flux_int_err': 'f',
+                'maj_axis': 'f',
+                'min_axis': 'f',
+                'pos_ang': 'f',
+                'rms_image': 'f',
+            }
 
-        results = (
-            dd.from_pandas(self.sources_df, self.ncpu)
-            .groupby('selavy')
-            .apply(
-                self._get_components,
-                meta=meta,
-            ).compute(num_workers=self.ncpu, scheduler='processes')
-        )
+            results = (
+                dd.from_pandas(self.sources_df, self.ncpu)
+                .groupby('image')
+                .apply(
+                    self._get_forced_fits,
+                    meta=meta,
+                ).compute(num_workers=self.ncpu, scheduler='processes')
+            )
+
+            # add this to avoid drop errors later on
+            results['#'] = []
+            results['has_siblings'] = False
+            results['detection'] = True
+
+            import ipdb
+            ipdb.set_trace()
+
+        else:
+            meta = {
+                '#': 'f',
+                'island_id': 'U',
+                'component_id': 'U',
+                'component_name': 'U',
+                'ra_hms_cont': 'U',
+                'dec_dms_cont': 'U',
+                'ra_deg_cont': 'f',
+                'dec_deg_cont': 'f',
+                'ra_err': 'f',
+                'dec_err': 'f',
+                'freq': 'f',
+                'flux_peak': 'f',
+                'flux_peak_err': 'f',
+                'flux_int': 'f',
+                'flux_int_err': 'f',
+                'maj_axis': 'f',
+                'min_axis': 'f',
+                'pos_ang': 'f',
+                'maj_axis_err': 'f',
+                'min_axis_err': 'f',
+                'pos_ang_err': 'f',
+                'maj_axis_deconv': 'f',
+                'min_axis_deconv': 'f',
+                'pos_ang_deconv': 'f',
+                'maj_axis_deconv_err': 'f',
+                'min_axis_deconv_err': 'f',
+                'pos_ang_deconv_err': 'f',
+                'chi_squared_fit': 'f',
+                'rms_fit_gauss': 'f',
+                'spectral_index': 'f',
+                'spectral_curvature': 'f',
+                'spectral_index_err': 'f',
+                'spectral_curvature_err': 'f',
+                'rms_image': 'f',
+                'has_siblings': 'f',
+                'fit_is_estimate': 'f',
+                'spectral_index_from_TT': 'f',
+                'flag_c4': 'f',
+                'comment': 'f',
+                'detection': '?',
+            }
+
+            results = (
+                dd.from_pandas(self.sources_df, self.ncpu)
+                .groupby('selavy')
+                .apply(
+                    self._get_components,
+                    meta=meta,
+                ).compute(num_workers=self.ncpu, scheduler='processes')
+            )
 
         results.index = results.index.droplevel()
 
@@ -806,6 +843,84 @@ class Query:
         )
 
         return thesource
+
+    def _get_forced_fits(self, group):
+
+        group = group.sort_values(by='dateobs')
+
+        m = group.iloc[0]
+        image = m['image']
+        image_name = image.split("/")[-1]
+        rms = m['rms']
+        bkg = rms.replace('rms', 'bkg')
+
+        field = m['field']
+        epoch = m['epoch']
+        stokes = m['stokes']
+
+        img_beam = Image(
+            field,
+            epoch,
+            stokes,
+            self.base_folder
+        ).beam
+
+        to_fit = SkyCoord(
+            group.ra, group.dec, unit=(u.deg, u.deg)
+        )
+
+        # make the Forced Photometry object
+        FP = forced_phot.ForcedPhot(image, bkg, rms)
+
+
+        # run the forced photometry
+        (
+            flux_islands, flux_err_islands,
+            chisq_islands, DOF_islands
+        ) = FP.measure(
+            to_fit,
+            img_beam.major,
+            img_beam.minor,
+            img_beam.pa,
+            cluster_threshold=3
+        )
+
+        source_names = [
+            "{}_{:04d}".format(i) for i in range(len(flux_islands))
+        ]
+
+        df = pd.DataFrame([
+            source_names,
+            source_names,
+            group.ra,
+            group.dec,
+            flux_islands,
+            flux_err_islands,
+            flux_islands,
+            flux_err_islands,
+            img_beam.major,
+            img_beam.minor,
+            img_beam.pa,
+            flux_err_islands,
+        ],
+        columns=[
+            'island_id',
+            'component_id',
+            'ra_deg_cont',
+            'dec_deg_cont',
+            'flux_peak',
+            'flux_peak_err',
+            'flux_int',
+            'flux_int_err',
+            'maj_axis',
+            'min_axis',
+            'pos_ang',
+            'rms_image'
+        ])
+
+        df.index = group.index
+
+        return df
 
     def _get_components(self, group):
         selavy_file = str(group.name)
