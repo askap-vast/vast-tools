@@ -214,8 +214,8 @@ def parse_args():
         '--png-disable-autoscaling',
         action="store_true",
         help=(
-            'Do not use the auto normalisation and instead apply scale settings'
-            ' to each epoch individually.'
+            'Do not use the auto normalisation and instead apply'
+            ' scale settings to each epoch individually.'
         ))
     parser.add_argument(
         '--ann',
