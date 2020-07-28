@@ -211,6 +211,13 @@ def parse_args():
         action="store_true",
         help='Do not show the colorbar on the png.')
     parser.add_argument(
+        '--png-disable-autoscaling',
+        action="store_true",
+        help=(
+            'Do not use the auto normalisation and instead apply scale settings'
+            ' to each epoch individually.'
+        ))
+    parser.add_argument(
         '--ann',
         action="store_true",
         help='Create a kvis annotation file of the components.')
@@ -417,6 +424,7 @@ if __name__ == '__main__':
                 png_no_colorbar=args.png_no_colorbar,
                 png_crossmatch_overlay=args.crossmatch_radius_overlay,
                 png_hide_beam=args.png_hide_beam,
+                png_disable_autoscaling=args.png_disable_autoscaling,
                 ann_crossmatch_overlay=args.crossmatch_radius_overlay,
                 reg_crossmatch_overlay=args.crossmatch_radius_overlay,
                 lc_sigma_thresh=5,

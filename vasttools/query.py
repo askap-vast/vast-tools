@@ -301,6 +301,7 @@ class Query:
         png_no_colorbar=False,
         png_crossmatch_overlay=False,
         png_hide_beam=False,
+        png_disable_autoscaling=False,
         ann_crossmatch_overlay=False,
         reg_crossmatch_overlay=False,
         lc_sigma_thresh=5,
@@ -348,7 +349,8 @@ class Query:
                 no_islands=png_islands,
                 no_colorbar=png_no_colorbar,
                 crossmatch_overlay=png_crossmatch_overlay,
-                hide_beam=png_hide_beam
+                hide_beam=png_hide_beam,
+                disable_autoscaling=png_disable_autoscaling
             )
 
         if ann:
@@ -417,7 +419,15 @@ class Query:
             )
             workers.terminate()
             sys.exit()
-
+        except Exception as e:
+            self.logger.error(
+                "Encountered error!."
+            )
+            self.logger.error(
+                e
+            )
+            workers.terminate()
+            sys.exit()
         else:
             self.logger.debug("Normal termination")
             workers.close()
@@ -440,7 +450,7 @@ class Query:
     def _save_all_png_cutouts(
         self, s, selavy, percentile,
         zscale, contrast, no_islands, no_colorbar,
-        crossmatch_overlay, hide_beam
+        crossmatch_overlay, hide_beam, disable_autoscaling
     ):
         s.save_all_png_cutouts(
             selavy=selavy,
@@ -450,7 +460,8 @@ class Query:
             islands=no_islands,
             no_colorbar=no_colorbar,
             crossmatch_overlay=crossmatch_overlay,
-            hide_beam=hide_beam
+            hide_beam=hide_beam,
+            disable_autoscaling=disable_autoscaling
         )
 
     def _save_all_fits_cutouts(self, s):
