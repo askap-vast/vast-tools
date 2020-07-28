@@ -733,6 +733,19 @@ class Query:
 
         matches_df.to_csv(outname, index=False)
 
+    def _check_for_duplicate_epochs(self, epochs):
+        dup_mask = epochs.duplicated(keep=False)
+        if dup_mask.any():
+            epochs.loc[dup_mask] = (
+                epochs.loc[dup_mask]
+                + "-"
+                + (epochs[dup_mask].groupby(
+                    epochs[dup_mask]
+                ).cumcount() + 1).astype(str)
+            )
+
+        return epochs
+
     def _init_sources(self, group):
 
         m = group.iloc[0]
@@ -743,6 +756,9 @@ class Query:
         if m['planet']:
             source_coord = group.skycoord
             source_primary_field = group.primary_field
+            group['epoch'] = self._check_for_duplicate_epochs(
+                group['epoch']
+            )
         else:
             source_coord = m.skycoord
             source_primary_field = m.primary_field
