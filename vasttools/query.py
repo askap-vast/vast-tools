@@ -233,7 +233,7 @@ class Query:
 
         return True
 
-    def get_all_cutout_data(self):
+    def get_all_cutout_data(self, imsize):
         # first get cutout data and selavy sources per image
         # group by image to do this
 
@@ -257,6 +257,7 @@ class Query:
             .groupby('image')
             .apply(
                 self._grouped_fetch_cutouts,
+                imsize=imsize,
                 meta=meta,
             ).compute(num_workers=self.ncpu, scheduler='processes')
         )
@@ -275,9 +276,9 @@ class Query:
                 'header',
                 'selavy_overlay',
                 'beam'
-            ]][self.sources_df.name == s_name].reset_index(drop=True)
+            ]][self.sources_df.name == s_name]
 
-            s.cutout_df = s_cutout
+            s.cutout_df = s_cutout.reset_index(drop=True)
             s._cutouts_got = True
 
         self.cutout_data_got = True
@@ -309,7 +310,8 @@ class Query:
         lc_grid=False,
         lc_yaxis_start="auto",
         lc_peak_flux=True,
-        measurements_simple=False
+        measurements_simple=False,
+        imsize=Angle(5. * u.arcmin)
     ):
         """
         This function is not intended to be used interactively.
@@ -325,7 +327,7 @@ class Query:
 
         if sum([fits, png, ann, reg]) > 0:
             if not self.cutout_data_got:
-                self.get_all_cutout_data()
+                self.get_all_cutout_data(imsize)
 
         original_sigint_handler = signal.signal(
             signal.SIGINT, signal.SIG_IGN
@@ -506,7 +508,7 @@ class Query:
 
         return s
 
-    def _grouped_fetch_cutouts(self, group):
+    def _grouped_fetch_cutouts(self, group, imsize):
 
         image_file = group.iloc[0]['image']
 
@@ -521,7 +523,7 @@ class Query:
 
         cutout_data = group.apply(
             self._get_cutout,
-            args=(image,),
+            args=(image, imsize),
             axis=1,
             result_type='expand'
         ).rename(columns={
@@ -582,7 +584,9 @@ class Query:
         if self.fields_found is False:
             self.find_fields()
 
-        self.sources_df = self.fields_df.copy()
+        self.sources_df = self.fields_df.sort_values(
+            by=['name', 'dateobs']
+        ).reset_index(drop=True)
 
         self.sources_df[
             ['selavy', 'image', 'rms']
