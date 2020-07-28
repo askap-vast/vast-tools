@@ -460,8 +460,11 @@ class Source:
                 path=row.image, rmspath=row.rms
             )
         else:
+            e = row.epoch
+            if "-" in e:
+                e = e.split("-")[0]
             image = Image(
-                row.field, row.epoch, self.stokes,
+                row.field, e, self.stokes,
                 self.base_folder, tiles=self.tiles,
                 sbid=row.sbid
             )
@@ -615,7 +618,12 @@ class Source:
         if self.pipeline:
             name_epoch = epoch
         else:
-            name_epoch = RELEASED_EPOCHS[epoch]
+            if "-" in epoch:
+                e_split = epoch.split("-")
+                e = e_split[0]
+                name_epoch = RELEASED_EPOCHS[e] + "-" + e_split[1]
+            else:
+                name_epoch = RELEASED_EPOCHS[epoch]
         outfile = "{}_EPOCH{}{}".format(
             self.name.replace(" ", "_").replace(
                 "/", "_"
@@ -770,7 +778,7 @@ class Source:
             )
 
             im = plots[i].imshow(
-                cutout_row.data, norm=img_norms, cmap="gray_r"
+                cutout_row.data * 1.e3, norm=img_norms, cmap="gray_r"
             )
 
             plots[i].set_title('Epoch {}'.format(
