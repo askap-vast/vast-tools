@@ -619,7 +619,7 @@ class Source:
             name_epoch = epoch
         else:
             if "-" in epoch:
-                e_split = e.split("-")
+                e_split = epoch.split("-")
                 e = e_split[0]
                 name_epoch = RELEASED_EPOCHS[e] + "-" + e_split[1]
             else:
