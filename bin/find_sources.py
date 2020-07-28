@@ -327,7 +327,7 @@ if __name__ == '__main__':
         )
         sys.exit()
 
-    if args.forced_fits and args.search_around:
+    if args.forced_fits and args.search_around_coordinates:
         logger.error(
             "Forced fits and search around mode are both selected!"
         )

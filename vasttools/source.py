@@ -91,6 +91,7 @@ class Source:
         planet=False,
         pipeline=False,
         tiles=False,
+        forced_fits=False
     ):
         '''Constructor method
         '''
@@ -143,6 +144,7 @@ class Source:
             ].shape[0]
 
             self.forced = None
+            self.forced_fits = forced_fits
 
         self._cutouts_got = False
 
@@ -206,6 +208,9 @@ class Source:
 
         elif not outfile.endswith(".csv"):
             outfile += ".csv"
+
+        if self.forced_fits:
+            outfile = outfile.replace(".csv", "_forced.csv")
 
         if self.outdir != ".":
             outfile = os.path.join(
@@ -331,11 +336,16 @@ class Source:
                 err_value_col = 'flux_int_err'
         else:
             err_value_col = 'rms_image'
+
+        if self.forced_fits:
+            marker = "D"
+        else:
+            marker = 'o'
         detection_points = ax.errorbar(
             plot_dates[~upper_lim_mask],
             detections[flux_col],
             yerr=detections[err_value_col],
-            marker='o',
+            marker=marker,
             c='k',
             linestyle="none")
 
@@ -806,6 +816,13 @@ class Source:
                 )
                 plots[i].add_collection(collection, autolim=False)
 
+            if self.forced_fits:
+                collection, patches, island_names = self._gen_overlay_collection(
+                    self.cutout_df.iloc[index], f_source=measurement_row
+                )
+                ax.add_collection(collection, autolim=False)
+                del collection
+
             [plots[i].plot(
                 l[0], l[1], color="C3", zorder=10, lw=1.5, alpha=0.6
             ) for l in crosshair_lines]
@@ -838,7 +855,7 @@ class Source:
 
             return fig
 
-    def _gen_overlay_collection(self, cutout_row):
+    def _gen_overlay_collection(self, cutout_row, f_source=None):
         wcs = cutout_row.wcs
         selavy_sources = cutout_row.selavy_overlay
         pix_scale = proj_plane_pixel_scales(wcs)
@@ -848,26 +865,44 @@ class Source:
 
         # define ellipse properties for clarity, selavy cut will have
         # already been created.
-        ww = selavy_sources["maj_axis"].astype(float) / 3600.
-        hh = selavy_sources["min_axis"].astype(float) / 3600.
+        if f_source is None:
+            ww =  selavy_sources["maj_axis"]
+            hh = selavy_sources["min_axis"]
+            aa = selavy_sources["pos_ang"]
+            x = selavy_sources["ra_deg_cont"]
+            y = selavy_sources["dec_deg_cont"]
+        else:
+            ww = np.array([f_source["maj_axis"]])
+            hh = np.array([f_source["min_axis"]])
+            aa = np.array([f_source["pos_ang"]])
+            x = np.array([f_source["ra_deg_cont"]])
+            y = np.array([f_source["dec_deg_cont"]])
+
+        ww = ww.astype(float) / 3600.
+        hh = hh.astype(float) / 3600.
         ww /= degrees_per_pixel
         hh /= degrees_per_pixel
-        aa = selavy_sources["pos_ang"].astype(float)
-        x = selavy_sources["ra_deg_cont"].astype(float)
-        y = selavy_sources["dec_deg_cont"].astype(float)
+        aa = aa.astype(float)
+        x = x.astype(float)
+        y = y.astype(float)
 
         coordinates = np.column_stack((x, y))
 
         coordinates = wcs.wcs_world2pix(coordinates, 0)
 
-        island_names = selavy_sources["island_id"].apply(
-            self._remove_sbid
-        )
         # Create ellipses, collect them, add to axis.
         # Also where correction is applied to PA to account for how selavy
         # defines it vs matplotlib
-        colors = ["C2" if c.startswith(
-            "n") else "C1" for c in island_names]
+        if f_source is None:
+            island_names = selavy_sources["island_id"].apply(
+                self._remove_sbid
+            )
+            colors = ["C2" if c.startswith(
+                "n") else "C1" for c in island_names]
+        else:
+            island_names = [f_source["island_id"],]
+            colors = ["C3" for c in island_names]
+
         patches = [Ellipse(
             coordinates[i], hh[i], ww[i],
             aa[i]) for i in range(len(coordinates))]
@@ -1171,6 +1206,13 @@ class Source:
                 "PNG: No selavy selected or selavy catalogue failed."
             )
 
+        if self.forced_fits:
+            collection, patches, island_names = self._gen_overlay_collection(
+                self.cutout_df.iloc[index], f_source=self.measurements.iloc[index]
+            )
+            ax.add_collection(collection, autolim=False)
+            del collection
+
         legend_elements = [
             Line2D(
                 [0], [0], marker='c', color='C3', label=label,
@@ -1194,6 +1236,16 @@ class Source:
                     label="Crossmatch radius ({:.1f} arcsec)".format(
                         self.crossmatch_radius.arcsec
                     ),
+                    markerfacecolor='none', ls="none",
+                    markersize=10
+                )
+            )
+
+        if self.forced_fits:
+            legend_elements.append(
+                Line2D(
+                    [0], [0], marker='o', color='C3',
+                    label="Forced Fit",
                     markerfacecolor='none', ls="none",
                     markersize=10
                 )

@@ -610,10 +610,11 @@ class Query:
                 'flux_peak_err': 'f',
                 'flux_int': 'f',
                 'flux_int_err': 'f',
+                'chi_squared_fit': 'f',
+                'rms_image': 'f',
                 'maj_axis': 'f',
                 'min_axis': 'f',
                 'pos_ang': 'f',
-                'rms_image': 'f',
             }
 
             results = (
@@ -626,12 +627,9 @@ class Query:
             )
 
             # add this to avoid drop errors later on
-            results['#'] = []
+            results['#'] = np.nan
             results['has_siblings'] = False
             results['detection'] = True
-
-            import ipdb
-            ipdb.set_trace()
 
         else:
             meta = {
@@ -839,6 +837,7 @@ class Query:
             source_base_folder,
             source_image_type,
             islands=source_islands,
+            forced_fits=self.settings['forced_fits'],
             outdir=source_outdir,
         )
 
@@ -846,10 +845,13 @@ class Query:
 
     def _get_forced_fits(self, group):
 
+        image = group.name
+        if image is None:
+            return
+
         group = group.sort_values(by='dateobs')
 
         m = group.iloc[0]
-        image = m['image']
         image_name = image.split("/")[-1]
         rms = m['rms']
         bkg = rms.replace('rms', 'bkg')
@@ -865,6 +867,10 @@ class Query:
             self.base_folder
         ).beam
 
+        major = img_beam.major.to(u.arcsec).value
+        minor = img_beam.minor.to(u.arcsec).value
+        pa = img_beam.pa.to(u.deg).value
+
         to_fit = SkyCoord(
             group.ra, group.dec, unit=(u.deg, u.deg)
         )
@@ -878,46 +884,41 @@ class Query:
             chisq_islands, DOF_islands
         ) = FP.measure(
             to_fit,
-            img_beam.major,
-            img_beam.minor,
-            img_beam.pa,
+            [major for i in range(to_fit.shape[0])] * u.arcmin,
+            [minor for i in range(to_fit.shape[0])] * u.arcmin,
+            [pa for i in range(to_fit.shape[0])] * u.deg,
             cluster_threshold=3
         )
 
+        flux_islands *= 1.e3
+        flux_err_islands *= 1.e3
+
         source_names = [
-            "{}_{:04d}".format(i) for i in range(len(flux_islands))
+            "{}_{:04d}".format(
+                image_name, i
+            ) for i in range(len(flux_islands))
         ]
 
-        df = pd.DataFrame([
-            source_names,
-            source_names,
-            group.ra,
-            group.dec,
-            flux_islands,
-            flux_err_islands,
-            flux_islands,
-            flux_err_islands,
-            img_beam.major,
-            img_beam.minor,
-            img_beam.pa,
-            flux_err_islands,
-        ],
-        columns=[
-            'island_id',
-            'component_id',
-            'ra_deg_cont',
-            'dec_deg_cont',
-            'flux_peak',
-            'flux_peak_err',
-            'flux_int',
-            'flux_int_err',
-            'maj_axis',
-            'min_axis',
-            'pos_ang',
-            'rms_image'
-        ])
+        data = {
+            'island_id': source_names,
+            'component_id': source_names,
+            'ra_deg_cont':  group.ra,
+            'dec_deg_cont':group.dec,
+            'flux_peak': flux_islands,
+            'flux_peak_err': flux_err_islands,
+            'flux_int': flux_islands,
+            'flux_int_err': flux_err_islands,
+            'chi_squared_fit': chisq_islands,
+            'rms_image': flux_err_islands,
+        }
 
-        df.index = group.index
+        df = pd.DataFrame(data)
+
+        df['maj_axis'] = major
+        df['min_axis'] = minor
+        df['pos_ang'] = pa
+
+        df.index = group.index.values
 
         return df
 
