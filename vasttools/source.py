@@ -705,7 +705,8 @@ class Source:
         no_colorbar=False,
         crossmatch_overlay=False,
         hide_beam=False,
-        size=None
+        size=None,
+        disable_autoscaling=False
     ):
         if self._cutouts_got is False:
             self.get_cutout_data(size)
@@ -731,14 +732,17 @@ class Source:
                 None,
                 crossmatch_overlay,
                 hide_beam,
-                True
+                True,
+                None,
+                False,
+                disable_autoscaling
             )
         )
 
     def plot_all_cutouts(
         self, columns=4, percentile=99.9, zscale=False,
         contrast=0.1, outfile=None, save=False, size=None, figsize=(10, 5),
-        force=False, no_selavy=False
+        force=False, no_selavy=False, disable_autoscaling=False
     ):
         if (self._cutouts_got is False) or (force):
             self.get_cutout_data(size)
@@ -776,6 +780,20 @@ class Source:
                 i,
                 projection=cutout_row.wcs
             )
+
+            if disable_autoscaling:
+                if zscale:
+                    img_norms = ImageNormalize(
+                        cutout_row.data * 1.e3,
+                        interval=ZScaleInterval(
+                            contrast=contrast
+                        )
+                    )
+                else:
+                    img_norms = ImageNormalize(
+                        cutout_row.data * 1.e3,
+                        interval=PercentileInterval(percentile),
+                        stretch=LinearStretch())
 
             im = plots[i].imshow(
                 cutout_row.data * 1.e3, norm=img_norms, cmap="gray_r"
@@ -1017,6 +1035,7 @@ class Source:
             save=False,
             size=None,
             force=False,
+            disable_autoscaling=False
     ):
         '''
         Save a PNG of the image postagestamp
@@ -1078,7 +1097,16 @@ class Source:
         fig = plt.figure(figsize=(8, 8))
         ax = fig.add_subplot(111, projection=self.cutout_df.iloc[index].wcs)
         # Get the Image Normalisation from zscale, user contrast.
-        if not self.checked_norms:
+        if not disable_autoscaling:
+            if not self.checked_norms:
+                self.analyse_norm_level(
+                    percentile=percentile,
+                    zscale=zscale,
+                    z_contrast=contrast
+                )
+            else:
+                img_norms = self.norms
+        else:
             if zscale:
                 img_norms = ImageNormalize(
                     self.cutout_df.iloc[index].data * 1.e3,
@@ -1090,8 +1118,6 @@ class Source:
                     self.cutout_df.iloc[index].data * 1.e3,
                     interval=PercentileInterval(percentile),
                     stretch=LinearStretch())
-        else:
-            img_norms = self.norms
 
         im = ax.imshow(
             self.cutout_df.iloc[index].data * 1.e3,
