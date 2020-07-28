@@ -748,9 +748,9 @@ class Query:
 
     def _init_sources(self, group):
 
-        m = group.iloc[0]
-
         group = group.sort_values(by='dateobs')
+
+        m = group.iloc[0]
 
         if self.settings['matches_only']:
             if group['detection'].sum() == 0:
