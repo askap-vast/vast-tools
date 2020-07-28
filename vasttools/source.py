@@ -778,7 +778,7 @@ class Source:
             )
 
             im = plots[i].imshow(
-                cutout_row.data, norm=img_norms, cmap="gray_r"
+                cutout_row.data * 1.e3, norm=img_norms, cmap="gray_r"
             )
 
             plots[i].set_title('Epoch {}'.format(

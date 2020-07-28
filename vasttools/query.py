@@ -750,6 +750,8 @@ class Query:
 
         m = group.iloc[0]
 
+        group = group.sort_values(by='dateobs')
+
         if self.settings['matches_only']:
             if group['detection'].sum() == 0:
                 return
