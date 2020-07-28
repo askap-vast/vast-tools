@@ -8,7 +8,7 @@ from vasttools.utils import (
     filter_selavy_components, simbad_search, match_planet_to_field,
     check_racs_exists
 )
-from vasttools import forced_phot
+from vasttools.fp import ForcedPhot
 
 import sys
 import numpy as np
@@ -870,8 +870,7 @@ class Query:
         )
 
         # make the Forced Photometry object
-        FP = forced_phot.ForcedPhot(image, bkg, rms)
-
+        FP = ForcedPhot(image, bkg, rms)
 
         # run the forced photometry
         (
