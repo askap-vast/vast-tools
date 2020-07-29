@@ -117,8 +117,7 @@ def parse_args():
         '--forced-fits',
         action="store_true",
         help=(
-            'Perform forced fits at the locations requested. No selavy'
-            ' information or rms limits will be obtained.'
+            'Perform forced fits at the locations requested.'
         ))
     parser.add_argument(
         '--crossmatch-only',
