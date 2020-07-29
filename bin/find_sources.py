@@ -114,6 +114,12 @@ def parse_args():
         action="store_true",
         help='Turn off non-essential terminal output.')
     parser.add_argument(
+        '--forced-fits',
+        action="store_true",
+        help=(
+            'Perform forced fits at the locations requested.'
+        ))
+    parser.add_argument(
         '--crossmatch-only',
         action="store_true",
         help='Only run crossmatch, do not generate any fits or png files.')
@@ -265,6 +271,18 @@ def parse_args():
             " 'auto' will let matplotlib decide the best range and '0' "
             " will start from 0."
         ))
+    parser.add_argument(
+        '--lc-use-forced-for-limits',
+        action="store_true",
+        help="Use the forced fits values instead of upper limits.")
+    parser.add_argument(
+        '--lc-use-forced-for-all',
+        action="store_true",
+        help="Use the forced fits for all datapoints.")
+    parser.add_argument(
+        '--lc-hide-legend',
+        action="store_true",
+        help="Don't show the legend on the final lightcurve plot.")
 
     args = parser.parse_args()
 
@@ -327,6 +345,26 @@ if __name__ == '__main__':
         )
         sys.exit()
 
+    if args.forced_fits and args.search_around_coordinates:
+        logger.error(
+            "Forced fits and search around mode are both selected!"
+        )
+        logger.error(
+            "These modes cannot be used together, "
+            "please check input and try again."
+        )
+        sys.exit()
+
+    if args.forced_fits and args.use_tiles:
+        logger.error(
+            "Forced fits and use tiles are both selected!"
+        )
+        logger.error(
+            "These modes cannot be used together, "
+            "please check input and try again."
+        )
+        sys.exit()
+
     output_ok = check_output_directory(args)
 
     if not output_ok:
@@ -367,7 +405,8 @@ if __name__ == '__main__':
         output_dir=args.out_folder,
         ncpu=args.ncpu,
         search_around_coordinates=args.search_around_coordinates,
-        sort_output=args.sort_output
+        sort_output=args.sort_output,
+        forced_fits=args.forced_fits
     )
 
     if args.find_fields:
@@ -435,6 +474,9 @@ if __name__ == '__main__':
                 lc_grid=args.lc_grid,
                 lc_yaxis_start=args.lc_yaxis_start,
                 lc_peak_flux=(not args.lc_use_int_flux),
+                lc_use_forced_for_limits=args.lc_use_forced_for_limits,
+                lc_use_forced_for_all=args.lc_use_forced_for_all,
+                lc_hide_legend=args.lc_hide_legend,
                 measurements_simple=args.selavy_simple,
                 imsize=Angle(args.imsize * u.arcmin)
             )
