@@ -105,11 +105,16 @@ class Query:
         self.ncpu = ncpu
 
         if coords is None and len(source_names) == 0 and len(planets) == 0:
-            if self.logger is None:
-                raise ValueError(
-                    "No coordinates or source names have been provided!"
-                    " Check inputs and try again!"
-                )
+            raise Exception(
+                "No coordinates or source names have been provided!"
+                " Check inputs and try again!"
+            )
+
+        if forced_fits and search_around_coordinates:
+            raise Exception(
+                "Forced fits and search around coordinates mode cannot be"
+                " used together! Check inputs and try again."
+            )
 
         if self.coords is None:
             if len(source_names) != 0:
@@ -314,6 +319,9 @@ class Query:
         lc_grid=False,
         lc_yaxis_start="auto",
         lc_peak_flux=True,
+        lc_use_forced_for_limits=False,
+        lc_use_forced_for_all=False,
+        lc_hide_legend=False,
         measurements_simple=False,
         imsize=Angle(5. * u.arcmin)
     ):
@@ -379,6 +387,9 @@ class Query:
                 lc_peak_flux=lc_peak_flux,
                 lc_save=True,
                 lc_outfile=None,
+                lc_use_forced_for_limits=lc_use_forced_for_limits,
+                lc_use_forced_for_all=lc_use_forced_for_all,
+                lc_hide_legend=lc_hide_legend
             )
 
         if measurements:
@@ -480,7 +491,10 @@ class Query:
         lc_yaxis_start="auto",
         lc_peak_flux=True,
         lc_save=True,
-        lc_outfile=None
+        lc_outfile=None,
+        lc_use_forced_for_limits=False,
+        lc_use_forced_for_all=False,
+        lc_hide_legend=False
     ):
         s.plot_lightcurve(
             sigma_thresh=lc_sigma_thresh,
@@ -493,6 +507,9 @@ class Query:
             peak_flux=lc_peak_flux,
             save=lc_save,
             outfile=lc_outfile,
+            use_forced_for_limits=lc_use_forced_for_limits,
+            use_forced_for_all=lc_use_forced_for_all,
+            hide_legend=lc_hide_legend
         )
 
     def _add_source_cutout_data(self, s):
@@ -601,23 +618,24 @@ class Query:
         )
 
         if self.settings['forced_fits']:
+            self.logger.info("Obtaining forced fits.")
             meta = {
-                'island_id': 'U',
-                'component_id': 'U',
-                'ra_deg_cont': 'f',
-                'dec_deg_cont': 'f',
-                'flux_peak': 'f',
-                'flux_peak_err': 'f',
-                'flux_int': 'f',
-                'flux_int_err': 'f',
-                'chi_squared_fit': 'f',
-                'rms_image': 'f',
-                'maj_axis': 'f',
-                'min_axis': 'f',
-                'pos_ang': 'f',
+                'f_island_id': 'U',
+                'f_component_id': 'U',
+                'f_ra_deg_cont': 'f',
+                'f_dec_deg_cont': 'f',
+                'f_flux_peak': 'f',
+                'f_flux_peak_err': 'f',
+                'f_flux_int': 'f',
+                'f_flux_int_err': 'f',
+                'f_chi_squared_fit': 'f',
+                'f_rms_image': 'f',
+                'f_maj_axis': 'f',
+                'f_min_axis': 'f',
+                'f_pos_ang': 'f',
             }
 
-            results = (
+            f_results = (
                 dd.from_pandas(self.sources_df, self.ncpu)
                 .groupby('image')
                 .apply(
@@ -626,65 +644,66 @@ class Query:
                 ).compute(num_workers=self.ncpu, scheduler='processes')
             )
 
-            # add this to avoid drop errors later on
-            results['#'] = np.nan
-            results['has_siblings'] = False
-            results['detection'] = True
+            f_results.index = f_results.index.droplevel()
 
-        else:
-            meta = {
-                '#': 'f',
-                'island_id': 'U',
-                'component_id': 'U',
-                'component_name': 'U',
-                'ra_hms_cont': 'U',
-                'dec_dms_cont': 'U',
-                'ra_deg_cont': 'f',
-                'dec_deg_cont': 'f',
-                'ra_err': 'f',
-                'dec_err': 'f',
-                'freq': 'f',
-                'flux_peak': 'f',
-                'flux_peak_err': 'f',
-                'flux_int': 'f',
-                'flux_int_err': 'f',
-                'maj_axis': 'f',
-                'min_axis': 'f',
-                'pos_ang': 'f',
-                'maj_axis_err': 'f',
-                'min_axis_err': 'f',
-                'pos_ang_err': 'f',
-                'maj_axis_deconv': 'f',
-                'min_axis_deconv': 'f',
-                'pos_ang_deconv': 'f',
-                'maj_axis_deconv_err': 'f',
-                'min_axis_deconv_err': 'f',
-                'pos_ang_deconv_err': 'f',
-                'chi_squared_fit': 'f',
-                'rms_fit_gauss': 'f',
-                'spectral_index': 'f',
-                'spectral_curvature': 'f',
-                'spectral_index_err': 'f',
-                'spectral_curvature_err': 'f',
-                'rms_image': 'f',
-                'has_siblings': 'f',
-                'fit_is_estimate': 'f',
-                'spectral_index_from_TT': 'f',
-                'flag_c4': 'f',
-                'comment': 'f',
-                'detection': '?',
-            }
+        meta = {
+            '#': 'f',
+            'island_id': 'U',
+            'component_id': 'U',
+            'component_name': 'U',
+            'ra_hms_cont': 'U',
+            'dec_dms_cont': 'U',
+            'ra_deg_cont': 'f',
+            'dec_deg_cont': 'f',
+            'ra_err': 'f',
+            'dec_err': 'f',
+            'freq': 'f',
+            'flux_peak': 'f',
+            'flux_peak_err': 'f',
+            'flux_int': 'f',
+            'flux_int_err': 'f',
+            'maj_axis': 'f',
+            'min_axis': 'f',
+            'pos_ang': 'f',
+            'maj_axis_err': 'f',
+            'min_axis_err': 'f',
+            'pos_ang_err': 'f',
+            'maj_axis_deconv': 'f',
+            'min_axis_deconv': 'f',
+            'pos_ang_deconv': 'f',
+            'maj_axis_deconv_err': 'f',
+            'min_axis_deconv_err': 'f',
+            'pos_ang_deconv_err': 'f',
+            'chi_squared_fit': 'f',
+            'rms_fit_gauss': 'f',
+            'spectral_index': 'f',
+            'spectral_curvature': 'f',
+            'spectral_index_err': 'f',
+            'spectral_curvature_err': 'f',
+            'rms_image': 'f',
+            'has_siblings': 'f',
+            'fit_is_estimate': 'f',
+            'spectral_index_from_TT': 'f',
+            'flag_c4': 'f',
+            'comment': 'f',
+            'detection': '?',
+        }
 
-            results = (
-                dd.from_pandas(self.sources_df, self.ncpu)
-                .groupby('selavy')
-                .apply(
-                    self._get_components,
-                    meta=meta,
-                ).compute(num_workers=self.ncpu, scheduler='processes')
-            )
+        results = (
+            dd.from_pandas(self.sources_df, self.ncpu)
+            .groupby('selavy')
+            .apply(
+                self._get_components,
+                meta=meta,
+            ).compute(num_workers=self.ncpu, scheduler='processes')
+        )
 
         results.index = results.index.droplevel()
+
+        if self.settings['forced_fits']:
+            results = results.merge(
+                f_results, left_index=True, right_index=True
+            )
 
         if self.settings['search_around']:
             how = 'inner'
@@ -884,8 +903,8 @@ class Query:
             chisq_islands, DOF_islands
         ) = FP.measure(
             to_fit,
-            [major for i in range(to_fit.shape[0])] * u.arcmin,
-            [minor for i in range(to_fit.shape[0])] * u.arcmin,
+            [major for i in range(to_fit.shape[0])] * u.arcsec,
+            [minor for i in range(to_fit.shape[0])] * u.arcsec,
             [pa for i in range(to_fit.shape[0])] * u.deg,
             cluster_threshold=3
         )
@@ -900,23 +919,23 @@ class Query:
         ]
 
         data = {
-            'island_id': source_names,
-            'component_id': source_names,
-            'ra_deg_cont':  group.ra,
-            'dec_deg_cont':group.dec,
-            'flux_peak': flux_islands,
-            'flux_peak_err': flux_err_islands,
-            'flux_int': flux_islands,
-            'flux_int_err': flux_err_islands,
-            'chi_squared_fit': chisq_islands,
-            'rms_image': flux_err_islands,
+            'f_island_id': source_names,
+            'f_component_id': source_names,
+            'f_ra_deg_cont':  group.ra,
+            'f_dec_deg_cont':group.dec,
+            'f_flux_peak': flux_islands,
+            'f_flux_peak_err': flux_err_islands,
+            'f_flux_int': flux_islands,
+            'f_flux_int_err': flux_err_islands,
+            'f_chi_squared_fit': chisq_islands,
+            'f_rms_image': flux_err_islands,
         }
 
         df = pd.DataFrame(data)
 
-        df['maj_axis'] = major
-        df['min_axis'] = minor
-        df['pos_ang'] = pa
+        df['f_maj_axis'] = major
+        df['f_min_axis'] = minor
+        df['f_pos_ang'] = pa
 
         df.index = group.index.values
 

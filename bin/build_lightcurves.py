@@ -79,6 +79,18 @@ def parse_args():
             " will start from 0."
         ))
     parser.add_argument(
+        '--use-forced-for-limits',
+        action="store_true",
+        help="Use the forced fits values instead of upper limits.")
+    parser.add_argument(
+        '--use-forced-for-all',
+        action="store_true",
+        help="Use the forced fits for all datapoints.")
+    parser.add_argument(
+        '--hide-legend',
+        action="store_true",
+        help="Don't show the legend on the final plot.")
+    parser.add_argument(
         '--nice',
         type=int,
         help='Set nice level.',
@@ -96,14 +108,27 @@ def load_sources(folder):
         glob.glob(os.path.join(folder, '*_measurements.csv'))
     )
 
+    # check for sorted outputt
+    if len(files) == 0:
+        files = sorted(
+            glob.glob(os.path.join(folder, '*', '*_measurements.csv'))
+        )
+        sort = True
+    else:
+        sort = False
+
     sources = [
-        source_from_measurements_file(i, folder) for i in files
+        source_from_measurements_file(i, folder, sort=sort) for i in files
     ]
 
     return sources
 
 
-def source_from_measurements_file(measurement_file, outdir):
+def source_from_measurements_file(measurement_file, outdir, sort=False):
+    if sort:
+        file_split = measurement_file.split("/")
+        outdir = os.path.join(outdir, file_split[-2])
+
     measurements = pd.read_csv(measurement_file)
 
     m = measurements.iloc[0]
@@ -118,6 +143,10 @@ def source_from_measurements_file(measurement_file, outdir):
     source_crossmatch_radius = None
     source_outdir = outdir
     source_image_type = "UNKNOWN"
+    if "f_maj_axis" in measurements.columns:
+        forced_fits = True
+    else:
+        forced_fits = False
 
     thesource = Source(
         source_coord,
@@ -130,7 +159,8 @@ def source_from_measurements_file(measurement_file, outdir):
         measurements,
         source_base_folder,
         source_image_type,
-        outdir=source_outdir
+        outdir=source_outdir,
+        forced_fits=forced_fits
     )
 
     return thesource
@@ -150,6 +180,7 @@ if __name__ == '__main__':
     sources = load_sources(args.folder)
 
     for s in sources:
+        logger.info('Saving %s lightcurve.', s.name)
         s.plot_lightcurve(
             min_points=args.min_points,
             min_detections=args.min_detections,
@@ -157,9 +188,11 @@ if __name__ == '__main__':
             grid=args.grid,
             yaxis_start=args.yaxis_start,
             peak_flux=(not args.use_int_flux),
-            save=True
+            save=True,
+            use_forced_for_limits=args.use_forced_for_limits,
+            use_forced_for_all=args.use_forced_for_all,
+            no_legend=args.hide_legend
         )
-        logger.info('Saving %s lightcurve.', s.name)
 
     runend = datetime.datetime.now()
     runtime = runend - runstart

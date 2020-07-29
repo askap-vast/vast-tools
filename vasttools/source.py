@@ -91,7 +91,7 @@ class Source:
         planet=False,
         pipeline=False,
         tiles=False,
-        forced_fits=False
+        forced_fits=False,
     ):
         '''Constructor method
         '''
@@ -187,7 +187,7 @@ class Source:
             )
 
         # drop any empty values
-        if not self.pipeline:
+        if not self.pipeline and not self.forced_fits:
             measurements_to_write = measurements_to_write[
                 measurements_to_write['rms_image'] != -99
             ]
@@ -209,9 +209,6 @@ class Source:
         elif not outfile.endswith(".csv"):
             outfile += ".csv"
 
-        if self.forced_fits:
-            outfile = outfile.replace(".csv", "_forced.csv")
-
         if self.outdir != ".":
             outfile = os.path.join(
                 self.outdir,
@@ -225,7 +222,8 @@ class Source:
     def plot_lightcurve(self, sigma_thresh=5, figsize=(8, 4),
                         min_points=2, min_detections=0, mjd=False,
                         grid=False, yaxis_start="auto", peak_flux=True,
-                        save=False, outfile=None):
+                        save=False, outfile=None, use_forced_for_limits=False,
+                        use_forced_for_all=False, hide_legend=False):
         '''
         Plot source lightcurves and save to file
 
@@ -244,6 +242,12 @@ class Source:
         :param grid: Turn on matplotlib grid, defaults to False
         :type grid: bool, optional
         '''
+        if use_forced_for_all or use_forced_for_limits:
+            if not self.forced_fits:
+                raise Exception(
+                    "Source does not have any forced fits points to plot."
+                )
+
         if self.detections < min_detections:
             self.logger.error(
                 "Number of detections (%i) lower than minimum required (%i)",
@@ -260,7 +264,9 @@ class Source:
 
         # remove empty values
         measurements = self.measurements
-        if not self.pipeline:
+        if not self.pipeline and not (
+            use_forced_for_limits or use_forced_for_all
+        ):
             measurements = self.measurements[
                 self.measurements['rms_image'] != -99
             ]
@@ -289,6 +295,11 @@ class Source:
         else:
             label = 'Integrated Flux Density (mJy)'
             flux_col = "flux_int"
+
+        if use_forced_for_all:
+            label = "Forced " + label
+            flux_col = "f_" + flux_col
+
         ax.set_ylabel(label)
 
         self.logger.debug("Plotting upper limit")
@@ -296,6 +307,8 @@ class Source:
             upper_lim_mask = measurements.forced == True
         else:
             upper_lim_mask = measurements.detection == False
+            if use_forced_for_all:
+                upper_lim_mask = np.array([False for i in upper_lim_mask])
         upper_lims = measurements[
             upper_lim_mask
         ]
@@ -309,25 +322,45 @@ class Source:
             marker = "D"
             uplims = False
             sigma_thresh = 1.0
+            label = 'Forced'
         else:
-            value_col = err_value_col = 'rms_image'
-            marker = "_"
-            uplims = True
-        upperlim_points = ax.errorbar(
-            plot_dates[upper_lim_mask],
-            sigma_thresh *
-            upper_lims[value_col],
-            yerr=upper_lims[err_value_col],
-            uplims=uplims,
-            lolims=False,
-            marker=marker,
-            c='k',
-            linestyle="none")
+            if use_forced_for_limits:
+                value_col = 'f_flux_peak'
+                err_value_col = 'f_flux_peak_err'
+                uplims = False
+                marker = "D"
+                sigma_thresh = 1.0
+                markerfacecolor = 'k'
+                label = "Forced"
+            else:
+                value_col = err_value_col = 'rms_image'
+                marker = "_"
+                uplims = True
+                markerfacecolor = 'k'
+                label = 'Upper limit'
+        if upper_lim_mask.any():
+            upperlim_points = ax.errorbar(
+                plot_dates[upper_lim_mask],
+                sigma_thresh *
+                upper_lims[value_col],
+                yerr=upper_lims[err_value_col],
+                uplims=uplims,
+                lolims=False,
+                marker=marker,
+                c='k',
+                linestyle="none",
+                markerfacecolor=markerfacecolor,
+                label=label
+            )
 
         self.logger.debug("Plotting detection")
-        detections = measurements[
-            ~upper_lim_mask
-        ]
+
+        if use_forced_for_all:
+            detections = measurements
+        else:
+            detections = measurements[
+                ~upper_lim_mask
+            ]
 
         if self.pipeline:
             if peak_flux:
@@ -335,19 +368,29 @@ class Source:
             else:
                 err_value_col = 'flux_int_err'
         else:
-            err_value_col = 'rms_image'
+            if use_forced_for_all:
+                err_value_col = flux_col + '_err'
+            else:
+                err_value_col = 'rms_image'
 
-        if self.forced_fits:
+        if use_forced_for_all:
             marker = "D"
+            markerfacecolor = 'k'
+            label = 'Forced'
         else:
             marker = 'o'
-        detection_points = ax.errorbar(
-            plot_dates[~upper_lim_mask],
-            detections[flux_col],
-            yerr=detections[err_value_col],
-            marker=marker,
-            c='k',
-            linestyle="none")
+            markerfacecolor = 'k'
+            label = 'Selavy'
+        if (~upper_lim_mask).any():
+            detection_points = ax.errorbar(
+                plot_dates[~upper_lim_mask],
+                detections[flux_col],
+                yerr=detections[err_value_col],
+                marker=marker,
+                c='k',
+                linestyle="none",
+                markerfacecolor=markerfacecolor,
+                label=label)
 
         if yaxis_start == "0":
             max_y = np.nanmax(
@@ -370,6 +413,9 @@ class Source:
             ax.xaxis.set_major_locator(mdates.WeekdayLocator(interval=2))
 
         ax.grid(grid)
+
+        if not hide_legend:
+            ax.legend()
 
         if save:
             if outfile is None:
@@ -872,11 +918,11 @@ class Source:
             x = selavy_sources["ra_deg_cont"]
             y = selavy_sources["dec_deg_cont"]
         else:
-            ww = np.array([f_source["maj_axis"]])
-            hh = np.array([f_source["min_axis"]])
-            aa = np.array([f_source["pos_ang"]])
-            x = np.array([f_source["ra_deg_cont"]])
-            y = np.array([f_source["dec_deg_cont"]])
+            ww = np.array([f_source["f_maj_axis"]])
+            hh = np.array([f_source["f_min_axis"]])
+            aa = np.array([f_source["f_pos_ang"]])
+            x = np.array([f_source["ra"]])
+            y = np.array([f_source["dec"]])
 
         ww = ww.astype(float) / 3600.
         hh = hh.astype(float) / 3600.
@@ -900,7 +946,7 @@ class Source:
             colors = ["C2" if c.startswith(
                 "n") else "C1" for c in island_names]
         else:
-            island_names = [f_source["island_id"],]
+            island_names = [f_source["f_island_id"],]
             colors = ["C3" for c in island_names]
 
         patches = [Ellipse(
