@@ -108,7 +108,7 @@ def load_sources(folder):
         glob.glob(os.path.join(folder, '*_measurements.csv'))
     )
 
-    # check for sorted outputt
+    # check for sorted output
     if len(files) == 0:
         files = sorted(
             glob.glob(os.path.join(folder, '*', '*_measurements.csv'))
@@ -191,7 +191,7 @@ if __name__ == '__main__':
             save=True,
             use_forced_for_limits=args.use_forced_for_limits,
             use_forced_for_all=args.use_forced_for_all,
-            no_legend=args.hide_legend
+            hide_legend=args.hide_legend
         )
 
     runend = datetime.datetime.now()
