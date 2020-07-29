@@ -584,7 +584,8 @@ class ForcedPhot:
         kernel = g(xx, yy)
 
         # uncertainties: see discussion in Section 3 of Condon (1997)
-        # the uncertainty on the amplitude is just the noise at the position of the source
+        # the uncertainty on the amplitude is just the
+        # noise at the position of the source
         # so do a weighted average over the beam
         n = self.noisedata[sl]
         flux = (
