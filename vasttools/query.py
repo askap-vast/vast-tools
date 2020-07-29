@@ -9,6 +9,7 @@ from vasttools.utils import (
     check_racs_exists
 )
 from vasttools.moc import VASTMOCS
+from vasttools.fp import ForcedPhot
 
 import sys
 import numpy as np
@@ -83,7 +84,8 @@ class Query:
         crossmatch_radius=5.0, max_sep=1.0, use_tiles=False,
         use_islands=False, base_folder=None, matches_only=False,
         no_rms=False, search_around_coordinates=False,
-        output_dir=".", planets=[], ncpu=2, sort_output=False
+        output_dir=".", planets=[], ncpu=2, sort_output=False,
+        forced_fits=False
     ):
         '''Constructor method
         '''
@@ -104,11 +106,16 @@ class Query:
         self.ncpu = ncpu
 
         if coords is None and len(source_names) == 0 and len(planets) == 0:
-            if self.logger is None:
-                raise ValueError(
-                    "No coordinates or source names have been provided!"
-                    " Check inputs and try again!"
-                )
+            raise Exception(
+                "No coordinates or source names have been provided!"
+                " Check inputs and try again!"
+            )
+
+        if forced_fits and search_around_coordinates:
+            raise Exception(
+                "Forced fits and search around coordinates mode cannot be"
+                " used together! Check inputs and try again."
+            )
 
         if self.coords is None:
             if len(source_names) != 0:
@@ -178,6 +185,7 @@ class Query:
         self.settings['matches_only'] = matches_only
         self.settings['search_around'] = search_around_coordinates
         self.settings['sort_output'] = sort_output
+        self.settings['forced_fits'] = forced_fits
 
         self.settings['output_dir'] = output_dir
 
@@ -313,6 +321,9 @@ class Query:
         lc_grid=False,
         lc_yaxis_start="auto",
         lc_peak_flux=True,
+        lc_use_forced_for_limits=False,
+        lc_use_forced_for_all=False,
+        lc_hide_legend=False,
         measurements_simple=False,
         imsize=Angle(5. * u.arcmin)
     ):
@@ -379,6 +390,9 @@ class Query:
                 lc_peak_flux=lc_peak_flux,
                 lc_save=True,
                 lc_outfile=None,
+                lc_use_forced_for_limits=lc_use_forced_for_limits,
+                lc_use_forced_for_all=lc_use_forced_for_all,
+                lc_hide_legend=lc_hide_legend
             )
 
         if measurements:
@@ -493,7 +507,10 @@ class Query:
         lc_yaxis_start="auto",
         lc_peak_flux=True,
         lc_save=True,
-        lc_outfile=None
+        lc_outfile=None,
+        lc_use_forced_for_limits=False,
+        lc_use_forced_for_all=False,
+        lc_hide_legend=False
     ):
         s.plot_lightcurve(
             sigma_thresh=lc_sigma_thresh,
@@ -506,6 +523,9 @@ class Query:
             peak_flux=lc_peak_flux,
             save=lc_save,
             outfile=lc_outfile,
+            use_forced_for_limits=lc_use_forced_for_limits,
+            use_forced_for_all=lc_use_forced_for_all,
+            hide_legend=lc_hide_legend
         )
 
     def _add_source_cutout_data(self, s):
@@ -613,6 +633,35 @@ class Query:
             result_type='expand'
         )
 
+        if self.settings['forced_fits']:
+            self.logger.info("Obtaining forced fits.")
+            meta = {
+                'f_island_id': 'U',
+                'f_component_id': 'U',
+                'f_ra_deg_cont': 'f',
+                'f_dec_deg_cont': 'f',
+                'f_flux_peak': 'f',
+                'f_flux_peak_err': 'f',
+                'f_flux_int': 'f',
+                'f_flux_int_err': 'f',
+                'f_chi_squared_fit': 'f',
+                'f_rms_image': 'f',
+                'f_maj_axis': 'f',
+                'f_min_axis': 'f',
+                'f_pos_ang': 'f',
+            }
+
+            f_results = (
+                dd.from_pandas(self.sources_df, self.ncpu)
+                .groupby('image')
+                .apply(
+                    self._get_forced_fits,
+                    meta=meta,
+                ).compute(num_workers=self.ncpu, scheduler='processes')
+            )
+
+            f_results.index = f_results.index.droplevel()
+
         meta = {
             '#': 'f',
             'island_id': 'U',
@@ -666,6 +715,11 @@ class Query:
         )
 
         results.index = results.index.droplevel()
+
+        if self.settings['forced_fits']:
+            results = results.merge(
+                f_results, left_index=True, right_index=True
+            )
 
         if self.settings['search_around']:
             how = 'inner'
@@ -818,10 +872,90 @@ class Query:
             source_base_folder,
             source_image_type,
             islands=source_islands,
+            forced_fits=self.settings['forced_fits'],
             outdir=source_outdir,
         )
 
         return thesource
+
+    def _get_forced_fits(self, group):
+
+        image = group.name
+        if image is None:
+            return
+
+        group = group.sort_values(by='dateobs')
+
+        m = group.iloc[0]
+        image_name = image.split("/")[-1]
+        rms = m['rms']
+        bkg = rms.replace('rms', 'bkg')
+
+        field = m['field']
+        epoch = m['epoch']
+        stokes = m['stokes']
+
+        img_beam = Image(
+            field,
+            epoch,
+            stokes,
+            self.base_folder
+        ).beam
+
+        major = img_beam.major.to(u.arcsec).value
+        minor = img_beam.minor.to(u.arcsec).value
+        pa = img_beam.pa.to(u.deg).value
+
+        to_fit = SkyCoord(
+            group.ra, group.dec, unit=(u.deg, u.deg)
+        )
+
+        # make the Forced Photometry object
+        FP = ForcedPhot(image, bkg, rms)
+
+        # run the forced photometry
+        (
+            flux_islands, flux_err_islands,
+            chisq_islands, DOF_islands
+        ) = FP.measure(
+            to_fit,
+            [major for i in range(to_fit.shape[0])] * u.arcsec,
+            [minor for i in range(to_fit.shape[0])] * u.arcsec,
+            [pa for i in range(to_fit.shape[0])] * u.deg,
+            cluster_threshold=3
+        )
+
+        flux_islands *= 1.e3
+        flux_err_islands *= 1.e3
+
+        source_names = [
+            "{}_{:04d}".format(
+                image_name, i
+            ) for i in range(len(flux_islands))
+        ]
+
+        data = {
+            'f_island_id': source_names,
+            'f_component_id': source_names,
+            'f_ra_deg_cont':  group.ra,
+            'f_dec_deg_cont': group.dec,
+            'f_flux_peak': flux_islands,
+            'f_flux_peak_err': flux_err_islands,
+            'f_flux_int': flux_islands,
+            'f_flux_int_err': flux_err_islands,
+            'f_chi_squared_fit': chisq_islands,
+            'f_rms_image': flux_err_islands,
+        }
+
+        df = pd.DataFrame(data)
+
+        df['f_maj_axis'] = major
+        df['f_min_axis'] = minor
+        df['f_pos_ang'] = pa
+
+        df.index = group.index.values
+
+        return df
 
     def _get_components(self, group):
         selavy_file = str(group.name)
