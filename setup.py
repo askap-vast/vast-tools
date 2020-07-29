@@ -18,6 +18,7 @@ setup(
         "colorlog>=4.0.2,<5.0",
         "dask[dataframe]<=2.20.0",
         "matplotlib>=3.1.2,<4.0",
+        "mocpy=>0.8.4",
         "multiprocessing_logging<=0.3.1",
         "numexpr>=2.7.1,<2.8",
         "numpy>=1.17.4,<1.18",
