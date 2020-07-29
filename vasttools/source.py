@@ -863,7 +863,11 @@ class Source:
                 plots[i].add_collection(collection, autolim=False)
 
             if self.forced_fits:
-                collection, patches, island_names = self._gen_overlay_collection(
+                (
+                    collection,
+                    patches,
+                    island_names
+                ) = self._gen_overlay_collection(
                     self.cutout_df.iloc[index], f_source=measurement_row
                 )
                 ax.add_collection(collection, autolim=False)
@@ -912,7 +916,7 @@ class Source:
         # define ellipse properties for clarity, selavy cut will have
         # already been created.
         if f_source is None:
-            ww =  selavy_sources["maj_axis"]
+            ww = selavy_sources["maj_axis"]
             hh = selavy_sources["min_axis"]
             aa = selavy_sources["pos_ang"]
             x = selavy_sources["ra_deg_cont"]
@@ -946,7 +950,7 @@ class Source:
             colors = ["C2" if c.startswith(
                 "n") else "C1" for c in island_names]
         else:
-            island_names = [f_source["f_island_id"],]
+            island_names = [f_source["f_island_id"], ]
             colors = ["C3" for c in island_names]
 
         patches = [Ellipse(
@@ -1254,7 +1258,8 @@ class Source:
 
         if self.forced_fits:
             collection, patches, island_names = self._gen_overlay_collection(
-                self.cutout_df.iloc[index], f_source=self.measurements.iloc[index]
+                self.cutout_df.iloc[index],
+                f_source=self.measurements.iloc[index]
             )
             ax.add_collection(collection, autolim=False)
             del collection

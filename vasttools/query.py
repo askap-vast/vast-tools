@@ -922,7 +922,7 @@ class Query:
             'f_island_id': source_names,
             'f_component_id': source_names,
             'f_ra_deg_cont':  group.ra,
-            'f_dec_deg_cont':group.dec,
+            'f_dec_deg_cont': group.dec,
             'f_flux_peak': flux_islands,
             'f_flux_peak_err': flux_err_islands,
             'f_flux_int': flux_islands,
