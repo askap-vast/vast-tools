@@ -8,6 +8,7 @@ from vasttools.utils import (
     filter_selavy_components, simbad_search, match_planet_to_field,
     check_racs_exists
 )
+from vasttools.moc import VASTMOCS
 from vasttools.fp import ForcedPhot
 
 import sys
@@ -93,7 +94,7 @@ class Query:
         install_mp_handler(logger=self.logger)
 
         self.coords = coords
-        self.source_names = source_names
+        self.source_names = np.array(source_names)
         if ncpu > HOST_NCPU:
             raise ValueError(
                 "Number of CPUs requested ({}) "
@@ -455,10 +456,14 @@ class Query:
             "Number of sources within footprint: %i",
             self.num_sources_searched
         )
-        self.logger.info(
-            "Number of sources with detections: %i",
-            self.num_sources_detected
-        )
+        try:
+            self.logger.info(
+                "Number of sources with detections: %i",
+                self.num_sources_detected
+            )
+        except Exception as e:
+            # Means that find sources has not been run
+            pass
         self.logger.info("-------------------------")
 
     def _save_all_png_cutouts(
@@ -1417,6 +1422,30 @@ class Query:
 
     def build_catalog(self):
         cols = ['ra', 'dec', 'name', 'skycoord', 'stokes']
+
+        if '0' in self.settings['epochs']:
+            mask = self.coords.dec.deg > 42
+
+            if mask.any():
+                self.logger.warning(
+                    "Removing %i sources outside the RACS area", sum(mask)
+                )
+                self.coords = self.coords[~mask]
+                self.source_names = self.source_names[~mask]
+        else:
+            mocs = VASTMOCS()
+            vast_pilot_moc = mocs.load_pilot_epoch_moc('1')
+            mask = vast_pilot_moc.contains(
+                self.coords.ra, self.coords.dec, keep_inside=False
+            )
+            if mask.any():
+                self.logger.warning(
+                    "Removing %i sources outside"
+                    " the VAST Pilot Footprint", sum(mask)
+                )
+                self.coords = self.coords[~mask]
+                self.source_names = self.source_names[~mask]
+
         if self.coords.shape == ():
             catalog = pd.DataFrame(
                 [[
