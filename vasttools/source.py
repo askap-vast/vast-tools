@@ -1774,7 +1774,6 @@ class Source:
 
         return fluxes, errors
 
-
     def calc_eta_metric(self, use_int=False, forced_fits=False):
         if self.measurements.shape[0] == 1:
             return 0.
