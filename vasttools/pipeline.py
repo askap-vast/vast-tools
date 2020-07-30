@@ -831,19 +831,19 @@ class PipeAnalysis(PipeRun):
         rect_scatter = [left, bottom, width, height]
         rect_histx = [left, bottom_h, width, 0.2]
         rect_histy = [left_h, bottom, 0.2, height]
-        fig = plt.figure(figsize=(12,12))
+        fig = plt.figure(figsize=(12, 12))
         axScatter = fig.add_subplot(223, position=rect_scatter)
         plt.xlabel(r'$\eta_{\nu}$', fontsize=28)
         plt.ylabel(r'$V_{\nu}$', fontsize=28)
-        axHistx=fig.add_subplot(221, position=rect_histx)
-        axHisty=fig.add_subplot(224, position=rect_histy)
+        axHistx = fig.add_subplot(221, position=rect_histx)
+        axHisty = fig.add_subplot(224, position=rect_histy)
         axHistx.xaxis.set_major_formatter(nullfmt)
         axHisty.yaxis.set_major_formatter(nullfmt)
         axHistx.axes.yaxis.set_ticklabels([])
         axHisty.axes.xaxis.set_ticklabels([])
 
-        xdata_var=np.log10(df[x_label])
-        ydata_var=np.log10(df[y_label])
+        xdata_var = np.log10(df[x_label])
+        ydata_var = np.log10(df[y_label])
         axScatter.scatter(xdata_var, ydata_var, s=10., zorder=5, color='C0')
         axScatter.fill_between(
             [eta_cutoff, 1e4], v_cutoff, 1e4,
@@ -893,9 +893,9 @@ class PipeAnalysis(PipeRun):
                 x=eta_cutoff, linewidth=2, color='k', linestyle='--'
             )
 
-        range_x,fitx = self.gaussian_fit(x, eta_fit_mean, eta_fit_sigma)
+        range_x, fitx = self.gaussian_fit(x, eta_fit_mean, eta_fit_sigma)
         axHistx.plot(range_x, fitx, 'k:', linewidth=2)
-        range_y,fity = self.gaussian_fit(y, v_fit_mean, v_fit_sigma)
+        range_y, fity = self.gaussian_fit(y, v_fit_mean, v_fit_sigma)
         axHisty.plot(fity, range_y, 'k:', linewidth=2)
 
         return fig
