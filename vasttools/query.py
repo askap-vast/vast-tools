@@ -490,7 +490,7 @@ class Query:
         s.save_all_ann(crossmatch_overlay=crossmatch_overlay)
 
     def _save_all_reg(self, s, crossmatch_overlay=False):
-        s.save_all_ann(crossmatch_overlay=crossmatch_overlay)
+        s.save_all_reg(crossmatch_overlay=crossmatch_overlay)
 
     def _save_all_measurements(self, s, simple=False, outfile=None):
         s.write_measurements(simple=simple, outfile=outfile)

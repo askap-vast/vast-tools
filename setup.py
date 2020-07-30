@@ -12,6 +12,7 @@ setup(
     description=('Python module to interact with'
                  ' ASKAP VAST data.'),
     install_requires=[
+        "astroML>=0.4.1,<0.5",
         "astropy>=3.2,<4.2,!=4.0",
         "astroquery<=0.4.1",
         "bokeh>=2.1.1,<2.2",

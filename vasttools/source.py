@@ -134,6 +134,7 @@ class Source:
             ].shape[0]
 
             self.limits = None
+            self.forced_fits = False
         else:
             self.detections = self.measurements[
                 self.measurements.detection == True
@@ -323,6 +324,7 @@ class Source:
             uplims = False
             sigma_thresh = 1.0
             label = 'Forced'
+            markerfacecolor = 'k'
         else:
             if use_forced_for_limits:
                 value_col = 'f_flux_peak'
@@ -688,7 +690,6 @@ class Source:
             ext
         )
         return outfile
-
 
     def save_fits_cutout(self, epoch, outfile=None, size=None, force=False):
         if (self._cutouts_got is False) or (force):
