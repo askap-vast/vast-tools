@@ -628,7 +628,8 @@ class PipeAnalysis(PipeRun):
                 nonselection_line_color=None,
             )
             variable_region_1 = BoxAnnotation(
-                left=vs_min, bottom=m_min, fill_color="orange", level="underlay"
+                left=vs_min, bottom=m_min,
+                fill_color="orange", level="underlay"
             )
             variable_region_2 = BoxAnnotation(
                 left=vs_min, top=-m_min, fill_color="orange", level="underlay"
@@ -639,10 +640,12 @@ class PipeAnalysis(PipeRun):
 
         # reshape fig list for grid layout
         epoch_pair_figs = [
-            epoch_pair_figs[i : i + GRID_WIDTH]
+            epoch_pair_figs[i: i + GRID_WIDTH]
             for i in range(0, len(epoch_pair_figs), GRID_WIDTH)
         ]
-        grid = gridplot(epoch_pair_figs, plot_width=PLOT_WIDTH, plot_height=PLOT_HEIGHT)
+        grid = gridplot(
+            epoch_pair_figs, plot_width=PLOT_WIDTH, plot_height=PLOT_HEIGHT
+        )
         grid.css_classes.append("mx-auto")
 
         return grid
@@ -701,7 +704,7 @@ class PipeAnalysis(PipeRun):
         range_data = np.linspace(min(data), max(data), 1000)
         fit = norm.pdf(range_data, loc=param_mean, scale=param_sigma)
 
-        return range_data,fit
+        return range_data, fit
 
     def make_bins(self, x):
         new_bins = density_estimation.bayesian_blocks(x)
@@ -781,15 +784,15 @@ class PipeAnalysis(PipeRun):
         xmin_ax3 = 10.**(int(np.log10(min(Xax3)) - 1.1))
         xmax_ax3 = 10.**(int(np.log10(max(Xax3)) + 1.2))
         xmin_ax4 = 0.8
-        xmax_ax4 = int(max(xdata_ax4)+0.5)
+        xmax_ax4 = int(max(xdata_ax4) + 0.5)
         ymin_ax1 = 10.**(int(np.log10(min(Yax1)) - 1.1))
         ymax_ax1 = 10.**(int(np.log10(max(Yax1)) + 1.2))
         ymin_ax3 = 10.**(int(np.log10(min(Yax3)) - 1.1))
         ymax_ax3 = 10.**(int(np.log10(max(Yax3)) + 1.2))
-        ax1.set_ylim(ymin_ax1,ymax_ax1)
-        ax3.set_ylim(ymin_ax3,ymax_ax3)
-        ax3.set_xlim(xmin_ax3,xmax_ax3)
-        ax4.set_xlim(xmin_ax4,xmax_ax4)
+        ax1.set_ylim(ymin_ax1, ymax_ax1)
+        ax3.set_ylim(ymin_ax3, ymax_ax3)
+        ax3.set_xlim(xmin_ax3, xmax_ax3)
+        ax4.set_xlim(xmin_ax4, xmax_ax4)
         ax1.set_xlim(ax3.get_xlim())
         ax4.set_ylim(ax3.get_ylim())
         ax2.set_xlim(ax4.get_xlim())
@@ -864,9 +867,9 @@ class PipeAnalysis(PipeRun):
         ymin = int(min(y) - 1.1)
         ymax = int(max(y) + 1.1)
         xvals = range(xmin, xmax)
-        xtxts=[r'$10^{'+str(a)+'}$' for a in xvals]
-        yvals=range(ymin, ymax)
-        ytxts=[r'$10^{' + str(a) + '}$' for a in yvals]
+        xtxts = [r'$10^{'+str(a)+'}$' for a in xvals]
+        yvals = range(ymin, ymax)
+        ytxts = [r'$10^{' + str(a) + '}$' for a in yvals]
         axScatter.set_xlim([xmin, xmax])
         axScatter.set_ylim([ymin, ymax])
         axScatter.set_xticks(xvals)
@@ -891,9 +894,9 @@ class PipeAnalysis(PipeRun):
             )
 
         range_x,fitx = self.gaussian_fit(x, eta_fit_mean, eta_fit_sigma)
-        axHistx.plot(range_x,fitx, 'k:', linewidth=2)
+        axHistx.plot(range_x, fitx, 'k:', linewidth=2)
         range_y,fity = self.gaussian_fit(y, v_fit_mean, v_fit_sigma)
-        axHisty.plot(fity,range_y, 'k:', linewidth=2)
+        axHisty.plot(fity, range_y, 'k:', linewidth=2)
 
         return fig
 
@@ -1083,5 +1086,3 @@ class PipeAnalysis(PipeRun):
             return eta_cutoff, v_cutoff, candidates, plot, diag
         else:
             return eta_cutoff, v_cutoff, candidates, plot
-
-
