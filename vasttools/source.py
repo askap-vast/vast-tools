@@ -272,7 +272,7 @@ class Source:
             ]
 
         if measurements.empty:
-            self.logger.warning(
+            self.logger.debug(
                 "%s has no measurements! No lightcurve will be produced.",
                 self.name
             )
@@ -886,9 +886,9 @@ class Source:
                     patches,
                     island_names
                 ) = self._gen_overlay_collection(
-                    self.cutout_df.iloc[index], f_source=measurement_row
+                    cutout_row, f_source=measurement_row
                 )
-                ax.add_collection(collection, autolim=False)
+                plots[i].add_collection(collection, autolim=False)
                 del collection
 
             [plots[i].plot(
@@ -1095,7 +1095,7 @@ class Source:
 
         if save:
             plt.savefig(outfile, bbox_inches="tight")
-            self.logger.info("Saved {}".format(outfile))
+            self.logger.debug("Saved {}".format(outfile))
 
             plt.close(fig)
 
@@ -1189,8 +1189,7 @@ class Source:
                     zscale=zscale,
                     z_contrast=contrast
                 )
-            else:
-                img_norms = self.norms
+            img_norms = self.norms
         else:
             if zscale:
                 img_norms = ImageNormalize(
@@ -1278,8 +1277,9 @@ class Source:
                         color="C0",
                         weight="bold")
         else:
-            self.logger.warning(
-                "PNG: No selavy selected or selavy catalogue failed."
+            self.logger.debug(
+                "PNG: No selavy selected or selavy catalogue failed. (%s)",
+                self.name
             )
 
         if self.forced_fits:
@@ -1385,7 +1385,7 @@ class Source:
 
         if save:
             plt.savefig(outfile, bbox_inches="tight")
-            self.logger.info("Saved {}".format(outfile))
+            self.logger.debug("Saved {}".format(outfile))
 
             plt.close(fig)
 
@@ -1473,7 +1473,7 @@ class Source:
                     f.write("COLOR GREEN\n")
                     neg = False
 
-        self.logger.info("Wrote annotation file {}.".format(outfile))
+        self.logger.debug("Wrote annotation file {}.".format(outfile))
 
     def write_reg(
             self, epoch, outfile=None, crossmatch_overlay=False,
@@ -1554,7 +1554,7 @@ class Source:
                         ra-(10./3600.), dec, self._remove_sbid(
                             row["island_id"]), color))
 
-        self.logger.info("Wrote region file {}.".format(outfile))
+        self.logger.debug("Wrote region file {}.".format(outfile))
 
     def save_measurements(
         self,
