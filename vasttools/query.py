@@ -274,22 +274,16 @@ class Query:
 
         cutouts.index = cutouts.index.droplevel()
 
-        self.sources_df = self.sources_df.join(
-            cutouts
-        )
-
         for s in self.results:
             s_name = s.name
-            s_cutout = self.sources_df[[
-                'data',
-                'wcs',
-                'header',
-                'selavy_overlay',
-                'beam'
-            ]][self.sources_df.name == s_name]
+            indexes = self.sources_df[
+                self.sources_df.name == s_name
+            ].index.values
 
-            s.cutout_df = s_cutout.reset_index(drop=True)
+            s.cutout_df = cutouts.loc[indexes].reset_index(drop=True)
             s._cutouts_got = True
+
+        del cutouts
 
         self.cutout_data_got = True
 
@@ -347,7 +341,7 @@ class Query:
             signal.SIGINT, signal.SIG_IGN
         )
 
-        workers = Pool(processes=self.ncpu)
+        workers = Pool(processes=self.ncpu,  maxtasksperchild=1)
 
         signal.signal(signal.SIGINT, original_sigint_handler)
 

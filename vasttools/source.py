@@ -689,7 +689,6 @@ class Source:
         )
         return outfile
 
-
     def save_fits_cutout(self, epoch, outfile=None, size=None, force=False):
         if (self._cutouts_got is False) or (force):
             self.get_cutout_data(size)
@@ -711,15 +710,15 @@ class Source:
 
         index = self.epochs.index(epoch)
 
-        cutout_data = self.cutout_df.iloc[index]
-
         hdu_stamp = fits.PrimaryHDU(
-            data=cutout_data.data,
-            header=cutout_data.header
+            data=self.cutout_df.iloc[index].data,
+            header=self.cutout_df.iloc[index].header
         )
 
         # Write the cutout to a new FITS file
         hdu_stamp.writeto(outfile, overwrite=True)
+
+        del hdu_stamp
 
     def save_png_cutout(self, epoch):
         fig = self.make_png(epoch)
