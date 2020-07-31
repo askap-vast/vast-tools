@@ -12,7 +12,6 @@ setup(
     description=('Python module to interact with'
                  ' ASKAP VAST data.'),
     install_requires=[
-        "astroML>=0.4.1,<0.5",
         "astropy>=3.2,<4.2,!=4.0",
         "astroquery<=0.4.1",
         "bokeh>=2.1.1,<2.2",
@@ -29,7 +28,6 @@ setup(
         "scipy>=1.4.0,<1.5.0",
         "tables>=3.6.1,<3.7.0",
         "tabulate>=0.8.6,<0.9",
-        "tqdm>=4.48.0,<4.49.0",
         ],
     scripts=[
         "bin/find_sources.py",

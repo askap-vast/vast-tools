@@ -22,7 +22,7 @@ import socket
 import re
 import signal
 import numexpr
-import tqdm
+import gc
 
 from multiprocessing import Pool, cpu_count
 from multiprocessing_logging import install_mp_handler
@@ -260,7 +260,8 @@ class Query:
             'wcs': 'O',
             'header': 'O',
             'selavy_overlay': 'O',
-            'beam': 'O'
+            'beam': 'O',
+            'name': 'U'
         }
 
         cutouts = (
@@ -275,18 +276,9 @@ class Query:
 
         cutouts.index = cutouts.index.droplevel()
 
-        for s in self.results:
-            s_name = s.name
-            indexes = self.sources_df[
-                self.sources_df.name == s_name
-            ].index.values
-
-            s.cutout_df = cutouts.loc[indexes].reset_index(drop=True)
-            s._cutouts_got = True
-
-        del cutouts
-
         self.cutout_data_got = True
+
+        return cutouts
 
     def gen_all_source_products(
         self,
@@ -339,11 +331,17 @@ class Query:
                 self.logger.info(
                     "Fetching cutout data for sources..."
                 )
-                self.get_all_cutout_data(imsize)
+                cutouts_df = self.get_all_cutout_data(imsize)
                 self.logger.info('Done.')
-            media = True
+                to_process = [(s, cutouts_df.loc[
+                    cutouts_df['name'] == s.name
+                ].reset_index()) for s in self.results.values]
+
+                del cutouts_df
+                gc.collect()
         else:
-            media = False
+            to_process = [(s, None) for s in self.results.values]
+            cutouts_df = None
 
         self.logger.info(
             'Saving source products, please be paitent for large queries...'
@@ -380,95 +378,43 @@ class Query:
             lc_use_forced_for_all=lc_use_forced_for_all,
             lc_hide_legend=lc_hide_legend,
             measurements_simple=measurements_simple,
+            calc_script_norms=~(png_disable_autoscaling)
         )
 
-        produce_source_products_multi = partial(
-            self._produce_source_products,
-            fits=fits,
-            png=png,
-            ann=ann,
-            reg=reg,
-            lightcurve=lightcurve,
-            measurements=measurements,
-            png_selavy=png_selavy,
-            png_percentile=png_percentile,
-            png_zscale=png_zscale,
-            png_contrast=png_contrast,
-            png_islands=png_islands,
-            png_no_colorbar=png_no_colorbar,
-            png_crossmatch_overlay=png_crossmatch_overlay,
-            png_hide_beam=png_hide_beam,
-            png_disable_autoscaling=png_disable_autoscaling,
-            ann_crossmatch_overlay=ann_crossmatch_overlay,
-            reg_crossmatch_overlay=reg_crossmatch_overlay,
-            lc_sigma_thresh=lc_sigma_thresh,
-            lc_figsize=lc_figsize,
-            lc_min_points=lc_min_points,
-            lc_min_detections=lc_min_detections,
-            lc_mjd=lc_mjd,
-            lc_grid=lc_grid,
-            lc_yaxis_start=lc_yaxis_start,
-            lc_peak_flux=lc_peak_flux,
-            lc_use_forced_for_limits=lc_use_forced_for_limits,
-            lc_use_forced_for_all=lc_use_forced_for_all,
-            lc_hide_legend=lc_hide_legend,
-            measurements_simple=measurements_simple,
+        original_sigint_handler = signal.signal(
+            signal.SIGINT, signal.SIG_IGN
         )
+        signal.signal(signal.SIGINT, original_sigint_handler)
+        workers = Pool(processes=self.ncpu)
 
-        if media:
-            if self.results.shape[0] <= 300:
-                parallel = True
-            else:
-                parallel = False
-        else:
-            parallel = True
-
-
-        if parallel:
-            original_sigint_handler = signal.signal(
-                signal.SIGINT, signal.SIG_IGN
+        try:
+            workers.map(
+                produce_source_products_multi,
+                to_process,
             )
-            signal.signal(signal.SIGINT, original_sigint_handler)
-            workers = Pool(processes=self.ncpu)
-
-            try:
-                workers.map(
-                    produce_source_products_multi,
-                    self.results.to_list(),
-                )
-            except KeyboardInterrupt:
-                self.logger.error(
-                    "Caught KeyboardInterrupt, terminating workers."
-                )
-                workers.terminate()
-                sys.exit()
-            except Exception as e:
-                self.logger.error(
-                    "Encountered error!."
-                )
-                self.logger.error(
-                    e
-                )
-                workers.terminate()
-                sys.exit()
-            else:
-                self.logger.debug("Normal termination")
-                workers.close()
-                workers.join()
-
-        else:
-            self.logger.warning(
-                "Saving sources individually to save memory,"
-                " see https://github.com/askap-vast/vast-tools/issues/192."
+        except KeyboardInterrupt:
+            self.logger.error(
+                "Caught KeyboardInterrupt, terminating workers."
             )
-            with tqdm.tqdm(total=self.results.shape[0]) as pbar:
-                for s in self.results:
-                    produce_source_products_multi(s)
-                    pbar.update()
+            workers.terminate()
+            sys.exit()
+        except Exception as e:
+            self.logger.error(
+                "Encountered error!."
+            )
+            self.logger.error(
+                e
+            )
+            workers.terminate()
+            sys.exit()
+        else:
+            self.logger.debug("Normal termination")
+            workers.close()
+            workers.join()
 
     def _produce_source_products(
         self,
-        source,
+        i,
         fits=True,
         png=False,
         ann=False,
@@ -498,10 +444,13 @@ class Query:
         lc_use_forced_for_all=False,
         lc_hide_legend=False,
         measurements_simple=False,
+        calc_script_norms=False
     ):
 
+        source, cutout_data = i
+
         if fits:
-            source.save_all_fits_cutouts()
+            source.save_all_fits_cutouts(cutout_data=cutout_data)
 
         if png:
             source.save_all_png_cutouts(
@@ -513,14 +462,22 @@ class Query:
                 no_colorbar=png_no_colorbar,
                 crossmatch_overlay=png_crossmatch_overlay,
                 hide_beam=png_hide_beam,
-                disable_autoscaling=png_disable_autoscaling
+                disable_autoscaling=png_disable_autoscaling,
+                cutout_data=cutout_data,
+                calc_script_norms=calc_script_norms
             )
 
         if ann:
-            source.save_all_ann(crossmatch_overlay=ann_crossmatch_overlay)
+            source.save_all_ann(
+                crossmatch_overlay=ann_crossmatch_overlay,
+                cutout_data=cutout_data
+            )
 
         if reg:
-            source.save_all_reg(crossmatch_overlay=reg_crossmatch_overlay)
+            source.save_all_reg(
+                crossmatch_overlay=reg_crossmatch_overlay,
+                cutout_data=cutout_data
+            )
 
         if lightcurve:
             source.plot_lightcurve(
@@ -604,6 +561,8 @@ class Query:
             3: "selavy_overlay",
             4: "beam"
         })
+
+        cutout_data['name'] = group['name'].values
 
         del image
 
