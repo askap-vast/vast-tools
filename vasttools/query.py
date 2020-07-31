@@ -341,6 +341,9 @@ class Query:
                 )
                 self.get_all_cutout_data(imsize)
                 self.logger.info('Done.')
+            media = True
+        else:
+            media = False
 
         self.logger.info(
             'Saving source products, please be paitent for large queries...'
@@ -412,8 +415,16 @@ class Query:
             measurements_simple=measurements_simple,
         )
 
-        if self.results.shape[0] <= 100:
+        if media:
+            if self.results.shape[0] <= 300:
+                parallel = True
+            else:
+                parallel = False
+        else:
+            parallel = True
 
+
+        if parallel:
             original_sigint_handler = signal.signal(
                 signal.SIGINT, signal.SIG_IGN
             )
@@ -530,6 +541,8 @@ class Query:
 
         if measurements:
             source.write_measurements(simple=measurements_simple)
+
+        return
 
     def summary_log(self):
         self.logger.info("-------------------------")
