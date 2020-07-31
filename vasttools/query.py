@@ -261,7 +261,8 @@ class Query:
             'header': 'O',
             'selavy_overlay': 'O',
             'beam': 'O',
-            'name': 'U'
+            'name': 'U',
+            'dateobs': 'datetime64[ns]'
         }
 
         cutouts = (
@@ -335,7 +336,9 @@ class Query:
                 self.logger.info('Done.')
                 to_process = [(s, cutouts_df.loc[
                     cutouts_df['name'] == s.name
-                ].reset_index()) for s in self.results.values]
+                ].sort_values(
+                    by='dateobs'
+                ).reset_index()) for s in self.results.values]
 
                 del cutouts_df
                 gc.collect()
@@ -410,7 +413,7 @@ class Query:
         else:
             self.logger.debug("Normal termination")
             workers.close()
-            workers.join()
+            # workers.join()
 
     def _produce_source_products(
         self,
@@ -563,6 +566,7 @@ class Query:
         })
 
         cutout_data['name'] = group['name'].values
+        cutout_data['dateobs'] = group['dateobs'].values
 
         del image
 
