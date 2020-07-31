@@ -27,7 +27,6 @@ import tqdm
 from multiprocessing import Pool, cpu_count
 from multiprocessing_logging import install_mp_handler
 from functools import partial
-import dask
 import dask.dataframe as dd
 
 import logging
@@ -380,10 +379,6 @@ class Query:
             measurements_simple=measurements_simple,
         )
 
-        original_sigint_handler = signal.signal(
-            signal.SIGINT, signal.SIG_IGN
-        )
-
         produce_source_products_multi = partial(
             self._produce_source_products,
             fits=fits,
@@ -419,6 +414,9 @@ class Query:
 
         if self.results.shape[0] <= 100:
 
+            original_sigint_handler = signal.signal(
+                signal.SIGINT, signal.SIG_IGN
+            )
             signal.signal(signal.SIGINT, original_sigint_handler)
             workers = Pool(processes=self.ncpu)
 
@@ -532,8 +530,6 @@ class Query:
 
         if measurements:
             source.write_measurements(simple=measurements_simple)
-
-        # return
 
     def summary_log(self):
         self.logger.info("-------------------------")
