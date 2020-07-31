@@ -17,7 +17,7 @@ setup(
         "bokeh>=2.1.1,<2.2",
         "colorlog>=4.0.2,<5.0",
         "dask[dataframe]<=2.20.0",
-        "matplotlib>=3.1.2,<4.0",
+        "matplotlib>=3.1.2,<3.3.0",
         "mocpy>=0.8.4",
         "multiprocessing_logging<=0.3.1",
         "numexpr>=2.7.1,<2.8",
@@ -28,6 +28,7 @@ setup(
         "scipy>=1.4.0,<1.5.0",
         "tables>=3.6.1,<3.7.0",
         "tabulate>=0.8.6,<0.9",
+        "tqdm>=4.48.0,<4.49.0",
         ],
     scripts=[
         "bin/find_sources.py",

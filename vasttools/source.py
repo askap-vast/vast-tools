@@ -1387,8 +1387,8 @@ class Source:
             self.logger.debug("Saved {}".format(outfile))
 
             plt.close(fig)
-
             return
+
         else:
             return fig
 

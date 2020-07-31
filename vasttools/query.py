@@ -22,10 +22,12 @@ import socket
 import re
 import signal
 import numexpr
+import tqdm
 
 from multiprocessing import Pool, cpu_count
 from multiprocessing_logging import install_mp_handler
 from functools import partial
+import dask
 import dask.dataframe as dd
 
 import logging
@@ -335,24 +337,170 @@ class Query:
 
         if sum([fits, png, ann, reg]) > 0:
             if not self.cutout_data_got:
+                self.logger.info(
+                    "Fetching cutout data for sources..."
+                )
                 self.get_all_cutout_data(imsize)
+                self.logger.info('Done.')
+
+        self.logger.info(
+            'Saving source products, please be paitent for large queries...'
+        )
+
+        produce_source_products_multi = partial(
+            self._produce_source_products,
+            fits=fits,
+            png=png,
+            ann=ann,
+            reg=reg,
+            lightcurve=lightcurve,
+            measurements=measurements,
+            png_selavy=png_selavy,
+            png_percentile=png_percentile,
+            png_zscale=png_zscale,
+            png_contrast=png_contrast,
+            png_islands=png_islands,
+            png_no_colorbar=png_no_colorbar,
+            png_crossmatch_overlay=png_crossmatch_overlay,
+            png_hide_beam=png_hide_beam,
+            png_disable_autoscaling=png_disable_autoscaling,
+            ann_crossmatch_overlay=ann_crossmatch_overlay,
+            reg_crossmatch_overlay=reg_crossmatch_overlay,
+            lc_sigma_thresh=lc_sigma_thresh,
+            lc_figsize=lc_figsize,
+            lc_min_points=lc_min_points,
+            lc_min_detections=lc_min_detections,
+            lc_mjd=lc_mjd,
+            lc_grid=lc_grid,
+            lc_yaxis_start=lc_yaxis_start,
+            lc_peak_flux=lc_peak_flux,
+            lc_use_forced_for_limits=lc_use_forced_for_limits,
+            lc_use_forced_for_all=lc_use_forced_for_all,
+            lc_hide_legend=lc_hide_legend,
+            measurements_simple=measurements_simple,
+        )
 
         original_sigint_handler = signal.signal(
             signal.SIGINT, signal.SIG_IGN
         )
 
-        workers = Pool(processes=self.ncpu,  maxtasksperchild=1)
+        produce_source_products_multi = partial(
+            self._produce_source_products,
+            fits=fits,
+            png=png,
+            ann=ann,
+            reg=reg,
+            lightcurve=lightcurve,
+            measurements=measurements,
+            png_selavy=png_selavy,
+            png_percentile=png_percentile,
+            png_zscale=png_zscale,
+            png_contrast=png_contrast,
+            png_islands=png_islands,
+            png_no_colorbar=png_no_colorbar,
+            png_crossmatch_overlay=png_crossmatch_overlay,
+            png_hide_beam=png_hide_beam,
+            png_disable_autoscaling=png_disable_autoscaling,
+            ann_crossmatch_overlay=ann_crossmatch_overlay,
+            reg_crossmatch_overlay=reg_crossmatch_overlay,
+            lc_sigma_thresh=lc_sigma_thresh,
+            lc_figsize=lc_figsize,
+            lc_min_points=lc_min_points,
+            lc_min_detections=lc_min_detections,
+            lc_mjd=lc_mjd,
+            lc_grid=lc_grid,
+            lc_yaxis_start=lc_yaxis_start,
+            lc_peak_flux=lc_peak_flux,
+            lc_use_forced_for_limits=lc_use_forced_for_limits,
+            lc_use_forced_for_all=lc_use_forced_for_all,
+            lc_hide_legend=lc_hide_legend,
+            measurements_simple=measurements_simple,
+        )
 
-        signal.signal(signal.SIGINT, original_sigint_handler)
+        if self.results.shape[0] <= 100:
+
+            signal.signal(signal.SIGINT, original_sigint_handler)
+            workers = Pool(processes=self.ncpu)
+
+            try:
+                workers.map(
+                    produce_source_products_multi,
+                    self.results.to_list(),
+                )
+            except KeyboardInterrupt:
+                self.logger.error(
+                    "Caught KeyboardInterrupt, terminating workers."
+                )
+                workers.terminate()
+                sys.exit()
+            except Exception as e:
+                self.logger.error(
+                    "Encountered error!."
+                )
+                self.logger.error(
+                    e
+                )
+                workers.terminate()
+                sys.exit()
+            else:
+                self.logger.debug("Normal termination")
+                workers.close()
+                workers.join()
+
+        else:
+            self.logger.warning(
+                "Saving sources individually to save memory,"
+                " see https://github.com/askap-vast/vast-tools/issues/192."
+            )
+            with tqdm.tqdm(total=self.results.shape[0]) as pbar:
+                for s in self.results:
+                    produce_source_products_multi(s)
+                    pbar.update()
+
+    def _produce_source_products(
+        self,
+        source,
+        fits=True,
+        png=False,
+        ann=False,
+        reg=False,
+        lightcurve=False,
+        measurements=False,
+        png_selavy=True,
+        png_percentile=99.9,
+        png_zscale=False,
+        png_contrast=0.2,
+        png_islands=True,
+        png_no_colorbar=False,
+        png_crossmatch_overlay=False,
+        png_hide_beam=False,
+        png_disable_autoscaling=False,
+        ann_crossmatch_overlay=False,
+        reg_crossmatch_overlay=False,
+        lc_sigma_thresh=5,
+        lc_figsize=(8, 4),
+        lc_min_points=2,
+        lc_min_detections=1,
+        lc_mjd=False,
+        lc_grid=False,
+        lc_yaxis_start="auto",
+        lc_peak_flux=True,
+        lc_use_forced_for_limits=False,
+        lc_use_forced_for_all=False,
+        lc_hide_legend=False,
+        measurements_simple=False,
+    ):
+
+        if fits:
+            source.save_all_fits_cutouts()
 
         if png:
-            multi_png = partial(
-                self._save_all_png_cutouts,
+            source.save_all_png_cutouts(
                 selavy=png_selavy,
                 percentile=png_percentile,
                 zscale=png_zscale,
                 contrast=png_contrast,
-                no_islands=png_islands,
+                islands=png_islands,
                 no_colorbar=png_no_colorbar,
                 crossmatch_overlay=png_crossmatch_overlay,
                 hide_beam=png_hide_beam,
@@ -360,87 +508,32 @@ class Query:
             )
 
         if ann:
-            multi_ann = partial(
-                self._save_all_ann,
-                crossmatch_overlay=ann_crossmatch_overlay
-            )
+            source.save_all_ann(crossmatch_overlay=ann_crossmatch_overlay)
 
         if reg:
-            multi_reg = partial(
-                self._save_all_reg,
-                crossmatch_overlay=reg_crossmatch_overlay
-            )
+            source.save_all_reg(crossmatch_overlay=reg_crossmatch_overlay)
 
         if lightcurve:
-            multi_lc = partial(
-                self._save_all_lc,
-                lc_sigma_thresh=lc_sigma_thresh,
-                lc_figsize=lc_figsize,
-                lc_min_points=lc_min_points,
-                lc_min_detections=lc_min_detections,
-                lc_mjd=lc_mjd,
-                lc_grid=lc_grid,
-                lc_yaxis_start=lc_yaxis_start,
-                lc_peak_flux=lc_peak_flux,
-                lc_save=True,
-                lc_outfile=None,
-                lc_use_forced_for_limits=lc_use_forced_for_limits,
-                lc_use_forced_for_all=lc_use_forced_for_all,
-                lc_hide_legend=lc_hide_legend
+            source.plot_lightcurve(
+                sigma_thresh=lc_sigma_thresh,
+                figsize=lc_figsize,
+                min_points=lc_min_points,
+                min_detections=lc_min_detections,
+                mjd=lc_mjd,
+                grid=lc_grid,
+                yaxis_start=lc_yaxis_start,
+                peak_flux=lc_peak_flux,
+                save=True,
+                outfile=None,
+                use_forced_for_limits=lc_use_forced_for_limits,
+                use_forced_for_all=lc_use_forced_for_all,
+                hide_legend=lc_hide_legend
             )
 
         if measurements:
-            multi_measurements = partial(
-                self._save_all_measurements,
-                simple=measurements_simple,
-                outfile=None,
-            )
+            source.write_measurements(simple=measurements_simple)
 
-        try:
-            if fits:
-                self.logger.info("Saving FITS cutouts...")
-                workers.map(self._save_all_fits_cutouts, self.results)
-                self.logger.info("Done")
-            if png:
-                self.logger.info("Saving PNG cutouts...")
-                workers.map(multi_png, self.results)
-                self.logger.info("Done")
-            if ann:
-                self.logger.info("Saving .ann files...")
-                workers.map(multi_ann, self.results)
-                self.logger.info("Done")
-            if reg:
-                self.logger.info("Saving .reg files...")
-                workers.map(multi_reg, self.results)
-                self.logger.info("Done")
-            if lightcurve:
-                self.logger.info("Saving lightcurves...")
-                workers.map(multi_lc, self.results)
-                self.logger.info("Done")
-            if measurements:
-                self.logger.info("Saving measurements...")
-                workers.map(multi_measurements, self.results)
-                self.logger.info("Done")
-
-        except KeyboardInterrupt:
-            self.logger.error(
-                "Caught KeyboardInterrupt, terminating workers."
-            )
-            workers.terminate()
-            sys.exit()
-        except Exception as e:
-            self.logger.error(
-                "Encountered error!."
-            )
-            self.logger.error(
-                e
-            )
-            workers.terminate()
-            sys.exit()
-        else:
-            self.logger.debug("Normal termination")
-            workers.close()
-            workers.join()
+        # return
 
     def summary_log(self):
         self.logger.info("-------------------------")
@@ -459,35 +552,6 @@ class Query:
             # Means that find sources has not been run
             pass
         self.logger.info("-------------------------")
-
-    def _save_all_png_cutouts(
-        self, s, selavy, percentile,
-        zscale, contrast, no_islands, no_colorbar,
-        crossmatch_overlay, hide_beam, disable_autoscaling
-    ):
-        s.save_all_png_cutouts(
-            selavy=selavy,
-            percentile=percentile,
-            zscale=zscale,
-            contrast=contrast,
-            islands=no_islands,
-            no_colorbar=no_colorbar,
-            crossmatch_overlay=crossmatch_overlay,
-            hide_beam=hide_beam,
-            disable_autoscaling=disable_autoscaling
-        )
-
-    def _save_all_fits_cutouts(self, s):
-        s.save_all_fits_cutouts()
-
-    def _save_all_ann(self, s, crossmatch_overlay=False):
-        s.save_all_ann(crossmatch_overlay=crossmatch_overlay)
-
-    def _save_all_reg(self, s, crossmatch_overlay=False):
-        s.save_all_ann(crossmatch_overlay=crossmatch_overlay)
-
-    def _save_all_measurements(self, s, simple=False, outfile=None):
-        s.write_measurements(simple=simple, outfile=outfile)
 
     def _save_all_lc(
         self,
@@ -612,8 +676,11 @@ class Query:
         )
 
     def find_sources(self):
+
         if self.fields_found is False:
             self.find_fields()
+
+        self.logger.info("Finding sources in PILOT data...")
 
         self.sources_df = self.fields_df.sort_values(
             by=['name', 'dateobs']
@@ -744,6 +811,8 @@ class Query:
                 ).compute(num_workers=self.ncpu, scheduler='processes')
             )
             self.results = self.results.dropna()
+
+        self.logger.info("Done.")
 
     def save_search_around_results(self, sort_output=False):
         meta = {}
@@ -1136,6 +1205,9 @@ class Query:
         ))
 
     def find_fields(self):
+        self.logger.info(
+            "Matching queried sources to VAST Pilot fields..."
+        )
         if self.racs:
             base_epoch = '0'
             base_fc = 'RACS'
@@ -1261,6 +1333,7 @@ class Query:
             self.fields_df['dateobs']
         )
 
+        self.logger.info("Done.")
         self.fields_found = True
 
     def _field_matching(
