@@ -751,6 +751,8 @@ class Source:
             args=(
                 None,
                 crossmatch_overlay,
+                None,
+                False,
                 cutout_data
             )
         )
@@ -761,6 +763,8 @@ class Source:
             args=(
                 None,
                 crossmatch_overlay,
+                None,
+                False,
                 cutout_data
             )
         )
@@ -1498,7 +1502,7 @@ class Source:
             if cutout_data is None:
                 selavy_cat_cut = self.cutout_df.iloc[index].selavy_overlay
             else:
-                selavy_cat_cut = cutout_data.selavy_overlay
+                selavy_cat_cut = cutout_data.iloc[index].selavy_overlay
 
             for i, row in selavy_cat_cut.iterrows():
                 if row["island_id"].startswith("n"):
@@ -1583,7 +1587,7 @@ class Source:
             if cutout_data is None:
                 selavy_cat_cut = self.cutout_df.iloc[index].selavy_overlay
             else:
-                selavy_cat_cut = cutout_data.selavy_overlay
+                selavy_cat_cut = cutout_data.iloc[index].selavy_overlay
 
             for i, row in selavy_cat_cut.iterrows():
                 if row["island_id"].startswith("n"):
