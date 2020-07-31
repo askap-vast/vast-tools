@@ -549,39 +549,6 @@ class Query:
             pass
         self.logger.info("-------------------------")
 
-    def _save_all_lc(
-        self,
-        s,
-        lc_sigma_thresh=5,
-        lc_figsize=(8, 4),
-        lc_min_points=2,
-        lc_min_detections=1,
-        lc_mjd=False,
-        lc_grid=False,
-        lc_yaxis_start="auto",
-        lc_peak_flux=True,
-        lc_save=True,
-        lc_outfile=None,
-        lc_use_forced_for_limits=False,
-        lc_use_forced_for_all=False,
-        lc_hide_legend=False
-    ):
-        s.plot_lightcurve(
-            sigma_thresh=lc_sigma_thresh,
-            figsize=lc_figsize,
-            min_points=lc_min_points,
-            min_detections=lc_min_detections,
-            mjd=lc_mjd,
-            grid=lc_grid,
-            yaxis_start=lc_yaxis_start,
-            peak_flux=lc_peak_flux,
-            save=lc_save,
-            outfile=lc_outfile,
-            use_forced_for_limits=lc_use_forced_for_limits,
-            use_forced_for_all=lc_use_forced_for_all,
-            hide_legend=lc_hide_legend
-        )
-
     def _add_source_cutout_data(self, s):
         s_name = s.name
         s_cutout = self.sources_df[[

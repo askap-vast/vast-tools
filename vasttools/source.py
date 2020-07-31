@@ -134,6 +134,7 @@ class Source:
             ].shape[0]
 
             self.limits = None
+            self.forced_fits = False
         else:
             self.detections = self.measurements[
                 self.measurements.detection == True
@@ -323,6 +324,7 @@ class Source:
             uplims = False
             sigma_thresh = 1.0
             label = 'Forced'
+            markerfacecolor = 'k'
         else:
             if use_forced_for_limits:
                 value_col = 'f_flux_peak'
@@ -1728,3 +1730,92 @@ class Source:
                 "Error in performing the NED region search! Error: %s", e
             )
             return None
+
+    def _get_fluxes_and_errors(self, suffix, forced_fits):
+
+        if self.pipeline:
+            non_detect_label = 'flux_{}'.format(suffix)
+            non_detect_label_err = 'flux_{}_err'.format(suffix)
+            scale = 1.
+            detection_label = 'forced'
+            detection_value = False
+        else:
+            detection_label = 'detection'
+            detection_value = True
+            if forced_fits:
+                non_detect_label = 'f_flux_{}'.format(suffix)
+                non_detect_label_err = 'f_flux_{}_err'.format(suffix)
+                scale = 1.
+            else:
+                scale = 5.
+                non_detect_label = 'rms_image'
+                non_detect_label_err = 'rms_image'
+
+        detect_mask = self.measurements[detection_label] == detection_value
+
+        detect_fluxes = (
+            self.measurements[detect_mask]['flux_{}'.format(suffix)]
+        )
+        detect_errors = (
+            self.measurements[detect_mask]['flux_{}_err'.format(
+                suffix
+            )]
+        )
+
+        non_detect_fluxes = (
+            self.measurements[~detect_mask][non_detect_label] * scale
+        )
+        non_detect_errors = (
+            self.measurements[~detect_mask][non_detect_label_err]
+        )
+
+        fluxes = detect_fluxes.append(non_detect_fluxes)
+        errors = detect_errors.append(non_detect_errors)
+
+        return fluxes, errors
+
+    def calc_eta_metric(self, use_int=False, forced_fits=False):
+        if self.measurements.shape[0] == 1:
+            return 0.
+
+        suffix = 'int' if use_int else 'peak'
+
+        if forced_fits and not self.forced_fits:
+            raise Exception(
+                "Forced fits selected but no forced fits are present!"
+            )
+
+        fluxes, errors = self._get_fluxes_and_errors(suffix, forced_fits)
+        n_src = fluxes.shape[0]
+
+        weights = 1. / errors**2
+        eta = (n_src / (n_src-1)) * (
+            (weights * fluxes**2).mean() - (
+                (weights * fluxes).mean()**2 / weights.mean()
+            )
+        )
+
+        return eta
+
+    def calc_v_metric(self, use_int=False, forced_fits=False):
+        if self.measurements.shape[0] == 1:
+            return 0.
+
+        suffix = 'int' if use_int else 'peak'
+
+        if forced_fits and not self.forced_fits:
+            raise Exception(
+                "Forced fits selected but no forced fits are present!"
+            )
+
+        fluxes, _ = self._get_fluxes_and_errors(suffix, forced_fits)
+        v = fluxes.std() / fluxes.mean()
+
+        return v
+
+    def calc_eta_and_v_metrics(self, use_int=False, forced_fits=False):
+
+        eta = self.calc_eta_metric(use_int=use_int, forced_fits=forced_fits)
+        v = self.calc_v_metric(use_int=use_int, forced_fits=forced_fits)
+
+        return eta, v
