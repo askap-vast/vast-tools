@@ -1798,11 +1798,11 @@ class Source:
     def _get_fluxes_and_errors(self, suffix, forced_fits):
 
         if self.pipeline:
-             non_detect_label = 'flux_{}'.format(suffix)
-             non_detect_label_err = 'flux_{}_err'.format(suffix)
-             scale = 1.
-             detection_label = 'forced'
-             detection_value = False
+            non_detect_label = 'flux_{}'.format(suffix)
+            non_detect_label_err = 'flux_{}_err'.format(suffix)
+            scale = 1.
+            detection_label = 'forced'
+            detection_value = False
         else:
             detection_label = 'detection'
             detection_value = True
@@ -1812,7 +1812,7 @@ class Source:
              scale = 1.
         else:
              scale = 5.
-             non_detect_label = 'rzms_image'
+             non_detect_label = 'rms_image'
              non_detect_label_err = 'rms_image'
 
         detect_mask = self.measurements[detection_label] == detection_value
@@ -1822,7 +1822,7 @@ class Source:
         )
         detect_errors = (
             self.measurements[detect_mask]['flux_{}_err'.format(
-            suffix
+                suffix
             )]
         )
 
@@ -1846,7 +1846,7 @@ class Source:
 
         if forced_fits and not self.forced_fits:
             raise Exception(
-                 "Forced fits selected but no forced fits are present!"
+                "Forced fits selected but no forced fits are present!"
             )
 
         fluxes, errors = self._get_fluxes_and_errors(suffix, forced_fits)
