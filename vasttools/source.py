@@ -1293,23 +1293,23 @@ class Source:
         #     alpha=0.5
         # )
         if crossmatch_overlay:
-            try:
-                crossmatch_patch = SphericalCircle(
-                    (
-                        self.measurements.iloc[index].ra,
-                        self.measurements.iloc[index].dec
-                    ),
-                    self.crossmatch_radius,
-                    transform=ax.get_transform('world'),
-                    label="Crossmatch radius ({:.1f} arcsec)".format(
-                        self.crossmatch_radius.arcsec
-                    ), edgecolor='C4', facecolor='none', alpha=0.8)
-                ax.add_patch(crossmatch_patch)
-            except Exception as e:
-                self.logger.warning(
-                    "Crossmatch circle png overlay failed!"
-                    " Has the source been crossmatched?")
-                crossmatch_overlay = False
+            # try:
+            crossmatch_patch = SphericalCircle(
+                (
+                    self.measurements.iloc[index].skycoord.ra,
+                    self.measurements.iloc[index].skycoord.dec
+                ),
+                self.crossmatch_radius,
+                transform=ax.get_transform('world'),
+                label="Crossmatch radius ({:.1f} arcsec)".format(
+                    self.crossmatch_radius.arcsec
+                ), edgecolor='C4', facecolor='none', alpha=0.8)
+            ax.add_patch(crossmatch_patch)
+            # except Exception as e:
+            #     self.logger.warning(
+            #         "Crossmatch circle png overlay failed!"
+            #         " Has the source been crossmatched?")
+            #     crossmatch_overlay = False
 
         if (not cutout_row['selavy_overlay'].empty) and selavy:
             ax.set_autoscale_on(False)
