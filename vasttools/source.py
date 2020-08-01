@@ -1806,14 +1806,14 @@ class Source:
         else:
             detection_label = 'detection'
             detection_value = True
-        if forced_fits:
-             non_detect_label = 'f_flux_{}'.format(suffix)
-             non_detect_label_err = 'f_flux_{}_err'.format(suffix)
-             scale = 1.
-        else:
-             scale = 5.
-             non_detect_label = 'rms_image'
-             non_detect_label_err = 'rms_image'
+            if forced_fits:
+                 non_detect_label = 'f_flux_{}'.format(suffix)
+                 non_detect_label_err = 'f_flux_{}_err'.format(suffix)
+                 scale = 1.
+            else:
+                 scale = 5.
+                 non_detect_label = 'rms_image'
+                 non_detect_label_err = 'rms_image'
 
         detect_mask = self.measurements[detection_label] == detection_value
 
