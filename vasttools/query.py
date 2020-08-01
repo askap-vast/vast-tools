@@ -388,7 +388,7 @@ class Query:
             signal.SIGINT, signal.SIG_IGN
         )
         signal.signal(signal.SIGINT, original_sigint_handler)
-        workers = Pool(processes=self.ncpu)
+        workers = Pool(processes=self.ncpu, maxtasksperchild=100)
 
         try:
             workers.map(
@@ -634,7 +634,7 @@ class Query:
         )
 
         if self.settings['forced_fits']:
-            self.logger.info("Obtaining forced fits.")
+            self.logger.info("Obtaining forced fits...")
             meta = {
                 'f_island_id': 'U',
                 'f_component_id': 'U',
@@ -661,6 +661,8 @@ class Query:
             )
 
             f_results.index = f_results.index.droplevel()
+
+            self.logger.info("Done.")
 
         meta = {
             '#': 'f',
@@ -720,6 +722,8 @@ class Query:
             results = results.merge(
                 f_results, left_index=True, right_index=True
             )
+
+            del f_results
 
         if self.settings['search_around']:
             how = 'inner'
