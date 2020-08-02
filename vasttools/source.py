@@ -91,6 +91,7 @@ class Source:
         planet=False,
         pipeline=False,
         tiles=False,
+        forced_fits=False,
     ):
         '''Constructor method
         '''
@@ -133,6 +134,7 @@ class Source:
             ].shape[0]
 
             self.limits = None
+            self.forced_fits = False
         else:
             self.detections = self.measurements[
                 self.measurements.detection == True
@@ -143,6 +145,7 @@ class Source:
             ].shape[0]
 
             self.forced = None
+            self.forced_fits = forced_fits
 
         self._cutouts_got = False
 
@@ -185,7 +188,7 @@ class Source:
             )
 
         # drop any empty values
-        if not self.pipeline:
+        if not self.pipeline and not self.forced_fits:
             measurements_to_write = measurements_to_write[
                 measurements_to_write['rms_image'] != -99
             ]
@@ -220,7 +223,8 @@ class Source:
     def plot_lightcurve(self, sigma_thresh=5, figsize=(8, 4),
                         min_points=2, min_detections=0, mjd=False,
                         grid=False, yaxis_start="auto", peak_flux=True,
-                        save=False, outfile=None):
+                        save=False, outfile=None, use_forced_for_limits=False,
+                        use_forced_for_all=False, hide_legend=False):
         '''
         Plot source lightcurves and save to file
 
@@ -239,6 +243,12 @@ class Source:
         :param grid: Turn on matplotlib grid, defaults to False
         :type grid: bool, optional
         '''
+        if use_forced_for_all or use_forced_for_limits:
+            if not self.forced_fits:
+                raise Exception(
+                    "Source does not have any forced fits points to plot."
+                )
+
         if self.detections < min_detections:
             self.logger.error(
                 "Number of detections (%i) lower than minimum required (%i)",
@@ -255,13 +265,15 @@ class Source:
 
         # remove empty values
         measurements = self.measurements
-        if not self.pipeline:
+        if not self.pipeline and not (
+            use_forced_for_limits or use_forced_for_all
+        ):
             measurements = self.measurements[
                 self.measurements['rms_image'] != -99
             ]
 
         if measurements.empty:
-            self.logger.warning(
+            self.logger.debug(
                 "%s has no measurements! No lightcurve will be produced.",
                 self.name
             )
@@ -284,6 +296,11 @@ class Source:
         else:
             label = 'Integrated Flux Density (mJy)'
             flux_col = "flux_int"
+
+        if use_forced_for_all:
+            label = "Forced " + label
+            flux_col = "f_" + flux_col
+
         ax.set_ylabel(label)
 
         self.logger.debug("Plotting upper limit")
@@ -291,6 +308,8 @@ class Source:
             upper_lim_mask = measurements.forced == True
         else:
             upper_lim_mask = measurements.detection == False
+            if use_forced_for_all:
+                upper_lim_mask = np.array([False for i in upper_lim_mask])
         upper_lims = measurements[
             upper_lim_mask
         ]
@@ -304,25 +323,46 @@ class Source:
             marker = "D"
             uplims = False
             sigma_thresh = 1.0
+            label = 'Forced'
+            markerfacecolor = 'k'
         else:
-            value_col = err_value_col = 'rms_image'
-            marker = "_"
-            uplims = True
-        upperlim_points = ax.errorbar(
-            plot_dates[upper_lim_mask],
-            sigma_thresh *
-            upper_lims[value_col],
-            yerr=upper_lims[err_value_col],
-            uplims=uplims,
-            lolims=False,
-            marker=marker,
-            c='k',
-            linestyle="none")
+            if use_forced_for_limits:
+                value_col = 'f_flux_peak'
+                err_value_col = 'f_flux_peak_err'
+                uplims = False
+                marker = "D"
+                sigma_thresh = 1.0
+                markerfacecolor = 'k'
+                label = "Forced"
+            else:
+                value_col = err_value_col = 'rms_image'
+                marker = "_"
+                uplims = True
+                markerfacecolor = 'k'
+                label = 'Upper limit'
+        if upper_lim_mask.any():
+            upperlim_points = ax.errorbar(
+                plot_dates[upper_lim_mask],
+                sigma_thresh *
+                upper_lims[value_col],
+                yerr=upper_lims[err_value_col],
+                uplims=uplims,
+                lolims=False,
+                marker=marker,
+                c='k',
+                linestyle="none",
+                markerfacecolor=markerfacecolor,
+                label=label
+            )
 
         self.logger.debug("Plotting detection")
-        detections = measurements[
-            ~upper_lim_mask
-        ]
+
+        if use_forced_for_all:
+            detections = measurements
+        else:
+            detections = measurements[
+                ~upper_lim_mask
+            ]
 
         if self.pipeline:
             if peak_flux:
@@ -330,14 +370,29 @@ class Source:
             else:
                 err_value_col = 'flux_int_err'
         else:
-            err_value_col = 'rms_image'
-        detection_points = ax.errorbar(
-            plot_dates[~upper_lim_mask],
-            detections[flux_col],
-            yerr=detections[err_value_col],
-            marker='o',
-            c='k',
-            linestyle="none")
+            if use_forced_for_all:
+                err_value_col = flux_col + '_err'
+            else:
+                err_value_col = 'rms_image'
+
+        if use_forced_for_all:
+            marker = "D"
+            markerfacecolor = 'k'
+            label = 'Forced'
+        else:
+            marker = 'o'
+            markerfacecolor = 'k'
+            label = 'Selavy'
+        if (~upper_lim_mask).any():
+            detection_points = ax.errorbar(
+                plot_dates[~upper_lim_mask],
+                detections[flux_col],
+                yerr=detections[err_value_col],
+                marker=marker,
+                c='k',
+                linestyle="none",
+                markerfacecolor=markerfacecolor,
+                label=label)
 
         if yaxis_start == "0":
             max_y = np.nanmax(
@@ -360,6 +415,9 @@ class Source:
             ax.xaxis.set_major_locator(mdates.WeekdayLocator(interval=2))
 
         ax.grid(grid)
+
+        if not hide_legend:
+            ax.legend()
 
         if save:
             if outfile is None:
@@ -443,7 +501,7 @@ class Source:
         if zscale:
             self.norms = ImageNormalize(
                 scale_data, interval=ZScaleInterval(
-                    contrast=contrast))
+                    contrast=z_contrast))
         else:
             self.norms = ImageNormalize(
                 scale_data,
@@ -460,8 +518,11 @@ class Source:
                 path=row.image, rmspath=row.rms
             )
         else:
+            e = row.epoch
+            if "-" in e:
+                e = e.split("-")[0]
             image = Image(
-                row.field, row.epoch, self.stokes,
+                row.field, e, self.stokes,
                 self.base_folder, tiles=self.tiles,
                 sbid=row.sbid
             )
@@ -615,7 +676,12 @@ class Source:
         if self.pipeline:
             name_epoch = epoch
         else:
-            name_epoch = RELEASED_EPOCHS[epoch]
+            if "-" in epoch:
+                e_split = epoch.split("-")
+                e = e_split[0]
+                name_epoch = RELEASED_EPOCHS[e] + "-" + e_split[1]
+            else:
+                name_epoch = RELEASED_EPOCHS[epoch]
         outfile = "{}_EPOCH{}{}".format(
             self.name.replace(" ", "_").replace(
                 "/", "_"
@@ -624,7 +690,6 @@ class Source:
             ext
         )
         return outfile
-
 
     def save_fits_cutout(self, epoch, outfile=None, size=None, force=False):
         if (self._cutouts_got is False) or (force):
@@ -697,13 +762,18 @@ class Source:
         no_colorbar=False,
         crossmatch_overlay=False,
         hide_beam=False,
-        size=None
+        size=None,
+        disable_autoscaling=False
     ):
         if self._cutouts_got is False:
             self.get_cutout_data(size)
 
         if not self.checked_norms:
-            self.analyse_norm_level()
+            self.analyse_norm_level(
+                percentile=percentile,
+                zscale=zscale,
+                z_contrast=contrast
+            )
 
         self.measurements['epoch'].apply(
             self.make_png,
@@ -719,15 +789,17 @@ class Source:
                 None,
                 crossmatch_overlay,
                 hide_beam,
-                True
+                True,
+                None,
+                False,
+                disable_autoscaling
             )
         )
-        # plt.close(fig)
 
     def plot_all_cutouts(
         self, columns=4, percentile=99.9, zscale=False,
         contrast=0.1, outfile=None, save=False, size=None, figsize=(10, 5),
-        force=False, no_selavy=False
+        force=False, no_selavy=False, disable_autoscaling=False
     ):
         if (self._cutouts_got is False) or (force):
             self.get_cutout_data(size)
@@ -742,26 +814,12 @@ class Source:
         plots = {}
 
         if not self.checked_norms:
-            if self.detections > 0:
-                scale_index = self.measurements[
-                    self.measurements.detection == True
-                ].index.values[0]
-            else:
-                scale_index = 0
-
-            scale_data = self.cutout_df.loc[scale_index].data
-
-            if zscale:
-                img_norms = ImageNormalize(
-                    scale_data, interval=ZScaleInterval(
-                        contrast=contrast))
-            else:
-                img_norms = ImageNormalize(
-                    scale_data,
-                    interval=PercentileInterval(percentile),
-                    stretch=LinearStretch())
-        else:
-            img_norms = self.norms
+            self.analyse_norm_level(
+                percentile=percentile,
+                zscale=zscale,
+                z_contrast=contrast
+            )
+        img_norms = self.norms
 
         for i in range(num_plots):
             cutout_row = self.cutout_df.iloc[i]
@@ -780,8 +838,22 @@ class Source:
                 projection=cutout_row.wcs
             )
 
+            if disable_autoscaling:
+                if zscale:
+                    img_norms = ImageNormalize(
+                        cutout_row.data * 1.e3,
+                        interval=ZScaleInterval(
+                            contrast=contrast
+                        )
+                    )
+                else:
+                    img_norms = ImageNormalize(
+                        cutout_row.data * 1.e3,
+                        interval=PercentileInterval(percentile),
+                        stretch=LinearStretch())
+
             im = plots[i].imshow(
-                cutout_row.data, norm=img_norms, cmap="gray_r"
+                cutout_row.data * 1.e3, norm=img_norms, cmap="gray_r"
             )
 
             plots[i].set_title('Epoch {}'.format(
@@ -808,6 +880,17 @@ class Source:
                     cutout_row
                 )
                 plots[i].add_collection(collection, autolim=False)
+
+            if self.forced_fits:
+                (
+                    collection,
+                    patches,
+                    island_names
+                ) = self._gen_overlay_collection(
+                    cutout_row, f_source=measurement_row
+                )
+                plots[i].add_collection(collection, autolim=False)
+                del collection
 
             [plots[i].plot(
                 l[0], l[1], color="C3", zorder=10, lw=1.5, alpha=0.6
@@ -841,7 +924,7 @@ class Source:
 
             return fig
 
-    def _gen_overlay_collection(self, cutout_row):
+    def _gen_overlay_collection(self, cutout_row, f_source=None):
         wcs = cutout_row.wcs
         selavy_sources = cutout_row.selavy_overlay
         pix_scale = proj_plane_pixel_scales(wcs)
@@ -851,26 +934,44 @@ class Source:
 
         # define ellipse properties for clarity, selavy cut will have
         # already been created.
-        ww = selavy_sources["maj_axis"].astype(float) / 3600.
-        hh = selavy_sources["min_axis"].astype(float) / 3600.
+        if f_source is None:
+            ww = selavy_sources["maj_axis"]
+            hh = selavy_sources["min_axis"]
+            aa = selavy_sources["pos_ang"]
+            x = selavy_sources["ra_deg_cont"]
+            y = selavy_sources["dec_deg_cont"]
+        else:
+            ww = np.array([f_source["f_maj_axis"]])
+            hh = np.array([f_source["f_min_axis"]])
+            aa = np.array([f_source["f_pos_ang"]])
+            x = np.array([f_source["ra"]])
+            y = np.array([f_source["dec"]])
+
+        ww = ww.astype(float) / 3600.
+        hh = hh.astype(float) / 3600.
         ww /= degrees_per_pixel
         hh /= degrees_per_pixel
-        aa = selavy_sources["pos_ang"].astype(float)
-        x = selavy_sources["ra_deg_cont"].astype(float)
-        y = selavy_sources["dec_deg_cont"].astype(float)
+        aa = aa.astype(float)
+        x = x.astype(float)
+        y = y.astype(float)
 
         coordinates = np.column_stack((x, y))
 
         coordinates = wcs.wcs_world2pix(coordinates, 0)
 
-        island_names = selavy_sources["island_id"].apply(
-            self._remove_sbid
-        )
         # Create ellipses, collect them, add to axis.
         # Also where correction is applied to PA to account for how selavy
         # defines it vs matplotlib
-        colors = ["C2" if c.startswith(
-            "n") else "C1" for c in island_names]
+        if f_source is None:
+            island_names = selavy_sources["island_id"].apply(
+                self._remove_sbid
+            )
+            colors = ["C2" if c.startswith(
+                "n") else "C1" for c in island_names]
+        else:
+            island_names = [f_source["f_island_id"], ]
+            colors = ["C3" for c in island_names]
+
         patches = [Ellipse(
             coordinates[i], hh[i], ww[i],
             aa[i]) for i in range(len(coordinates))]
@@ -995,7 +1096,7 @@ class Source:
 
         if save:
             plt.savefig(outfile, bbox_inches="tight")
-            self.logger.info("Saved {}".format(outfile))
+            self.logger.debug("Saved {}".format(outfile))
 
             plt.close(fig)
 
@@ -1020,6 +1121,7 @@ class Source:
             save=False,
             size=None,
             force=False,
+            disable_autoscaling=False
     ):
         '''
         Save a PNG of the image postagestamp
@@ -1081,7 +1183,15 @@ class Source:
         fig = plt.figure(figsize=(8, 8))
         ax = fig.add_subplot(111, projection=self.cutout_df.iloc[index].wcs)
         # Get the Image Normalisation from zscale, user contrast.
-        if not self.checked_norms:
+        if not disable_autoscaling:
+            if not self.checked_norms:
+                self.analyse_norm_level(
+                    percentile=percentile,
+                    zscale=zscale,
+                    z_contrast=contrast
+                )
+            img_norms = self.norms
+        else:
             if zscale:
                 img_norms = ImageNormalize(
                     self.cutout_df.iloc[index].data * 1.e3,
@@ -1093,8 +1203,6 @@ class Source:
                     self.cutout_df.iloc[index].data * 1.e3,
                     interval=PercentileInterval(percentile),
                     stretch=LinearStretch())
-        else:
-            img_norms = self.norms
 
         im = ax.imshow(
             self.cutout_df.iloc[index].data * 1.e3,
@@ -1170,9 +1278,18 @@ class Source:
                         color="C0",
                         weight="bold")
         else:
-            self.logger.warning(
-                "PNG: No selavy selected or selavy catalogue failed."
+            self.logger.debug(
+                "PNG: No selavy selected or selavy catalogue failed. (%s)",
+                self.name
             )
+
+        if self.forced_fits:
+            collection, patches, island_names = self._gen_overlay_collection(
+                self.cutout_df.iloc[index],
+                f_source=self.measurements.iloc[index]
+            )
+            ax.add_collection(collection, autolim=False)
+            del collection
 
         legend_elements = [
             Line2D(
@@ -1197,6 +1314,16 @@ class Source:
                     label="Crossmatch radius ({:.1f} arcsec)".format(
                         self.crossmatch_radius.arcsec
                     ),
+                    markerfacecolor='none', ls="none",
+                    markersize=10
+                )
+            )
+
+        if self.forced_fits:
+            legend_elements.append(
+                Line2D(
+                    [0], [0], marker='o', color='C3',
+                    label="Forced Fit",
                     markerfacecolor='none', ls="none",
                     markersize=10
                 )
@@ -1259,7 +1386,7 @@ class Source:
 
         if save:
             plt.savefig(outfile, bbox_inches="tight")
-            self.logger.info("Saved {}".format(outfile))
+            self.logger.debug("Saved {}".format(outfile))
 
             plt.close(fig)
 
@@ -1300,15 +1427,15 @@ class Source:
             f.write("FONT hershey14\n")
             f.write("COLOR BLUE\n")
             f.write("CROSS {0} {1} {2} {2}\n".format(
-                self.measurements.iloc[index].ra.deg,
-                self.measurements.iloc[index].ra.deg,
+                self.measurements.iloc[index].ra,
+                self.measurements.iloc[index].dec,
                 3./3600.
             ))
             if crossmatch_overlay:
                 try:
                     f.write("CIRCLE {} {} {}\n".format(
-                        self.measurements.iloc[index].ra.deg,
-                        self.measurements.iloc[index].dec.deg,
+                        self.measurements.iloc[index].ra,
+                        self.measurements.iloc[index].dec,
                         self.crossmatch_radius.deg
                     ))
                 except Exception as e:
@@ -1347,7 +1474,7 @@ class Source:
                     f.write("COLOR GREEN\n")
                     neg = False
 
-        self.logger.info("Wrote annotation file {}.".format(outfile))
+        self.logger.debug("Wrote annotation file {}.".format(outfile))
 
     def write_reg(
             self, epoch, outfile=None, crossmatch_overlay=False,
@@ -1383,14 +1510,14 @@ class Source:
             f.write("fk5\n")
             f.write(
                 "point({} {}) # point=x color=blue\n".format(
-                    self.measurements.iloc[index].ra.deg,
-                    self.measurements.iloc[index].dec.deg,
+                    self.measurements.iloc[index].ra,
+                    self.measurements.iloc[index].dec,
                 ))
             if crossmatch_overlay:
                 try:
                     f.write("circle({} {} {}) # color=blue\n".format(
-                        self.measurements.iloc[index].ra.deg,
-                        self.measurements.iloc[index].dec.deg,
+                        self.measurements.iloc[index].ra,
+                        self.measurements.iloc[index].dec,
                         self.crossmatch_radius.deg
                     ))
                 except Exception as e:
@@ -1428,7 +1555,7 @@ class Source:
                         ra-(10./3600.), dec, self._remove_sbid(
                             row["island_id"]), color))
 
-        self.logger.info("Wrote region file {}.".format(outfile))
+        self.logger.debug("Wrote region file {}.".format(outfile))
 
     def save_measurements(
         self,
@@ -1603,3 +1730,92 @@ class Source:
                 "Error in performing the NED region search! Error: %s", e
             )
             return None
+
+    def _get_fluxes_and_errors(self, suffix, forced_fits):
+
+        if self.pipeline:
+            non_detect_label = 'flux_{}'.format(suffix)
+            non_detect_label_err = 'flux_{}_err'.format(suffix)
+            scale = 1.
+            detection_label = 'forced'
+            detection_value = False
+        else:
+            detection_label = 'detection'
+            detection_value = True
+            if forced_fits:
+                non_detect_label = 'f_flux_{}'.format(suffix)
+                non_detect_label_err = 'f_flux_{}_err'.format(suffix)
+                scale = 1.
+            else:
+                scale = 5.
+                non_detect_label = 'rms_image'
+                non_detect_label_err = 'rms_image'
+
+        detect_mask = self.measurements[detection_label] == detection_value
+
+        detect_fluxes = (
+            self.measurements[detect_mask]['flux_{}'.format(suffix)]
+        )
+        detect_errors = (
+            self.measurements[detect_mask]['flux_{}_err'.format(
+                suffix
+            )]
+        )
+
+        non_detect_fluxes = (
+            self.measurements[~detect_mask][non_detect_label] * scale
+        )
+        non_detect_errors = (
+            self.measurements[~detect_mask][non_detect_label_err]
+        )
+
+        fluxes = detect_fluxes.append(non_detect_fluxes)
+        errors = detect_errors.append(non_detect_errors)
+
+        return fluxes, errors
+
+    def calc_eta_metric(self, use_int=False, forced_fits=False):
+        if self.measurements.shape[0] == 1:
+            return 0.
+
+        suffix = 'int' if use_int else 'peak'
+
+        if forced_fits and not self.forced_fits:
+            raise Exception(
+                "Forced fits selected but no forced fits are present!"
+            )
+
+        fluxes, errors = self._get_fluxes_and_errors(suffix, forced_fits)
+        n_src = fluxes.shape[0]
+
+        weights = 1. / errors**2
+        eta = (n_src / (n_src-1)) * (
+            (weights * fluxes**2).mean() - (
+                (weights * fluxes).mean()**2 / weights.mean()
+            )
+        )
+
+        return eta
+
+    def calc_v_metric(self, use_int=False, forced_fits=False):
+        if self.measurements.shape[0] == 1:
+            return 0.
+
+        suffix = 'int' if use_int else 'peak'
+
+        if forced_fits and not self.forced_fits:
+            raise Exception(
+                "Forced fits selected but no forced fits are present!"
+            )
+
+        fluxes, _ = self._get_fluxes_and_errors(suffix, forced_fits)
+        v = fluxes.std() / fluxes.mean()
+
+        return v
+
+    def calc_eta_and_v_metrics(self, use_int=False, forced_fits=False):
+
+        eta = self.calc_eta_metric(use_int=use_int, forced_fits=forced_fits)
+        v = self.calc_v_metric(use_int=use_int, forced_fits=forced_fits)
+
+        return eta, v

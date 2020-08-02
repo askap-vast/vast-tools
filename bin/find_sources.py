@@ -4,6 +4,8 @@
 
 # ./find_sources.py "16:16:00.22 +22:16:04.83" --create-png --imsize 5.0
 # --png-zscale-contrast 0.1 --png-selavy-overlay --use-combined
+from astropy import units as u
+from astropy.coordinates import Angle
 from vasttools.survey import Fields, Image
 from vasttools.survey import RELEASED_EPOCHS, ALLOWED_PLANETS
 from vasttools.source import Source
@@ -11,7 +13,8 @@ from vasttools.query import Query, EpochInfo
 from vasttools.utils import (
     get_logger,
     build_catalog,
-    build_SkyCoord
+    build_SkyCoord,
+    create_source_directories
 )
 import argparse
 import os
@@ -111,6 +114,12 @@ def parse_args():
         action="store_true",
         help='Turn off non-essential terminal output.')
     parser.add_argument(
+        '--forced-fits',
+        action="store_true",
+        help=(
+            'Perform forced fits at the locations requested.'
+        ))
+    parser.add_argument(
         '--crossmatch-only',
         action="store_true",
         help='Only run crossmatch, do not generate any fits or png files.')
@@ -142,9 +151,23 @@ def parse_args():
         action="store_true",
         help='Only return the associated field for each source.')
     parser.add_argument(
+        '--search-around-coordinates',
+        action="store_true",
+        help=(
+            'Return all crossmatches within the queried crossmatch radius.'
+            'Plotting options will be unavailable.'
+        ))
+    parser.add_argument(
         '--clobber',
         action="store_true",
         help=("Overwrite the output directory if it already exists."))
+    parser.add_argument(
+        '--sort-output',
+        action="store_true",
+        help=(
+            "Place results into individual source directories within the "
+            "main output directory."
+        ))
     parser.add_argument(
         '--nice',
         type=int,
@@ -194,6 +217,13 @@ def parse_args():
         action="store_true",
         help='Do not show the colorbar on the png.')
     parser.add_argument(
+        '--png-disable-autoscaling',
+        action="store_true",
+        help=(
+            'Do not use the auto normalisation and instead apply'
+            ' scale settings to each epoch individually.'
+        ))
+    parser.add_argument(
         '--ann',
         action="store_true",
         help='Create a kvis annotation file of the components.')
@@ -241,6 +271,18 @@ def parse_args():
             " 'auto' will let matplotlib decide the best range and '0' "
             " will start from 0."
         ))
+    parser.add_argument(
+        '--lc-use-forced-for-limits',
+        action="store_true",
+        help="Use the forced fits values instead of upper limits.")
+    parser.add_argument(
+        '--lc-use-forced-for-all',
+        action="store_true",
+        help="Use the forced fits for all datapoints.")
+    parser.add_argument(
+        '--lc-hide-legend',
+        action="store_true",
+        help="Don't show the legend on the final lightcurve plot.")
 
     args = parser.parse_args()
 
@@ -303,6 +345,26 @@ if __name__ == '__main__':
         )
         sys.exit()
 
+    if args.forced_fits and args.search_around_coordinates:
+        logger.error(
+            "Forced fits and search around mode are both selected!"
+        )
+        logger.error(
+            "These modes cannot be used together, "
+            "please check input and try again."
+        )
+        sys.exit()
+
+    if args.forced_fits and args.use_tiles:
+        logger.error(
+            "Forced fits and use tiles are both selected!"
+        )
+        logger.error(
+            "These modes cannot be used together, "
+            "please check input and try again."
+        )
+        sys.exit()
+
     output_ok = check_output_directory(args)
 
     if not output_ok:
@@ -341,7 +403,10 @@ if __name__ == '__main__':
         matches_only=args.process_matches,
         no_rms=args.no_background_rms,
         output_dir=args.out_folder,
-        ncpu=args.ncpu
+        ncpu=args.ncpu,
+        search_around_coordinates=args.search_around_coordinates,
+        sort_output=args.sort_output,
+        forced_fits=args.forced_fits
     )
 
     if args.find_fields:
@@ -352,47 +417,69 @@ if __name__ == '__main__':
     else:
         query.find_sources()
 
-        if args.crossmatch_only:
-            fits = False
-            png = False
-            ann = False
-            reg = False
-            lightcurve = False
+        if args.search_around_coordinates:
+            logger.info(
+                'Search around coordinates mode selected.'
+                ' No other output will be wrtten apart from the'
+                ' matches csv files.'
+            )
+            create_source_directories(
+                args.out_folder,
+                query.results.name.unique()
+            )
+            query.save_search_around_results(args.sort_output)
         else:
-            fits = (not args.no_fits)
-            png = args.create_png
-            ann = args.ann
-            reg = args.reg
-            lightcurve = args.lightcurves
+            if args.sort_output:
+                create_source_directories(
+                    args.out_folder,
+                    query.results.index.values
+                )
+            if args.crossmatch_only:
+                fits = False
+                png = False
+                ann = False
+                reg = False
+                lightcurve = False
+            else:
+                fits = (not args.no_fits)
+                png = args.create_png
+                ann = args.ann
+                reg = args.reg
+                lightcurve = args.lightcurves
 
-        query.gen_all_source_products(
-            fits=fits,
-            png=png,
-            ann=ann,
-            reg=reg,
-            lightcurve=lightcurve,
-            measurements=True,
-            fits_outfile=None,
-            png_selavy=args.png_selavy_overlay,
-            png_percentile=args.png_linear_percentile,
-            png_zscale=args.png_use_zscale,
-            png_contrast=args.png_zscale_contrast,
-            png_no_islands=args.png_no_island_labels,
-            png_no_colorbar=args.png_no_colorbar,
-            png_crossmatch_overlay=args.crossmatch_radius_overlay,
-            png_hide_beam=args.png_hide_beam,
-            ann_crossmatch_overlay=args.crossmatch_radius_overlay,
-            reg_crossmatch_overlay=args.crossmatch_radius_overlay,
-            lc_sigma_thresh=5,
-            lc_figsize=(8, 4),
-            lc_min_points=args.lc_min_points,
-            lc_min_detections=args.lc_min_detections,
-            lc_mjd=args.lc_mjd,
-            lc_grid=args.lc_grid,
-            lc_yaxis_start=args.lc_yaxis_start,
-            lc_peak_flux=(not args.lc_use_int_flux),
-            measurements_simple=args.selavy_simple
-        )
+            query.gen_all_source_products(
+                fits=fits,
+                png=png,
+                ann=ann,
+                reg=reg,
+                lightcurve=lightcurve,
+                measurements=True,
+                fits_outfile=None,
+                png_selavy=args.png_selavy_overlay,
+                png_percentile=args.png_linear_percentile,
+                png_zscale=args.png_use_zscale,
+                png_contrast=args.png_zscale_contrast,
+                png_islands=args.png_no_island_labels,
+                png_no_colorbar=args.png_no_colorbar,
+                png_crossmatch_overlay=args.crossmatch_radius_overlay,
+                png_hide_beam=args.png_hide_beam,
+                png_disable_autoscaling=args.png_disable_autoscaling,
+                ann_crossmatch_overlay=args.crossmatch_radius_overlay,
+                reg_crossmatch_overlay=args.crossmatch_radius_overlay,
+                lc_sigma_thresh=5,
+                lc_figsize=(8, 4),
+                lc_min_points=args.lc_min_points,
+                lc_min_detections=args.lc_min_detections,
+                lc_mjd=args.lc_mjd,
+                lc_grid=args.lc_grid,
+                lc_yaxis_start=args.lc_yaxis_start,
+                lc_peak_flux=(not args.lc_use_int_flux),
+                lc_use_forced_for_limits=args.lc_use_forced_for_limits,
+                lc_use_forced_for_all=args.lc_use_forced_for_all,
+                lc_hide_legend=args.lc_hide_legend,
+                measurements_simple=args.selavy_simple,
+                imsize=Angle(args.imsize * u.arcmin)
+            )
 
     query.summary_log()
 

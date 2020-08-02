@@ -33,6 +33,14 @@ from vasttools.utils import match_planet_to_field
 from multiprocessing import cpu_count
 from datetime import timedelta
 from itertools import combinations
+import matplotlib
+import matplotlib.pyplot as plt
+from matplotlib.ticker import NullFormatter
+from matplotlib.font_manager import FontProperties
+from astroML import density_estimation
+
+
+matplotlib.pyplot.switch_backend('Agg')
 
 
 class Pipeline(object):
@@ -250,6 +258,8 @@ class Pipeline(object):
             'n_relations'
         ].astype(int)
 
+        images = images.set_index('id')
+
         piperun = PipeAnalysis(
             test="no",
             name=runname,
@@ -463,7 +473,7 @@ class PipeAnalysis(PipeRun):
         self.test = test
 
     def _get_two_epoch_df(self, allowed_sources=[]):
-        image_ids = self.images['id'].tolist()
+        image_ids = self.images.index.tolist()
 
         combs = combinations(
             image_ids, 2
@@ -494,7 +504,11 @@ class PipeAnalysis(PipeRun):
                 measurements['image_id'] == i
             ]
 
-        pairs = {}
+        pairs = {
+            'pair': [],
+            'id': [],
+            'td': []
+        }
 
         for i, c in enumerate(combs):
             img_1 = c[0]
@@ -502,9 +516,14 @@ class PipeAnalysis(PipeRun):
 
             pair_key = i+1
 
-            pairs["{}_{}".format(
+            pairs['pair'].append("{}_{}".format(
                 img_1, img_2
-            )] = pair_key
+            ))
+            pairs['id'].append(pair_key)
+            pairs['td'].append(
+                self.images.loc[img_2].datetime
+                - self.images.loc[img_1].datetime
+            )
 
             first_set = measurements_images[img_1]
             second_set = measurements_images[img_2]
@@ -523,6 +542,10 @@ class PipeAnalysis(PipeRun):
                 two_epoch_df = first_set
             else:
                 two_epoch_df = two_epoch_df.append(first_set)
+
+        pairs = pd.DataFrame.from_dict(pairs).set_index(
+            'id'
+        ).sort_values(by='td')
 
         return pairs, two_epoch_df
 
@@ -549,7 +572,7 @@ class PipeAnalysis(PipeRun):
             )
         )
 
-        df["m"] = np.abs(
+        df["m"] = (
             (
                 df[flux_x_label]
                 - df[flux_y_label]
@@ -561,6 +584,71 @@ class PipeAnalysis(PipeRun):
         )
 
         return df
+
+    def plot_epoch_pairs_bokeh(
+        self,
+        df: pd.DataFrame,
+        pairs: pd.DataFrame,
+        vs_min=4.3,
+        m_min=0.26,
+    ) -> Model:
+
+        light_curve_pairs = pairs.index.values
+
+        GRID_WIDTH = 3
+        PLOT_WIDTH = 500
+        PLOT_HEIGHT = 300
+        x_range = DataRange1d(start=0.5)
+        m_max_abs = df.query("Vs >= @vs_min")["m"].abs().max()
+        y_range = Range1d(start=-m_max_abs, end=m_max_abs)
+        epoch_pair_figs = []
+        for epoch_pair in light_curve_pairs:
+            td_days = pairs.loc[epoch_pair]['td'].days
+            df_filter = df.query("pair == @epoch_pair")
+            fig = figure(
+                plot_width=PLOT_WIDTH,
+                plot_height=PLOT_HEIGHT,
+                x_axis_type="log",
+                x_range=x_range,
+                y_range=y_range,
+                x_axis_label="Vs",
+                y_axis_label="m",
+                title=f"{epoch_pair}: {td_days:.2f} days",
+                tools="pan,box_select,lasso_select,box_zoom,wheel_zoom,reset",
+                tooltips=[("source", "@source")],
+            )
+            fig.scatter(
+                f"Vs",
+                f"m",
+                source=df_filter,
+                marker="circle",
+                size=2,
+                nonselection_fill_alpha=0.1,
+                nonselection_fill_color="grey",
+                nonselection_line_color=None,
+            )
+            variable_region_1 = BoxAnnotation(
+                left=vs_min, bottom=m_min,
+                fill_color="orange", level="underlay"
+            )
+            variable_region_2 = BoxAnnotation(
+                left=vs_min, top=-m_min, fill_color="orange", level="underlay"
+            )
+            fig.add_layout(variable_region_1)
+            fig.add_layout(variable_region_2)
+            epoch_pair_figs.append(fig)
+
+        # reshape fig list for grid layout
+        epoch_pair_figs = [
+            epoch_pair_figs[i: i + GRID_WIDTH]
+            for i in range(0, len(epoch_pair_figs), GRID_WIDTH)
+        ]
+        grid = gridplot(
+            epoch_pair_figs, plot_width=PLOT_WIDTH, plot_height=PLOT_HEIGHT
+        )
+        grid.css_classes.append("mx-auto")
+
+        return grid
 
     def run_two_epoch_analysis(
         self, v, m, query=None,
@@ -580,29 +668,31 @@ class PipeAnalysis(PipeRun):
 
         df = self._calculate_metrics(df, use_int_flux=use_int_flux)
 
-        candidates = df.query("Vs > {} & m > {}".format(
-            v, m
-        ))
+        candidates = df.loc[(df['Vs'] > v) & (df['m'].abs() > m)]
 
-        return pairs, df, candidates
+        plot = self.plot_epoch_pairs_bokeh(
+            df, pairs, vs_min=v, m_min=m
+        )
+
+        return pairs, df, candidates, plot
 
     def _fit_eta_v(self, df, use_int_flux=False):
 
         if use_int_flux:
-            eta_label = 'eta_peak'
-            v_label = 'v_peak'
-        else:
             eta_label = 'eta_int'
             v_label = 'v_int'
+        else:
+            eta_label = 'eta_peak'
+            v_label = 'v_peak'
 
         eta_log = np.log10(df[eta_label])
         v_log = np.log10(df[v_label])
 
         eta_log_clipped = sigma_clip(
-            eta_log, masked=False, stdfunc=mad_std, sigma=2
+            eta_log, masked=False, stdfunc=mad_std, sigma=3
         )
         v_log_clipped = sigma_clip(
-            v_log, masked=False, stdfunc=mad_std, sigma=2
+            v_log, masked=False, stdfunc=mad_std, sigma=3
         )
 
         eta_fit_mean, eta_fit_sigma = norm.fit(eta_log_clipped)
@@ -610,7 +700,207 @@ class PipeAnalysis(PipeRun):
 
         return (eta_fit_mean, eta_fit_sigma, v_fit_mean, v_fit_sigma)
 
-    def plot_eta_v(
+    def gaussian_fit(self, data, param_mean, param_sigma):
+        range_data = np.linspace(min(data), max(data), 1000)
+        fit = norm.pdf(range_data, loc=param_mean, scale=param_sigma)
+
+        return range_data, fit
+
+    def make_bins(self, x):
+        new_bins = density_estimation.bayesian_blocks(x)
+        binsx = [
+            new_bins[a] for a in range(
+                len(new_bins) - 1
+            ) if abs((new_bins[a + 1] - new_bins[a]) / new_bins[a]) > 0.05
+        ]
+        binsx = binsx + [new_bins[-1]]
+
+        return binsx
+
+    def eta_v_diagnostic_plot(
+        self, df, eta_cutoff, v_cutoff, use_int_flux=False
+    ):
+        plt.close()  # close any previous ones
+
+        if use_int_flux:
+            eta_label = 'eta_int'
+            v_label = 'v_int'
+        else:
+            eta_label = 'eta_peak'
+            v_label = 'v_peak'
+
+        eta_cutoff = np.log10(eta_cutoff)
+        v_cutoff = np.log10(v_cutoff)
+
+        nullfmt = NullFormatter()  # no labels
+
+        fig = plt.figure(figsize=(12, 12))
+        ax1 = fig.add_subplot(221)
+        ax2 = fig.add_subplot(222)
+        ax3 = fig.add_subplot(223)
+        ax4 = fig.add_subplot(224)
+        fontP = FontProperties()
+        fontP.set_size('large')
+        fig.subplots_adjust(hspace=.001, wspace=0.001)
+        ax1.set_ylabel(r'$\eta_\nu$', fontsize=28)
+        ax3.set_ylabel(r'$V_\nu$', fontsize=28)
+        ax3.set_xlabel('Max Flux (Jy)', fontsize=24)
+        ax4.set_xlabel('Max Flux / Median Flux', fontsize=24)
+
+        xdata_ax3 = df['max_flux_peak']
+        xdata_ax4 = df['max_flux_peak'] / df['avg_flux_peak']
+        ydata_ax1 = df[eta_label]
+        ydata_ax3 = df[v_label]
+        ax1.scatter(xdata_ax3, ydata_ax1, s=10., zorder=5)
+        ax2.scatter(xdata_ax4, ydata_ax1, s=10., zorder=6)
+        ax3.scatter(xdata_ax3, ydata_ax3, s=10., zorder=7)
+        ax4.scatter(xdata_ax4, ydata_ax3, s=10., zorder=8)
+
+        Xax3 = df['max_flux_peak']
+        Xax4 = df['max_flux_peak'] / df['avg_flux_peak']
+        Yax1 = df[eta_label]
+        Yax3 = df[v_label]
+
+        if eta_cutoff != 0 or v_cutoff != 0:
+            ax1.axhline(
+                y=10.**eta_cutoff, linewidth=2, color='k', linestyle='--'
+            )
+            ax2.axhline(
+                y=10.**eta_cutoff, linewidth=2, color='k', linestyle='--'
+            )
+            ax3.axhline(
+                y=10.**v_cutoff, linewidth=2, color='k', linestyle='--'
+            )
+            ax4.axhline(
+                y=10.**v_cutoff, linewidth=2, color='k', linestyle='--'
+            )
+
+        ax1.set_yscale('log')
+        ax1.set_xscale('log')
+        ax2.set_yscale('log')
+        ax3.set_yscale('log')
+        ax3.set_xscale('log')
+        ax4.set_yscale('log')
+        xmin_ax3 = 10.**(int(np.log10(min(Xax3)) - 1.1))
+        xmax_ax3 = 10.**(int(np.log10(max(Xax3)) + 1.2))
+        xmin_ax4 = 0.8
+        xmax_ax4 = int(max(xdata_ax4) + 0.5)
+        ymin_ax1 = 10.**(int(np.log10(min(Yax1)) - 1.1))
+        ymax_ax1 = 10.**(int(np.log10(max(Yax1)) + 1.2))
+        ymin_ax3 = 10.**(int(np.log10(min(Yax3)) - 1.1))
+        ymax_ax3 = 10.**(int(np.log10(max(Yax3)) + 1.2))
+        ax1.set_ylim(ymin_ax1, ymax_ax1)
+        ax3.set_ylim(ymin_ax3, ymax_ax3)
+        ax3.set_xlim(xmin_ax3, xmax_ax3)
+        ax4.set_xlim(xmin_ax4, xmax_ax4)
+        ax1.set_xlim(ax3.get_xlim())
+        ax4.set_ylim(ax3.get_ylim())
+        ax2.set_xlim(ax4.get_xlim())
+        ax2.set_ylim(ax1.get_ylim())
+        ax1.xaxis.set_major_formatter(nullfmt)
+        ax4.yaxis.set_major_formatter(nullfmt)
+        ax2.xaxis.set_major_formatter(nullfmt)
+        ax2.yaxis.set_major_formatter(nullfmt)
+
+        return fig
+
+    def plot_eta_v_matplotlib(
+        self, df, eta_fit_mean, eta_fit_sigma,
+        v_fit_mean, v_fit_sigma, eta_cutoff, v_cutoff,
+        use_int_flux=False
+    ):
+        plt.close()  # close any previous ones
+        if use_int_flux:
+            x_label = 'eta_int'
+            y_label = 'v_int'
+            title = "Int. Flux"
+        else:
+            x_label = 'eta_peak'
+            y_label = 'v_peak'
+            title = 'Peak Flux'
+
+        eta_cutoff = np.log10(eta_cutoff)
+        v_cutoff = np.log10(v_cutoff)
+
+        nullfmt = NullFormatter()  # no labels
+        fontP = FontProperties()
+        fontP.set_size('large')
+        left, width = 0.1, 0.65
+        bottom, height = 0.1, 0.65
+        bottom_h = left_h = left+width+0.02
+        rect_scatter = [left, bottom, width, height]
+        rect_histx = [left, bottom_h, width, 0.2]
+        rect_histy = [left_h, bottom, 0.2, height]
+        fig = plt.figure(figsize=(12, 12))
+        axScatter = fig.add_subplot(223, position=rect_scatter)
+        plt.xlabel(r'$\eta_{\nu}$', fontsize=28)
+        plt.ylabel(r'$V_{\nu}$', fontsize=28)
+        axHistx = fig.add_subplot(221, position=rect_histx)
+        axHisty = fig.add_subplot(224, position=rect_histy)
+        axHistx.xaxis.set_major_formatter(nullfmt)
+        axHisty.yaxis.set_major_formatter(nullfmt)
+        axHistx.axes.yaxis.set_ticklabels([])
+        axHisty.axes.xaxis.set_ticklabels([])
+
+        xdata_var = np.log10(df[x_label])
+        ydata_var = np.log10(df[y_label])
+        axScatter.scatter(xdata_var, ydata_var, s=10., zorder=5, color='C0')
+        axScatter.fill_between(
+            [eta_cutoff, 1e4], v_cutoff, 1e4,
+            color='navajowhite', alpha=0.5
+        )
+
+        x = np.log10(df[x_label])
+        y = np.log10(df[y_label])
+
+        axHistx.hist(
+            x, bins=self.make_bins(x), density=1,
+            histtype='stepfilled', color='C0'
+        )
+        axHisty.hist(
+            y, bins=self.make_bins(y), density=1,
+            histtype='stepfilled', orientation='horizontal', color='C0'
+        )
+
+        xmin = int(min(x) - 1.1)
+        xmax = int(max(x) + 1.1)
+        ymin = int(min(y) - 1.1)
+        ymax = int(max(y) + 1.1)
+        xvals = range(xmin, xmax)
+        xtxts = [r'$10^{'+str(a)+'}$' for a in xvals]
+        yvals = range(ymin, ymax)
+        ytxts = [r'$10^{' + str(a) + '}$' for a in yvals]
+        axScatter.set_xlim([xmin, xmax])
+        axScatter.set_ylim([ymin, ymax])
+        axScatter.set_xticks(xvals)
+        axScatter.set_xticklabels(xtxts, fontsize=20)
+        axScatter.set_yticks(yvals)
+        axScatter.set_yticklabels(ytxts, fontsize=20)
+        axHistx.set_xlim(axScatter.get_xlim())
+        axHisty.set_ylim(axScatter.get_ylim())
+
+        if eta_cutoff != 0 or v_cutoff != 0:
+            axHistx.axvline(
+                x=eta_cutoff, linewidth=2, color='k', linestyle='--'
+            )
+            axHisty.axhline(
+                y=v_cutoff, linewidth=2, color='k', linestyle='--'
+            )
+            axScatter.axhline(
+                y=v_cutoff, linewidth=2, color='k', linestyle='--'
+            )
+            axScatter.axvline(
+                x=eta_cutoff, linewidth=2, color='k', linestyle='--'
+            )
+
+        range_x, fitx = self.gaussian_fit(x, eta_fit_mean, eta_fit_sigma)
+        axHistx.plot(range_x, fitx, 'k:', linewidth=2)
+        range_y, fity = self.gaussian_fit(y, v_fit_mean, v_fit_sigma)
+        axHisty.plot(fity, range_y, 'k:', linewidth=2)
+
+        return fig
+
+    def plot_eta_v_bokeh(
         self, df, eta_fit_mean, eta_fit_sigma,
         v_fit_mean, v_fit_sigma, eta_cutoff, v_cutoff,
         use_int_flux=False
@@ -737,8 +1027,16 @@ class PipeAnalysis(PipeRun):
 
     def run_eta_v_analysis(
         self, eta_sigma, v_sigma,
-        query=None, df=None, use_int_flux=False
+        query=None, df=None, use_int_flux=False,
+        plot_type='bokeh', diagnostic=False
     ):
+        plot_types = ['bokeh', 'matplotlib']
+
+        if plot_type not in plot_types:
+            raise Exception(
+                "Not a valid plot type!"
+                " Must be 'bokeh' or 'matplotlib'."
+            )
 
         if df is None:
             df = self.sources
@@ -754,11 +1052,18 @@ class PipeAnalysis(PipeRun):
         v_cutoff = 10 ** (v_fit_mean + v_sigma * v_fit_sigma)
         eta_cutoff = 10 ** (eta_fit_mean + eta_sigma * eta_fit_sigma)
 
-        plot = self.plot_eta_v(
-            df, eta_fit_mean, eta_fit_sigma,
-            v_fit_mean, v_fit_sigma, eta_cutoff, v_cutoff,
-            use_int_flux=use_int_flux
-        )
+        if plot_type == 'bokeh':
+            plot = self.plot_eta_v_bokeh(
+                df, eta_fit_mean, eta_fit_sigma,
+                v_fit_mean, v_fit_sigma, eta_cutoff, v_cutoff,
+                use_int_flux=use_int_flux
+            )
+        else:
+            plot = self.plot_eta_v_matplotlib(
+                df, eta_fit_mean, eta_fit_sigma,
+                v_fit_mean, v_fit_sigma, eta_cutoff, v_cutoff,
+                use_int_flux=use_int_flux
+            )
 
         if use_int_flux:
             label = 'int'
@@ -774,4 +1079,10 @@ class PipeAnalysis(PipeRun):
             )
         )
 
-        return eta_cutoff, v_cutoff, candidates, plot
+        if diagnostic:
+            diag = self.eta_v_diagnostic_plot(
+                df, eta_cutoff, v_cutoff
+            )
+            return eta_cutoff, v_cutoff, candidates, plot, diag
+        else:
+            return eta_cutoff, v_cutoff, candidates, plot

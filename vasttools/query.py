@@ -8,6 +8,8 @@ from vasttools.utils import (
     filter_selavy_components, simbad_search, match_planet_to_field,
     check_racs_exists
 )
+from vasttools.moc import VASTMOCS
+from vasttools.fp import ForcedPhot
 
 import sys
 import numpy as np
@@ -115,7 +117,9 @@ class Query:
         self, coords=None, source_names=[], epochs="all", stokes="I",
         crossmatch_radius=5.0, max_sep=1.0, use_tiles=False,
         use_islands=False, base_folder=None, matches_only=False,
-        no_rms=False, output_dir=".", planets=[], ncpu=2
+        no_rms=False, search_around_coordinates=False,
+        output_dir=".", planets=[], ncpu=2, sort_output=False,
+        forced_fits=False
     ):
         '''Constructor method
         '''
@@ -124,8 +128,8 @@ class Query:
         install_mp_handler(logger=self.logger)
 
         self.coords = coords
-        self.source_names = source_names
-        self.planets = planets
+        self.source_names = np.array(source_names)
+
         if ncpu > HOST_NCPU:
             raise ValueError(
                 "Number of CPUs requested ({}) "
@@ -136,13 +140,17 @@ class Query:
             )
         self.ncpu = ncpu
 
-        if self.coords is None and len(
-                self.source_names) == 0 and len(self.planets) == 0:
-            if self.logger is None:
-                raise ValueError(
-                    "No coordinates or source names have been provided!"
-                    " Check inputs and try again!"
-                )
+        if coords is None and len(source_names) == 0 and len(planets) == 0:
+            raise Exception(
+                "No coordinates or source names have been provided!"
+                " Check inputs and try again!"
+            )
+
+        if forced_fits and search_around_coordinates:
+            raise Exception(
+                "Forced fits and search around coordinates mode cannot be"
+                " used together! Check inputs and try again."
+            )
 
         if self.coords is None:
             if len(source_names) != 0:
@@ -159,7 +167,8 @@ class Query:
                     self.logger.info('Found:')
                     for i in self.source_names:
                         self.logger.info(i)
-                    warnings.warn(simbad_msg)
+                    if self.logger is None:
+                        warnings.warn(simbad_msg)
                 else:
                     self.logger.error(
                         "SIMBAD search failed!"
@@ -190,6 +199,10 @@ class Query:
                 self.base_folder = ADA_BASE_DIR
             elif HOST == HOST_NIMBUS:
                 self.base_folder = NIMBUS_BASE_DIR
+            else:
+                raise Exception(
+                    "No base folder has been provided!"
+                )
         else:
             self.base_folder = base_folder
 
@@ -205,6 +218,9 @@ class Query:
         self.settings['tiles'] = use_tiles
         self.settings['no_rms'] = no_rms
         self.settings['matches_only'] = matches_only
+        self.settings['search_around'] = search_around_coordinates
+        self.settings['sort_output'] = sort_output
+        self.settings['forced_fits'] = forced_fits
 
         self.settings['output_dir'] = output_dir
 
@@ -262,11 +278,16 @@ class Query:
 
         return True
 
-    def get_all_cutout_data(self):
-        '''Get cutout data'''
-
+    def get_all_cutout_data(self, imsize):
         # first get cutout data and selavy sources per image
         # group by image to do this
+
+        if self.settings['search_around']:
+            raise Exception(
+                'Getting cutout data cannot be run when'
+                ' search around coordinates mode has been'
+                ' used.'
+            )
 
         meta = {
             'data': 'O',
@@ -281,6 +302,7 @@ class Query:
             .groupby('image')
             .apply(
                 self._grouped_fetch_cutouts,
+                imsize=imsize,
                 meta=meta,
             ).compute(num_workers=self.ncpu, scheduler='processes')
         )
@@ -301,9 +323,9 @@ class Query:
                 'header',
                 'selavy_overlay',
                 'beam'
-            ]][self.sources_df.name == s_name].reset_index(drop=True)
+            ]][self.sources_df.name == s_name]
 
-            s.cutout_df = s_cutout
+            s.cutout_df = s_cutout.reset_index(drop=True)
             s._cutouts_got = True
 
         self.cutout_data_got = True
@@ -325,6 +347,7 @@ class Query:
         png_no_colorbar=False,
         png_crossmatch_overlay=False,
         png_hide_beam=False,
+        png_disable_autoscaling=False,
         ann_crossmatch_overlay=False,
         reg_crossmatch_overlay=False,
         lc_sigma_thresh=5,
@@ -335,7 +358,11 @@ class Query:
         lc_grid=False,
         lc_yaxis_start="auto",
         lc_peak_flux=True,
-        measurements_simple=False
+        lc_use_forced_for_limits=False,
+        lc_use_forced_for_all=False,
+        lc_hide_legend=False,
+        measurements_simple=False,
+        imsize=Angle(5. * u.arcmin)
     ):
         """
         This function is not intended to be used interactively.
@@ -414,9 +441,16 @@ class Query:
         :type measurements_simple: bool, optional
         """
 
+        if self.settings['search_around']:
+            raise Exception(
+                'Getting source products cannot be run when'
+                ' search around coordinates mode has been'
+                ' used.'
+            )
+
         if sum([fits, png, ann, reg]) > 0:
             if not self.cutout_data_got:
-                self.get_all_cutout_data()
+                self.get_all_cutout_data(imsize)
 
         original_sigint_handler = signal.signal(
             signal.SIGINT, signal.SIG_IGN
@@ -436,7 +470,8 @@ class Query:
                 no_islands=png_no_islands,
                 no_colorbar=png_no_colorbar,
                 crossmatch_overlay=png_crossmatch_overlay,
-                hide_beam=png_hide_beam
+                hide_beam=png_hide_beam,
+                disable_autoscaling=png_disable_autoscaling
             )
 
         if ann:
@@ -464,6 +499,9 @@ class Query:
                 lc_peak_flux=lc_peak_flux,
                 lc_save=True,
                 lc_outfile=None,
+                lc_use_forced_for_limits=lc_use_forced_for_limits,
+                lc_use_forced_for_all=lc_use_forced_for_all,
+                lc_hide_legend=lc_hide_legend
             )
 
         if measurements:
@@ -505,7 +543,15 @@ class Query:
             )
             workers.terminate()
             sys.exit()
-
+        except Exception as e:
+            self.logger.error(
+                "Encountered error!."
+            )
+            self.logger.error(
+                e
+            )
+            workers.terminate()
+            sys.exit()
         else:
             self.logger.debug("Normal termination")
             workers.close()
@@ -519,16 +565,20 @@ class Query:
             "Number of sources within footprint: %i",
             self.num_sources_searched
         )
-        self.logger.info(
-            "Number of sources with detections: %i",
-            self.num_sources_detected
-        )
+        try:
+            self.logger.info(
+                "Number of sources with detections: %i",
+                self.num_sources_detected
+            )
+        except Exception as e:
+            # Means that find sources has not been run
+            pass
         self.logger.info("-------------------------")
 
     def _save_all_png_cutouts(
         self, s, selavy, percentile,
         zscale, contrast, no_islands, no_colorbar,
-        crossmatch_overlay, hide_beam
+        crossmatch_overlay, hide_beam, disable_autoscaling
     ):
         '''
         Save png cutouts for all available images of the source of interest
@@ -561,7 +611,8 @@ class Query:
             islands=no_islands,
             no_colorbar=no_colorbar,
             crossmatch_overlay=crossmatch_overlay,
-            hide_beam=hide_beam
+            hide_beam=hide_beam,
+            disable_autoscaling=disable_autoscaling
         )
 
     def _save_all_fits_cutouts(self, s):
@@ -598,7 +649,7 @@ class Query:
         :type crossmatch_overlay: bool, optional
         '''
 
-        s.save_all_ann(crossmatch_overlay=crossmatch_overlay)
+        s.save_all_reg(crossmatch_overlay=crossmatch_overlay)
 
     def _save_all_measurements(self, s, simple=False, outfile=None):
         '''
@@ -626,7 +677,10 @@ class Query:
         lc_yaxis_start="auto",
         lc_peak_flux=True,
         lc_save=True,
-        lc_outfile=None
+        lc_outfile=None,
+        lc_use_forced_for_limits=False,
+        lc_use_forced_for_all=False,
+        lc_hide_legend=False
     ):
         '''
         Plot the lightcurve of the source of interest, and save to file.
@@ -672,6 +726,9 @@ class Query:
             peak_flux=lc_peak_flux,
             save=lc_save,
             outfile=lc_outfile,
+            use_forced_for_limits=lc_use_forced_for_limits,
+            use_forced_for_all=lc_use_forced_for_all,
+            hide_legend=lc_hide_legend
         )
 
     def _add_source_cutout_data(self, s):
@@ -698,7 +755,7 @@ class Query:
 
         return s
 
-    def _grouped_fetch_cutouts(self, group):
+    def _grouped_fetch_cutouts(self, group, imsize):
 
         image_file = group.iloc[0]['image']
 
@@ -713,7 +770,7 @@ class Query:
 
         cutout_data = group.apply(
             self._get_cutout,
-            args=(image,),
+            args=(image, imsize),
             axis=1,
             result_type='expand'
         ).rename(columns={
@@ -793,7 +850,9 @@ class Query:
         if self.fields_found is False:
             self.find_fields()
 
-        self.sources_df = self.fields_df.copy()
+        self.sources_df = self.fields_df.sort_values(
+            by=['name', 'dateobs']
+        ).reset_index(drop=True)
 
         self.sources_df[
             ['selavy', 'image', 'rms']
@@ -802,6 +861,35 @@ class Query:
             axis=1,
             result_type='expand'
         )
+
+        if self.settings['forced_fits']:
+            self.logger.info("Obtaining forced fits.")
+            meta = {
+                'f_island_id': 'U',
+                'f_component_id': 'U',
+                'f_ra_deg_cont': 'f',
+                'f_dec_deg_cont': 'f',
+                'f_flux_peak': 'f',
+                'f_flux_peak_err': 'f',
+                'f_flux_int': 'f',
+                'f_flux_int_err': 'f',
+                'f_chi_squared_fit': 'f',
+                'f_rms_image': 'f',
+                'f_maj_axis': 'f',
+                'f_min_axis': 'f',
+                'f_pos_ang': 'f',
+            }
+
+            f_results = (
+                dd.from_pandas(self.sources_df, self.ncpu)
+                .groupby('image')
+                .apply(
+                    self._get_forced_fits,
+                    meta=meta,
+                ).compute(num_workers=self.ncpu, scheduler='processes')
+            )
+
+            f_results.index = f_results.index.droplevel()
 
         meta = {
             '#': 'f',
@@ -856,8 +944,19 @@ class Query:
         )
 
         results.index = results.index.droplevel()
+
+        if self.settings['forced_fits']:
+            results = results.merge(
+                f_results, left_index=True, right_index=True
+            )
+
+        if self.settings['search_around']:
+            how = 'inner'
+        else:
+            how = 'left'
+
         self.crossmatch_results = self.sources_df.merge(
-            results, how='left', left_index=True, right_index=True
+            results, how=how, left_index=True, right_index=True
         )
 
         meta = {'name': 'O'}
@@ -868,16 +967,83 @@ class Query:
             }).sum()
         )
 
-        self.results = (
-            dd.from_pandas(self.crossmatch_results, self.ncpu)
+        if self.settings['search_around']:
+            self.results = self.crossmatch_results
+        else:
+            self.results = (
+                dd.from_pandas(self.crossmatch_results, self.ncpu)
+                .groupby('name')
+                .apply(
+                    self._init_sources,
+                    meta=meta,
+                ).compute(num_workers=self.ncpu, scheduler='processes')
+            )
+            self.results = self.results.dropna()
+
+    def save_search_around_results(self, sort_output=False):
+        meta = {}
+        # also have the sort output setting as a function
+        # input in case of interactive use.
+        if self.settings['sort_output']:
+            sort_output = True
+        result = (
+            dd.from_pandas(self.results, self.ncpu)
             .groupby('name')
             .apply(
-                self._init_sources,
+                self._write_search_around_results,
+                sort_output=sort_output,
                 meta=meta,
             ).compute(num_workers=self.ncpu, scheduler='processes')
         )
 
-        self.results = self.results.dropna()
+    def _write_search_around_results(self, group, sort_output):
+        source_name = group.iloc[0]['name'].replace(
+            " ", "_"
+        ).replace("/", "_")
+
+        matches_df = group.drop(
+            columns=[
+                'fields',
+                'stokes',
+                'skycoord',
+                'selavy',
+                'image',
+                'rms',
+                '#'
+            ]
+        ).sort_values(by=['dateobs', 'component_id'])
+
+        outname = "{}_matches_around.csv".format(
+            source_name
+        )
+
+        if sort_output:
+            base = os.path.join(
+                self.settings['output_dir'],
+                source_name
+            )
+        else:
+            base = self.settings['output_dir'],
+
+        outname = os.path.join(
+            base,
+            outname
+        )
+
+        matches_df.to_csv(outname, index=False)
+
+    def _check_for_duplicate_epochs(self, epochs):
+        dup_mask = epochs.duplicated(keep=False)
+        if dup_mask.any():
+            epochs.loc[dup_mask] = (
+                epochs.loc[dup_mask]
+                + "-"
+                + (epochs[dup_mask].groupby(
+                    epochs[dup_mask]
+                ).cumcount() + 1).astype(str)
+            )
+
+        return epochs
 
     def _init_sources(self, group):
         '''
@@ -889,6 +1055,8 @@ class Query:
         :rtype: vasttools.source.Source
         '''
 
+        group = group.sort_values(by='dateobs')
+
         m = group.iloc[0]
 
         if self.settings['matches_only']:
@@ -897,6 +1065,9 @@ class Query:
         if m['planet']:
             source_coord = group.skycoord
             source_primary_field = group.primary_field
+            group['epoch'] = self._check_for_duplicate_epochs(
+                group['epoch']
+            )
         else:
             source_coord = m.skycoord
             source_primary_field = m.primary_field
@@ -907,6 +1078,11 @@ class Query:
         source_base_folder = self.base_folder
         source_crossmatch_radius = self.settings['crossmatch_radius']
         source_outdir = self.settings['output_dir']
+        if self.settings['sort_output']:
+            source_outdir = os.path.join(
+                source_outdir,
+                source_name.replace(" ", "_").replace("/", "_")
+            )
         if self.settings['tiles']:
             source_image_type = "TILES"
         else:
@@ -933,10 +1109,90 @@ class Query:
             source_base_folder,
             source_image_type,
             islands=source_islands,
+            forced_fits=self.settings['forced_fits'],
             outdir=source_outdir,
         )
 
         return thesource
+
+    def _get_forced_fits(self, group):
+
+        image = group.name
+        if image is None:
+            return
+
+        group = group.sort_values(by='dateobs')
+
+        m = group.iloc[0]
+        image_name = image.split("/")[-1]
+        rms = m['rms']
+        bkg = rms.replace('rms', 'bkg')
+
+        field = m['field']
+        epoch = m['epoch']
+        stokes = m['stokes']
+
+        img_beam = Image(
+            field,
+            epoch,
+            stokes,
+            self.base_folder
+        ).beam
+
+        major = img_beam.major.to(u.arcsec).value
+        minor = img_beam.minor.to(u.arcsec).value
+        pa = img_beam.pa.to(u.deg).value
+
+        to_fit = SkyCoord(
+            group.ra, group.dec, unit=(u.deg, u.deg)
+        )
+
+        # make the Forced Photometry object
+        FP = ForcedPhot(image, bkg, rms)
+
+        # run the forced photometry
+        (
+            flux_islands, flux_err_islands,
+            chisq_islands, DOF_islands
+        ) = FP.measure(
+            to_fit,
+            [major for i in range(to_fit.shape[0])] * u.arcsec,
+            [minor for i in range(to_fit.shape[0])] * u.arcsec,
+            [pa for i in range(to_fit.shape[0])] * u.deg,
+            cluster_threshold=3
+        )
+
+        flux_islands *= 1.e3
+        flux_err_islands *= 1.e3
+
+        source_names = [
+            "{}_{:04d}".format(
+                image_name, i
+            ) for i in range(len(flux_islands))
+        ]
+
+        data = {
+            'f_island_id': source_names,
+            'f_component_id': source_names,
+            'f_ra_deg_cont':  group.ra,
+            'f_dec_deg_cont': group.dec,
+            'f_flux_peak': flux_islands,
+            'f_flux_peak_err': flux_err_islands,
+            'f_flux_int': flux_islands,
+            'f_flux_int_err': flux_err_islands,
+            'f_chi_squared_fit': chisq_islands,
+            'f_rms_image': flux_err_islands,
+        }
+
+        df = pd.DataFrame(data)
+
+        df['f_maj_axis'] = major
+        df['f_min_axis'] = minor
+        df['f_pos_ang'] = pa
+
+        df.index = group.index.values
+
+        return df
 
     def _get_components(self, group):
         '''
@@ -950,8 +1206,7 @@ class Query:
         selavy_file = str(group.name)
         if selavy_file is None:
             return
-        # if type(selavy_file) != str:
-        #     selavy_file = group.iloc[0]['name']
+
         master = pd.DataFrame()
 
         selavy_df = pd.read_fwf(
@@ -969,45 +1224,56 @@ class Query:
             unit=(u.deg, u.deg)
         )
 
-        idx, d2d, _ = group_coords.match_to_catalog_sky(selavy_coords)
-        mask = d2d < self.settings['crossmatch_radius']
-        idx_matches = idx[mask]
+        if self.settings['search_around']:
+            idxselavy, idxc, d2d, _ = group_coords.search_around_sky(
+                selavy_coords, self.settings['crossmatch_radius']
+            )
+            if idxc.shape[0] == 0:
+                return
+            copy = selavy_df.iloc[idxselavy].reset_index(drop=True)
+            copy['detection'] = True
+            copy.index = group.iloc[idxc].index.values
+            master = master.append(copy, sort=False)
+        else:
+            idx, d2d, _ = group_coords.match_to_catalog_sky(selavy_coords)
+            mask = d2d < self.settings['crossmatch_radius']
+            idx_matches = idx[mask]
 
-        copy = selavy_df.iloc[idx_matches].reset_index(drop=True)
-        copy["detection"] = True
-        copy.index = group[mask].index.values
+            copy = selavy_df.iloc[idx_matches].reset_index(drop=True)
+            copy['detection'] = True
+            copy.index = group[mask].index.values
 
-        master = master.append(copy, sort=False)
+            master = master.append(copy, sort=False)
 
-        missing = group_coords[~mask]
-        if missing.shape[0] > 0:
-            if not self.settings['no_rms']:
-                image = Image(
-                    group.iloc[0].field,
-                    group.iloc[0].epoch,
-                    self.settings['stokes'],
-                    self.base_folder,
-                    sbid=group.iloc[0].sbid,
-                    tiles=self.settings['tiles']
-                )
-                rms_values = image.measure_coord_pixel_values(
-                    missing, rms=True
-                )
-                rms_df = pd.DataFrame(rms_values, columns=['rms_image'])
+            missing = group_coords[~mask]
+            if missing.shape[0] > 0:
+                if not self.settings['no_rms']:
+                    image = Image(
+                        group.iloc[0].field,
+                        group.iloc[0].epoch,
+                        self.settings['stokes'],
+                        self.base_folder,
+                        sbid=group.iloc[0].sbid,
+                        tiles=self.settings['tiles']
+                    )
+                    rms_values = image.measure_coord_pixel_values(
+                        missing, rms=True
+                    )
+                    rms_df = pd.DataFrame(rms_values, columns=['rms_image'])
 
-                # to mJy
-                rms_df['rms_image'] = rms_df['rms_image'] * 1.e3
-            else:
-                rms_df = pd.DataFrame(
-                    [-99 for i in range(missing.shape[0])],
-                    columns=['rms_image']
-                )
+                    # to mJy
+                    rms_df['rms_image'] = rms_df['rms_image'] * 1.e3
+                else:
+                    rms_df = pd.DataFrame(
+                        [-99 for i in range(missing.shape[0])],
+                        columns=['rms_image']
+                    )
 
-            rms_df['detection'] = False
+                rms_df['detection'] = False
 
-            rms_df.index = group[~mask].index.values
+                rms_df.index = group[~mask].index.values
 
-            master = master.append(rms_df, sort=False)
+                master = master.append(rms_df, sort=False)
 
         return master
 
@@ -1412,6 +1678,30 @@ class Query:
 
     def build_catalog(self):
         cols = ['ra', 'dec', 'name', 'skycoord', 'stokes']
+
+        if '0' in self.settings['epochs']:
+            mask = self.coords.dec.deg > 42
+
+            if mask.any():
+                self.logger.warning(
+                    "Removing %i sources outside the RACS area", sum(mask)
+                )
+                self.coords = self.coords[~mask]
+                self.source_names = self.source_names[~mask]
+        else:
+            mocs = VASTMOCS()
+            vast_pilot_moc = mocs.load_pilot_epoch_moc('1')
+            mask = vast_pilot_moc.contains(
+                self.coords.ra, self.coords.dec, keep_inside=False
+            )
+            if mask.any():
+                self.logger.warning(
+                    "Removing %i sources outside"
+                    " the VAST Pilot Footprint", sum(mask)
+                )
+                self.coords = self.coords[~mask]
+                self.source_names = self.source_names[~mask]
+
         if self.coords.shape == ():
             catalog = pd.DataFrame(
                 [[

@@ -85,34 +85,34 @@ RELEASED_EPOCHS = {
 
 FIELD_FILES = {
     "0": pkg_resources.resource_filename(
-        __name__, "./data/racs_info.csv"),
+        __name__, "./data/csvs/racs_info.csv"),
     "1": pkg_resources.resource_filename(
-        __name__, "./data/vast_epoch01_info.csv"),
+        __name__, "./data/csvs/vast_epoch01_info.csv"),
     "2": pkg_resources.resource_filename(
-        __name__, "./data/vast_epoch02_info.csv"),
+        __name__, "./data/csvs/vast_epoch02_info.csv"),
     "3x": pkg_resources.resource_filename(
-        __name__, "./data/vast_epoch03x_info.csv"),
+        __name__, "./data/csvs/vast_epoch03x_info.csv"),
     "4x": pkg_resources.resource_filename(
-        __name__, "./data/vast_epoch04x_info.csv"),
+        __name__, "./data/csvs/vast_epoch04x_info.csv"),
     "5x": pkg_resources.resource_filename(
-        __name__, "./data/vast_epoch05x_info.csv"),
+        __name__, "./data/csvs/vast_epoch05x_info.csv"),
     "6x": pkg_resources.resource_filename(
-        __name__, "./data/vast_epoch06x_info.csv"),
+        __name__, "./data/csvs/vast_epoch06x_info.csv"),
     "7x": pkg_resources.resource_filename(
-        __name__, "./data/vast_epoch07x_info.csv"),
+        __name__, "./data/csvs/vast_epoch07x_info.csv"),
     "8": pkg_resources.resource_filename(
-        __name__, "./data/vast_epoch08_info.csv"),
+        __name__, "./data/csvs/vast_epoch08_info.csv"),
     "9": pkg_resources.resource_filename(
-        __name__, "./data/vast_epoch09_info.csv"),
+        __name__, "./data/csvs/vast_epoch09_info.csv"),
     "10x": pkg_resources.resource_filename(
-        __name__, "./data/vast_epoch10x_info.csv"),
+        __name__, "./data/csvs/vast_epoch10x_info.csv"),
     "11x": pkg_resources.resource_filename(
-        __name__, "./data/vast_epoch11x_info.csv")
+        __name__, "./data/csvs/vast_epoch11x_info.csv")
 }
 
 FIELD_CENTRES = pd.read_csv(
     pkg_resources.resource_filename(
-        __name__, "./data/vast_field_centres.csv"
+        __name__, "./data/csvs/vast_field_centres.csv"
     )
 )
 
