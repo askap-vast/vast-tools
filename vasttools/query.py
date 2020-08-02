@@ -257,7 +257,12 @@ class Query:
         self.cutout_data_got = False
 
     def _validate_settings(self):
-        '''Use to check misc details'''
+        '''
+        Use to check misc details
+        
+        :returns: `True` if settings are acceptable, `False` otherwise
+        :rtype: bool
+        '''
 
         if self.settings['tiles'] and self.settings['stokes'].lower() != "i":
             self.logger.critital("Only Stokes I are supported with tiles!")
@@ -279,6 +284,12 @@ class Query:
         return True
 
     def get_all_cutout_data(self, imsize):
+        '''
+        Get cutout data and selavy components for all sources
+        
+        :param imsize: Size of the requested cutout
+        :type imsize: `astropy.coordinates.angles.Angle`
+        '''
         # first get cutout data and selavy sources per image
         # group by image to do this
 
@@ -439,6 +450,8 @@ class Query:
         :param measurements_simple: Use simple schema for measurement output, \
         defaults to `False`
         :type measurements_simple: bool, optional
+        :param imsize: Size of the requested cutout
+        :type imsize: `astropy.coordinates.angles.Angle`
         """
 
         if self.settings['search_around']:
@@ -558,6 +571,10 @@ class Query:
             workers.join()
 
     def summary_log(self):
+        '''
+        Print a summary log
+        '''
+
         self.logger.info("-------------------------")
         self.logger.info("Summary:")
         self.logger.info("-------------------------")
@@ -756,6 +773,17 @@ class Query:
         return s
 
     def _grouped_fetch_cutouts(self, group, imsize):
+        '''
+        
+
+        :param group: 
+        :type group: 
+        :param imsize: Size of the requested cutout
+        :type imsize: `astropy.coordinates.angles.Angle`
+        
+        :returns:
+        :rtype:
+        '''
 
         image_file = group.iloc[0]['image']
 
@@ -844,7 +872,7 @@ class Query:
 
     def find_sources(self):
         '''
-
+        Run source search
         '''
 
         if self.fields_found is False:
@@ -981,6 +1009,13 @@ class Query:
             self.results = self.results.dropna()
 
     def save_search_around_results(self, sort_output=False):
+        '''
+        Save results from cone search
+
+        :param sort_output: Whether to sort the output, defaults to `False`
+        :type sort_output: bool, optional
+        '''
+
         meta = {}
         # also have the sort output setting as a function
         # input in case of interactive use.
@@ -997,6 +1032,14 @@ class Query:
         )
 
     def _write_search_around_results(self, group, sort_output):
+        '''
+        Write cone search results to file
+
+        :param group: 
+        :type group: 
+        :param sort_output: Whether to sort the output
+        :type sort_output: bool
+        '''
         source_name = group.iloc[0]['name'].replace(
             " ", "_"
         ).replace("/", "_")
@@ -1033,6 +1076,16 @@ class Query:
         matches_df.to_csv(outname, index=False)
 
     def _check_for_duplicate_epochs(self, epochs):
+        '''
+
+
+        :param epochs: 
+        :type epochs:
+        
+        :returns:
+        :rtype:
+        '''
+
         dup_mask = epochs.duplicated(keep=False)
         if dup_mask.any():
             epochs.loc[dup_mask] = (
@@ -1116,6 +1169,14 @@ class Query:
         return thesource
 
     def _get_forced_fits(self, group):
+        '''
+        
+        :param group: 
+        :type group: 
+        
+        :returns:
+        :rtype: `pandas.core.frame.DataFrame`
+        '''
 
         image = group.name
         if image is None:
@@ -1278,6 +1339,15 @@ class Query:
         return master
 
     def _add_files(self, row):
+        '''
+        
+        
+        :param row:
+        :type row:
+        
+        :returns:
+        :rtype: tuple
+        '''
 
         epoch_string = "EPOCH{}".format(
             RELEASED_EPOCHS[row.epoch]
@@ -1359,6 +1429,13 @@ class Query:
         return selavy_file, image_file, rms_file
 
     def write_find_fields(self, outname=None):
+        '''
+
+
+        :param outname: , defaults to None
+        :type outname: , optional
+        '''
+
         if self.fields_found is False:
             self.find_fields()
 
@@ -1387,6 +1464,10 @@ class Query:
         ))
 
     def find_fields(self):
+        '''
+        Find the corresponding field for each source
+        '''
+
         if self.racs:
             base_epoch = '0'
             base_fc = 'RACS'
@@ -1529,6 +1610,24 @@ class Query:
         field_centres,
         field_centre_names
     ):
+        '''
+
+
+        :param row: 
+        :type row: 
+        :param fields_coords: 
+        :type fields_coords: 
+        :param fields_names: 
+        :type fields_names: 
+        :param field_centres: 
+        :type field_centres: 
+        :param field_centre_names: 
+        :type field_centre_names: 
+        
+        :returns:
+        :rtype:
+        '''
+
         seps = row.skycoord.separation(fields_coords)
         accept = seps.deg < self.settings['max_sep']
         fields = np.unique(fields_names[accept])
@@ -1609,6 +1708,12 @@ class Query:
         return fields, primary_field, epochs, field_per_epochs, sbids, dateobs
 
     def _get_planets_epoch_df_template(self):
+        '''
+        
+        
+        :returns:
+        :rtype: `pandas.core.frame.DataFrame`
+        '''
         epochs = self.settings['epochs']
 
         planet_epoch_fields = self._epoch_fields.loc[epochs].reset_index()
@@ -1623,6 +1728,12 @@ class Query:
         return planet_epoch_fields
 
     def search_planets(self):
+        '''
+        
+        :returns:
+        :rtype: `pandas.core.frame.DataFrame`
+        
+        '''
 
         template = self._get_planets_epoch_df_template()
 
@@ -1677,6 +1788,11 @@ class Query:
         return results
 
     def build_catalog(self):
+        '''
+        
+        :returns:
+        :rtype: `pandas.core.frame.DataFrame`
+        '''
         cols = ['ra', 'dec', 'name', 'skycoord', 'stokes']
 
         if '0' in self.settings['epochs']:
@@ -1727,6 +1843,9 @@ class Query:
     def get_epochs(self, req_epochs):
         '''
         Parse the list of epochs to query.
+        
+        :param req_epochs:
+        :type req_epochs:
 
         :returns: Epochs to query, as a list of string
         :rtype: list
@@ -1782,7 +1901,14 @@ class Query:
     def get_stokes(self, req_stokes):
         '''
         Set the stokes Parameter
+        
+        :param req_stokes: Requested stokes parameter to check
+        :type req_stokes: str
+        
+        :returns: Valid stokes parameter
+        :rtype: str
         '''
+
         valid = ["I", "Q", "U", "V"]
 
         if req_stokes.upper() not in valid:
@@ -1828,17 +1954,22 @@ class EpochInfo:
     epoch query including the relevant folders, whether to only find fields,
     the survey and epoch.
 
-    :param args: Arguments namespace
-    :type args: `argparse.Namespace`
     :param pilot_epoch: Pilot epoch (0 for RACS)
     :type pilot_epoch: str
-    :param stokes_param: Stokes parameter (I or V)
-    :type stokes_param: str
+    :param base_folder: Path to base folder if using default directory structure
+    :type base_folder: str
+    :param stokes: Stokes parametr (I, Q, U or V)
+    :type stokes: str
+    :param tiles: Use the individual tiles instead of combined mosaics.
+    :type tiles: bool
     '''
 
     def __init__(
         self, pilot_epoch, base_folder, stokes, tiles
     ):
+        '''Constructor Method
+        '''
+        
         self.logger = logging.getLogger('vasttools.find_sources.EpochInfo')
 
         BASE_FOLDER = base_folder
@@ -1930,8 +2061,9 @@ class FieldQuery:
     This is a class representation of a query of the VAST Pilot survey
     fields, returning basic information such as observation dates and psf
     information.
-    :param args: Arguments namespace
-    :type args: `argparse.Namespace`
+    
+    :param field: Name of requested field
+    :type field: str
     '''
 
     def __init__(self, field):
@@ -1967,6 +2099,7 @@ class FieldQuery:
         '''
         Processes all the beams of a field per epoch and initialises
         radio_beam.Beams objects.
+        
         :returns: Dictionary of 'radio_beam.Beams' objects.
         :rtype: dict.
         '''
@@ -1990,6 +2123,7 @@ class FieldQuery:
             _pilot_info=None):
         '''
         Running the field query.
+        
         :param largest_psf: If true the largest psf  is calculated
             of the field per epoch. Defaults to False.
         :type largest_psf: bool, optional
@@ -2006,8 +2140,9 @@ class FieldQuery:
         :param _pilot_info: Allows for the pilot info to be provided
             rather than the function building it locally. If not provided
             then the dataframe is built. Defaults to None.
-        :type _pilot_info: pandas.DataFrame, optional
+        :type _pilot_info: `pandas.core.frame.DataFrame`, optional
         '''
+        
         if not self.valid:
             self.logger.error("Field doesn't exist.")
             return
