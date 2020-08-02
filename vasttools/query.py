@@ -259,7 +259,7 @@ class Query:
     def _validate_settings(self):
         '''
         Use to check misc details
-        
+
         :returns: `True` if settings are acceptable, `False` otherwise
         :rtype: bool
         '''
@@ -286,7 +286,7 @@ class Query:
     def get_all_cutout_data(self, imsize):
         '''
         Get cutout data and selavy components for all sources
-        
+
         :param imsize: Size of the requested cutout
         :type imsize: `astropy.coordinates.angles.Angle`
         '''
@@ -774,13 +774,13 @@ class Query:
 
     def _grouped_fetch_cutouts(self, group, imsize):
         '''
-        
 
-        :param group: 
-        :type group: 
+
+        :param group:
+        :type group:
         :param imsize: Size of the requested cutout
         :type imsize: `astropy.coordinates.angles.Angle`
-        
+
         :returns:
         :rtype:
         '''
@@ -1035,8 +1035,8 @@ class Query:
         '''
         Write cone search results to file
 
-        :param group: 
-        :type group: 
+        :param group:
+        :type group:
         :param sort_output: Whether to sort the output
         :type sort_output: bool
         '''
@@ -1079,9 +1079,9 @@ class Query:
         '''
 
 
-        :param epochs: 
+        :param epochs:
         :type epochs:
-        
+
         :returns:
         :rtype:
         '''
@@ -1170,10 +1170,10 @@ class Query:
 
     def _get_forced_fits(self, group):
         '''
-        
-        :param group: 
-        :type group: 
-        
+
+        :param group:
+        :type group:
+
         :returns:
         :rtype: `pandas.core.frame.DataFrame`
         '''
@@ -1235,7 +1235,7 @@ class Query:
         data = {
             'f_island_id': source_names,
             'f_component_id': source_names,
-            'f_ra_deg_cont':  group.ra,
+            'f_ra_deg_cont': group.ra,
             'f_dec_deg_cont': group.dec,
             'f_flux_peak': flux_islands,
             'f_flux_peak_err': flux_err_islands,
@@ -1340,11 +1340,11 @@ class Query:
 
     def _add_files(self, row):
         '''
-        
-        
+
+
         :param row:
         :type row:
-        
+
         :returns:
         :rtype: tuple
         '''
@@ -1613,17 +1613,17 @@ class Query:
         '''
 
 
-        :param row: 
-        :type row: 
-        :param fields_coords: 
-        :type fields_coords: 
-        :param fields_names: 
-        :type fields_names: 
-        :param field_centres: 
-        :type field_centres: 
-        :param field_centre_names: 
-        :type field_centre_names: 
-        
+        :param row:
+        :type row:
+        :param fields_coords:
+        :type fields_coords:
+        :param fields_names:
+        :type fields_names:
+        :param field_centres:
+        :type field_centres:
+        :param field_centre_names:
+        :type field_centre_names:
+
         :returns:
         :rtype:
         '''
@@ -1709,8 +1709,8 @@ class Query:
 
     def _get_planets_epoch_df_template(self):
         '''
-        
-        
+
+
         :returns:
         :rtype: `pandas.core.frame.DataFrame`
         '''
@@ -1729,10 +1729,10 @@ class Query:
 
     def search_planets(self):
         '''
-        
+
         :returns:
         :rtype: `pandas.core.frame.DataFrame`
-        
+
         '''
 
         template = self._get_planets_epoch_df_template()
@@ -1780,16 +1780,16 @@ class Query:
         )
         results['fields'] = [[i] for i in results['field']]
         results['planet'] = True
-        
+
         with pd.option_context('display.max_rows', None, 'display.max_columns', None):
             print(results)
-        #exit()
+        # exit()
 
         return results
 
     def build_catalog(self):
         '''
-        
+
         :returns:
         :rtype: `pandas.core.frame.DataFrame`
         '''
@@ -1843,7 +1843,7 @@ class Query:
     def get_epochs(self, req_epochs):
         '''
         Parse the list of epochs to query.
-        
+
         :param req_epochs:
         :type req_epochs:
 
@@ -1901,10 +1901,10 @@ class Query:
     def get_stokes(self, req_stokes):
         '''
         Set the stokes Parameter
-        
+
         :param req_stokes: Requested stokes parameter to check
         :type req_stokes: str
-        
+
         :returns: Valid stokes parameter
         :rtype: str
         '''
@@ -1969,7 +1969,7 @@ class EpochInfo:
     ):
         '''Constructor Method
         '''
-        
+
         self.logger = logging.getLogger('vasttools.find_sources.EpochInfo')
 
         BASE_FOLDER = base_folder
@@ -2061,7 +2061,7 @@ class FieldQuery:
     This is a class representation of a query of the VAST Pilot survey
     fields, returning basic information such as observation dates and psf
     information.
-    
+
     :param field: Name of requested field
     :type field: str
     '''
@@ -2099,7 +2099,7 @@ class FieldQuery:
         '''
         Processes all the beams of a field per epoch and initialises
         radio_beam.Beams objects.
-        
+
         :returns: Dictionary of 'radio_beam.Beams' objects.
         :rtype: dict.
         '''
@@ -2123,7 +2123,7 @@ class FieldQuery:
             _pilot_info=None):
         '''
         Running the field query.
-        
+
         :param largest_psf: If true the largest psf  is calculated
             of the field per epoch. Defaults to False.
         :type largest_psf: bool, optional
@@ -2142,7 +2142,7 @@ class FieldQuery:
             then the dataframe is built. Defaults to None.
         :type _pilot_info: `pandas.core.frame.DataFrame`, optional
         '''
-        
+
         if not self.valid:
             self.logger.error("Field doesn't exist.")
             return

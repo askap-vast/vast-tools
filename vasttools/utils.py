@@ -159,11 +159,11 @@ def crosshair():
 def check_file(path):
     '''
     Check if logging file exists
-    
+
     :param path: filepath to check
     :type path: str
     '''
-    
+
     logger = logging.getLogger()
     exists = os.path.isfile(path)
     if not exists:
@@ -176,11 +176,11 @@ def check_file(path):
 def build_catalog(coords, source_names):
     '''
     Build the catalogue of target sources
-    
-    :param coords: 
-    :type coords: 
-    :param source_names: 
-    :type source_names: 
+
+    :param coords:
+    :type coords:
+    :param source_names:
+    :type source_names:
 
     :returns: Catalogue of target sources
     :rtype: `pandas.core.frame.DataFrame`
@@ -256,7 +256,7 @@ def build_catalog(coords, source_names):
 def build_SkyCoord(catalog):
     '''
     Create a SkyCoord array for each target source
-    
+
     :param catalog: Catalog of source coordinates
     :type catalog: `pandas.core.frame.DataFrame`
 
@@ -300,7 +300,7 @@ def filter_selavy_components(selavy_df, selavy_sc, imsize, target):
     '''
     Create a shortened catalogue by filtering out selavy components
     outside of the image
-    
+
     :param selavy_df: Dataframe of selavy components
     :type selavy_df: `pandas.core.frame.DataFrame`
     :param selavy_sc: SkyCoords containing selavy components
@@ -323,12 +323,12 @@ def filter_selavy_components(selavy_df, selavy_sc, imsize, target):
 def simbad_search(objects, logger=None):
     """
     Searches SIMBAD for object coordinates and returns coordinates and names
-    
-    :param objects: 
-    :type objects: 
+
+    :param objects:
+    :type objects:
     :param logger: Logger to use, defaults to None
     :type logger: , optional
-    
+
     :returns:
     :rtype:
     """
@@ -358,10 +358,10 @@ def simbad_search(objects, logger=None):
 
 def match_planet_to_field(group):
     '''
-    
+
     :param group:
     :type group:
-    
+
     :returns:
     :rtype:
     '''
@@ -395,10 +395,10 @@ def match_planet_to_field(group):
 def check_racs_exists(base_dir):
     '''
     Check if RACS directory exists
-    
+
     :param base_dir: Path to base directory
     :type base_dir: str
-    
+
     :returns: True if exists, False otherwise
     :rtype: bool
     '''

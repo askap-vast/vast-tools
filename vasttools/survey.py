@@ -31,7 +31,7 @@ def get_fields_per_epoch_info():
     """
     Function to create a dataframe suitable for fast,
     field querying per epoch.
-    
+
     :returns: Dataframe of epoch information
     :rtype: `pandas.core.frame.DataFrame`
     """
@@ -60,7 +60,7 @@ def get_askap_observing_location():
     from astropy.coordinates import EarthLocation
     """
     Function to return ASKAP observing location.
-    
+
     :returns: Location of ASKAP
     :rtype: `astropy.coordinates.earth.EarthLocation`
     """
@@ -240,12 +240,12 @@ class Fields:
 class Image:
     '''
     Store image data for a survey field
-    
+
     :param field: Name of the field
     :type field: str
-    :param epoch: 
-    :type epoch: 
-    :param stokes: Stokes parameter of interest 
+    :param epoch:
+    :type epoch:
+    :param stokes: Stokes parameter of interest
     :type stokes: str
     :param base_folder: Path to base folder if using default directory structure
     :type base_folder: str
@@ -331,7 +331,6 @@ class Image:
                 self.logger.error("Beam information could not be read!")
                 self.beam = None
 
-
     def get_rms_img(self):
         '''
         Load the noisemap corresponding to the image
@@ -362,12 +361,12 @@ class Image:
 
     def measure_coord_pixel_values(self, coords, rms=False):
         '''
-        
+
         :param coords: Coordinate of interest
-        :type coords: 
+        :type coords:
         :param rms: Query the RMS image, defaults to `False`
         :type rms: bool, optional
-        
+
         :returns:
         :rtype:
         '''

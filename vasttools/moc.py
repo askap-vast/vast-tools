@@ -11,12 +11,13 @@ from astropy.coordinates import Angle, SkyCoord
 
 
 BASE_MOC_PATH = pkg_resources.resource_filename(
-        __name__, "./data/mocs/"
+    __name__, "./data/mocs/"
 )
 
 
 class VASTMOCS(object):
     """docstring for VastMocs"""
+
     def __init__(self):
         '''Constructor method
         '''
@@ -26,7 +27,7 @@ class VASTMOCS(object):
     def load_pilot_stmoc(self):
         '''
         Load spacetime MOC
-        
+
         :returns:
         :rtype:
         '''
@@ -72,7 +73,7 @@ class VASTMOCS(object):
         :type field: str
         :param itype: Image type (COMBINED or TILES), defaults to 'COMBINED'
         :type itype: str, optional
-        
+
         :returns: Field MOC
         :rtype:
         '''
@@ -111,7 +112,6 @@ class VASTMOCS(object):
         :param max_rows: Maximum rows to return, defaults to 10000
         :type max_rows: int, optional
         '''
-
 
         moc = self.load_pilot_field_moc('1')
 
