@@ -30,14 +30,12 @@ def get_logger(debug, quiet, logfile=None):
     '''
     Set up the logger
 
-    :param logfile: File to output log to
-    :type logfile: str
     :param debug: Set stream level to debug
     :type debug: bool
     :param quiet: Suppress all non-essential output
     :type quiet: bool
-    :param usecolorlog: Use colourful logging scheme, defaults to False
-    :type usecolorlog: bool, optional
+    :param logfile: File to output log to
+    :type logfile: str
 
     :returns: Logger
     :rtype: `logging.RootLogger`
@@ -159,6 +157,13 @@ def crosshair():
 
 
 def check_file(path):
+    '''
+    Check if logging file exists
+    
+    :param path: filepath to check
+    :type path: str
+    '''
+    
     logger = logging.getLogger()
     exists = os.path.isfile(path)
     if not exists:
@@ -171,6 +176,11 @@ def check_file(path):
 def build_catalog(coords, source_names):
     '''
     Build the catalogue of target sources
+    
+    :param coords: 
+    :type coords: 
+    :param source_names: 
+    :type source_names: 
 
     :returns: Catalogue of target sources
     :rtype: `pandas.core.frame.DataFrame`
@@ -246,6 +256,9 @@ def build_catalog(coords, source_names):
 def build_SkyCoord(catalog):
     '''
     Create a SkyCoord array for each target source
+    
+    :param catalog: Catalog of source coordinates
+    :type catalog: `pandas.core.frame.DataFrame`
 
     :returns: Target source SkyCoord
     :rtype: `astropy.coordinates.sky_coordinate.SkyCoord`
@@ -287,10 +300,19 @@ def filter_selavy_components(selavy_df, selavy_sc, imsize, target):
     '''
     Create a shortened catalogue by filtering out selavy components
     outside of the image
-
+    
+    :param selavy_df: Dataframe of selavy components
+    :type selavy_df: `pandas.core.frame.DataFrame`
+    :param selavy_sc: SkyCoords containing selavy components
+    :type selavy_sc: `astropy.coordinates.sky_coordinate.SkyCoord
     :param imsize: Size of the image along each axis
     :type imsize: `astropy.coordinates.angles.Angle` or tuple of two
         `Angle` objects
+    :param target: SkyCoord of target centre
+    :type target: `astropy.coordinates.sky_coordinate.SkyCoord`
+
+    :returns: Shortened catalogue
+    :rtype: `pandas.core.frame.DataFrame`
     '''
 
     seps = target.separation(selavy_sc)
@@ -301,6 +323,14 @@ def filter_selavy_components(selavy_df, selavy_sc, imsize, target):
 def simbad_search(objects, logger=None):
     """
     Searches SIMBAD for object coordinates and returns coordinates and names
+    
+    :param objects: 
+    :type objects: 
+    :param logger: Logger to use, defaults to None
+    :type logger: , optional
+    
+    :returns:
+    :rtype:
     """
 
     Simbad.add_votable_fields('ra(d)', 'dec(d)')
@@ -327,6 +357,14 @@ def simbad_search(objects, logger=None):
 
 
 def match_planet_to_field(group):
+    '''
+    
+    :param group:
+    :type group:
+    
+    :returns:
+    :rtype:
+    '''
     planet = group.iloc[0]['planet']
     dates = Time(group['DATEOBS'].tolist())
     fields_skycoord = SkyCoord(
@@ -355,10 +393,29 @@ def match_planet_to_field(group):
 
 
 def check_racs_exists(base_dir):
+    '''
+    Check if RACS directory exists
+    
+    :param base_dir: Path to base directory
+    :type base_dir: str
+    
+    :returns: True if exists, False otherwise
+    :rtype: bool
+    '''
+
     return os.path.isdir(os.path.join(base_dir, "EPOCH00"))
 
 
 def create_source_directories(outdir, sources):
+    '''
+    Create directory for all sources in a list
+
+    :param outdir: Base directory
+    :type outdir: str
+    :param sources: List of sources
+    :type sources: list
+    '''
+
     logger = logging.getLogger()
 
     for i in sources:
