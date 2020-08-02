@@ -31,6 +31,9 @@ def get_fields_per_epoch_info():
     """
     Function to create a dataframe suitable for fast,
     field querying per epoch.
+    
+    :returns: Dataframe of epoch information
+    :rtype: `pandas.core.frame.DataFrame`
     """
 
     for i, e in enumerate(FIELD_FILES):
@@ -57,6 +60,9 @@ def get_askap_observing_location():
     from astropy.coordinates import EarthLocation
     """
     Function to return ASKAP observing location.
+    
+    :returns: Location of ASKAP
+    :rtype: `astropy.coordinates.earth.EarthLocation`
     """
     ASKAP_latitude = Angle("-26:41:46.0", unit=u.deg)
     ASKAP_longitude = Angle("116:38:13.0", unit=u.deg)
@@ -136,8 +142,8 @@ class Fields:
     '''
     Store the coordinates of all survey fields
 
-    :param fname: The epoch number of fields to collect
-    :type fname: int
+    :param epoch: The epoch number of fields to collect
+    :type epoch: str
     '''
 
     def __init__(self, epoch):
@@ -234,20 +240,25 @@ class Fields:
 class Image:
     '''
     Store image data for a survey field
-    Store image data for a RACS field
-
-    :param sbid: SBID of the field
-    :type sbid: str
+    
     :param field: Name of the field
     :type field: str
-    :param IMAGE_FOLDER: Path to image directory
-    :type IMAGE_FOLDER: str
-    :param RMS_FOLDER: Path to RMS map directory
-    :type RMS_FOLDER: str
-    :param vast_pilot: Survey epoch (if applicable)
-    :type vast_pilot: str
-    :param tiles: Use image tiles instead of mosaics, defaults to `False`
+    :param epoch: 
+    :type epoch: 
+    :param stokes: Stokes parameter of interest 
+    :type stokes: str
+    :param base_folder: Path to base folder if using default directory structure
+    :type base_folder: str
+    :param tiles: Whether to use tiles or combined images, defaults to `False`
     :type tiles: bool, optional
+    :param sbid: SBID of the field, defaults to None
+    :type sbid: str, optional
+    :param path: , defaults to None
+    :type path: , optional
+    :param rmspath: , defaults to None
+    :type rmspath: , optional
+    :param rms_header: , defaults to None
+    :type rms_header: , optional
     '''
 
     def __init__(self, field, epoch, stokes, base_folder,
@@ -350,6 +361,16 @@ class Image:
                 self.rms_data = hdul[0].data
 
     def measure_coord_pixel_values(self, coords, rms=False):
+        '''
+        
+        :param coords: Coordinate of interest
+        :type coords: 
+        :param rms: Query the RMS image, defaults to `False`
+        :type rms: bool, optional
+        
+        :returns:
+        :rtype:
+        '''
 
         if rms is True:
             if self.rms_header is None:
