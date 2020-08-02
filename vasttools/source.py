@@ -57,21 +57,38 @@ class Source:
     '''
     This is a class representation of a catalogued source position
 
-    :param field: Name of the field containing the source
-    :type field: str
-    :param src_coord: Source coordinates
-    :type src_coord: `astropy.coordinates.sky_coordinate.SkyCoord`
-    :param sbid: SBID of the field containing the source
-    :type sbid: str
-    :param SELAVY_FOLDER: Path to selavy directory
-    :type SELAVY_FOLDER: str
-    :param vast_pilot: Survey epoch
-    :type vast_pilot: str
-    :param tiles: `True` if image tiles should be used,
-        `False` for mosaiced images, defaults to `False`
+    :param coord: Source coordinates
+    :type coord: `astropy.coordinates.sky_coordinate.SkyCoord`
+    :param name: 
+    :type name: 
+    :param epochs: 
+    :type epochs: 
+    :param fields: 
+    :type fields: 
+    :param stokes: 
+    :type stokes: 
+    :param primary_field: 
+    :type primary_field: 
+    :param crossmatch_radius: 
+    :type crossmatch_radius: 
+    :param measurements: 
+    :type measurements: 
+    :param base_folder: Path to base folder if using default directory structure
+    :type base_folder: str
+    :param image_type: , defaults to "COMBINED"
+    :type image_type: str, optional
+    :param islands: , defaults to `False`
+    :type islands: bool, optional
+    :param outdir: , defaults to "."
+    :type outdir: str, optional
+    :param planet: , defaults to `False`
+    :type planet: bool, optional
+    :param pipeline: , defaults to `False`
+    :type pipeline: bool, optional
+    :param tiles: , defaults to `False`
     :type tiles: bool, optional
-    :param stokes: Stokes parameter to query, defaults to "I"
-    :type stokes: str, optional
+    :param forced_fits: , defaults to `False`
+    :type forced_fits: bool, optional
     '''
 
     def __init__(
@@ -155,9 +172,14 @@ class Source:
         self.planet = planet
 
     def write_measurements(self, simple=False, outfile=None):
-        """
+        '''
         Write the measurements to a CSV file.
-        """
+        
+        :param simple: Only include flux density and uncertainty in returned table, defaults to `False`
+        :type simple: bool, optional
+        :param outfile: File to write measurements to, defaults to None
+        :type outfile: str, optional
+        '''
 
         if simple:
             cols = [
@@ -229,19 +251,34 @@ class Source:
         Plot source lightcurves and save to file
 
         :param sigma_thresh: Threshold to use for upper limits, defaults to 5
-        :type sigma_thresh: int or float
-        :param savefile: Filename to save plot, defaults to None
-        :type savefile: str
-        :param min_points: Minimum number of points for plotting,
-            defaults to 2
-        :type min_points: int, optional
-        :param min_detections: Minimum number of detections for plotting, \
-        defaults to 1
-        :type min_detections: int, optional
+        :type sigma_thresh: int or float, optional
+        :param figsize: Figure size, defaults to (8, 4)
+        :type figsize: tuple of floats, optional
+        :param min_points: Minimum number of points for plotting, defaults to 2
+        :type min_points: float, optional
+        :param min_detections:  Minimum number of detections for plotting, defaults to 0
+        :type min_detections: float, optional
         :param mjd: Plot x-axis in MJD rather than datetime, defaults to False
         :type mjd: bool, optional
         :param grid: Turn on matplotlib grid, defaults to False
         :type grid: bool, optional
+        :param yaxis_start: , defaults to "auto"
+        :type yaxis_start: str, optional
+        :param peak_flux: , defaults to `True`
+        :type peak_flux: bool, optional
+        :param save: , defaults to `False`
+        :type save: bool, optional
+        :param outfile: , defaults to None
+        :type outfile: , optional
+        :param use_forced_for_limits: , defaults to `False`
+        :type use_forced_for_limits: bool, optional
+        :param use_forced_for_all: , defaults to `False`
+        :type use_forced_for_all: bool, optional
+        :param hide_legend: , defaults to `False`
+        :type hide_legend: bool, optional
+        
+        :returns:
+        :rtype:
         '''
         if use_forced_for_all or use_forced_for_limits:
             if not self.forced_fits:
@@ -447,19 +484,10 @@ class Source:
 
     def get_cutout_data(self, size=None):
         '''
-        Make a FITS postagestamp of the source region and write to file
+        
 
-        :param img_data: Numpy array containing the image data
-        :type img_data: `numpy.ndarray`
-        :param header: FITS header data units of the image
-        :type header: `astropy.io.fits.header.Header`
-        :param wcs: World Coordinate System of the image
-        :type wcs: `astropy.wcs.wcs.WCS`
-        :param size: Size of the cutout array along each axis
-        :type size: `astropy.coordinates.angles.Angle`
-            or tuple of two `Angle` objects
-        :param outfile: Name of output FITS file
-        :type outfile: str
+        :param size: , defaults to None
+        :type size: , optional
         '''
         if size is None:
             args = None
@@ -484,6 +512,17 @@ class Source:
         self, percentile=99.9,
         zscale=False, z_contrast=0.2
     ):
+        '''
+
+
+        :param percentile: , defaults to 99.9
+        :type percentile: float, optional
+        :param zscale: , defaults to `False`
+        :type zscale: bool, optional
+        :param z_contrast: , defaults to 0.2
+        :type z_contrast: float, optional
+        '''
+
         if not self._cutouts_got:
             self.logger.warning(
                 "Fetch cutout data before running this function!"
@@ -511,6 +550,14 @@ class Source:
         self.checked_norms = True
 
     def _get_cutout(self, row, size=Angle(5. * u.arcmin)):
+        '''
+
+
+        :param row: 
+        :type row: 
+        :param size: , defaults to Angle(5.*u.arcmin)
+        :type size: `astropy.coordinates.angles.Angle`, optional
+        '''
 
         if self.pipeline:
             image = Image(
@@ -612,7 +659,36 @@ class Source:
         """
         Wrapper for make_png to make nicer interactive function.
         No access to save.
+        
+        :param epoch: 
+        :type epoch: 
+        :param selavy: , defaults to `True`
+        :type selavy: bool, optional
+        :param percentile: , defaults to 99.9
+        :type percentile: float, optional
+        :param zscale: , defaults to `False`
+        :type zscale: bool, optional
+        :param contrast: , defaults to 0.2
+        :type contrast: float, optional
+        :param no_islands: , defaults to `True`
+        :type no_islands: bool, optional
+        :param label: , defaults to "Source"
+        :type label: str, optional
+        :param no_colorbar: , defaults to `False`
+        :type no_colorbar: bool, optional
+        :param title: , defaults to None
+        :type title: , optional
+        :param crossmatch_overlay: , defaults to `False`
+        :type crossmatch_overlay: bool, optional
+        :param hide_beam: , defaults to `False`
+        :type hide_beam: bool, optional
+        :param size: , defaults to None
+        :type size: , optional
+        :param force: , defaults to `False`
+        :type force: bool, optional
+
         """
+
         fig = self.make_png(
             epoch,
             selavy=selavy,
@@ -651,7 +727,37 @@ class Source:
         """
         Wrapper for make_png to make nicer interactive function.
         Always save.
+        
+        :param epoch: 
+        :type epoch: 
+        :param selavy: , defaults to `True`
+        :type selavy: bool, optional
+        :param percentile: , defaults to 99.9
+        :type percentile: float, optional
+        :param zscale: , defaults to `False`
+        :type zscale: bool, optional
+        :param contrast: , defaults to 0.2
+        :type contrast: float, optional
+        :param no_islands: , defaults to `True`
+        :type no_islands: bool, optional
+        :param label: , defaults to "Source"
+        :type label: str, optional
+        :param no_colorbar: , defaults to `False`
+        :type no_colorbar: bool, optional
+        :param title: , defaults to None
+        :type title: , optional
+        :param crossmatch_overlay: , defaults to `False`
+        :type crossmatch_overlay: bool, optional
+        :param hide_beam: , defaults to `False`
+        :type hide_beam: bool, optional
+        :param size: , defaults to None
+        :type size: , optional
+        :param force: , defaults to `False`
+        :type force: bool, optional
+        :param outfile: , defaults to None
+        :type outfile: , optional
         """
+
         fig = self.make_png(
             epoch,
             selavy=selavy,
@@ -673,6 +779,15 @@ class Source:
         return
 
     def _get_save_name(self, epoch, ext):
+        '''
+        Generate name of file to save to
+
+        :param epoch: Epoch corresponding to requested data
+        :type epoch: str
+        :param ext: File extension
+        :type ext: str
+        '''
+
         if self.pipeline:
             name_epoch = epoch
         else:
@@ -692,6 +807,19 @@ class Source:
         return outfile
 
     def save_fits_cutout(self, epoch, outfile=None, size=None, force=False):
+        '''
+        
+        
+        :param epoch: Requested epoch
+        :type epoch: str
+        :param outfile: File to save to, defaults to None
+        :type outfile: str, optional
+        :param size: , defaults to None
+        :type size: , optional
+        :param force: , defaults to `False`
+        :type force: bool, optional
+        '''
+
         if (self._cutouts_got is False) or (force):
             self.get_cutout_data(size)
 
@@ -723,11 +851,26 @@ class Source:
         hdu_stamp.writeto(outfile, overwrite=True)
 
     def save_png_cutout(self, epoch):
+        '''
+        Save png cutout for requested epoch
+        
+        :param epoch: Requested epoch
+        :type epoch: str
+        '''
+        
         fig = self.make_png(epoch)
 
         return fig
 
     def save_all_ann(self, crossmatch_overlay=False):
+        '''
+        Save kvis annotation file corresponding to the source
+        
+        :param crossmatch_overlay: Include the crossmatch radius, \
+        defaults to `False`
+        :type crossmatch_overlay: bool, optional
+        '''
+
         self.measurements['epoch'].apply(
             self.write_ann,
             args=(
@@ -737,6 +880,14 @@ class Source:
         )
 
     def save_all_reg(self, crossmatch_overlay=False):
+        '''
+        Save DS9 region file corresponding to the source
+        
+        :param crossmatch_overlay: Include the crossmatch radius, \
+        defaults to `False`
+        :type crossmatch_overlay: bool, optional
+        '''
+
         self.measurements['epoch'].apply(
             self.write_reg,
             args=(
@@ -746,6 +897,15 @@ class Source:
         )
 
     def save_all_fits_cutouts(self, size=None, force=False):
+        '''
+        Save all cutouts of the source to fits file
+        
+        :param size: , defaults to None
+        :type size: , optional
+        :param force: , defaults to `False`
+        :type force: bool, optional
+        '''
+        
         if (self._cutouts_got is False) or (force):
             self.get_cutout_data(size)
 
@@ -765,6 +925,31 @@ class Source:
         size=None,
         disable_autoscaling=False
     ):
+        '''
+        
+        
+        :param selavy: , defaults to `True`
+        :type selavy: bool, optional
+        :param percentile: , defaults to 99.9
+        :type percentile: float, optional
+        :param zscale: , defaults to `False`
+        :type zscale: bool, optional
+        :param contrast: , defaults to 0.2
+        :type contrast: float, optional
+        :param islands: , defaults to `True`
+        :type islands: bool, optional
+        :param no_colorbar: , defaults to `False`
+        :type no_colorbar: bool, optional
+        :param crossmatch_overlay: , defaults to `False`
+        :type crossmatch_overlay: bool, optional
+        :param hide_beam: , defaults to `False`
+        :type hide_beam: bool, optional
+        :param size: , defaults to None
+        :type size: , optional
+        :param disable_autoscaling: , defaults to `False`
+        :type disable_autoscaling: bool, optional
+        '''
+
         if self._cutouts_got is False:
             self.get_cutout_data(size)
 
@@ -801,6 +986,37 @@ class Source:
         contrast=0.1, outfile=None, save=False, size=None, figsize=(10, 5),
         force=False, no_selavy=False, disable_autoscaling=False
     ):
+        '''
+        
+        :param columns: , defaults to 4
+        :type columns: float, optional
+        :param percentile: , defaults to 99.9
+        :type percentile: float, optional
+        :param zscale: , defaults to `False`
+        :type zscale: bool, optional
+        :param contrast: , defaults to 0.1
+        :type contrast: float, optional
+        :param outfile: , defaults to None
+        :type outfile: , optional
+        :param save: , defaults to `False`
+        :type save: bool, optional
+        :param size: , defaults to None
+        :type size: , optional
+        :param figsize: , defaults to (10
+        :type figsize: , optional
+        :param 5): 
+        :type 5): 
+        :param force: , defaults to `False`
+        :type force: bool, optional
+        :param no_selavy: , defaults to `False`
+        :type no_selavy: bool, optional
+        :param disable_autoscaling: , defaults to `False`
+        :type disable_autoscaling: bool, optional
+        
+        :returns:
+        :rtype:
+        '''
+
         if (self._cutouts_got is False) or (force):
             self.get_cutout_data(size)
 
@@ -925,6 +1141,17 @@ class Source:
             return fig
 
     def _gen_overlay_collection(self, cutout_row, f_source=None):
+        '''
+        
+        :param cutout_row: 
+        :type cutout_row: 
+        :param f_source: , defaults to None
+        :type f_source: , optional
+
+        :returns:
+        :rtype:
+        '''
+
         wcs = cutout_row.wcs
         selavy_sources = cutout_row.selavy_overlay
         pix_scale = proj_plane_pixel_scales(wcs)
@@ -998,7 +1225,37 @@ class Source:
         size=None,
         force=False,
     ):
-        """docstring for skyview_contour_plot"""
+        '''
+        
+        :param epoch: 
+        :type epoch: 
+        :param survey: 
+        :type survey: 
+        :param contour_levels: , defaults to [3., 5., 10., 15.]
+        :type contour_levels: , optional
+        :param percentile: , defaults to 99.9
+        :type percentile: float, optional
+        :param zscale: , defaults to `False`
+        :type zscale: bool, optional
+        :param contrast: , defaults to 0.2
+        :type contrast: float, optional
+        :param outfile: , defaults to None
+        :type outfile: , optional
+        :param no_colorbar: , defaults to `False`
+        :type no_colorbar: bool, optional
+        :param title: , defaults to None
+        :type title: , optional
+        :param save: , defaults to `False`
+        :type save: bool, optional
+        :param size: , defaults to None
+        :type size: , optional
+        :param force: , defaults to `False`
+        :type force: bool, optional
+        
+        :returns:
+        :rtype:
+        '''
+
         if (self._cutouts_got is False) or (force):
             self.get_cutout_data(size)
 
@@ -1125,7 +1382,9 @@ class Source:
     ):
         '''
         Save a PNG of the image postagestamp
-
+        
+        :param epoch: 
+        :type epoch: 
         :param selavy: `True` to overlay selavy components, `False` otherwise
         :type selavy: bool
         :param percentile: Percentile level for normalisation.
@@ -1137,10 +1396,7 @@ class Source:
         :param outfile: Name of the file to write to, or the name of the FITS
             file
         :type outfile: str
-        :param img_beam: Object containing the beam information of the image,
-            from which the source is being plotted from.
-        :type img_beam: radio_beam.Beam
-        :param no_islands: Disable island lables on the png, defaults to
+         :param no_islands: Disable island lables on the png, defaults to
             `False`
         :type no_islands: bool, optional
         :param label: Figure title (usually the name of the source of
@@ -1158,7 +1414,19 @@ class Source:
         :param hide_beam: If 'True' then the beam is not plotted onto the png
             plot, defaults to `False`.
         :type hide_beam: bool, optional
+        :param save: , defaults to `False`
+        :type save: bool, optional
+        :param size: , defaults to None
+        :type size: , optional
+        :param force: , defaults to `False`
+        :type force: bool, optional
+        :param disable_autoscaling: , defaults to `False`
+        :type disable_autoscaling: bool, optional
+        
+        :returns:
+        :rtype:
         '''
+        
         if (self._cutouts_got is False) or (force):
             self.get_cutout_data(size)
 
@@ -1402,12 +1670,20 @@ class Source:
         Write a kvis annotation file containing all selavy sources
         within the image.
 
-        :param outfile: Name of the file to write
-        :type outfile: str
+        
+        :param epoch: 
+        :type epoch: 
+        :param outfile: Name of the file to write, defaults to None
+        :type outfile: str, optional
         :param crossmatch_overlay: If True, a circle is added to the
             annotation file output denoting the crossmatch radius,
             defaults to False.
         :type crossmatch_overlay: bool, optional.
+        :param size: , defaults to None
+        :type size: , optional
+        :param force: , defaults to `False`
+        :type force: bool, optional
+
         '''
         if (self._cutouts_got is False) or (force):
             self.get_cutout_data(size)
@@ -1483,11 +1759,18 @@ class Source:
         '''
         Write a DS9 region file containing all selavy sources within the image
 
-        :param outfile: Name of the file to write
-        :type outfile: str
-        :param crossmatch_overlay: If True, a circle is added to the region
-            file output denoting the crossmatch radius, defaults to False.
+        :param epoch: 
+        :type epoch: 
+        :param outfile: Name of the file to write, defaults to None
+        :type outfile: str, optional
+        :param crossmatch_overlay: If True, a circle is added to the
+            annotation file output denoting the crossmatch radius,
+            defaults to False.
         :type crossmatch_overlay: bool, optional.
+        :param size: , defaults to None
+        :type size: , optional
+        :param force: , defaults to `False`
+        :type force: bool, optional
         '''
         if (self._cutouts_got is False) or (force):
             self.get_cutout_data(size)
@@ -1563,6 +1846,15 @@ class Source:
         simple=False,
         detections_only=False
     ):
+        '''
+        
+        :param out_dir: , defaults to None
+        :type out_dir: , optional
+        :param simple: , defaults to `False`
+        :type simple: bool, optional
+        :param detections_only: , defaults to `False`
+        :type detections_only: bool, optional
+        '''
 
         if simple:
             to_write = self.measurements[[
@@ -1629,8 +1921,7 @@ class Source:
         provided as percentages of the image size.
 
         :param target: The target in pixel coordinates.
-        :type np.array: array of the pixel values of the target
-            returned by wcs.wcs_world2pix.
+        :type target: `np.array`
         :param pixel_buff: Percentage of image size that is the buffer
             of the crosshair, i.e. the distance between the target and
             beginning of the line.
@@ -1640,6 +1931,7 @@ class Source:
         :type length: float.
         :param img_size: Tuple size of the image array.
         :type img_size: tuple.
+        
         :returns: list of pairs of pixel coordinates to plot using
             scatter.
         :rtype: list.
@@ -1664,6 +1956,12 @@ class Source:
     def simbad_search(self, radius=Angle(20. * u.arcsec)):
         """
         Searches SIMBAD for object coordinates and returns matches.
+        
+        :param radius: Radius to search, defaults to Angle(20. * u.arcsec)
+        :type radius: `astropy.coordinates.Angle`, optional
+        
+        :returns:
+        :rtype:
         """
 
         Simbad.add_votable_fields('ra(d)', 'dec(d)')
@@ -1684,6 +1982,12 @@ class Source:
     def ned_search(self, radius=Angle(20. * u.arcsec)):
         """
         Searches NED for object coordinates and returns matches.
+        
+        :param radius: Radius to search, defaults to Angle(20. * u.arcsec)
+        :type radius: `astropy.coordinates.Angle`, optional
+        
+        :returns:
+        :rtype:
         """
 
         try:
@@ -1705,6 +2009,16 @@ class Source:
     ):
         """
         Searches NED for object coordinates and returns matches.
+        
+        :param radius: Radius to search, defaults to Angle(20. * u.arcsec)
+        :type radius: `astropy.coordinates.Angle`, optional
+        :param filter_out_unreleased: Remove unreleased data, defaults to `False`
+        :type filter_out_unreleased: bool, optional
+        :param show_all: Show all available data, defaults to `False`
+        :type show_all: bool, optional
+
+        :returns:
+        :rtype:
         """
         try:
             result_table = Casda.query_region(self.coord, radius=radius)
@@ -1732,6 +2046,16 @@ class Source:
             return None
 
     def _get_fluxes_and_errors(self, suffix, forced_fits):
+        '''
+        
+        :param suffix: 
+        :type suffix: 
+        :param forced_fits: 
+        :type forced_fits:
+        
+        :returns:
+        :rtype:
+        '''
 
         if self.pipeline:
             non_detect_label = 'flux_{}'.format(suffix)
@@ -1775,6 +2099,18 @@ class Source:
         return fluxes, errors
 
     def calc_eta_metric(self, use_int=False, forced_fits=False):
+        '''
+        Calculate the eta variability metric
+        
+        :param use_int: Calculate using integrated (rather than peak) flux, defaults to `False`
+        :type use_int: bool, optional
+        :param forced_fits: Use forced fits, defaults to `False`
+        :type forced_fits: bool, optional
+        
+        :returns: Eta variability metric
+        :rtype: float
+        '''
+
         if self.measurements.shape[0] == 1:
             return 0.
 
@@ -1798,6 +2134,18 @@ class Source:
         return eta
 
     def calc_v_metric(self, use_int=False, forced_fits=False):
+        '''
+        Calculate the V variability metric
+        
+        :param use_int: Calculate using integrated (rather than peak) flux, defaults to `False`
+        :type use_int: bool, optional
+        :param forced_fits: Use forced fits, defaults to `False`
+        :type forced_fits: bool, optional
+        
+        :returns: V variability metric
+        :rtype: float
+        '''
+
         if self.measurements.shape[0] == 1:
             return 0.
 
@@ -1814,7 +2162,18 @@ class Source:
         return v
 
     def calc_eta_and_v_metrics(self, use_int=False, forced_fits=False):
-
+        '''
+        Calculate both variability metrics
+        
+        :param use_int: Calculate using integrated (rather than peak) flux, defaults to `False`
+        :type use_int: bool, optional
+        :param forced_fits: Use forced fits, defaults to `False`
+        :type forced_fits: bool, optional
+        
+        :returns: Variability metrics
+        :rtype: tuple of floats
+        '''
+        
         eta = self.calc_eta_metric(use_int=use_int, forced_fits=forced_fits)
         v = self.calc_v_metric(use_int=use_int, forced_fits=forced_fits)
 
