@@ -18,9 +18,18 @@ BASE_MOC_PATH = pkg_resources.resource_filename(
 class VASTMOCS(object):
     """docstring for VastMocs"""
     def __init__(self):
+        '''Constructor method
+        '''
+
         super(VASTMOCS, self).__init__()
 
     def load_pilot_stmoc(self):
+        '''
+        Load spacetime MOC
+        
+        :returns:
+        :rtype:
+        '''
 
         stmoc_path = os.path.join(
             BASE_MOC_PATH, 'VAST_PILOT.stmoc.fits'
@@ -31,6 +40,12 @@ class VASTMOCS(object):
         return stmoc
 
     def load_pilot_epoch_moc(self, epoch):
+        '''
+        Load MOC corresponding to one epoch of the pilot
+
+        :param epoch: Epoch to load
+        :type epoch: str
+        '''
 
         if epoch not in RELEASED_EPOCHS:
             raise Exception(
@@ -50,6 +65,17 @@ class VASTMOCS(object):
         return moc
 
     def load_pilot_field_moc(self, field, itype='COMBINED'):
+        '''
+        Load MOCs corresponding to pilot field
+
+        :param field: name of field requested
+        :type field: str
+        :param itype: Image type (COMBINED or TILES), defaults to 'COMBINED'
+        :type itype: str, optional
+        
+        :returns: Field MOC
+        :rtype:
+        '''
 
         types = ["COMBINED", "TILES"]
 
@@ -77,6 +103,15 @@ class VASTMOCS(object):
         return moc
 
     def query_vizier_vast_pilot(self, table_id, max_rows=10000):
+        '''
+        Query Vizier table for sources within Pilot fields
+
+        :param table_id: ID of table to query
+        :type table_id: str
+        :param max_rows: Maximum rows to return, defaults to 10000
+        :type max_rows: int, optional
+        '''
+
 
         moc = self.load_pilot_field_moc('1')
 
