@@ -22,6 +22,7 @@ import socket
 import re
 import signal
 import numexpr
+import gc
 
 from multiprocessing import Pool, cpu_count
 from multiprocessing_logging import install_mp_handler
@@ -305,7 +306,9 @@ class Query:
             'wcs': 'O',
             'header': 'O',
             'selavy_overlay': 'O',
-            'beam': 'O'
+            'beam': 'O',
+            'name': 'U',
+            'dateobs': 'datetime64[ns]'
         }
 
         cutouts = (
@@ -320,26 +323,9 @@ class Query:
 
         cutouts.index = cutouts.index.droplevel()
 
-        self.sources_df = self.sources_df.join(
-            cutouts
-        )
-        with pd.option_context('display.max_rows', None, 'display.max_columns', None):
-            self.logger.debug(print(self.sources_df))
-
-        for s in self.results:
-            s_name = s.name
-            s_cutout = self.sources_df[[
-                'data',
-                'wcs',
-                'header',
-                'selavy_overlay',
-                'beam'
-            ]][self.sources_df.name == s_name]
-
-            s.cutout_df = s_cutout.reset_index(drop=True)
-            s._cutouts_got = True
-
         self.cutout_data_got = True
+
+        return cutouts
 
     def gen_all_source_products(
         self,
@@ -463,93 +449,72 @@ class Query:
 
         if sum([fits, png, ann, reg]) > 0:
             if not self.cutout_data_got:
-                self.get_all_cutout_data(imsize)
+                self.logger.info(
+                    "Fetching cutout data for sources..."
+                )
+                cutouts_df = self.get_all_cutout_data(imsize)
+                self.logger.info('Done.')
+                to_process = [(s, cutouts_df.loc[
+                    cutouts_df['name'] == s.name
+                ].sort_values(
+                    by='dateobs'
+                ).reset_index()) for s in self.results.values]
+
+                del cutouts_df
+                gc.collect()
+        else:
+            to_process = [(s, None) for s in self.results.values]
+            cutouts_df = None
+
+        self.logger.info(
+            'Saving source products, please be paitent for large queries...'
+        )
+
+        produce_source_products_multi = partial(
+            self._produce_source_products,
+            fits=fits,
+            png=png,
+            ann=ann,
+            reg=reg,
+            lightcurve=lightcurve,
+            measurements=measurements,
+            png_selavy=png_selavy,
+            png_percentile=png_percentile,
+            png_zscale=png_zscale,
+            png_contrast=png_contrast,
+            png_islands=png_islands,
+            png_no_colorbar=png_no_colorbar,
+            png_crossmatch_overlay=png_crossmatch_overlay,
+            png_hide_beam=png_hide_beam,
+            png_disable_autoscaling=png_disable_autoscaling,
+            ann_crossmatch_overlay=ann_crossmatch_overlay,
+            reg_crossmatch_overlay=reg_crossmatch_overlay,
+            lc_sigma_thresh=lc_sigma_thresh,
+            lc_figsize=lc_figsize,
+            lc_min_points=lc_min_points,
+            lc_min_detections=lc_min_detections,
+            lc_mjd=lc_mjd,
+            lc_grid=lc_grid,
+            lc_yaxis_start=lc_yaxis_start,
+            lc_peak_flux=lc_peak_flux,
+            lc_use_forced_for_limits=lc_use_forced_for_limits,
+            lc_use_forced_for_all=lc_use_forced_for_all,
+            lc_hide_legend=lc_hide_legend,
+            measurements_simple=measurements_simple,
+            calc_script_norms=~(png_disable_autoscaling)
+        )
 
         original_sigint_handler = signal.signal(
             signal.SIGINT, signal.SIG_IGN
         )
-
-        workers = Pool(processes=self.ncpu)
-
         signal.signal(signal.SIGINT, original_sigint_handler)
-
-        if png:
-            multi_png = partial(
-                self._save_all_png_cutouts,
-                selavy=png_selavy,
-                percentile=png_percentile,
-                zscale=png_zscale,
-                contrast=png_contrast,
-                no_islands=png_no_islands,
-                no_colorbar=png_no_colorbar,
-                crossmatch_overlay=png_crossmatch_overlay,
-                hide_beam=png_hide_beam,
-                disable_autoscaling=png_disable_autoscaling
-            )
-
-        if ann:
-            multi_ann = partial(
-                self._save_all_ann,
-                crossmatch_overlay=ann_crossmatch_overlay
-            )
-
-        if reg:
-            multi_reg = partial(
-                self._save_all_reg,
-                crossmatch_overlay=reg_crossmatch_overlay
-            )
-
-        if lightcurve:
-            multi_lc = partial(
-                self._save_all_lc,
-                lc_sigma_thresh=lc_sigma_thresh,
-                lc_figsize=lc_figsize,
-                lc_min_points=lc_min_points,
-                lc_min_detections=lc_min_detections,
-                lc_mjd=lc_mjd,
-                lc_grid=lc_grid,
-                lc_yaxis_start=lc_yaxis_start,
-                lc_peak_flux=lc_peak_flux,
-                lc_save=True,
-                lc_outfile=None,
-                lc_use_forced_for_limits=lc_use_forced_for_limits,
-                lc_use_forced_for_all=lc_use_forced_for_all,
-                lc_hide_legend=lc_hide_legend
-            )
-
-        if measurements:
-            multi_measurements = partial(
-                self._save_all_measurements,
-                simple=measurements_simple,
-                outfile=None,
-            )
+        workers = Pool(processes=self.ncpu, maxtasksperchild=100)
 
         try:
-            if fits:
-                self.logger.info("Saving FITS cutouts...")
-                workers.map(self._save_all_fits_cutouts, self.results)
-                self.logger.info("Done")
-            if png:
-                self.logger.info("Saving PNG cutouts...")
-                workers.map(multi_png, self.results)
-                self.logger.info("Done")
-            if ann:
-                self.logger.info("Saving .ann files...")
-                workers.map(multi_ann, self.results)
-                self.logger.info("Done")
-            if reg:
-                self.logger.info("Saving .reg files...")
-                workers.map(multi_reg, self.results)
-                self.logger.info("Done")
-            if lightcurve:
-                self.logger.info("Saving lightcurves...")
-                workers.map(multi_lc, self.results)
-                self.logger.info("Done")
-            if measurements:
-                self.logger.info("Saving measurements...")
-                workers.map(multi_measurements, self.results)
-                self.logger.info("Done")
-
+            workers.map(
+                produce_source_products_multi,
+                to_process,
+            )
         except KeyboardInterrupt:
             self.logger.error(
                 "Caught KeyboardInterrupt, terminating workers."
@@ -568,7 +533,96 @@ class Query:
         else:
             self.logger.debug("Normal termination")
             workers.close()
-            workers.join()
+            # workers.join()
+
+    def _produce_source_products(
+        self,
+        i,
+        fits=True,
+        png=False,
+        ann=False,
+        reg=False,
+        lightcurve=False,
+        measurements=False,
+        png_selavy=True,
+        png_percentile=99.9,
+        png_zscale=False,
+        png_contrast=0.2,
+        png_islands=True,
+        png_no_colorbar=False,
+        png_crossmatch_overlay=False,
+        png_hide_beam=False,
+        png_disable_autoscaling=False,
+        ann_crossmatch_overlay=False,
+        reg_crossmatch_overlay=False,
+        lc_sigma_thresh=5,
+        lc_figsize=(8, 4),
+        lc_min_points=2,
+        lc_min_detections=1,
+        lc_mjd=False,
+        lc_grid=False,
+        lc_yaxis_start="auto",
+        lc_peak_flux=True,
+        lc_use_forced_for_limits=False,
+        lc_use_forced_for_all=False,
+        lc_hide_legend=False,
+        measurements_simple=False,
+        calc_script_norms=False
+    ):
+
+        source, cutout_data = i
+
+        if fits:
+            source.save_all_fits_cutouts(cutout_data=cutout_data)
+
+        if png:
+            source.save_all_png_cutouts(
+                selavy=png_selavy,
+                percentile=png_percentile,
+                zscale=png_zscale,
+                contrast=png_contrast,
+                no_islands=png_no_islands,
+                no_colorbar=png_no_colorbar,
+                crossmatch_overlay=png_crossmatch_overlay,
+                hide_beam=png_hide_beam,
+                disable_autoscaling=png_disable_autoscaling,
+                cutout_data=cutout_data,
+                calc_script_norms=calc_script_norms
+            )
+
+        if ann:
+            source.save_all_ann(
+                crossmatch_overlay=ann_crossmatch_overlay,
+                cutout_data=cutout_data
+            )
+
+        if reg:
+            source.save_all_reg(
+                crossmatch_overlay=reg_crossmatch_overlay,
+                cutout_data=cutout_data
+            )
+
+        if lightcurve:
+            source.plot_lightcurve(
+                sigma_thresh=lc_sigma_thresh,
+                figsize=lc_figsize,
+                min_points=lc_min_points,
+                min_detections=lc_min_detections,
+                mjd=lc_mjd,
+                grid=lc_grid,
+                yaxis_start=lc_yaxis_start,
+                peak_flux=lc_peak_flux,
+                save=True,
+                outfile=None,
+                use_forced_for_limits=lc_use_forced_for_limits,
+                use_forced_for_all=lc_use_forced_for_all,
+                hide_legend=lc_hide_legend
+            )
+
+        if measurements:
+            source.write_measurements(simple=measurements_simple)
+
+        return
 
     def summary_log(self):
         '''
@@ -591,162 +645,6 @@ class Query:
             # Means that find sources has not been run
             pass
         self.logger.info("-------------------------")
-
-    def _save_all_png_cutouts(
-        self, s, selavy, percentile,
-        zscale, contrast, no_islands, no_colorbar,
-        crossmatch_overlay, hide_beam, disable_autoscaling
-    ):
-        '''
-        Save png cutouts for all available images of the source of interest
-
-        :param s: Source of interest
-        :type s: `vasttools.Source`
-        :param selavy: Overlay selavy components onto png postagestamp
-        :type selavy: bool
-        :param percentile: Percentile level for the png normalisation
-        :type percentile: float
-        :param zscale: Use z-scale normalisation rather than linear
-        :type zscale: bool
-        :param contrast: Z-scale constrast
-        :type contrast: float
-        :param no_islands: Don't overlay selavy islands
-        :type no_islands: bool
-        :param no_colorbar: Don't use a colourbar
-        :type no_colorbar: bool
-        :param crossmatch_overlay: Overlay crossmatch radius
-        :type crossmatch_overlay: bool
-        :param hide_beam: Don't show the beam shape
-        :type hide_beam: bool
-        '''
-
-        s.save_all_png_cutouts(
-            selavy=selavy,
-            percentile=percentile,
-            zscale=zscale,
-            contrast=contrast,
-            islands=no_islands,
-            no_colorbar=no_colorbar,
-            crossmatch_overlay=crossmatch_overlay,
-            hide_beam=hide_beam,
-            disable_autoscaling=disable_autoscaling
-        )
-
-    def _save_all_fits_cutouts(self, s):
-        '''
-        Save fits cutouts for all available images of the source of interest
-
-        :param s: Source of interest
-        :type s: `vasttools.Source`
-        '''
-        s.save_all_fits_cutouts()
-
-    def _save_all_ann(self, s, crossmatch_overlay=False):
-        '''
-        Save kvis annotations for all available images of the source of \
-        interest
-
-        :param s: Source of interest
-        :type s: `vasttools.Source`
-        :param crossmatch_overlay: Include the crossmatch radius, \
-        defaults to `False`
-        :type crossmatch_overlay: bool, optional
-        '''
-
-        s.save_all_ann(crossmatch_overlay=crossmatch_overlay)
-
-    def _save_all_reg(self, s, crossmatch_overlay=False):
-        '''
-        Save DS9 overlays for all available images of the source of interest
-
-        :param s: Source of interest
-        :type s: `vasttools.Source`
-        :param crossmatch_overlay: Include the crossmatch radius, \
-        defaults to `False`
-        :type crossmatch_overlay: bool, optional
-        '''
-
-        s.save_all_reg(crossmatch_overlay=crossmatch_overlay)
-
-    def _save_all_measurements(self, s, simple=False, outfile=None):
-        '''
-        Save all measurements of the source of interest
-
-        :param s: Source of interest
-        :type s: `vasttools.Source`
-        :param simple: Only save simple measurement info, defaults to `False`
-        :type simple: bool, optional
-        :param outfile: File to write measurements to, defaults to None
-        :type outfile: str, optional
-        '''
-
-        s.write_measurements(simple=simple, outfile=outfile)
-
-    def _save_all_lc(
-        self,
-        s,
-        lc_sigma_thresh=5,
-        lc_figsize=(8, 4),
-        lc_min_points=2,
-        lc_min_detections=1,
-        lc_mjd=False,
-        lc_grid=False,
-        lc_yaxis_start="auto",
-        lc_peak_flux=True,
-        lc_save=True,
-        lc_outfile=None,
-        lc_use_forced_for_limits=False,
-        lc_use_forced_for_all=False,
-        lc_hide_legend=False
-    ):
-        '''
-        Plot the lightcurve of the source of interest, and save to file.
-
-        :param s: Source of interest
-        :type s: `vasttools.Source`
-        :param lc_sigma_thresh: Detection threshold (in sigma) for \
-        lightcurves, defaults to 5
-        :type lc_sigma_thresh: float, optional
-        :param lc_figsize: Size of lightcurve figure, defaults to (8, 4)
-        :type lc_figsize: tuple, optional
-        :param lc_min_points: Minimum number of source observations required \
-        for a lightcurve to be generated, defaults to 2
-        :type lc_min_points: int, optional
-        :param lc_min_detections: Minimum number of source detections \
-        required for a lightcurve to be generated, defaults to 1
-        :type lc_min_detections: int, optional
-        :param lc_mjd: Use MJD for lightcurve x-axis, defaults to `False`
-        :type lc_mjd: bool, optional
-        :param lc_grid: Include grid on lightcurve plot, defaults to `False`
-        :type lc_grid: bool, optional
-        :param lc_yaxis_start: Start the lightcurve y-axis at 0 ("0") or use \
-        the matpotlib default ("auto"). Defaults to "auto"
-        :type lc_yaxis_start: str, optional
-        :param lc_peak_flux: Generate lightcurve using peak flux density \
-        rather than integrated flux density, defaults to `True`
-        :type lc_peak_flux: bool, optional
-        :param lc_save: Save the lightcurve plot to file, defaults to `True`
-        :type lc_save: bool, optional
-        :param lc_outfile: File to save the lightcurve plot to, \
-        defaults to None
-        :type lc_outfile: str, optional
-        '''
-
-        s.plot_lightcurve(
-            sigma_thresh=lc_sigma_thresh,
-            figsize=lc_figsize,
-            min_points=lc_min_points,
-            min_detections=lc_min_detections,
-            mjd=lc_mjd,
-            grid=lc_grid,
-            yaxis_start=lc_yaxis_start,
-            peak_flux=lc_peak_flux,
-            save=lc_save,
-            outfile=lc_outfile,
-            use_forced_for_limits=lc_use_forced_for_limits,
-            use_forced_for_all=lc_use_forced_for_all,
-            hide_legend=lc_hide_legend
-        )
 
     def _add_source_cutout_data(self, s):
         '''
@@ -808,6 +706,9 @@ class Query:
             3: "selavy_overlay",
             4: "beam"
         })
+
+        cutout_data['name'] = group['name'].values
+        cutout_data['dateobs'] = group['dateobs'].values
 
         del image
 
@@ -878,6 +779,8 @@ class Query:
         if self.fields_found is False:
             self.find_fields()
 
+        self.logger.info("Finding sources in PILOT data...")
+
         self.sources_df = self.fields_df.sort_values(
             by=['name', 'dateobs']
         ).reset_index(drop=True)
@@ -891,7 +794,7 @@ class Query:
         )
 
         if self.settings['forced_fits']:
-            self.logger.info("Obtaining forced fits.")
+            self.logger.info("Obtaining forced fits...")
             meta = {
                 'f_island_id': 'U',
                 'f_component_id': 'U',
@@ -918,6 +821,8 @@ class Query:
             )
 
             f_results.index = f_results.index.droplevel()
+
+            self.logger.info("Done.")
 
         meta = {
             '#': 'f',
@@ -978,6 +883,8 @@ class Query:
                 f_results, left_index=True, right_index=True
             )
 
+            del f_results
+
         if self.settings['search_around']:
             how = 'inner'
         else:
@@ -1007,6 +914,8 @@ class Query:
                 ).compute(num_workers=self.ncpu, scheduler='processes')
             )
             self.results = self.results.dropna()
+
+        self.logger.info("Done.")
 
     def save_search_around_results(self, sort_output=False):
         '''
@@ -1468,6 +1377,10 @@ class Query:
         Find the corresponding field for each source
         '''
 
+        self.logger.info(
+            "Matching queried sources to VAST Pilot fields..."
+        )
+
         if self.racs:
             base_epoch = '0'
             base_fc = 'RACS'
@@ -1600,6 +1513,7 @@ class Query:
             self.fields_df['dateobs']
         )
 
+        self.logger.info("Done.")
         self.fields_found = True
 
     def _field_matching(

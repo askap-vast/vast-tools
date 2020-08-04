@@ -210,53 +210,21 @@ class Pipeline(object):
             }
         )
 
-        sources = sources.join(
-            measurements[[
-                'source',
-                'forced',
-            ]].groupby('source').count(),
-            how='left'
-        ).rename(columns={
-            'forced': 'n_datapoints'
-        })
-        sources = sources.merge(
-            measurements[[
-                'source',
-                'forced',
-                'has_siblings'
-            ]].groupby('source').agg(
-                {
-                    'forced': sum,
-                    # below works in pandas but not Dask
-                    'has_siblings': any
-                }
-            ),
-            how='left', right_index=True, left_index=True
-        ).rename(columns={
-            'forced': 'n_forced',
-        })
+        to_move = ['n_meas', 'n_meas_sel', 'n_meas_forced', 'n_sibl', 'n_rel']
+        sources_len = sources.shape[1]
+        for c in to_move:
+            col = sources.pop(c)
+            sources.insert(sources_len - 1, c, col)
 
-        sources['n_forced'] = sources['n_forced'].astype(int)
-        sources['n_datapoints'] = sources['n_datapoints'].astype(int)
-
-        sources['n_selavy'] = (
-            sources['n_datapoints'] - sources['n_forced']
-        )
-
-        relations = relations[relations['related_with'] != -1]
-
-        sources = sources.merge(
-            relations.groupby('id').count(),
-            how='left', left_index=True, right_index=True
-        ).fillna(0).rename(
+        sources = sources.rename(
             columns={
-                'related_with': 'n_relations'
+                'n_meas_forced': 'n_forced',
+                'n_meas': 'n_measurements',
+                'n_meas_sel': 'n_selavy',
+                'n_sibl': 'n_siblings',
+                'n_rel': 'n_relations'
             }
         )
-
-        sources['n_relations'] = sources[
-            'n_relations'
-        ].astype(int)
 
         images = images.set_index('id')
 
@@ -305,7 +273,7 @@ class PipeRun(object):
 
         s = self.sources.loc[id]
 
-        num_measurements = s['n_datapoints']
+        num_measurements = s['n_measurements']
 
         source_coord = SkyCoord(
             s['wavg_ra'],

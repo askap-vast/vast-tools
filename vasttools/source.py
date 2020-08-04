@@ -510,7 +510,9 @@ class Source:
 
     def analyse_norm_level(
         self, percentile=99.9,
-        zscale=False, z_contrast=0.2
+        zscale=False, z_contrast=0.2,
+        cutout_data=None,
+        return_norm=False
     ):
         '''
 
@@ -523,10 +525,14 @@ class Source:
         :type z_contrast: float, optional
         '''
 
-        if not self._cutouts_got:
-            self.logger.warning(
-                "Fetch cutout data before running this function!"
-            )
+        if cutout_data is None:
+            if not self._cutouts_got:
+                self.logger.warning(
+                    "Fetch cutout data before running this function!"
+                )
+
+        if cutout_data is None:
+            cutout_data = self.cutout_df
 
         if self.detections > 0:
             scale_index = self.measurements[
@@ -535,17 +541,23 @@ class Source:
         else:
             scale_index = 0
 
-        scale_data = self.cutout_df.loc[scale_index].data * 1.e3
+        scale_data = cutout_data.loc[scale_index].data * 1.e3
+
 
         if zscale:
-            self.norms = ImageNormalize(
+            norms = ImageNormalize(
                 scale_data, interval=ZScaleInterval(
                     contrast=z_contrast))
         else:
-            self.norms = ImageNormalize(
+            norms = ImageNormalize(
                 scale_data,
                 interval=PercentileInterval(percentile),
                 stretch=LinearStretch())
+
+        if return_norm:
+            return norms
+        else:
+            self.norms = norms
 
         self.checked_norms = True
 
@@ -806,7 +818,9 @@ class Source:
         )
         return outfile
 
-    def save_fits_cutout(self, epoch, outfile=None, size=None, force=False):
+    def save_fits_cutout(
+        self, epoch, outfile=None, size=None, force=False, cutout_data=None
+    ):
         '''
 
 
@@ -818,10 +832,13 @@ class Source:
         :type size: , optional
         :param force: , defaults to `False`
         :type force: bool, optional
+        :param cutout_data, defaults to None
+        :type pandas.DataFrame
         '''
 
         if (self._cutouts_got is False) or (force):
-            self.get_cutout_data(size)
+            if cutout_data is None:
+                self.get_cutout_data(size)
 
         if epoch not in self.epochs:
             raise ValueError(
@@ -840,15 +857,20 @@ class Source:
 
         index = self.epochs.index(epoch)
 
-        cutout_data = self.cutout_df.iloc[index]
+        if cutout_data is None:
+            cutout_row = self.cutout_df.iloc[index]
+        else:
+            cutout_row = cutout_data.iloc[0]
 
         hdu_stamp = fits.PrimaryHDU(
-            data=cutout_data.data,
-            header=cutout_data.header
+            data=cutout_row.data,
+            header=cutout_row.header
         )
 
         # Write the cutout to a new FITS file
         hdu_stamp.writeto(outfile, overwrite=True)
+
+        del hdu_stamp
 
     def save_png_cutout(self, epoch):
         '''
@@ -862,41 +884,53 @@ class Source:
 
         return fig
 
-    def save_all_ann(self, crossmatch_overlay=False):
+    def save_all_ann(self, crossmatch_overlay=False, cutout_data=None):
         '''
         Save kvis annotation file corresponding to the source
 
         :param crossmatch_overlay: Include the crossmatch radius, \
         defaults to `False`
         :type crossmatch_overlay: bool, optional
+        :param cutout_data, defaults to None
+        :type pandas.DataFrame
         '''
 
         self.measurements['epoch'].apply(
             self.write_ann,
             args=(
                 None,
-                crossmatch_overlay
+                crossmatch_overlay,
+                None,
+                False,
+                cutout_data
             )
         )
 
-    def save_all_reg(self, crossmatch_overlay=False):
+    def save_all_reg(self, crossmatch_overlay=False, cutout_data=None):
         '''
         Save DS9 region file corresponding to the source
 
         :param crossmatch_overlay: Include the crossmatch radius, \
         defaults to `False`
         :type crossmatch_overlay: bool, optional
+        :param cutout_data, defaults to None
+        :type pandas.DataFrame
         '''
 
         self.measurements['epoch'].apply(
             self.write_reg,
             args=(
                 None,
-                crossmatch_overlay
+                crossmatch_overlay,
+                None,
+                False,
+                cutout_data
             )
         )
 
-    def save_all_fits_cutouts(self, size=None, force=False):
+    def save_all_fits_cutouts(
+        self, size=None, force=False, cutout_data=None
+    ):
         '''
         Save all cutouts of the source to fits file
 
@@ -904,13 +938,16 @@ class Source:
         :type size: , optional
         :param force: , defaults to `False`
         :type force: bool, optional
+        :param cutout_data, defaults to None
+        :type pandas.DataFrame
         '''
 
         if (self._cutouts_got is False) or (force):
-            self.get_cutout_data(size)
+            if cutout_data is None:
+                self.get_cutout_data(size)
 
         for e in self.measurements['epoch']:
-            self.save_fits_cutout(e)
+            self.save_fits_cutout(e, cutout_data=cutout_data)
 
     def save_all_png_cutouts(
         self,
@@ -923,7 +960,9 @@ class Source:
         crossmatch_overlay=False,
         hide_beam=False,
         size=None,
-        disable_autoscaling=False
+        disable_autoscaling=False,
+        cutout_data=None,
+        calc_script_norms=False
     ):
         '''
 
@@ -951,13 +990,23 @@ class Source:
         '''
 
         if self._cutouts_got is False:
-            self.get_cutout_data(size)
+            if cutout_data is None:
+                self.get_cutout_data(size)
 
-        if not self.checked_norms:
-            self.analyse_norm_level(
+        if not calc_script_norms:
+            if not self.checked_norms:
+                self.analyse_norm_level(
+                    percentile=percentile,
+                    zscale=zscale,
+                    z_contrast=contrast
+                )
+            norms = None
+        else:
+            norms = self.analyse_norm_level(
                 percentile=percentile,
                 zscale=zscale,
-                z_contrast=contrast
+                z_contrast=contrast,
+                cutout_data=cutout_data
             )
 
         self.measurements['epoch'].apply(
@@ -977,7 +1026,9 @@ class Source:
                 True,
                 None,
                 False,
-                disable_autoscaling
+                disable_autoscaling,
+                cutout_data,
+                norms
             )
         )
 
@@ -1378,7 +1429,9 @@ class Source:
             save=False,
             size=None,
             force=False,
-            disable_autoscaling=False
+            disable_autoscaling=False,
+            cutout_data=None,
+            norms=None
     ):
         '''
         Save a PNG of the image postagestamp
@@ -1428,7 +1481,8 @@ class Source:
         '''
 
         if (self._cutouts_got is False) or (force):
-            self.get_cutout_data(size)
+            if cutout_data is None:
+                self.get_cutout_data(size)
 
         if epoch not in self.epochs:
             raise ValueError(
@@ -1448,32 +1502,40 @@ class Source:
 
         index = self.epochs.index(epoch)
 
+        if cutout_data is None:
+            cutout_row = self.cutout_df.iloc[index]
+        else:
+            cutout_row = cutout_data.iloc[index]
+
         fig = plt.figure(figsize=(8, 8))
-        ax = fig.add_subplot(111, projection=self.cutout_df.iloc[index].wcs)
+        ax = fig.add_subplot(111, projection=cutout_row.wcs)
         # Get the Image Normalisation from zscale, user contrast.
         if not disable_autoscaling:
-            if not self.checked_norms:
-                self.analyse_norm_level(
-                    percentile=percentile,
-                    zscale=zscale,
-                    z_contrast=contrast
-                )
-            img_norms = self.norms
+            if norms is not None:
+                img_norms = norms
+            else:
+                if not self.checked_norms:
+                    self.analyse_norm_level(
+                        percentile=percentile,
+                        zscale=zscale,
+                        z_contrast=contrast
+                    )
+                img_norms = self.norms
         else:
             if zscale:
                 img_norms = ImageNormalize(
-                    self.cutout_df.iloc[index].data * 1.e3,
+                    cutout_row.data * 1.e3,
                     interval=ZScaleInterval(
                         contrast=contrast
                     ))
             else:
                 img_norms = ImageNormalize(
-                    self.cutout_df.iloc[index].data * 1.e3,
+                    cutout_row.data * 1.e3,
                     interval=PercentileInterval(percentile),
                     stretch=LinearStretch())
 
         im = ax.imshow(
-            self.cutout_df.iloc[index].data * 1.e3,
+            cutout_row.data * 1.e3,
             norm=img_norms,
             cmap="gray_r"
         )
@@ -1486,7 +1548,7 @@ class Source:
             ]])
         )
 
-        target_coords = self.cutout_df.iloc[index].wcs.wcs_world2pix(
+        target_coords = cutout_row.wcs.wcs_world2pix(
             target_coords, 0
         )
 
@@ -1494,7 +1556,7 @@ class Source:
             target_coords,
             0.03,
             0.03,
-            self.cutout_df.iloc[index].data.shape
+            cutout_row.data.shape
         )
 
         [ax.plot(
@@ -1512,8 +1574,8 @@ class Source:
             try:
                 crossmatch_patch = SphericalCircle(
                     (
-                        self.measurements.iloc[index].ra,
-                        self.measurements.iloc[index].dec
+                        self.measurements.iloc[index].skycoord.ra,
+                        self.measurements.iloc[index].skycoord.dec
                     ),
                     self.crossmatch_radius,
                     transform=ax.get_transform('world'),
@@ -1527,10 +1589,10 @@ class Source:
                     " Has the source been crossmatched?")
                 crossmatch_overlay = False
 
-        if (not self.cutout_df.iloc[index]['selavy_overlay'].empty) and selavy:
+        if (not cutout_row['selavy_overlay'].empty) and selavy:
             ax.set_autoscale_on(False)
             collection, patches, island_names = self._gen_overlay_collection(
-                self.cutout_df.iloc[index]
+                cutout_row
             )
             ax.add_collection(collection, autolim=False)
             del collection
@@ -1553,7 +1615,7 @@ class Source:
 
         if self.forced_fits:
             collection, patches, island_names = self._gen_overlay_collection(
-                self.cutout_df.iloc[index],
+                cutout_row,
                 f_source=self.measurements.iloc[index]
             )
             ax.add_collection(collection, autolim=False)
@@ -1624,14 +1686,14 @@ class Source:
 
         ax.set_title(title)
 
-        if self.cutout_df.iloc[index].beam is not None and hide_beam is False:
-            img_beam = self.cutout_df.iloc[index].beam
-            if self.cutout_df.iloc[index].wcs.is_celestial:
+        if cutout_row.beam is not None and hide_beam is False:
+            img_beam = cutout_row.beam
+            if cutout_row.wcs.is_celestial:
                 major = img_beam.major.value
                 minor = img_beam.minor.value
                 pa = img_beam.pa.value
                 pix_scale = proj_plane_pixel_scales(
-                    self.cutout_df.iloc[index].wcs
+                    cutout_row.wcs
                 )
                 sx = pix_scale[0]
                 sy = pix_scale[1]
@@ -1657,14 +1719,14 @@ class Source:
             self.logger.debug("Saved {}".format(outfile))
 
             plt.close(fig)
-
             return
+
         else:
             return fig
 
     def write_ann(
         self, epoch, outfile=None, crossmatch_overlay=False,
-        size=None, force=False
+        size=None, force=False, cutout_data=None
     ):
         '''
         Write a kvis annotation file containing all selavy sources
@@ -1686,7 +1748,8 @@ class Source:
 
         '''
         if (self._cutouts_got is False) or (force):
-            self.get_cutout_data(size)
+            if cutout_data is None:
+                self.get_cutout_data(size)
 
         if outfile is None:
             outfile = self._get_save_name(epoch, ".ann")
@@ -1695,7 +1758,9 @@ class Source:
                 self.outdir,
                 outfile
             )
+
         index = self.epochs.index(epoch)
+
         neg = False
         with open(outfile, 'w') as f:
             f.write("COORD W\n")
@@ -1720,7 +1785,10 @@ class Source:
                         " Has the source been crossmatched?")
             f.write("COLOR GREEN\n")
 
-            selavy_cat_cut = self.cutout_df.iloc[index].selavy_overlay
+            if cutout_data is None:
+                selavy_cat_cut = self.cutout_df.iloc[index].selavy_overlay
+            else:
+                selavy_cat_cut = cutout_data.iloc[index].selavy_overlay
 
             for i, row in selavy_cat_cut.iterrows():
                 if row["island_id"].startswith("n"):
@@ -1754,7 +1822,7 @@ class Source:
 
     def write_reg(
             self, epoch, outfile=None, crossmatch_overlay=False,
-            size=None, force=False
+            size=None, force=False, cutout_data=None
     ):
         '''
         Write a DS9 region file containing all selavy sources within the image
@@ -1773,7 +1841,8 @@ class Source:
         :type force: bool, optional
         '''
         if (self._cutouts_got is False) or (force):
-            self.get_cutout_data(size)
+            if cutout_data is None:
+                self.get_cutout_data(size)
 
         if outfile is None:
             outfile = self._get_save_name(epoch, ".reg")
@@ -1808,7 +1877,10 @@ class Source:
                         "Crossmatch circle overlay failed!"
                         " Has the source been crossmatched?")
 
-            selavy_cat_cut = self.cutout_df.iloc[index].selavy_overlay
+            if cutout_data is None:
+                selavy_cat_cut = self.cutout_df.iloc[index].selavy_overlay
+            else:
+                selavy_cat_cut = cutout_data.iloc[index].selavy_overlay
 
             for i, row in selavy_cat_cut.iterrows():
                 if row["island_id"].startswith("n"):
