@@ -319,9 +319,11 @@ class Image:
         :type epoch:
         :param stokes: Stokes parameter of interest
         :type stokes: str
-        :param base_folder: Path to base folder if using default directory structure
+        :param base_folder: Path to base folder if using
+            default directory structure
         :type base_folder: str
-        :param tiles: Whether to use tiles or combined images, defaults to `False`
+        :param tiles: Whether to use tiles or combined images,
+            defaults to `False`
         :type tiles: bool, optional
         :param sbid: SBID of the field, defaults to None
         :type sbid: str, optional
