@@ -695,7 +695,7 @@ class PipeAnalysis(PipeRun):
         :returns: Tuple containing the pairs dataframe and the
             two epoch dataframe containg the results of each pair
             of source measurements.
-        :rtype: tuple
+        :rtype:
         """
         image_ids = self.images.index.tolist()
 
@@ -934,7 +934,8 @@ class PipeAnalysis(PipeRun):
         :returns: tuple containing the pairs dataframe, the two epoch dataframe
             containing the calculated metrics, the dataframe of candidates and
             the bokeh plot.
-        :rtype: tuple.
+        :rtype: pandas.core.frame.DataFrame, pandas.core.frame.DataFrame,
+            pandas.core.frame.DataFrame, bokeh.models.grids.Grid
         """
         if df is None:
             df = self.sources
@@ -971,7 +972,7 @@ class PipeAnalysis(PipeRun):
 
         :returns: tuple containing the eta_fit_mean, eta_fit_sigma, v_fit_mean
             and the v_fit_sigma
-        :rtype: tuple.
+        :rtype: float, float, float, float
         """
 
         if use_int_flux:
@@ -1010,7 +1011,7 @@ class PipeAnalysis(PipeRun):
 
         :returns: tuple containing the range of the returned data and the
             Gaussian fit.
-        :rtype: tuple.
+        :rtype: numpy.ndarray, scipy.stats.norm
         """
         range_data = np.linspace(min(data), max(data), 1000)
         fit = norm.pdf(range_data, loc=param_mean, scale=param_sigma)
@@ -1461,7 +1462,10 @@ class PipeAnalysis(PipeRun):
         :returns: tuple containing the eta cutoff value, the v cutoff value,
             dataframe of candidates, candidates plot and, if selected, the
             diagnostic plot.
-        :rtype: tuple.
+        :rtype: float, float, pandas.core.frame.DataFrame,
+            (bokeh.models.grids.Grid or matplotlib.pyplot.figure),
+            matplotlib.pyplot.figure
+
         """
         plot_types = ['bokeh', 'matplotlib']
 
