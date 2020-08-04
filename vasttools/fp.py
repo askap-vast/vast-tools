@@ -1,4 +1,7 @@
 """
+This is written by David Kaplan:
+https://github.com/dlakaplan/forced_phot
+
 Usage:
 
 from astropy.table import Table
