@@ -447,7 +447,7 @@ if __name__ == '__main__':
                 reg = args.reg
                 lightcurve = args.lightcurves
 
-            query.gen_all_source_products(
+            query._gen_all_source_products(
                 fits=fits,
                 png=png,
                 ann=ann,

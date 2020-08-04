@@ -78,13 +78,43 @@ class Query:
 
     Attributes
     ----------
-
+    coords : astropy.coordinates.sky_coordinate.SkyCoord
+        The sky coordinates to be queried.
+    source_names : list
+        The names of the sources (coordinates) being queried.
+    ncpu : int
+        The number of cpus available.
+    planets : bool
+        Set to 'True' when planets are to be queried.
+    settings : dict
+        Dictionary that contains the various settings of the query.
+    base_folder : str
+        The base folder of the VAST data.
+    fields_found : bool
+        Set to 'True' once 'find_fields' has been run on the query.
+    racs : bool
+        Set to 'True' if RACS (Epoch 00) is included in the query.
+    query_df : pandas.core.frame.DataFrame
+        The dataframe that is constructed to perform the query.
+    sources_df : pandas.core.frame.DataFrame
+        The dataframe that contains the found sources when 'find_sources'
+        is run.
+    results : pandas.core.frame.Series
+        Series that contains each result in the form of a
+        vasttools.source.Source object, with the source name
+        as the index.
 
     Methods
     -------
+    find_fields()
 
+    write_find_fields()
 
+    find_sources()
 
+    save_search_around_results(self, sort_output=False)
+
+    summary_log()
 
     '''
 
@@ -223,8 +253,8 @@ class Query:
         else:
             self.base_folder = base_folder
 
-        self.settings['epochs'] = self.get_epochs(epochs)
-        self.settings['stokes'] = self.get_stokes(stokes)
+        self.settings['epochs'] = self._get_epochs(epochs)
+        self.settings['stokes'] = self._get_stokes(stokes)
 
         self.settings['crossmatch_radius'] = Angle(
             crossmatch_radius, unit=u.arcsec
@@ -265,7 +295,7 @@ class Query:
             ))
 
         if self.coords is not None:
-            self.query_df = self.build_catalog()
+            self.query_df = self._build_catalog()
         else:
             self.query_df = None
 
@@ -298,7 +328,7 @@ class Query:
 
         return True
 
-    def get_all_cutout_data(self, imsize):
+    def _get_all_cutout_data(self, imsize):
         '''
         Get cutout data and selavy components for all sources
 
@@ -339,7 +369,7 @@ class Query:
 
         return cutouts
 
-    def gen_all_source_products(
+    def _gen_all_source_products(
         self,
         fits=True,
         png=False,
@@ -463,7 +493,7 @@ class Query:
             self.logger.info(
                 "Fetching cutout data for sources..."
             )
-            cutouts_df = self.get_all_cutout_data(imsize)
+            cutouts_df = self._get_all_cutout_data(imsize)
             self.logger.info('Done.')
             to_process = [(s, cutouts_df.loc[
                 cutouts_df['name'] == s.name
@@ -1486,7 +1516,7 @@ class Query:
 
         # Handle Planets
         if self.planets is not None:
-            planet_fields = self.search_planets()
+            planet_fields = self._search_planets()
 
             if self.fields_df is None:
                 self.fields_df = planet_fields
@@ -1652,7 +1682,7 @@ class Query:
 
         return planet_epoch_fields
 
-    def search_planets(self):
+    def _search_planets(self):
         '''
 
         :returns:
@@ -1706,13 +1736,9 @@ class Query:
         results['fields'] = [[i] for i in results['field']]
         results['planet'] = True
 
-        with pd.option_context('display.max_rows', None, 'display.max_columns', None):
-            print(results)
-        # exit()
-
         return results
 
-    def build_catalog(self):
+    def _build_catalog(self):
         '''
 
         :returns:
@@ -1765,7 +1791,7 @@ class Query:
 
         return catalog
 
-    def get_epochs(self, req_epochs):
+    def _get_epochs(self, req_epochs):
         '''
         Parse the list of epochs to query.
 
@@ -1823,7 +1849,7 @@ class Query:
 
         return epochs
 
-    def get_stokes(self, req_stokes):
+    def _get_stokes(self, req_stokes):
         '''
         Set the stokes Parameter
 
@@ -1846,31 +1872,6 @@ class Query:
             )
         else:
             return req_stokes.upper()
-
-    def set_outfile_prefix(self):
-        '''
-        Return general parameters of the requested survey
-
-        :returns: prefix for output file
-        :rtype: str
-        '''
-
-        if self.stokes_param != "I" and self.args.use_tiles:
-            self.logger.critical(
-                ("Only Stokes I tiles can be queried right now."))
-            self.logger.critical(
-                "Run again but remove the option '--use-tiles'.")
-            sys.exit()
-
-        if self.args.use_tiles:
-            outfile_prefix = "tile"
-        else:
-            outfile_prefix = "combined"
-            if self.stokes_param != "I":
-                outfile_prefix += "_stokes{}".format(
-                    self.stokes_param.lower())
-
-        self.outfile_prefix = outfile_prefix
 
 
 class EpochInfo:
