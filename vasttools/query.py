@@ -76,42 +76,16 @@ class Query:
     query including the catalogue of target sources, the Stokes parameter,
     crossmatch radius and output parameters.
 
-    :param coords: List of coordinates to query, defaults to None
-    :type coords: `astropy.coordinates.sky_coordinate.SkyCoord`, optional
-    :param source_names: List of source names, defaults to []
-    :type source_names: list, optional
-    :param epochs: Comma-separated list of epochs to query. \
-    All available epochs can be queried by passsing "all". Defaults to "all"
-    :type epochs: str, optional
-    :param stokes: Stokes parameter to query, defaults to "I"
-    :type stokes: str, optional
-    :param crossmatch_radius: Crossmatch radius in arcsec, defaults to 5.0
-    :type crossmatch_radius: float, optional
-    :param max_sep: Maximum separation of source from beam centre in degrees, \
-    defaults to 1.0
-    :type max_sep: float, optional
-    :param use_tiles: Query tiles rather than combined mosaics, \
-    defaults to `False`
-    :type use_tiles: bool, optional
-    :param use_islands: Use selavy islands rather than components, \
-    defaults to `False`
-    :type use_islands: bool, optional
-    :param base_folder: Path to base folder if using default directory \
-    structure, defaults to None
-    :type base_folder: str, optional
-    :param matches_only: Only produce data products for sources with a selavy \
-    match, defaults to `False`
-    :type matches_only: bool, optional
-    :param no_rms: Estimate the background RMS around each source, \
-    defaults to `False`
-    :type no_rms: bool, optional
-    :param output_dir: Output directory to place all results in, \
-    defaults to "."
-    :type output_dir: str, optional
-    :param planets: List of planets to search for, defaults to []
-    :type planets: list, optional
-    :param ncpu: Number of CPUs to use, defaults to 2
-    :type ncpu: float, optional
+    Attributes
+    ----------
+
+
+    Methods
+    -------
+
+
+
+
     '''
 
     def __init__(
@@ -122,7 +96,49 @@ class Query:
         output_dir=".", planets=[], ncpu=2, sort_output=False,
         forced_fits=False
     ):
-        '''Constructor method
+        '''
+        :param coords: List of coordinates to query, defaults to None
+        :type coords: `astropy.coordinates.sky_coordinate.SkyCoord`, optional
+        :param source_names: List of source names, defaults to []
+        :type source_names: list, optional
+        :param epochs: Comma-separated list of epochs to query. \
+        All available epochs can be queried by passsing "all". Defaults to "all"
+        :type epochs: str, optional
+        :param stokes: Stokes parameter to query, defaults to "I"
+        :type stokes: str, optional
+        :param crossmatch_radius: Crossmatch radius in arcsec, defaults to 5.0
+        :type crossmatch_radius: float, optional
+        :param max_sep: Maximum separation of source from beam centre in degrees, \
+        defaults to 1.0
+        :type max_sep: float, optional
+        :param use_tiles: Query tiles rather than combined mosaics, \
+        defaults to `False`
+        :type use_tiles: bool, optional
+        :param use_islands: Use selavy islands rather than components, \
+        defaults to `False`
+        :type use_islands: bool, optional
+        :param base_folder: Path to base folder if using default directory \
+        structure, defaults to None
+        :type base_folder: str, optional
+        :param matches_only: Only produce data products for sources with a selavy \
+        match, defaults to `False`
+        :type matches_only: bool, optional
+        :param no_rms: Estimate the background RMS around each source, \
+        defaults to `False`
+        :type no_rms: bool, optional
+        :param output_dir: Output directory to place all results in, \
+        defaults to "."
+        :type output_dir: str, optional
+        :param planets: List of planets to search for, defaults to []
+        :type planets: list, optional
+        :param ncpu: Number of CPUs to use, defaults to 2
+        :type ncpu: float, optional
+        :param sort_output: Sorts the output into individual source
+            directories, defaults to `False`.
+        :type sort_output: bool, optional
+        :param forced_fits: Turns on the option to perform forced fits
+            on the locations queried, defaults to `False`.
+        :type forced_fits: bool, optional
         '''
         self.logger = logging.getLogger('vasttools.find_sources.Query')
 
@@ -255,8 +271,6 @@ class Query:
 
         self.fields_found = False
 
-        self.cutout_data_got = False
-
     def _validate_settings(self):
         '''
         Use to check misc details
@@ -322,8 +336,6 @@ class Query:
         )
 
         cutouts.index = cutouts.index.droplevel()
-
-        self.cutout_data_got = True
 
         return cutouts
 
@@ -448,20 +460,19 @@ class Query:
             )
 
         if sum([fits, png, ann, reg]) > 0:
-            if not self.cutout_data_got:
-                self.logger.info(
-                    "Fetching cutout data for sources..."
-                )
-                cutouts_df = self.get_all_cutout_data(imsize)
-                self.logger.info('Done.')
-                to_process = [(s, cutouts_df.loc[
-                    cutouts_df['name'] == s.name
-                ].sort_values(
-                    by='dateobs'
-                ).reset_index()) for s in self.results.values]
+            self.logger.info(
+                "Fetching cutout data for sources..."
+            )
+            cutouts_df = self.get_all_cutout_data(imsize)
+            self.logger.info('Done.')
+            to_process = [(s, cutouts_df.loc[
+                cutouts_df['name'] == s.name
+            ].sort_values(
+                by='dateobs'
+            ).reset_index()) for s in self.results.values]
 
-                del cutouts_df
-                gc.collect()
+            del cutouts_df
+            gc.collect()
         else:
             to_process = [(s, None) for s in self.results.values]
             cutouts_df = None

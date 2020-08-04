@@ -358,12 +358,19 @@ def simbad_search(objects, logger=None):
 
 def match_planet_to_field(group):
     '''
+    Processes a dataframe that contains observational info
+    and calculates whether a planet is within 4 degrees of the
+    observation. Used as part of groupby functions hence the argument
+    is a group.
 
-    :param group:
-    :type group:
+    :param group: Required columns are planet, DATEOBS, centre-ra and
+        centre-dec.
+    :type group: pandas.core.frame.DataFrame
 
-    :returns:
-    :rtype:
+    :returns: The group with planet location information added and
+        filtered for only those which are within 4 degress. Hence an
+        empty dataframe could be returned.
+    :rtype: pandas.core.frame.DataFrame
     '''
     planet = group.iloc[0]['planet']
     dates = Time(group['DATEOBS'].tolist())
