@@ -73,7 +73,7 @@ class Source:
     :type crossmatch_radius:
     :param measurements:
     :type measurements:
-    :param base_folder: Path to base folder if using default directory structure
+    :param base_folder: Path to base folder in default directory structure
     :type base_folder: str
     :param image_type: , defaults to "COMBINED"
     :type image_type: str, optional
@@ -175,7 +175,8 @@ class Source:
         '''
         Write the measurements to a CSV file.
 
-        :param simple: Only include flux density and uncertainty in returned table, defaults to `False`
+        :param simple: Only include flux density and uncertainty in returned \
+        table, defaults to `False`
         :type simple: bool, optional
         :param outfile: File to write measurements to, defaults to None
         :type outfile: str, optional
@@ -256,7 +257,8 @@ class Source:
         :type figsize: tuple of floats, optional
         :param min_points: Minimum number of points for plotting, defaults to 2
         :type min_points: float, optional
-        :param min_detections:  Minimum number of detections for plotting, defaults to 0
+        :param min_detections:  Minimum number of detections for plotting, \
+        defaults to 0
         :type min_detections: float, optional
         :param mjd: Plot x-axis in MJD rather than datetime, defaults to False
         :type mjd: bool, optional
@@ -542,7 +544,6 @@ class Source:
             scale_index = 0
 
         scale_data = cutout_data.loc[scale_index].data * 1.e3
-
 
         if zscale:
             norms = ImageNormalize(
@@ -2084,7 +2085,8 @@ class Source:
 
         :param radius: Radius to search, defaults to Angle(20. * u.arcsec)
         :type radius: `astropy.coordinates.Angle`, optional
-        :param filter_out_unreleased: Remove unreleased data, defaults to `False`
+        :param filter_out_unreleased: Remove unreleased data, \
+        defaults to `False`
         :type filter_out_unreleased: bool, optional
         :param show_all: Show all available data, defaults to `False`
         :type show_all: bool, optional
@@ -2174,7 +2176,8 @@ class Source:
         '''
         Calculate the eta variability metric
 
-        :param use_int: Calculate using integrated (rather than peak) flux, defaults to `False`
+        :param use_int: Calculate using integrated (rather than peak) flux, \
+        defaults to `False`
         :type use_int: bool, optional
         :param forced_fits: Use forced fits, defaults to `False`
         :type forced_fits: bool, optional
@@ -2209,7 +2212,8 @@ class Source:
         '''
         Calculate the V variability metric
 
-        :param use_int: Calculate using integrated (rather than peak) flux, defaults to `False`
+        :param use_int: Calculate using integrated (rather than peak) flux, \
+        defaults to `False`
         :type use_int: bool, optional
         :param forced_fits: Use forced fits, defaults to `False`
         :type forced_fits: bool, optional
@@ -2237,7 +2241,8 @@ class Source:
         '''
         Calculate both variability metrics
 
-        :param use_int: Calculate using integrated (rather than peak) flux, defaults to `False`
+        :param use_int: Calculate using integrated (rather than peak) flux, \
+        defaults to `False`
         :type use_int: bool, optional
         :param forced_fits: Use forced fits, defaults to `False`
         :type forced_fits: bool, optional
