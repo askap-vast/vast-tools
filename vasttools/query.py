@@ -612,7 +612,7 @@ class Query:
     ):
         '''
         Produce source products for one source
-        
+
         :param i: Tuple containing source and cutout data
         :type i: tuple
         :param fits: Create and save fits cutouts, defaults to `True`
@@ -1769,7 +1769,7 @@ class Query:
     def _search_planets(self):
         '''
         Search for planets in all requested epochs
-        
+
         :returns: Dataframe containing search results
         :rtype: `pandas.core.frame.DataFrame`
         '''
