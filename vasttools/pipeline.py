@@ -739,14 +739,23 @@ class PipeAnalysis(PipeRun):
 
             pair_key = i+1
 
-            pairs['pair'].append("{}_{}".format(
-                img_1, img_2
-            ))
-            pairs['id'].append(pair_key)
-            pairs['td'].append(
+            pair_td = (
                 self.images.loc[img_2].datetime
                 - self.images.loc[img_1].datetime
             )
+
+            if pair_td.total_seconds() < 0:
+                img_1 = c[1]
+                img_2 = c[0]
+
+                pair_td *= -1
+
+            pairs['id'].append(pair_key)
+            pairs['td'].append(pair_td)
+
+            pairs['pair'].append("{}_{}".format(
+                img_1, img_2
+            ))
 
             first_set = measurements_images[img_1]
             second_set = measurements_images[img_2]

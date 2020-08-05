@@ -1080,7 +1080,7 @@ class Source:
 
         plots = {}
 
-        if not self.checked_norms:
+        if not self.checked_norms or force:
             self.analyse_norm_level(
                 percentile=percentile,
                 zscale=zscale,
