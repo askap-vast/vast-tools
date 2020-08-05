@@ -131,15 +131,15 @@ class Query:
         :type coords: `astropy.coordinates.sky_coordinate.SkyCoord`, optional
         :param source_names: List of source names, defaults to []
         :type source_names: list, optional
-        :param epochs: Comma-separated list of epochs to query. \
-        All available epochs can be queried by passsing "all". Defaults to "all"
+        :param epochs: Comma-separated list of epochs to query. All available \
+        epochs can be queried by passsing "all". Defaults to "all"
         :type epochs: str, optional
         :param stokes: Stokes parameter to query, defaults to "I"
         :type stokes: str, optional
         :param crossmatch_radius: Crossmatch radius in arcsec, defaults to 5.0
         :type crossmatch_radius: float, optional
-        :param max_sep: Maximum separation of source from beam centre in degrees, \
-        defaults to 1.0
+        :param max_sep: Maximum separation of source from beam centre \
+        in degrees, defaults to 1.0
         :type max_sep: float, optional
         :param use_tiles: Query tiles rather than combined mosaics, \
         defaults to `False`
@@ -150,8 +150,8 @@ class Query:
         :param base_folder: Path to base folder if using default directory \
         structure, defaults to None
         :type base_folder: str, optional
-        :param matches_only: Only produce data products for sources with a selavy \
-        match, defaults to `False`
+        :param matches_only: Only produce data products for sources with a \
+        selavy match, defaults to `False`
         :type matches_only: bool, optional
         :param no_rms: Estimate the background RMS around each source, \
         defaults to `False`
@@ -1885,7 +1885,7 @@ class EpochInfo:
 
     :param pilot_epoch: Pilot epoch (0 for RACS)
     :type pilot_epoch: str
-    :param base_folder: Path to base folder if using default directory structure
+    :param base_folder: Path to base folder in default directory structure
     :type base_folder: str
     :param stokes: Stokes parametr (I, Q, U or V)
     :type stokes: str
