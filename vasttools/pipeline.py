@@ -278,7 +278,6 @@ class Pipeline(object):
         images = images.set_index('id')
 
         piperun = PipeAnalysis(
-            test="no",
             name=run_name,
             images=images,
             skyregions=skyregions,
