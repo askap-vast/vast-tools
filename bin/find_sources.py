@@ -68,7 +68,9 @@ def parse_args():
         type=str,
         help=("Select the VAST Pilot Epoch to query. Epoch 0 is RACS. "
               "All available epochs can be queried using "
-              "\"--vast-pilot=all\""),
+              "'all' or all VAST Epochs using 'all-vast'. Otherwise"
+              " enter as a comma separated list with no spaces, e.g."
+              " '1,2,3x,4x'."),
         default="1")
     parser.add_argument(
         '--imsize',
