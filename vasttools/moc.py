@@ -146,7 +146,7 @@ class VASTMOCS(object):
         :rtype: astropy.table.Table
         '''
 
-        moc = self.load_pilot_field_moc('1')
+        moc = self.load_pilot_epoch_moc('1')
 
         viz_table = moc.query_vizier_table(table_id, max_rows=max_rows)
 
