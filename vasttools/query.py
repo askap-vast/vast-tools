@@ -403,7 +403,7 @@ class Query:
         measurements_simple=False,
         imsize=Angle(5. * u.arcmin)
     ):
-        """
+        '''
         This function is not intended to be used interactively.
         Script only.
 
@@ -480,7 +480,7 @@ class Query:
         :type measurements_simple: bool, optional
         :param imsize: Size of the requested cutout
         :type imsize: `astropy.coordinates.angles.Angle`
-        """
+        '''
 
         if self.settings['search_around']:
             raise Exception(

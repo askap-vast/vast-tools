@@ -668,7 +668,7 @@ class Source:
             size=None,
             force=False
     ):
-        """
+        '''
         Wrapper for make_png to make nicer interactive function.
         No access to save.
 
@@ -699,7 +699,7 @@ class Source:
         :param force: , defaults to `False`
         :type force: bool, optional
 
-        """
+        '''
 
         fig = self.make_png(
             epoch,
@@ -736,7 +736,7 @@ class Source:
             force=False,
             outfile=None
     ):
-        """
+        '''
         Wrapper for make_png to make nicer interactive function.
         Always save.
 
@@ -768,7 +768,7 @@ class Source:
         :type force: bool, optional
         :param outfile: , defaults to None
         :type outfile: , optional
-        """
+        '''
 
         fig = self.make_png(
             epoch,
@@ -2026,7 +2026,7 @@ class Source:
         return plots
 
     def simbad_search(self, radius=Angle(20. * u.arcsec)):
-        """
+        '''
         Searches SIMBAD for object coordinates and returns matches.
 
         :param radius: Radius to search, defaults to Angle(20. * u.arcsec)
@@ -2034,7 +2034,7 @@ class Source:
 
         :returns:
         :rtype:
-        """
+        '''
 
         Simbad.add_votable_fields('ra(d)', 'dec(d)')
 
@@ -2052,7 +2052,7 @@ class Source:
             return None
 
     def ned_search(self, radius=Angle(20. * u.arcsec)):
-        """
+        '''
         Searches NED for object coordinates and returns matches.
 
         :param radius: Radius to search, defaults to Angle(20. * u.arcsec)
@@ -2060,7 +2060,7 @@ class Source:
 
         :returns:
         :rtype:
-        """
+        '''
 
         try:
             result_table = Ned.query_region(self.coord, radius=radius)
@@ -2079,7 +2079,7 @@ class Source:
         filter_out_unreleased=False,
         show_all=False
     ):
-        """
+        '''
         Searches NED for object coordinates and returns matches.
 
         :param radius: Radius to search, defaults to Angle(20. * u.arcsec)
@@ -2091,7 +2091,7 @@ class Source:
 
         :returns:
         :rtype:
-        """
+        '''
         try:
             result_table = Casda.query_region(self.coord, radius=radius)
 

@@ -44,7 +44,7 @@ matplotlib.pyplot.switch_backend('Agg')
 
 
 class Pipeline(object):
-    """
+    '''
     Class to interface with VAST Pipeline results.
 
     Attributes
@@ -68,7 +68,7 @@ class Pipeline(object):
         Loads the pipeline run defined by run_name.
         Returns a PipeRun object.
 
-    """
+    '''
     def __init__(self, project_dir):
         '''
         Constructor method.
@@ -114,7 +114,7 @@ class Pipeline(object):
     def load_run(
         self, run_name, n_workers=cpu_count() - 1
     ):
-        """
+        '''
         Process and load a pipeline run.
 
         :param run_name: The name of the run to load.
@@ -125,7 +125,7 @@ class Pipeline(object):
 
         :returns: PipeAnalysis object.
         :rtype: vasttools.pipeline.PipeAnalysis
-        """
+        '''
 
         run_dir = os.path.join(
             self.project_dir,
@@ -290,7 +290,7 @@ class Pipeline(object):
 
 
 class PipeRun(object):
-    """
+    '''
     Class that represents a Pipeline run.
 
     Attributes
@@ -327,7 +327,7 @@ class PipeRun(object):
     check_for_planets()
         Searches the pipeline run images for any planets present.
         Returns pandas dataframe with results.
-    """
+    '''
     def __init__(
         self, name, images,
         skyregions, relations, sources,
@@ -367,7 +367,7 @@ class PipeRun(object):
         self.n_workers = n_workers
 
     def get_source(self, id, field=None, stokes='I', outdir='.'):
-        """
+        '''
         Fetches an individual source and returns a
         vasttools.source.Source object. Users do not need
         to change the field, stokes and outdir parameters.
@@ -385,7 +385,7 @@ class PipeRun(object):
 
         :returns: vast tools Source object
         :rtype: vasttools.source.Source
-        """
+        '''
 
         measurements = self.measurements.groupby(
             'source'
@@ -452,7 +452,7 @@ class PipeRun(object):
         return thesource
 
     def _add_times(self, row, duration=True, every_hour=False):
-        """
+        '''
         Adds the times required for planet searching. By default it
         adds the beginning and end of the observation. The every_hour
         option adds the time every hour during the observation, which
@@ -470,7 +470,7 @@ class PipeRun(object):
         :returns: List of times to be searched for planets, in the
             format of rows.
         :rtype: list
-        """
+        '''
         if row['duration'] == 0:
             return row['DATEOBS']
 
@@ -493,7 +493,7 @@ class PipeRun(object):
             return times
 
     def check_for_planets(self):
-        """
+        '''
         Checks the pipeline run for any planets in the field.
         All planets are checked: Mercury, Venus, Mars, Jupiter,
         Saturn, Uranus, Neptune, Pluto, Sun, Moon.
@@ -501,7 +501,7 @@ class PipeRun(object):
         :returns: DataFrame with list of planet positions. Empty
             if no planets are found.
         :rtype: pandas.core.frame.DataFrame
-        """
+        '''
 
         from vasttools.survey import ALLOWED_PLANETS
         ap = ALLOWED_PLANETS
@@ -583,7 +583,7 @@ class PipeRun(object):
 
 
 class PipeAnalysis(PipeRun):
-    """
+    '''
     Class that represents an Analysis instance of a Pipeline run.
     Inherits from class `PipeRun`.
 
@@ -645,7 +645,7 @@ class PipeAnalysis(PipeRun):
         Returns the eta and V based diagnostic plot (matplotlib). Requires
         eta and V cutoff values from `run_eta_v_analysis` and the sources
         dataframe.
-    """
+    '''
     def __init__(
         self, name, images,
         skyregions, relations, sources,
@@ -682,7 +682,7 @@ class PipeAnalysis(PipeRun):
         )
 
     def _get_two_epoch_df(self, allowed_sources=[]):
-        """
+        '''
         Workhorse function of the two epoch analysis which
         calculates the unique pairs of images and the metrics
         between each source datapoint for each pair.
@@ -695,7 +695,7 @@ class PipeAnalysis(PipeRun):
             two epoch dataframe containg the results of each pair
             of source measurements.
         :rtype:
-        """
+        '''
         image_ids = self.images.index.tolist()
 
         combs = combinations(
@@ -782,7 +782,7 @@ class PipeAnalysis(PipeRun):
         return pairs, two_epoch_df
 
     def _calculate_metrics(self, df, use_int_flux=False):
-        """
+        '''
         Calcualtes the V and m two epoch metrics.
 
         :param df: Dataframe of source pairs with flux information.
@@ -793,7 +793,7 @@ class PipeAnalysis(PipeRun):
 
         :returns: Dataframe with the metrics added.
         :rtype: pandas.core.frame.DataFrame
-        """
+        '''
 
         if use_int_flux:
             flux = 'int'
@@ -836,7 +836,7 @@ class PipeAnalysis(PipeRun):
         vs_min=4.3,
         m_min=0.26,
     ) -> Model:
-        """
+        '''
         Adapted from code written by Andrew O'Brien.
         Plot the results of the two epoch analysis. It is run in
         'run_two_epoch_analysis' but can also be run separately.
@@ -855,7 +855,7 @@ class PipeAnalysis(PipeRun):
 
         :returns: Bokeh grid containing plots.
         :rtype: bokeh.models.grids.Grid
-        """
+        '''
 
         light_curve_pairs = pairs.index.values
 
@@ -918,7 +918,7 @@ class PipeAnalysis(PipeRun):
         self, v, m, query=None,
         df=None, use_int_flux=False
     ):
-        """
+        '''
         Run the two epoch analysis on the pipeline run, with optional
         inputs to use a query or filtered dataframe.
 
@@ -944,7 +944,7 @@ class PipeAnalysis(PipeRun):
             the bokeh plot.
         :rtype: pandas.core.frame.DataFrame, pandas.core.frame.DataFrame,
             pandas.core.frame.DataFrame, bokeh.models.grids.Grid
-        """
+        '''
         if df is None:
             df = self.sources
 
@@ -968,7 +968,7 @@ class PipeAnalysis(PipeRun):
         return pairs, df, candidates, plot
 
     def _fit_eta_v(self, df, use_int_flux=False):
-        """
+        '''
         Fits the eta and v distributions with Gaussians. Used from
         within the 'run_eta_v_analysis' method.
 
@@ -981,7 +981,7 @@ class PipeAnalysis(PipeRun):
         :returns: tuple containing the eta_fit_mean, eta_fit_sigma, v_fit_mean
             and the v_fit_sigma
         :rtype: float, float, float, float
-        """
+        '''
 
         if use_int_flux:
             eta_label = 'eta_int'
@@ -1006,7 +1006,7 @@ class PipeAnalysis(PipeRun):
         return (eta_fit_mean, eta_fit_sigma, v_fit_mean, v_fit_sigma)
 
     def _gaussian_fit(self, data, param_mean, param_sigma):
-        """
+        '''
         Returns the Guassian to add to the matplotlib plot.
 
         :param data: Series object containing the log10 values of the
@@ -1020,14 +1020,14 @@ class PipeAnalysis(PipeRun):
         :returns: tuple containing the range of the returned data and the
             Gaussian fit.
         :rtype: numpy.ndarray, scipy.stats.norm
-        """
+        '''
         range_data = np.linspace(min(data), max(data), 1000)
         fit = norm.pdf(range_data, loc=param_mean, scale=param_sigma)
 
         return range_data, fit
 
     def _make_bins(self, x):
-        """
+        '''
         Calculates the bins that should be used for the v, eta distribution
         using bayesian blocks.
 
@@ -1037,7 +1037,7 @@ class PipeAnalysis(PipeRun):
 
         :returns: bins to apply.
         :rtype: list.
-        """
+        '''
         new_bins = density_estimation.bayesian_blocks(x)
         binsx = [
             new_bins[a] for a in range(
@@ -1051,7 +1051,7 @@ class PipeAnalysis(PipeRun):
     def eta_v_diagnostic_plot(
         self, df, eta_cutoff, v_cutoff, use_int_flux=False
     ):
-        """
+        '''
         Adapted from code written by Antonia Rowlinson.
         Produces the eta, V 'diagnostic plot'
         (see Rowlinson et al., 2018,
@@ -1069,7 +1069,7 @@ class PipeAnalysis(PipeRun):
 
         :returns: matplotlib figure containing plot.
         :rtype: matplotlib.pyplot.figure.
-        """
+        '''
         plt.close()  # close any previous ones
 
         if use_int_flux:
@@ -1159,7 +1159,7 @@ class PipeAnalysis(PipeRun):
         v_fit_mean, v_fit_sigma, eta_cutoff, v_cutoff,
         use_int_flux=False
     ):
-        """
+        '''
         Adapted from code written by Antonia Rowlinson.
         Produces the eta, V candidates plot
         (see Rowlinson et al., 2018,
@@ -1187,7 +1187,7 @@ class PipeAnalysis(PipeRun):
 
         :returns: matplotlib figure containing plot.
         :rtype: matplotlib.pyplot.figure.
-        """
+        '''
         plt.close()  # close any previous ones
         if use_int_flux:
             x_label = 'eta_int'
@@ -1284,7 +1284,7 @@ class PipeAnalysis(PipeRun):
         v_fit_mean, v_fit_sigma, eta_cutoff, v_cutoff,
         use_int_flux=False
     ):
-        """
+        '''
         Adapted from code written by Andrew O'Brien.
         Produces the eta, V candidates plot
         (see Rowlinson et al., 2018,
@@ -1312,7 +1312,7 @@ class PipeAnalysis(PipeRun):
 
         :returns: bokeh grid object containing figure.
         :rtype: bokeh.models.grids.Grid
-        """
+        '''
         # generate fitted curve data for plotting
         eta_x = np.linspace(
             norm.ppf(0.001, loc=eta_fit_mean, scale=eta_fit_sigma),
@@ -1438,7 +1438,7 @@ class PipeAnalysis(PipeRun):
         query=None, df=None, use_int_flux=False,
         plot_type='bokeh', diagnostic=False
     ):
-        """
+        '''
         Run the eta, v analysis on the pipeline run, with optional
         inputs to use a query or filtered dataframe (see Rowlinson
         et al., 2018,
@@ -1474,7 +1474,7 @@ class PipeAnalysis(PipeRun):
             (bokeh.models.grids.Grid or matplotlib.pyplot.figure),
             matplotlib.pyplot.figure
 
-        """
+        '''
         plot_types = ['bokeh', 'matplotlib']
 
         if plot_type not in plot_types:

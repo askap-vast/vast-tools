@@ -16,7 +16,7 @@ BASE_MOC_PATH = pkg_resources.resource_filename(
 
 
 class VASTMOCS(object):
-    """
+    '''
     Class to interface with VAST MOC files.
 
     Attributes
@@ -42,7 +42,7 @@ class VASTMOCS(object):
         A wrapper function to quicky obtain all sources from
         a Vizier catalogue that are located within the VAST
         pilot survey footprint.
-    """
+    '''
 
     def __init__(self):
         '''

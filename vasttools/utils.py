@@ -87,7 +87,7 @@ def get_logger(debug, quiet, logfile=None):
 
 
 def _set_crosshair(self):
-    """This module adds a true crosshair marker to matplotlib.
+    '''This module adds a true crosshair marker to matplotlib.
 
     ============================== ===========================================
     marker                         description
@@ -120,7 +120,7 @@ def _set_crosshair(self):
     ------
     L. A. Boogaard (13/07/2017)
 
-    """
+    '''
 
     _crosshair_path = Path([(0.0, -0.5),  # center, bottom
                             (0.0, -0.25),  # center, q_bot
@@ -146,10 +146,10 @@ def _set_crosshair(self):
 
 
 def crosshair():
-    """
+    '''
     A wrapper function to set the crosshair marker in
     matplotlib using the function written by L. A. Boogaard.
-    """
+    '''
 
     matplotlib.markers.MarkerStyle._set_crosshair = _set_crosshair
     matplotlib.markers.MarkerStyle.markers['c'] = 'crosshair'
@@ -321,7 +321,7 @@ def filter_selavy_components(selavy_df, selavy_sc, imsize, target):
 
 
 def simbad_search(objects, logger=None):
-    """
+    '''
     Searches SIMBAD for object coordinates and returns coordinates and names
 
     :param objects:
@@ -331,7 +331,7 @@ def simbad_search(objects, logger=None):
 
     :returns:
     :rtype:
-    """
+    '''
 
     Simbad.add_votable_fields('ra(d)', 'dec(d)')
 

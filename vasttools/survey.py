@@ -92,13 +92,13 @@ ALLOWED_PLANETS = [
 
 
 def get_fields_per_epoch_info():
-    """
+    '''
     Function to create a dataframe suitable for fast
     field querying per epoch.
 
     :returns: Dataframe of epoch information
     :rtype: `pandas.core.frame.DataFrame`
-    """
+    '''
 
     for i, e in enumerate(FIELD_FILES):
         temp = pd.read_csv(FIELD_FILES[e], comment='#')
@@ -121,12 +121,12 @@ def get_fields_per_epoch_info():
 
 
 def get_askap_observing_location():
-    """
+    '''
     Function to return ASKAP observing location.
 
     :returns: Location of ASKAP
     :rtype: `astropy.coordinates.earth.EarthLocation`
-    """
+    '''
     from astropy.coordinates import EarthLocation
     ASKAP_latitude = Angle("-26:41:46.0", unit=u.deg)
     ASKAP_longitude = Angle("116:38:13.0", unit=u.deg)
@@ -139,7 +139,7 @@ def get_askap_observing_location():
 
 
 class Fields:
-    """
+    '''
     Class to represent the VAST Pilot survey fields of a given
     epoch.
 
@@ -164,7 +164,7 @@ class Fields:
 
     write_fields_cat(outfile)
         Write the results of find to a csv file.
-    """
+    '''
 
     def __init__(self, epoch):
         '''
