@@ -404,8 +404,8 @@ class Query:
         imsize=Angle(5. * u.arcmin)
     ):
         '''
-        This function is not intended to be used interactively.
-        Script only.
+        Generate products for all sources.
+        This function is not intended to be used interactively - Script only.
 
         :param fits: Create and save fits cutouts, defaults to `True`
         :type fits: bool, optional
@@ -589,7 +589,7 @@ class Query:
         png_percentile=99.9,
         png_zscale=False,
         png_contrast=0.2,
-        png_islands=True,
+        png_no_islands=True,
         png_no_colorbar=False,
         png_crossmatch_overlay=False,
         png_hide_beam=False,
@@ -610,6 +610,90 @@ class Query:
         measurements_simple=False,
         calc_script_norms=False
     ):
+        '''
+        Produce source products for one source
+        
+        :param i: Tuple containing source and cutout data
+        :type i: tuple
+        :param fits: Create and save fits cutouts, defaults to `True`
+        :type fits: bool, optional
+        :param png: Create and save png postagestamps, defaults to `False`
+        :type png: bool, optional
+        :param ann: Create and save kvis annotation files for all components, \
+        defaults to `False`
+        :type ann: bool, optional
+        :param reg: Create and save DS9 annotation files for all components, \
+        defaults to `False`
+        :type reg: bool, optional
+        :param lightcurve: Create and save lightcurves for all sources, \
+        defaults to `False`
+        :type lightcurve: bool, optional
+        :param measurements: Create and save measurements for all sources, \
+        defaults to `False`
+        :type measurements: bool, optional
+        :param png_selavy: Overlay selavy components onto png postagestamp, \
+        defaults to `True`
+        :type png_selavy: bool, optional
+        :param png_percentile: Percentile level for the png normalisation, \
+        defaults to 99.9
+        :type png_percentile: float, optional
+        :param png_zscale: Use z-scale normalisation rather than linear, \
+        defaults to `False`
+        :type png_zscale: bool, optional
+        :param png_contrast: Z-scale constrast, defaults to 0.2
+        :type png_contrast: float, optional
+        :param png_no_islands: Don't overlay selavy islands on png \
+        postagestamps, defaults to `True`
+        :type png_no_islands: bool, optional
+        :param png_no_colorbar: Don't include colourbar on png output, \
+        defaults to `False`
+        :type png_no_colorbar: bool, optional
+        :param png_crossmatch_overlay: Overlay the crossmatch radius on png \
+        postagestamps, defaults to `False`
+        :type png_crossmatch_overlay: bool, optional
+        :param png_hide_beam: Do not show the beam shape on png postagestamps,\
+         defaults to `False`
+        :type png_hide_beam: bool, optional
+        :param ann_crossmatch_overlay: Include crossmatch radius in ann, \
+        defaults to `False`
+        :type ann_crossmatch_overlay: bool, optional
+        :param reg_crossmatch_overlay: Include crossmatch radius in reg, \
+        defaults to `False`
+        :type reg_crossmatch_overlay: bool, optional
+        :param lc_sigma_thresh: Detection threshold (in sigma) for \
+        lightcurves, defaults to 5
+        :type lc_sigma_thresh: float, optional
+        :param lc_figsize: Size of lightcurve figure, defaults to (8, 4)
+        :type lc_figsize: tuple, optional
+        :param lc_min_points: Minimum number of source observations required\
+        for a lightcurve to be generated, defaults to 2
+        :type lc_min_points: int, optional
+        :param lc_min_detections: Minimum number of source detections required\
+         for a lightcurve to be generated, defaults to 1
+        :type lc_min_detections: int, optional
+        :param lc_mjd: Use MJD for lightcurve x-axis, defaults to `False`
+        :type lc_mjd: bool, optional
+        :param lc_grid: Include grid on lightcurve plot, defaults to `False`
+        :type lc_grid: bool, optional
+        :param lc_yaxis_start: Start the lightcurve y-axis at 0 ("0") or use \
+        the matpotlib default ("auto"). Defaults to "auto"
+        :type lc_yaxis_start: str, optional
+        :param lc_peak_flux: Generate lightcurve using peak flux density \
+        rather than integrated flux density, defaults to `True`
+        :type lc_peak_flux: bool, optional
+        :param lc_use_forced_for_limits: Generate lightcurves using forced \
+        photometry for non-detections only
+        :type lc_use_forced_for_limits: bool, optional
+        :param lc_use_forced_for_all: Generate lightcurves using forced \
+        photometry for all measurements
+        :type lc_use_forced_for_all: bool, optional
+        :param measurements_simple: Use simple schema for measurement output, \
+        defaults to `False`
+        :type measurements_simple: bool, optional
+        :param calc_script_norms: Calculate the png normalisation if it \
+        hasn't been already
+        :type calc_script_norms: bool, optional
+        '''
 
         source, cutout_data = i
 
@@ -1380,10 +1464,10 @@ class Query:
 
     def write_find_fields(self, outname=None):
         '''
+        Write the results of a field search to file
 
-
-        :param outname: , defaults to None
-        :type outname: , optional
+        :param outname: Name of file to write output to, defaults to None
+        :type outname: str, optional
         '''
 
         if self.fields_found is False:
@@ -1664,9 +1748,9 @@ class Query:
 
     def _get_planets_epoch_df_template(self):
         '''
+        Generate template df for fields containing planets in all epochs
 
-
-        :returns:
+        :returns: Dataframe containing fields and epoch info
         :rtype: `pandas.core.frame.DataFrame`
         '''
         epochs = self.settings['epochs']
@@ -1684,10 +1768,10 @@ class Query:
 
     def _search_planets(self):
         '''
-
-        :returns:
+        Search for planets in all requested epochs
+        
+        :returns: Dataframe containing search results
         :rtype: `pandas.core.frame.DataFrame`
-
         '''
 
         template = self._get_planets_epoch_df_template()
@@ -1740,8 +1824,10 @@ class Query:
 
     def _build_catalog(self):
         '''
+        Generate source catalogue from requested coordinates, \
+        removing those outside of the VAST pilot fields
 
-        :returns:
+        :returns: Catalogue of source positions
         :rtype: `pandas.core.frame.DataFrame`
         '''
         cols = ['ra', 'dec', 'name', 'skycoord', 'stokes']
@@ -1795,10 +1881,10 @@ class Query:
         '''
         Parse the list of epochs to query.
 
-        :param req_epochs:
-        :type req_epochs:
+        :param req_epochs: Requested epochs to query
+        :type req_epochs: str
 
-        :returns: Epochs to query, as a list of string
+        :returns: Epochs to query, as a list of strings
         :rtype: list
         '''
 
