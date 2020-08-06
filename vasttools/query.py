@@ -309,7 +309,7 @@ class Query:
 
     def _validate_settings(self):
         '''
-        Use to check misc details
+        Used to check settings are valid
 
         :returns: `True` if settings are acceptable, `False` otherwise
         :rtype: bool
@@ -788,7 +788,10 @@ class Query:
         Add cutout data to the source of interest
 
         :param s: Source of interest
-        :type s: `vasttools.Source`
+        :type s: `vasttools.source.Source`
+        
+        :returns: Updated source of interest
+        :rtype: `vasttools.source.Source`
         '''
 
         s_name = s.name
@@ -813,14 +816,14 @@ class Query:
         group object, where the requested sources have been
         grouped by image.
 
-        :param group:
-        :type group:
+        :param group: Catalogue of sources grouped by field
+        :type group: `pandas.core.frame.DataFrame`
         :param imsize: Size of the requested cutout
         :type imsize: `astropy.coordinates.angles.Angle`
 
         :returns: Dataframe containing the cutout data
             for the group.
-        :rtype: pandas.core.series.DataFrame
+        :rtype: `pandas.core.series.DataFrame`
         '''
 
         image_file = group.iloc[0]['image']
@@ -914,6 +917,7 @@ class Query:
     def find_sources(self):
         '''
         Run source search. Results are stored in attributes.
+
         Steps:
         1. Run find_fields if not already run.
         2. Add the file paths to each measurement point.
@@ -1140,10 +1144,10 @@ class Query:
         is converted to 0-1, 0-2.
 
         :param epochs: The epochs of the source.
-        :type epochs: pandas.core.series.Series
+        :type epochs: `pandas.core.series.Series`
 
         :returns: Corrected epochs.
-        :rtype: pandas.core.series.Series
+        :rtype: `pandas.core.series.Series`
         '''
 
         dup_mask = epochs.duplicated(keep=False)
@@ -1165,7 +1169,7 @@ class Query:
 
         :param group: The grouped measurements to initialise
             a source object.
-        :type group: pandas.core.series.DataFrame
+        :type group: `pandas.core.series.DataFrame`
 
         :returns: Source of interest
         :rtype: vasttools.source.Source
@@ -1238,7 +1242,7 @@ class Query:
 
         :param group: A dataframe of sources/positions which have been
             supplied by grouping the queried sources by image.
-        :type group: pandas.core.series.DataFrame
+        :type group: `pandas.core.series.DataFrame`
 
         :returns: Dataframe containing the forced fit measurements for
             each source.
@@ -1330,7 +1334,7 @@ class Query:
         rms is measured at the source location.
 
         :param group: The grouped coordinates to search in the image.
-        :type group: pandas.core.series.DataFrame
+        :type group: `pandas.core.series.DataFrame`
 
         :returns: The selavy matched component and/or upper limits for the
             queried coordinates.
@@ -1417,7 +1421,7 @@ class Query:
 
         :param row: The input row of the dataframe (this function
             is called with a .apply())
-        :type row:  pandas.core.series.Series
+        :type row:  `pandas.core.series.Series`
 
         :returns: The paths of the image, selavy catalogue and rms image.
         :rtype: tuple
@@ -1709,7 +1713,7 @@ class Query:
             centre skycoord.
         :type field_centre_names: list
 
-        :returns:
+        :returns: Field information
         :rtype: tuple (str, str, list, list, list, list)
         '''
 
@@ -2014,7 +2018,33 @@ class EpochInfo:
     This is a class representation of various information about a particular
     epoch query including the relevant folders, whether to only find fields,
     the survey and epoch.
+    
+    Attributes
+    ----------
 
+    use_tiles : bool
+        Use tiles or combined images
+    pilot_epoch : str
+        Epoch to query
+    stokes_param : str
+        Stokes parameter of interest 
+    survey : str
+        Distinguish between RACS and the VAST Pilot
+    epoch_str :str
+        String representation of the requested epoch
+    survey_folder : str
+        Path to folder containing data from the epoch of interest
+    IMAGE_FOLDER : str
+        Path to image data
+    SELAVY_FOLDER : str
+        Path to selavy catalogues
+    RMS_FOLDER : 
+        Path to noise maps
+
+    Methods
+    ----------
+    
+    None
     '''
 
     def __init__(
@@ -2027,7 +2057,7 @@ class EpochInfo:
         :type pilot_epoch: str
         :param base_folder: Path to base folder in default directory structure
         :type base_folder: str
-        :param stokes: Stokes parametr (I, Q, U or V)
+        :param stokes: Stokes parameter (I, Q, U or V)
         :type stokes: str
         :param tiles: Use the individual tiles instead of combined mosaics.
         :type tiles: bool
@@ -2125,12 +2155,34 @@ class FieldQuery:
     fields, returning basic information such as observation dates and psf
     information.
 
-    :param field: Name of requested field
-    :type field: str
+    Attributes
+    ----------
+
+    field : str
+        Name of requested field
+    valid : bool
+        Confirm the requested field exists
+    pilot_info : `pandas.core.frame.DataFrame`
+        Dataframe describing the pilot survey
+    field_info : `pandas.core.frame.DataFrame`
+        Dataframe describing properties of the field
+    epochs : `pandas.core.frame.DataFrame`
+        Dataframe containing epochs this field was observed in
+        
+
+    Methods
+    ----------
+    
+    run_query(psf=False, largest_psf=False, common_psf=False, all_psf=False, \
+        save=False, _pilot_info=None)
+        Run the query to find the fields and associated information
     '''
 
     def __init__(self, field):
         '''Constructor method
+        
+        :param field: Name of requested field
+        :type field: str
         '''
         self.logger = logging.getLogger('vasttools.query.FieldQuery')
 
