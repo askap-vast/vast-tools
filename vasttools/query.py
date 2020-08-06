@@ -107,15 +107,21 @@ class Query:
     Methods
     -------
     find_fields()
+        Finds whether the queried sources are in the VAST Pilot survey
+        and if so what field they are in.
 
     write_find_fields()
+        Writes the results of find_fields to a csv file.
 
     find_sources()
+        Takes the results from find_fields and searches for crossmatches
+        to the queried sources in the selavy catalogues. It can also perform
+        rms upper limit measuring and forced fits if requested in the query
+        settings. Returns a Series object containing the found sources.
 
     save_search_around_results(self, sort_output=False)
-
-    summary_log()
-
+        Writes the results of the query if the search_around_sky option
+        has been used.
     '''
 
     def __init__(
@@ -131,33 +137,33 @@ class Query:
         :type coords: `astropy.coordinates.sky_coordinate.SkyCoord`, optional
         :param source_names: List of source names, defaults to []
         :type source_names: list, optional
-        :param epochs: Comma-separated list of epochs to query. All available \
-        epochs can be queried by passsing "all". Defaults to "all"
+        :param epochs: Comma-separated list of epochs to query. All available
+            epochs can be queried by passsing "all". Defaults to "all"
         :type epochs: str, optional
         :param stokes: Stokes parameter to query, defaults to "I"
         :type stokes: str, optional
         :param crossmatch_radius: Crossmatch radius in arcsec, defaults to 5.0
         :type crossmatch_radius: float, optional
-        :param max_sep: Maximum separation of source from beam centre \
-        in degrees, defaults to 1.0
+        :param max_sep: Maximum separation of source from beam centre
+            in degrees, defaults to 1.0
         :type max_sep: float, optional
-        :param use_tiles: Query tiles rather than combined mosaics, \
-        defaults to `False`
+        :param use_tiles: Query tiles rather than combined mosaics,
+            defaults to `False`
         :type use_tiles: bool, optional
-        :param use_islands: Use selavy islands rather than components, \
-        defaults to `False`
+        :param use_islands: Use selavy islands rather than components,
+            defaults to `False`
         :type use_islands: bool, optional
-        :param base_folder: Path to base folder if using default directory \
-        structure, defaults to None
+        :param base_folder: Path to base folder if using default directory
+            structure, defaults to None
         :type base_folder: str, optional
-        :param matches_only: Only produce data products for sources with a \
-        selavy match, defaults to `False`
+        :param matches_only: Only produce data products for sources with a
+            selavy match, defaults to `False`
         :type matches_only: bool, optional
-        :param no_rms: Estimate the background RMS around each source, \
-        defaults to `False`
+        :param no_rms: Estimate the background RMS around each source,
+            defaults to `False`
         :type no_rms: bool, optional
-        :param output_dir: Output directory to place all results in, \
-        defaults to "."
+        :param output_dir: Output directory to place all results in,
+            defaults to "."
         :type output_dir: str, optional
         :param planets: List of planets to search for, defaults to []
         :type planets: list, optional
@@ -334,6 +340,12 @@ class Query:
 
         :param imsize: Size of the requested cutout
         :type imsize: `astropy.coordinates.angles.Angle`
+
+        :returns: Dataframe containing the cutout data
+            of all measurements in the query. Cutout data
+            specifically is the image data, header, wcs, and
+            selavy sources present in the cutout.
+        :rtype: pandas.core.series.DataFrame
         '''
         # first get cutout data and selavy sources per image
         # group by image to do this
@@ -749,7 +761,7 @@ class Query:
 
         return
 
-    def summary_log(self):
+    def _summary_log(self):
         '''
         Print a summary log
         '''
@@ -797,15 +809,18 @@ class Query:
 
     def _grouped_fetch_cutouts(self, group, imsize):
         '''
-
+        Function that handles fetching the cutout data per
+        group object, where the requested sources have been
+        grouped by image.
 
         :param group:
         :type group:
         :param imsize: Size of the requested cutout
         :type imsize: `astropy.coordinates.angles.Angle`
 
-        :returns:
-        :rtype:
+        :returns: Dataframe containing the cutout data
+            for the group.
+        :rtype: pandas.core.series.DataFrame
         '''
 
         image_file = group.iloc[0]['image']
@@ -898,7 +913,13 @@ class Query:
 
     def find_sources(self):
         '''
-        Run source search
+        Run source search. Results are stored in attributes.
+        Steps:
+        1. Run find_fields if not already run.
+        2. Add the file paths to each measurement point.
+        3. Obtain forced fits if requested.
+        4. Run selavy matching and upper limit fetching.
+        5. Package up results into vasttools.source.Source objects.
         '''
 
         if self.fields_found is False:
@@ -1069,8 +1090,9 @@ class Query:
         '''
         Write cone search results to file
 
-        :param group:
-        :type group:
+        :param group: The group from the pandas groupby function,
+            which in this case is grouped by image.
+        :type group: pandas.core.series.Dataframe`
         :param sort_output: Whether to sort the output
         :type sort_output: bool
         '''
@@ -1111,13 +1133,17 @@ class Query:
 
     def _check_for_duplicate_epochs(self, epochs):
         '''
+        Checks whether a source has been detected in an
+        epoch twice, which usually affects planets. If
+        a duplicate is detected it adds `-N` to the epoch
+        where N is the ith occurance of the epoch. E.g. 0,0
+        is converted to 0-1, 0-2.
 
+        :param epochs: The epochs of the source.
+        :type epochs: pandas.core.series.Series
 
-        :param epochs:
-        :type epochs:
-
-        :returns:
-        :rtype:
+        :returns: Corrected epochs.
+        :rtype: pandas.core.series.Series
         '''
 
         dup_mask = epochs.duplicated(keep=False)
@@ -1134,9 +1160,12 @@ class Query:
 
     def _init_sources(self, group):
         '''
+        Initialises the vasttools.source.Source objects
+        which are returned by find_sources.
 
-        :param group:
-        :type group:
+        :param group: The grouped measurements to initialise
+            a source object.
+        :type group: pandas.core.series.DataFrame
 
         :returns: Source of interest
         :rtype: vasttools.source.Source
@@ -1204,11 +1233,15 @@ class Query:
 
     def _get_forced_fits(self, group):
         '''
+        Perform the forced fits on an image, on the coordinates
+        supplied by the group.
 
-        :param group:
-        :type group:
+        :param group: A dataframe of sources/positions which have been
+            supplied by grouping the queried sources by image.
+        :type group: pandas.core.series.DataFrame
 
-        :returns:
+        :returns: Dataframe containing the forced fit measurements for
+            each source.
         :rtype: `pandas.core.frame.DataFrame`
         '''
 
@@ -1291,11 +1324,16 @@ class Query:
 
     def _get_components(self, group):
         '''
+        Obtains the matches from the selavy catalogue for each coordinate
+        in the group. The group is the queried sources grouped by image
+        (the result from find_fields). If no component is found then the
+        rms is measured at the source location.
 
-        :param group:
-        :type group:
+        :param group: The grouped coordinates to search in the image.
+        :type group: pandas.core.series.DataFrame
 
-        :returns:
+        :returns: The selavy matched component and/or upper limits for the
+            queried coordinates.
         :rtype: `pandas.core.frame.DataFrame`
         '''
         selavy_file = str(group.name)
@@ -1374,12 +1412,14 @@ class Query:
 
     def _add_files(self, row):
         '''
+        Adds the file paths for the image, selavy catalogues and
+        rms images for each source to be queried.
 
+        :param row: The input row of the dataframe (this function
+            is called with a .apply())
+        :type row:  pandas.core.series.Series
 
-        :param row:
-        :type row:
-
-        :returns:
+        :returns: The paths of the image, selavy catalogue and rms image.
         :rtype: tuple
         '''
 
@@ -1499,7 +1539,9 @@ class Query:
 
     def find_fields(self):
         '''
-        Find the corresponding field for each source
+        Find the corresponding field for each source.
+
+        Planet fields are also found here if any are selected.
         '''
 
         self.logger.info(
@@ -1650,21 +1692,25 @@ class Query:
         field_centre_names
     ):
         '''
+        This function does the actual field matching for each queried
+        coordinate, which is a 'row' here in the fuction.
 
-
-        :param row:
-        :type row:
-        :param fields_coords:
-        :type fields_coords:
-        :param fields_names:
-        :type fields_names:
-        :param field_centres:
-        :type field_centres:
-        :param field_centre_names:
-        :type field_centre_names:
+        :param row: The row from the query_df, i.e. the coodinates to match
+            to a field.
+        :type row: pandas.core.series.Series
+        :param fields_coords: SkyCoord object representing the beam
+            centres of the VAST or RACS survey.
+        :type fields_coords: astropy.coordinates.sky_coordinate.SkyCoord
+        :param fields_names: Field names to match with the SkyCoord object.
+        :type fields_names: pandas.core.series.Series
+        :param field_centres: SkyCoord object representing the field centres
+        :type field_centres: astropy.coordinates.sky_coordinate.SkyCoord
+        :param field_centre_names: Field names matching the field
+            centre skycoord.
+        :type field_centre_names: list
 
         :returns:
-        :rtype:
+        :rtype: tuple (str, str, list, list, list, list)
         '''
 
         seps = row.skycoord.separation(fields_coords)
@@ -1969,20 +2015,22 @@ class EpochInfo:
     epoch query including the relevant folders, whether to only find fields,
     the survey and epoch.
 
-    :param pilot_epoch: Pilot epoch (0 for RACS)
-    :type pilot_epoch: str
-    :param base_folder: Path to base folder in default directory structure
-    :type base_folder: str
-    :param stokes: Stokes parametr (I, Q, U or V)
-    :type stokes: str
-    :param tiles: Use the individual tiles instead of combined mosaics.
-    :type tiles: bool
     '''
 
     def __init__(
         self, pilot_epoch, base_folder, stokes, tiles
     ):
-        '''Constructor Method
+        '''
+        Constructor Method
+
+        :param pilot_epoch: Pilot epoch (0 for RACS)
+        :type pilot_epoch: str
+        :param base_folder: Path to base folder in default directory structure
+        :type base_folder: str
+        :param stokes: Stokes parametr (I, Q, U or V)
+        :type stokes: str
+        :param tiles: Use the individual tiles instead of combined mosaics.
+        :type tiles: bool
         '''
 
         self.logger = logging.getLogger('vasttools.find_sources.EpochInfo')

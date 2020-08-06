@@ -483,7 +483,7 @@ if __name__ == '__main__':
                 imsize=Angle(args.imsize * u.arcmin)
             )
 
-    query.summary_log()
+    query._summary_log()
 
     runend = datetime.datetime.now()
     runtime = runend - runstart
