@@ -68,7 +68,7 @@ class Pipeline(object):
         Loads the pipeline run defined by run_name.
         Returns a PipeRun object.
     '''
-    
+
     def __init__(self, project_dir):
         '''
         Constructor method.
