@@ -67,8 +67,8 @@ class Pipeline(object):
     load_run(run_name, n_workers=cpu_count()-1)
         Loads the pipeline run defined by run_name.
         Returns a PipeRun object.
-
     '''
+    
     def __init__(self, project_dir):
         '''
         Constructor method.
