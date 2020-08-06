@@ -535,7 +535,7 @@ class Query:
             png_percentile=png_percentile,
             png_zscale=png_zscale,
             png_contrast=png_contrast,
-            png_islands=png_islands,
+            png_no_islands=png_no_islands,
             png_no_colorbar=png_no_colorbar,
             png_crossmatch_overlay=png_crossmatch_overlay,
             png_hide_beam=png_hide_beam,
