@@ -789,7 +789,7 @@ class Query:
 
         :param s: Source of interest
         :type s: `vasttools.source.Source`
-        
+
         :returns: Updated source of interest
         :rtype: `vasttools.source.Source`
         '''
@@ -2018,7 +2018,7 @@ class EpochInfo:
     This is a class representation of various information about a particular
     epoch query including the relevant folders, whether to only find fields,
     the survey and epoch.
-    
+
     Attributes
     ----------
 
@@ -2027,7 +2027,7 @@ class EpochInfo:
     pilot_epoch : str
         Epoch to query
     stokes_param : str
-        Stokes parameter of interest 
+        Stokes parameter of interest
     survey : str
         Distinguish between RACS and the VAST Pilot
     epoch_str :str
@@ -2038,12 +2038,12 @@ class EpochInfo:
         Path to image data
     SELAVY_FOLDER : str
         Path to selavy catalogues
-    RMS_FOLDER : 
+    RMS_FOLDER :
         Path to noise maps
 
     Methods
     ----------
-    
+
     None
     '''
 
@@ -2168,11 +2168,11 @@ class FieldQuery:
         Dataframe describing properties of the field
     epochs : `pandas.core.frame.DataFrame`
         Dataframe containing epochs this field was observed in
-        
+
 
     Methods
     ----------
-    
+
     run_query(psf=False, largest_psf=False, common_psf=False, all_psf=False, \
         save=False, _pilot_info=None)
         Run the query to find the fields and associated information
@@ -2180,7 +2180,7 @@ class FieldQuery:
 
     def __init__(self, field):
         '''Constructor method
-        
+
         :param field: Name of requested field
         :type field: str
         '''
