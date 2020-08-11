@@ -57,38 +57,32 @@ class Source:
     '''
     This is a class representation of a catalogued source position
 
-    :param coord: Source coordinates
-    :type coord: `astropy.coordinates.sky_coordinate.SkyCoord`
-    :param name:
-    :type name:
-    :param epochs:
-    :type epochs:
-    :param fields:
-    :type fields:
-    :param stokes:
-    :type stokes:
-    :param primary_field:
-    :type primary_field:
-    :param crossmatch_radius:
-    :type crossmatch_radius:
-    :param measurements:
-    :type measurements:
-    :param base_folder: Path to base folder in default directory structure
-    :type base_folder: str
-    :param image_type: , defaults to "COMBINED"
-    :type image_type: str, optional
-    :param islands: , defaults to `False`
-    :type islands: bool, optional
-    :param outdir: , defaults to "."
-    :type outdir: str, optional
-    :param planet: , defaults to `False`
-    :type planet: bool, optional
-    :param pipeline: , defaults to `False`
-    :type pipeline: bool, optional
-    :param tiles: , defaults to `False`
-    :type tiles: bool, optional
-    :param forced_fits: , defaults to `False`
-    :type forced_fits: bool, optional
+
+    This is a class representation of a query of the VAST Pilot survey
+    fields, returning basic information such as observation dates and psf
+    information.
+
+    Attributes
+    ----------
+
+    field : str
+        Name of requested field
+    valid : bool
+        Confirm the requested field exists
+    pilot_info : `pandas.core.frame.DataFrame`
+        Dataframe describing the pilot survey
+    field_info : `pandas.core.frame.DataFrame`
+        Dataframe describing properties of the field
+    epochs : `pandas.core.frame.DataFrame`
+        Dataframe containing epochs this field was observed in
+
+
+    Methods
+    ----------
+
+    run_query(psf=False, largest_psf=False, common_psf=False, all_psf=False, \
+        save=False, _pilot_info=None)
+        Run the query to find the fields and associated information
     '''
 
     def __init__(
@@ -110,7 +104,42 @@ class Source:
         tiles=False,
         forced_fits=False,
     ):
-        '''Constructor method
+        '''
+        Constructor method
+
+        :param coord: Source coordinates
+        :type coord: `astropy.coordinates.sky_coordinate.SkyCoord`
+        :param name:
+        :type name:
+        :param epochs:
+        :type epochs:
+        :param fields:
+        :type fields:
+        :param stokes:
+        :type stokes:
+        :param primary_field:
+        :type primary_field:
+        :param crossmatch_radius:
+        :type crossmatch_radius:
+        :param measurements:
+        :type measurements:
+        :param base_folder: Path to base folder in default directory structure
+        :type base_folder: str
+        :param image_type: , defaults to "COMBINED"
+        :type image_type: str, optional
+        :param islands: , defaults to `False`
+        :type islands: bool, optional
+        :param outdir: , defaults to "."
+        :type outdir: str, optional
+        :param planet: , defaults to `False`
+        :type planet: bool, optional
+        :param pipeline: , defaults to `False`
+        :type pipeline: bool, optional
+        :param tiles: , defaults to `False`
+        :type tiles: bool, optional
+        :param forced_fits: , defaults to `False`
+        :type forced_fits: bool, optional
+
         '''
         self.logger = logging.getLogger('vasttools.source.Source')
         self.logger.debug('Created Source instance')
