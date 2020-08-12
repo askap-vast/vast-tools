@@ -77,7 +77,8 @@ class Pipeline(object):
         first with the project_dir inpuut the fallback option.
 
         :param project_dir: The directory of the pipeline results,
-            only required when the system variable is not defined.
+            only required when the system variable is not defined,
+            defaults to None.
         :type project_dir: str, optional
         '''
         super(Pipeline, self).__init__()
