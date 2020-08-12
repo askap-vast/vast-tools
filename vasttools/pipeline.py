@@ -69,16 +69,40 @@ class Pipeline(object):
         Returns a PipeRun object.
     '''
 
-    def __init__(self, project_dir):
+    def __init__(self, project_dir=None):
         '''
         Constructor method.
 
-        :param project_dir: The directory of the pipeline results.
-        :type project_dir: str
+        The system variable `PIPELINE_WORKING_DIR` will be checked
+        first with the project_dir inpuut the fallback option.
+
+        :param project_dir: The directory of the pipeline results,
+            only required when the system variable is not defined.
+        :type project_dir: str, optional
         '''
         super(Pipeline, self).__init__()
 
-        self.project_dir = os.path.abspath(project_dir)
+        try:
+            pipeline_run_path = os.getenv(
+                'PIPELINE_WORKING_DIR',
+                os.path.abspath(project_dir)
+            )
+        except Exception as e:
+            raise Exception(
+                "The pipeline run directory could not be determined!"
+                " Either the system environment 'PIPELINE_WORKING_DIR'"
+                " must be defined or the 'project_dir' argument defined"
+                " when initialising the pipeline class object."
+            )
+
+        if not os.path.isdir(pipeline_run_path):
+            raise Exception(
+                "Pipeline run directory {} not found!".format(
+                    pipeline_run_path
+                )
+            )
+
+        self.project_dir = pipeline_run_path
 
     def list_piperuns(self):
         '''
