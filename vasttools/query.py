@@ -345,7 +345,7 @@ class Query:
             of all measurements in the query. Cutout data
             specifically is the image data, header, wcs, and
             selavy sources present in the cutout.
-        :rtype: pandas.core.series.DataFrame
+        :rtype: pandas.core.frame.DataFrame
         '''
         # first get cutout data and selavy sources per image
         # group by image to do this
@@ -823,7 +823,7 @@ class Query:
 
         :returns: Dataframe containing the cutout data
             for the group.
-        :rtype: `pandas.core.series.DataFrame`
+        :rtype: `pandas.core.frame.DataFrame`
         '''
 
         image_file = group.iloc[0]['image']
@@ -1169,7 +1169,7 @@ class Query:
 
         :param group: The grouped measurements to initialise
             a source object.
-        :type group: `pandas.core.series.DataFrame`
+        :type group: `pandas.core.frame.DataFrame`
 
         :returns: Source of interest
         :rtype: vasttools.source.Source
@@ -1242,7 +1242,7 @@ class Query:
 
         :param group: A dataframe of sources/positions which have been
             supplied by grouping the queried sources by image.
-        :type group: `pandas.core.series.DataFrame`
+        :type group: `pandas.core.frame.DataFrame`
 
         :returns: Dataframe containing the forced fit measurements for
             each source.
@@ -1334,7 +1334,7 @@ class Query:
         rms is measured at the source location.
 
         :param group: The grouped coordinates to search in the image.
-        :type group: `pandas.core.series.DataFrame`
+        :type group: `pandas.core.frame.DataFrame`
 
         :returns: The selavy matched component and/or upper limits for the
             queried coordinates.
