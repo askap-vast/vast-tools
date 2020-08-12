@@ -41,23 +41,25 @@ See the section below for details on the other options available when running.
 Most options should be self explanatory. The lightcurve plots and csv files are saved in the same directory as the input
 
 ```
-usage: pilot_fields_info.py [-h] [--psf] [--common-psf] [--all-psf] [--save] [--quiet] [--debug]
-                            [--nice NICE]
+usage: pilot_fields_info.py [-h] [--psf] [--largest-psf] [--common-psf] [--all-psf] [--save] [--quiet]
+                            [--debug] [--nice NICE]
                             fields [fields ...]
 
 positional arguments:
-  fields        Fields to query (or csv file containing fields).
+  fields         Fields to query (or csv file containing fields).
 
 optional arguments:
-  -h, --help    show this help message and exit
-  --psf         Include the largest PSF of the 36 beams that make up the field. (default: False)
-  --common-psf  Include the common PSF of the 36 beams that make up the field. (default: False)
-  --all-psf     Include all the PSF information for the field. (default: False)
-  --save        Save the resulting information. Files will be saved to the current working directory
-                in the form of 'VAST_XXXX+/-XXA_field_info.csv'." (default: False)
-  --quiet       Turn off non-essential terminal output. (default: False)
-  --debug       Turn on debug output. (default: False)
-  --nice NICE   Set nice level. (default: 5)
+  -h, --help     show this help message and exit
+  --psf          Include the used PSF of the 36 beams that make up the field. Usually set from beam
+                 00. (default: False)
+  --largest-psf  Include the largest PSF of the 36 beams that make up the field. (default: False)
+  --common-psf   Include the common PSF of the 36 beams that make up the field. (default: False)
+  --all-psf      Include all the PSF information for the field. (default: False)
+  --save         Save the resulting information. Files will be saved to the current working directory
+                 in the form of 'VAST_XXXX+/-XXA_field_info.csv'. (default: False)
+  --quiet        Turn off non-essential terminal output. (default: False)
+  --debug        Turn on debug output. (default: False)
+  --nice NICE    Set nice level. (default: 5)
 ```
 
 ## Example
