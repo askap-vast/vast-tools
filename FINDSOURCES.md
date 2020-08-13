@@ -189,7 +189,7 @@ find_sources.py --coords "22:37:5.6000 +34:24:31.90,22:37:5.6000 -34:24:31.90,13
 ```
 
 ### Input CSV file
-To crossmatch many coordinates it's recommended to use a csv. Instead of entering coordaintes enter the name of the csv. The `--source-names` option is not used with CSV files.
+To crossmatch many coordinates it's recommended to use a csv. Instead of entering coordinates, enter the name of the csv. The `--source-names` option is not used with CSV files.
 
 E.g. 
 ```
