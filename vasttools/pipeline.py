@@ -950,7 +950,7 @@ class PipeAnalysis(PipeRun):
 
             first_set = first_set.merge(second_set, on='source')
 
-            pairs['total_pairs'] = first_set.shape[0]
+            pairs['total_pairs'].append(first_set.shape[0])
 
             first_set['pair'] = pair_key
             first_set['forced_count'] = first_set[
