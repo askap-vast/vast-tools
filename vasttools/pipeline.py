@@ -69,7 +69,7 @@ class Pipeline(object):
         Returns a PipeRun object.
     '''
 
-    def __init__(self, project_dir=None):
+    def __init__(self, project_dir='None'):
         '''
         Constructor method.
 
@@ -78,7 +78,7 @@ class Pipeline(object):
 
         :param project_dir: The directory of the pipeline results,
             only required when the system variable is not defined,
-            defaults to None.
+            defaults to 'None'.
         :type project_dir: str, optional
         '''
         super(Pipeline, self).__init__()

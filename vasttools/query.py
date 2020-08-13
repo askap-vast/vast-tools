@@ -122,7 +122,7 @@ class Query:
     def __init__(
         self, coords=None, source_names=[], epochs="all", stokes="I",
         crossmatch_radius=5.0, max_sep=1.0, use_tiles=False,
-        use_islands=False, base_folder=None, matches_only=False,
+        use_islands=False, base_folder='None', matches_only=False,
         no_rms=False, search_around_coordinates=False,
         output_dir=".", planets=[], ncpu=2, sort_output=False,
         forced_fits=False
@@ -149,7 +149,7 @@ class Query:
             defaults to `False`
         :type use_islands: bool, optional
         :param base_folder: Path to base folder if using default directory
-            structure, defaults to None
+            structure, defaults to 'None'.
         :type base_folder: str, optional
         :param matches_only: Only produce data products for sources with a
             selavy match, defaults to `False`

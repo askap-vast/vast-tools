@@ -83,7 +83,8 @@ optional arguments:
   --use-tiles           Use the individual tiles instead of combined mosaics. (default: False)
   --islands             Search islands instead of components. (default: False)
   --base-folder BASE_FOLDER
-                        Path to base folder if using default directory structure (default: None)
+                        Path to base folder if using default directory structure. Not required if the
+                         `VAST_DATA_DIR` environment variable' has been set. (default: None)
   --stokes {I,Q,U,V}    Select the Stokes parameter. (default: I)
   --quiet               Turn off non-essential terminal output. (default: False)
   --forced-fits         Perform forced fits at the locations requested. (default: False)
