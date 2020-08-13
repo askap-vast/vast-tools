@@ -145,7 +145,7 @@ optional arguments:
 
 ## Inputs
 
-To run the script needs at least some coordinates, or a planet to search for. Coordinates are entered using the `--coords` parameter as demonstrated below.
+To run the script needs at least some coordinates, or a planet to search for. Coordinates are entered using the `--coords` parameter as demonstrated below, while planets can be specified using the `--planet` parameter.
 
 ### Command line: Single Coordinate
 Here the format can be either in Hours or decimal degrees: 
