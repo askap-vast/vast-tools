@@ -1,26 +1,21 @@
 # build\_lightcurves.py
 
-This script allows you to quickly build lightcurves of sources you have extracted using `find_sources.py`.
+This script allows you to quickly build lightcurves of sources you have extracted using `find_sources.py`. While in v2.0 `find_sources.py` can now output lightcurve plots directly, this script can be helpful to run the lightcurve plotting again on a complete `find_sources.py` output.
 
-The script will output a csv file containing:
-* The start and end datetimes of the observation
-* Peak (default) or integrated flux density and associated uncertainty.
-* The image noise in the local region
-* A flag stating whether the measurement is a detection or an upper limit.
-
-By default the script will also plot the lightcurve, although this can be disabled using the `--no-plotting` flag. Also peak fluxes are used by default, integrated fluxes can be used by using the `--use-int-flux` flag.
+Peak fluxes are used by default, integrated fluxes can be used by using the `--use-int-flux` flag.
 
 # Running the script
-Prior to running this script you should query the survey data using `find_sources.py` with the `--vast-pilot` flag set to `all`. Then run `build_lightcurves.py FOLDER` where `FOLDER` is the output folder of the previous query.
+Prior to running this script you should query the survey data using `find_sources.py` with the `--vast-pilot` flag set to your desired epochs. Then run `build_lightcurves.py FOLDER` where `FOLDER` is the output folder of the previous query.
 
 ## Usage
 
-Most options should be self explanatory. The lightcurve plots and csv files are saved in the same directory as the input
+Most options should be self explanatory. The lightcurve plots are saved in the same directory as the input.
 
 ```
-usage: build_lightcurves.py [-h] [--use-int-flux] [--no-plotting] [--quiet] [--debug] [--min-points MIN_POINTS]
-                            [--min-detections MIN_DETECTIONS] [--mjd] [--grid] [--yaxis-start {auto,0}]
-                            [--nice NICE]
+usage: build_lightcurves.py [-h] [--use-int-flux] [--quiet] [--debug] [--min-points MIN_POINTS]
+                            [--min-detections MIN_DETECTIONS] [--mjd] [--grid]
+                            [--yaxis-start {auto,0}] [--use-forced-for-limits] [--use-forced-for-all]
+                            [--hide-legend] [--nice NICE]
                             folder
 
 positional arguments:
@@ -29,7 +24,6 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   --use-int-flux        Use the integrated flux, rather than peak flux (default: False)
-  --no-plotting         Write lightcurves to file without plotting (default: False)
   --quiet               Turn off non-essential terminal output. (default: False)
   --debug               Turn on debug output. (default: False)
   --min-points MIN_POINTS
@@ -39,7 +33,12 @@ optional arguments:
   --mjd                 Plot lightcurve in MJD rather than datetime. (default: False)
   --grid                Turn on the 'grid' in the lightcurve plot. (default: False)
   --yaxis-start {auto,0}
-                        Define where the y axis on the lightcurve plot starts from. 'auto' will let matplotlib
-                        decide the best range and '0' will start from 0. (default: 0)
+                        Define where the y axis on the lightcurve plot starts from. 'auto' will let
+                        matplotlib decide the best range and '0' will start from 0. (default: 0)
+  --use-forced-for-limits
+                        Use the forced fits values instead of upper limits. (default: False)
+  --use-forced-for-all  Use the forced fits for all datapoints. (default: False)
+  --hide-legend         Don't show the legend on the final plot. (default: False)
   --nice NICE           Set nice level. (default: 5)
+
 ```

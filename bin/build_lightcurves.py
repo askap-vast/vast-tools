@@ -39,10 +39,6 @@ def parse_args():
         action="store_true",
         help='Use the integrated flux, rather than peak flux')
     parser.add_argument(
-        '--no-plotting',
-        action="store_true",
-        help='Write lightcurves to file without plotting')
-    parser.add_argument(
         '--quiet',
         action="store_true",
         help='Turn off non-essential terminal output.')

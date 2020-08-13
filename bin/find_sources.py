@@ -68,7 +68,9 @@ def parse_args():
         type=str,
         help=("Select the VAST Pilot Epoch to query. Epoch 0 is RACS. "
               "All available epochs can be queried using "
-              "\"--vast-pilot=all\""),
+              "'all' or all VAST Epochs using 'all-vast'. Otherwise"
+              " enter as a comma separated list with no spaces, e.g."
+              " '1,2,3x,4x'."),
         default="1")
     parser.add_argument(
         '--imsize',
@@ -333,7 +335,7 @@ if __name__ == '__main__':
     )
 
     if len(args.planets) > 0:
-        args.planets = args.planets.split(",")
+        args.planets = args.planets.lower().replace(" ", "").split(",")
 
     if (args.coords is None and
             args.source_names == "" and len(args.planets) == 0):
@@ -388,7 +390,7 @@ if __name__ == '__main__':
     else:
         sky_coords = None
         source_names = ""
-
+    logger.debug(args.epochs)
     query = Query(
         coords=sky_coords,
         source_names=source_names,
@@ -447,7 +449,7 @@ if __name__ == '__main__':
                 reg = args.reg
                 lightcurve = args.lightcurves
 
-            query.gen_all_source_products(
+            query._gen_all_source_products(
                 fits=fits,
                 png=png,
                 ann=ann,
@@ -459,7 +461,7 @@ if __name__ == '__main__':
                 png_percentile=args.png_linear_percentile,
                 png_zscale=args.png_use_zscale,
                 png_contrast=args.png_zscale_contrast,
-                png_islands=args.png_no_island_labels,
+                png_no_islands=args.png_no_island_labels,
                 png_no_colorbar=args.png_no_colorbar,
                 png_crossmatch_overlay=args.crossmatch_radius_overlay,
                 png_hide_beam=args.png_hide_beam,
@@ -481,7 +483,7 @@ if __name__ == '__main__':
                 imsize=Angle(args.imsize * u.arcmin)
             )
 
-    query.summary_log()
+    query._summary_log()
 
     runend = datetime.datetime.now()
     runtime = runend - runstart
