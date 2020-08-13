@@ -635,9 +635,9 @@ class PipeRun(object):
 
         binary = (~np.isnan(image.data)).astype(int)
         mask = self._distance_from_edge(binary)
-        x,y = np.where(mask == 1)
+        x, y = np.where(mask == 1)
 
-        array_coords = np.column_stack((x,y))
+        array_coords = np.column_stack((x, y))
         coords = image.wcs.array_index_to_world_values(array_coords)
         # need to know when to reverse by checking axis sizes.
         coords = np.column_stack(coords)
