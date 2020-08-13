@@ -214,7 +214,8 @@ The following files are or can be produced (for tiles the `combined` will be rep
 * `{source_name}.EPOCH{NN}.{STOKES}_combined.png` - Matplotlib png figure of the above cutout of the source referenced in the name (if requested).
 * `{source_name}.EPOCH{NN}.{STOKES}_combined.ann` - Kvis annotation file for use with the FITS file (if requested).
 * `{source_name}.EPOCH{NN}.{STOKES}_combined.reg` - DS9 region file for use with the FITS file (if requested).
-* `{X}-find-fields_VAST_{NN}_fields.csv` - Output of the find fields option containing the input sources and the matched VAST Pilot Survey field (find-fields only).
+* `{source_name}_lc.png` - Lightcurve png plot (if requested).
+* `find_fields_result.csv` - Output of the find fields option containing the input sources and the matched VAST Pilot Survey field (find-fields only).
 
 `X` refers to the out-folder name.
 
