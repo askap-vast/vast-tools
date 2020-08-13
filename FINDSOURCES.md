@@ -31,7 +31,7 @@ See [this wiki page](https://github.com/askap-vast/vast-project/wiki/Nimbus:-SSH
 ## RACS caveats
 If you are running this script on ada or Nimbus you also have access to RACS data to search for sources. Remember that RACS is not a VAST data product and you must let Tara or David know that you intend to use RACS. Also keep in mind that this is not final quality RACS data, there are some issues with the data so please be aware when interpreting results. Currently only Stokes I data is available.
 
-To use RACS it is included if you specify `--epochs all`. Or you can only select RACS using `--epochs 0`. If you would like to exclude RACS then use `--epochs all-vast`.
+RACS can be included by specifying `--epochs all`, or you can only select RACS using `--epochs 0`. If you would like to query all VAST epochs (and exclude RACS) then use `--epochs all-vast`.
 
 ## Usage
 
