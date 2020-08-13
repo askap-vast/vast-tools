@@ -71,6 +71,10 @@ class Pipeline(object):
     load_run(run_name, n_workers=cpu_count()-1)
         Loads the pipeline run defined by run_name.
         Returns a PipeRun object.
+
+    load_runs(run_names, name, n_workers=cpu_count()-1)
+        Loads a list of run names into to one pipeline object.
+        Returns a PipeRun object.
     '''
 
     def __init__(self, project_dir):
@@ -114,6 +118,40 @@ class Pipeline(object):
         img_list = [i.split("/")[-1] for i in img_list]
 
         return img_list
+
+    def load_runs(self, run_names, name=None, n_workers=cpu_count() - 1):
+        '''
+        Wrapper to load multiple runs in one command.
+
+        :param run_names: List containing the names of the runs
+            to load.
+        :type run_names: list
+        :param name: State a name for the pipeline run.
+        :type name: str
+        :param n_workers: The number of workers (cpus)
+            available.
+        :type run_name: int, optional
+
+        :returns: Combined PipeAnalysis object.
+        :rtype: vasttools.pipeline.PipeAnalysis
+        '''
+        piperun = self.load_run(
+            run_names[0],
+            n_workers=n_workers
+        )
+
+        if len(run_names) > 1:
+            for r in run_names[1:]:
+                piperun = piperun.combine_with_run(
+                    self.load_run(
+                        r,
+                        n_workers=n_workers
+                    )
+                )
+        if name is not None:
+            piperun.name = name
+
+        return piperun
 
     def load_run(
         self, run_name, n_workers=cpu_count() - 1
@@ -598,7 +636,7 @@ class PipeRun(object):
         return result
 
     def _distance_from_edge(self, x):
-        """
+        '''
         Analyses the binary array x and determines the distance from
         the edge (0).
 
@@ -607,14 +645,14 @@ class PipeRun(object):
 
         :returns: Array each cell containing distance from the edge.
         :rtype: numpy.ndarray
-        """
+        '''
         x = np.pad(x, 1, mode='constant')
         dist = ndi.distance_transform_cdt(x, metric='taxicab')
 
         return dist[1:-1, 1:-1]
 
     def _create_moc_from_fits(self, fits_img, max_depth=9):
-        """
+        '''
         Creates a MOC from (assuming) an ASKAP fits image
         using the cheat method of analysing the edge pixels of the image.
 
@@ -627,7 +665,7 @@ class PipeRun(object):
 
         :returns: The MOC generated from the FITS file.
         :rtype: mocpy.moc.moc.MOC
-        """
+        '''
         image = Image(
             'field', '1', 'I', 'None',
             path=fits_img
@@ -653,7 +691,7 @@ class PipeRun(object):
         return moc
 
     def create_moc(self, max_depth=9):
-        """
+        '''
         Create a MOC file that represents the area covered by
         the pipeline run.
 
@@ -663,7 +701,7 @@ class PipeRun(object):
 
         :returns: MOC object.
         :rtype: mocpy.moc.moc.MOC
-        """
+        '''
 
         images_to_use = self.images.drop_duplicates(
             'skyreg_id'
@@ -685,7 +723,7 @@ class PipeRun(object):
         return moc
 
     def combine_with_run(self, other_PipeRun, new_name=None):
-        """
+        '''
         Combines the output of another PipeRun object with the PipeRun
         from which this method is being called from.
 
@@ -698,7 +736,7 @@ class PipeRun(object):
         :param new_name: If not None then the PipeRun attribute 'name'
             is changed to the given value.
         :type new_name: str, optional
-        """
+        '''
 
         self.images = self.images.append(
             other_PipeRun.images,
@@ -727,6 +765,8 @@ class PipeRun(object):
 
         if new_name is not None:
             self.name = new_name
+
+        return self
 
 
 class PipeAnalysis(PipeRun):
