@@ -13,9 +13,13 @@ The outputs are/can be:
 # Running on your own machine
 **No local data is required to run the `--find-fields` option which will find which fields that contain your sources of interest.** To create postage FITS files or PNG images, a copy of the survey data is required locally.
 
-You must tell the script where your data is and as of v2.0 this data must follow the same directory structure and naming scheme of the VAST Pilot release. You can define the path to this data using the following option:
+You must tell the script where your data is and as of v2.0 this data must follow the same directory structure and naming scheme of the VAST Pilot release. The easiest method is to set the environment variable `VAST_DATA_DIR` to the data path which will be read by the module, for example on bash:
 ```
---base-folder /Users/askap/my-pilot-data/
+export VAST_DATA_DIR=/path/to/my-pilot-data/
+```
+If this variable is not set you can define the path to this data using the following option when running the script:
+```
+--base-folder /path/to/my-pilot-data/
 ```
 
 If you are running `find_sources.py` on your own machine we recommend first using the `--find-fields` flag, downloading the relevant fields and then re-running the script as normal.
