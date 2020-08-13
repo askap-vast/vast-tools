@@ -1,6 +1,6 @@
 from vasttools.survey import Fields, Image
 from vasttools.survey import (
-    RELEASED_EPOCHS, FIELD_FILES, ADA_BASE_DIR, NIMBUS_BASE_DIR,
+    RELEASED_EPOCHS, FIELD_FILES,
     FIELD_CENTRES, ALLOWED_PLANETS, get_fields_per_epoch_info
 )
 from vasttools.source import Source
@@ -18,7 +18,6 @@ import datetime
 import pandas as pd
 import warnings
 import io
-import socket
 import re
 import signal
 import numexpr
@@ -61,10 +60,6 @@ from tabulate import tabulate
 warnings.filterwarnings('ignore', category=AstropyWarning, append=True)
 warnings.filterwarnings('ignore',
                         category=AstropyDeprecationWarning, append=True)
-
-HOST = socket.gethostname()
-HOST_ADA = 'ada.physics.usyd.edu.au'
-HOST_NIMBUS = 'nimbus.pawsey.org.au'
 
 HOST_NCPU = cpu_count()
 numexpr.set_num_threads(int(HOST_NCPU / 4))
@@ -154,7 +149,7 @@ class Query:
             defaults to `False`
         :type use_islands: bool, optional
         :param base_folder: Path to base folder if using default directory
-            structure, defaults to None
+            structure, defaults to 'None'.
         :type base_folder: str, optional
         :param matches_only: Only produce data products for sources with a
             selavy match, defaults to `False`
@@ -246,18 +241,27 @@ class Query:
 
         self.settings = {}
 
-        if base_folder is None:
-            # We can hardcode in paths we control
-            if HOST == HOST_ADA:
-                self.base_folder = ADA_BASE_DIR
-            elif HOST == HOST_NIMBUS:
-                self.base_folder = NIMBUS_BASE_DIR
-            else:
-                raise Exception(
-                    "No base folder has been provided!"
+        try:
+            the_base_folder = os.getenv(
+                'VAST_DATA_DIR',
+                os.path.abspath(str(base_folder))
+            )
+        except Exception as e:
+            raise Exception(
+                "The base folder directory could not be determined!"
+                " Either the system environment 'VAST_DATA_DIR' must be"
+                " defined or the 'base_folder' argument defined when"
+                " initialising the query."
+            )
+
+        if not os.path.isdir(the_base_folder):
+            raise Exception(
+                "Base folder {} not found!".format(
+                    the_base_folder
                 )
-        else:
-            self.base_folder = base_folder
+            )
+
+        self.base_folder = the_base_folder
 
         self.settings['epochs'] = self._get_epochs(epochs)
         self.settings['stokes'] = self._get_stokes(stokes)

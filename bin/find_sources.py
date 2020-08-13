@@ -104,7 +104,11 @@ def parse_args():
     parser.add_argument(
         '--base-folder',
         type=str,
-        help='Path to base folder if using default directory structure')
+        help=(
+            'Path to base folder if using default directory structure.'
+            ' Not required if the `VAST_DATA_DIR` environment variable'
+            ' has been set.'
+        ))
     parser.add_argument(
         '--stokes',
         type=str,
