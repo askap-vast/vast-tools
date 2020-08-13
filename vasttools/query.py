@@ -122,7 +122,7 @@ class Query:
     def __init__(
         self, coords=None, source_names=[], epochs="all", stokes="I",
         crossmatch_radius=5.0, max_sep=1.0, use_tiles=False,
-        use_islands=False, base_folder='None', matches_only=False,
+        use_islands=False, base_folder=None, matches_only=False,
         no_rms=False, search_around_coordinates=False,
         output_dir=".", planets=[], ncpu=2, sort_output=False,
         forced_fits=False
@@ -244,7 +244,7 @@ class Query:
         try:
             the_base_folder = os.getenv(
                 'VAST_DATA_DIR',
-                os.path.abspath(base_folder)
+                os.path.abspath(str(base_folder))
             )
         except Exception as e:
             raise Exception(

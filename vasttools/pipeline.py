@@ -69,7 +69,7 @@ class Pipeline(object):
         Returns a PipeRun object.
     '''
 
-    def __init__(self, project_dir='None'):
+    def __init__(self, project_dir=None):
         '''
         Constructor method.
 
@@ -86,7 +86,7 @@ class Pipeline(object):
         try:
             pipeline_run_path = os.getenv(
                 'PIPELINE_WORKING_DIR',
-                os.path.abspath(project_dir)
+                os.path.abspath(str(project_dir))
             )
         except Exception as e:
             raise Exception(
