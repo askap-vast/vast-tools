@@ -2,6 +2,7 @@ import pandas as pd
 import os
 import warnings
 import glob
+import gc
 import dask.dataframe as dd
 from typing import Dict, List, Tuple
 import bokeh.colors.named as colors
@@ -25,11 +26,14 @@ from bokeh.transform import linear_cmap, factor_cmap
 import numpy as np
 import pandas as pd
 from scipy.stats import norm
+import scipy.ndimage as ndi
 from astropy.stats import sigma_clip, mad_std
 from astropy.coordinates import SkyCoord
 from astropy import units as u
+from mocpy import MOC
 from vasttools.source import Source
 from vasttools.utils import match_planet_to_field
+from vasttools.survey import Image
 from multiprocessing import cpu_count
 from datetime import timedelta
 from itertools import combinations
@@ -66,6 +70,10 @@ class Pipeline(object):
 
     load_run(run_name, n_workers=cpu_count()-1)
         Loads the pipeline run defined by run_name.
+        Returns a PipeRun object.
+
+    load_runs(run_names, name, n_workers=cpu_count()-1)
+        Loads a list of run names into to one pipeline object.
         Returns a PipeRun object.
     '''
 
@@ -135,6 +143,40 @@ class Pipeline(object):
         img_list = [i.split("/")[-1] for i in img_list]
 
         return img_list
+
+    def load_runs(self, run_names, name=None, n_workers=cpu_count() - 1):
+        '''
+        Wrapper to load multiple runs in one command.
+
+        :param run_names: List containing the names of the runs
+            to load.
+        :type run_names: list
+        :param name: State a name for the pipeline run.
+        :type name: str
+        :param n_workers: The number of workers (cpus)
+            available.
+        :type run_name: int, optional
+
+        :returns: Combined PipeAnalysis object.
+        :rtype: vasttools.pipeline.PipeAnalysis
+        '''
+        piperun = self.load_run(
+            run_names[0],
+            n_workers=n_workers
+        )
+
+        if len(run_names) > 1:
+            for r in run_names[1:]:
+                piperun = piperun.combine_with_run(
+                    self.load_run(
+                        r,
+                        n_workers=n_workers
+                    )
+                )
+        if name is not None:
+            piperun.name = name
+
+        return piperun
 
     def load_run(
         self, run_name, n_workers=cpu_count() - 1
@@ -352,6 +394,18 @@ class PipeRun(object):
     check_for_planets()
         Searches the pipeline run images for any planets present.
         Returns pandas dataframe with results.
+
+    create_moc(max_depth=9)
+        Create a MOC file that represents the area covered by
+        the pipeline run.
+
+    combine_with_run(other_PipeRun, new_name=None)
+        Combines the output of another PipeRun object with the PipeRun
+        from which this method is being called from.
+
+        WARNING! It is assumed you are loading runs from the same Pipeline
+        instance. If this is not the case then erroneous results may be
+        returned.
     '''
     def __init__(
         self, name, images,
@@ -606,6 +660,139 @@ class PipeRun(object):
 
         return result
 
+    def _distance_from_edge(self, x):
+        '''
+        Analyses the binary array x and determines the distance from
+        the edge (0).
+
+        :param x: The binary array to analyse.
+        :type x: numpy.ndarray
+
+        :returns: Array each cell containing distance from the edge.
+        :rtype: numpy.ndarray
+        '''
+        x = np.pad(x, 1, mode='constant')
+        dist = ndi.distance_transform_cdt(x, metric='taxicab')
+
+        return dist[1:-1, 1:-1]
+
+    def _create_moc_from_fits(self, fits_img, max_depth=9):
+        '''
+        Creates a MOC from (assuming) an ASKAP fits image
+        using the cheat method of analysing the edge pixels of the image.
+
+        :param fits_img: The path of the ASKAP FITS image to
+            generate the MOC from.
+        :type fits_img: str
+        :param max_depth: Max depth parameter passed to the
+            MOC.from_polygon_skycoord() function, defaults to 9.
+        :type max_depth: int, optional
+
+        :returns: The MOC generated from the FITS file.
+        :rtype: mocpy.moc.moc.MOC
+        '''
+        image = Image(
+            'field', '1', 'I', 'None',
+            path=fits_img
+        )
+
+        binary = (~np.isnan(image.data)).astype(int)
+        mask = self._distance_from_edge(binary)
+        x, y = np.where(mask == 1)
+
+        array_coords = np.column_stack((x, y))
+        coords = image.wcs.array_index_to_world_values(array_coords)
+        # need to know when to reverse by checking axis sizes.
+        coords = np.column_stack(coords)
+        coords = SkyCoord(coords[0], coords[1], unit=(u.deg, u.deg))
+
+        moc = MOC.from_polygon_skycoord(coords, max_depth=max_depth)
+
+        del image
+        del binary
+        del array_coords
+        gc.collect()
+
+        return moc
+
+    def create_moc(self, max_depth=9):
+        '''
+        Create a MOC file that represents the area covered by
+        the pipeline run.
+
+        :param max_depth: Max depth parameter passed to the
+            MOC.from_polygon_skycoord() function, defaults to 9.
+        :type max_depth: int, optional
+
+        :returns: MOC object.
+        :rtype: mocpy.moc.moc.MOC
+        '''
+
+        images_to_use = self.images.drop_duplicates(
+            'skyreg_id'
+        )['path'].values
+
+        moc = self._create_moc_from_fits(
+            images_to_use[0],
+            max_depth=max_depth
+        )
+
+        if images_to_use.shape[0] > 1:
+            for img in images_to_use[1:]:
+                img_moc = self._create_moc_from_fits(
+                    img,
+                    max_depth
+                )
+                moc = moc.union(img_moc)
+
+        return moc
+
+    def combine_with_run(self, other_PipeRun, new_name=None):
+        '''
+        Combines the output of another PipeRun object with the PipeRun
+        from which this method is being called from.
+
+        WARNING! It is assumed you are loading runs from the same Pipeline
+        instance. If this is not the case then erroneous results may be
+        returned.
+
+        :param other_PipeRun: The other pipeline run to merge.
+        :type other_PipeRun: vasttools.pipeline.PipeRun
+        :param new_name: If not None then the PipeRun attribute 'name'
+            is changed to the given value.
+        :type new_name: str, optional
+        '''
+
+        self.images = self.images.append(
+            other_PipeRun.images,
+        ).drop_duplicates('path')
+
+        self.skyregions = self.skyregions.append(
+            other_PipeRun.skyregions,
+            ignore_index=True
+        ).drop_duplicates('id')
+
+        self.measurements = self.measurements.append(
+            other_PipeRun.measurements,
+            ignore_index=True
+        ).drop_duplicates(['id', 'source'])
+
+        sources_to_add = other_PipeRun.sources.loc[
+            ~(other_PipeRun.sources.index.isin(
+                self.sources.index
+            ))
+        ]
+        self.sources = self.sources.append(
+            sources_to_add
+        )
+
+        del sources_to_add
+
+        if new_name is not None:
+            self.name = new_name
+
+        return self
+
 
 class PipeAnalysis(PipeRun):
     '''
@@ -755,7 +942,8 @@ class PipeAnalysis(PipeRun):
         pairs = {
             'pair': [],
             'id': [],
-            'td': []
+            'td': [],
+            'total_pairs': [],
         }
 
         for i, c in enumerate(combs):
@@ -787,6 +975,8 @@ class PipeAnalysis(PipeRun):
 
             first_set = first_set.merge(second_set, on='source')
 
+            pairs['total_pairs'].append(first_set.shape[0])
+
             first_set['pair'] = pair_key
             first_set['forced_count'] = first_set[
                 ['forced_x', 'forced_y']
@@ -803,6 +993,8 @@ class PipeAnalysis(PipeRun):
         pairs = pd.DataFrame.from_dict(pairs).set_index(
             'id'
         ).sort_values(by='td')
+
+        pairs = pairs.loc[pairs['total_pairs'] != 0]
 
         return pairs, two_epoch_df
 
