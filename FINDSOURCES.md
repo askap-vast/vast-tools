@@ -30,12 +30,14 @@ You can access running the script on the vast-data instance by selecting the ter
 See [this wiki page](https://github.com/askap-vast/vast-project/wiki/Nimbus:-SSH,-Downloads,-Pipeline-&-Jupyter-Hub) for information on Nimbus.
 
 ## Warning!
-* Currently the crossmatching matches against **components**. Check your results to see if the component is part of an island (`has_sibling` column will = 1) and query the island catalogue, using the `island_id` if you need further information on your source.
+* The default crossmatching uses **components**. Check your results to see if the component is part of an island (`has_sibling` column will = 1) and query the island catalogue, using the `island_id` if you need further information on your source.
 
-## RACS caveats
+## RACS
 If you are running this script on ada or Nimbus you also have access to RACS data to search for sources. Remember that RACS is not a VAST data product and you *MUST* let Tara or David know that you intend to use RACS. Also keep in mind that this is not final quality RACS data, there are some issues with the data so please be aware when interpreting results. Currently only Stokes I data is available.
 
 RACS can be included by specifying `--epochs all`, or you can only select RACS using `--epochs 0`. If you would like to query all VAST epochs (and exclude RACS) then use `--epochs all-vast`.
+
+If you are using your own installation RACS is considered to be `EPOCH00` in the directory structure and follows the same naming structure as the VAST files but with `RACS` as the survey name in place of `VAST`. Please check the data structure on Nimbus if you are unsure.
 
 ## Usage
 
