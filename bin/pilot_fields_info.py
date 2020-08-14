@@ -36,6 +36,14 @@ def parse_args():
         '--psf',
         action="store_true",
         help=(
+            'Include the used PSF of the 36'
+            ' beams that make up the field.'
+            ' Usually set from beam 00.'
+            ))
+    parser.add_argument(
+        '--largest-psf',
+        action="store_true",
+        help=(
             'Include the largest PSF of the 36'
             ' beams that make up the field.'
             ))
@@ -112,12 +120,12 @@ if __name__ == '__main__':
     else:
         fields = args.fields
 
-    if args.psf and args.common_psf:
+    if sum([args.psf, args.largest_psf, args.common_psf]) > 1:
         logger.warning(
-            "Both '--psf' and '--common-psf' have been selected."
-            " Ignoring '--psf' and will display '--common-psf'."
+            "More than one psf option has been selected."
+            " Please correct and re-run."
         )
-        args.psf = False
+        sys.exit()
 
     logger.info("Will find information for the following fields:")
     [logger.info(i) for i in fields]
@@ -126,7 +134,8 @@ if __name__ == '__main__':
         query = FieldQuery(field)
         if i == 0:
             query.run_query(
-                largest_psf=args.psf,
+                psf=args.psf,
+                largest_psf=args.largest_psf,
                 common_psf=args.common_psf,
                 all_psf=args.all_psf,
                 save=args.save
@@ -137,7 +146,8 @@ if __name__ == '__main__':
                 continue
         else:
             query.run_query(
-                largest_psf=args.psf,
+                psf=args.psf,
+                largest_psf=args.largest_psf,
                 common_psf=args.common_psf,
                 all_psf=args.all_psf,
                 save=args.save,

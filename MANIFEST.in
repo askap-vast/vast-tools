@@ -1,1 +1,2 @@
-include vasttools/data/*
+recursive-include vasttools/data/ *
+recursive-include notebook-examples/ *

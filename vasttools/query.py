@@ -1,7 +1,15 @@
 from vasttools.survey import Fields, Image
-from vasttools.survey import RELEASED_EPOCHS
-from vasttools.survey import FIELD_FILES
+from vasttools.survey import (
+    RELEASED_EPOCHS, FIELD_FILES,
+    FIELD_CENTRES, ALLOWED_PLANETS, get_fields_per_epoch_info
+)
 from vasttools.source import Source
+from vasttools.utils import (
+    filter_selavy_components, simbad_search, match_planet_to_field,
+    check_racs_exists
+)
+from vasttools.moc import VASTMOCS
+from vasttools.fp import ForcedPhot
 
 import sys
 import numpy as np
@@ -9,10 +17,16 @@ import os
 import datetime
 import pandas as pd
 import warnings
-import shutil
 import io
-import socket
 import re
+import signal
+import numexpr
+import gc
+
+from multiprocessing import Pool, cpu_count
+from multiprocessing_logging import install_mp_handler
+from functools import partial
+import dask.dataframe as dd
 
 import logging
 import logging.handlers
@@ -47,8 +61,8 @@ warnings.filterwarnings('ignore', category=AstropyWarning, append=True)
 warnings.filterwarnings('ignore',
                         category=AstropyDeprecationWarning, append=True)
 
-HOST = socket.gethostname()
-HOST_ADA = 'ada.physics.usyd.edu.au'
+HOST_NCPU = cpu_count()
+numexpr.set_num_threads(int(HOST_NCPU / 4))
 
 
 class Query:
@@ -57,165 +71,1920 @@ class Query:
     query including the catalogue of target sources, the Stokes parameter,
     crossmatch radius and output parameters.
 
-    :param args: Arguments namespace
-    :type args: `argparse.Namespace`
+    Attributes
+    ----------
+    coords : astropy.coordinates.sky_coordinate.SkyCoord
+        The sky coordinates to be queried.
+    source_names : list
+        The names of the sources (coordinates) being queried.
+    ncpu : int
+        The number of cpus available.
+    planets : bool
+        Set to 'True' when planets are to be queried.
+    settings : dict
+        Dictionary that contains the various settings of the query.
+    base_folder : str
+        The base folder of the VAST data.
+    fields_found : bool
+        Set to 'True' once 'find_fields' has been run on the query.
+    racs : bool
+        Set to 'True' if RACS (Epoch 00) is included in the query.
+    query_df : pandas.core.frame.DataFrame
+        The dataframe that is constructed to perform the query.
+    sources_df : pandas.core.frame.DataFrame
+        The dataframe that contains the found sources when 'find_sources'
+        is run.
+    results : pandas.core.frame.Series
+        Series that contains each result in the form of a
+        vasttools.source.Source object, with the source name
+        as the index.
+
+    Methods
+    -------
+    find_fields()
+        Finds whether the queried sources are in the VAST Pilot survey
+        and if so what field they are in.
+
+    write_find_fields()
+        Writes the results of find_fields to a csv file.
+
+    find_sources()
+        Takes the results from find_fields and searches for crossmatches
+        to the queried sources in the selavy catalogues. It can also perform
+        rms upper limit measuring and forced fits if requested in the query
+        settings. Returns a Series object containing the found sources.
+
+    save_search_around_results(self, sort_output=False)
+        Writes the results of the query if the search_around_sky option
+        has been used.
     '''
 
-    def __init__(self, args):
-        '''Constructor method
+    def __init__(
+        self, coords=None, source_names=[], epochs="all", stokes="I",
+        crossmatch_radius=5.0, max_sep=1.0, use_tiles=False,
+        use_islands=False, base_folder=None, matches_only=False,
+        no_rms=False, search_around_coordinates=False,
+        output_dir=".", planets=[], ncpu=2, sort_output=False,
+        forced_fits=False
+    ):
+        '''
+        :param coords: List of coordinates to query, defaults to None
+        :type coords: `astropy.coordinates.sky_coordinate.SkyCoord`, optional
+        :param source_names: List of source names, defaults to []
+        :type source_names: list, optional
+        :param epochs: Comma-separated list of epochs to query. All available
+            epochs can be queried by passsing "all". Defaults to "all"
+        :type epochs: str, optional
+        :param stokes: Stokes parameter to query, defaults to "I"
+        :type stokes: str, optional
+        :param crossmatch_radius: Crossmatch radius in arcsec, defaults to 5.0
+        :type crossmatch_radius: float, optional
+        :param max_sep: Maximum separation of source from beam centre
+            in degrees, defaults to 1.0
+        :type max_sep: float, optional
+        :param use_tiles: Query tiles rather than combined mosaics,
+            defaults to `False`
+        :type use_tiles: bool, optional
+        :param use_islands: Use selavy islands rather than components,
+            defaults to `False`
+        :type use_islands: bool, optional
+        :param base_folder: Path to base folder if using default directory
+            structure, defaults to 'None'.
+        :type base_folder: str, optional
+        :param matches_only: Only produce data products for sources with a
+            selavy match, defaults to `False`
+        :type matches_only: bool, optional
+        :param no_rms: Estimate the background RMS around each source,
+            defaults to `False`
+        :type no_rms: bool, optional
+        :param output_dir: Output directory to place all results in,
+            defaults to "."
+        :type output_dir: str, optional
+        :param planets: List of planets to search for, defaults to []
+        :type planets: list, optional
+        :param ncpu: Number of CPUs to use, defaults to 2
+        :type ncpu: float, optional
+        :param sort_output: Sorts the output into individual source
+            directories, defaults to `False`.
+        :type sort_output: bool, optional
+        :param forced_fits: Turns on the option to perform forced fits
+            on the locations queried, defaults to `False`.
+        :type forced_fits: bool, optional
         '''
         self.logger = logging.getLogger('vasttools.find_sources.Query')
 
-        self.args = args
+        install_mp_handler(logger=self.logger)
 
-        self.epochs = self.get_epochs()
+        self.coords = coords
+        self.source_names = np.array(source_names)
 
-        self.catalog = self.build_catalog()
-        self.src_coords = self.build_SkyCoord()
-        self.logger.info(
-            "Finding fields for {} sources...".format(len(self.src_coords)))
+        if ncpu > HOST_NCPU:
+            raise ValueError(
+                "Number of CPUs requested ({}) "
+                "exceeds number available ({})".format(
+                    ncpu,
+                    HOST_NCPU
+                )
+            )
+        self.ncpu = ncpu
 
-        self.set_stokes_param()
-        self.set_outfile_prefix()
-        self.set_output_directory()
+        if coords is None and len(source_names) == 0 and len(planets) == 0:
+            raise Exception(
+                "No coordinates or source names have been provided!"
+                " Check inputs and try again!"
+            )
 
-        self.imsize = Angle(args.imsize, unit=u.arcmin)
-        self.max_sep = args.maxsep
-        self.crossmatch_radius = Angle(args.crossmatch_radius, unit=u.arcsec)
+        if forced_fits and search_around_coordinates:
+            raise Exception(
+                "Forced fits and search around coordinates mode cannot be"
+                " used together! Check inputs and try again."
+            )
 
-    def build_catalog(self):
+        if self.coords is None:
+            if len(source_names) != 0:
+                pre_simbad = len(source_names)
+                self.coords, self.source_names = simbad_search(
+                    source_names, logger=self.logger
+                )
+                if self.coords is not None:
+                    simbad_msg = "SIMBAD search found {}/{} source(s)".format(
+                        len(self.source_names),
+                        pre_simbad
+                    )
+                    self.logger.info(simbad_msg)
+                    self.logger.info('Found:')
+                    for i in self.source_names:
+                        self.logger.info(i)
+                    if self.logger is None:
+                        warnings.warn(simbad_msg)
+                else:
+                    self.logger.error(
+                        "SIMBAD search failed!"
+                    )
+                    raise ValueError(
+                        "SIMBAD search failed!"
+                    )
+        if len(planets) != 0:
+            valid_planets = sum([i in ALLOWED_PLANETS for i in planets])
+
+            if valid_planets != len(planets):
+                self.logger.error(
+                    "Invalid planet object provided!"
+                )
+                raise ValueError(
+                    "Invalid planet object provided!"
+                )
+            else:
+                self.planets = planets
+        else:
+            self.planets = None
+
+        self.settings = {}
+
+        try:
+            the_base_folder = os.getenv(
+                'VAST_DATA_DIR',
+                os.path.abspath(str(base_folder))
+            )
+        except Exception as e:
+            raise Exception(
+                "The base folder directory could not be determined!"
+                " Either the system environment 'VAST_DATA_DIR' must be"
+                " defined or the 'base_folder' argument defined when"
+                " initialising the query."
+            )
+
+        if not os.path.isdir(the_base_folder):
+            raise Exception(
+                "Base folder {} not found!".format(
+                    the_base_folder
+                )
+            )
+
+        self.base_folder = the_base_folder
+
+        self.settings['epochs'] = self._get_epochs(epochs)
+        self.settings['stokes'] = self._get_stokes(stokes)
+
+        self.settings['crossmatch_radius'] = Angle(
+            crossmatch_radius, unit=u.arcsec
+        )
+        self.settings['max_sep'] = max_sep
+
+        self.settings['islands'] = use_islands
+        self.settings['tiles'] = use_tiles
+        self.settings['no_rms'] = no_rms
+        self.settings['matches_only'] = matches_only
+        self.settings['search_around'] = search_around_coordinates
+        self.settings['sort_output'] = sort_output
+        self.settings['forced_fits'] = forced_fits
+
+        self.settings['output_dir'] = output_dir
+
+        # Going to need this so load it now
+        self._epoch_fields = get_fields_per_epoch_info()
+
+        if not os.path.isdir(self.base_folder):
+            self.logger.critical(
+                "The base directory {} does not exist!".format(
+                    self.base_folder
+                )
+            )
+            raise ValueError("The base directory {} does not exist!".format(
+                self.base_folder
+            ))
+
+        settings_ok = self._validate_settings()
+
+        if not settings_ok:
+            self.logger.critical("Problems found in query settings!")
+            self.logger.critical("Please address and try again.")
+            raise ValueError((
+                "Problems found in query settings!"
+                "\nPlease address and try again."
+            ))
+
+        if self.coords is not None:
+            self.query_df = self._build_catalog()
+        else:
+            self.query_df = None
+
+        self.fields_found = False
+
+    def _validate_settings(self):
         '''
-        Build the catalogue of target sources
+        Used to check settings are valid
 
-        :returns: Catalogue of target sources
+        :returns: `True` if settings are acceptable, `False` otherwise
+        :rtype: bool
+        '''
+
+        if self.settings['tiles'] and self.settings['stokes'].lower() != "i":
+            self.logger.critital("Only Stokes I are supported with tiles!")
+            return False
+
+        if self.settings['tiles'] and self.settings['islands']:
+            self.logger.critital(
+                "Only component catalogues are supported with tiles!"
+            )
+            return False
+
+        if self.settings['tiles'] and not self.settings['no_rms']:
+            self.logger.warning(
+                "RMS measurements are not supported with tiles!"
+            )
+            self.logger.warning("Turning RMS measurements off.")
+            self.settings['no_rms'] = True
+
+        return True
+
+    def _get_all_cutout_data(self, imsize):
+        '''
+        Get cutout data and selavy components for all sources
+
+        :param imsize: Size of the requested cutout
+        :type imsize: `astropy.coordinates.angles.Angle`
+
+        :returns: Dataframe containing the cutout data
+            of all measurements in the query. Cutout data
+            specifically is the image data, header, wcs, and
+            selavy sources present in the cutout.
+        :rtype: pandas.core.frame.DataFrame
+        '''
+        # first get cutout data and selavy sources per image
+        # group by image to do this
+
+        if self.settings['search_around']:
+            raise Exception(
+                'Getting cutout data cannot be run when'
+                ' search around coordinates mode has been'
+                ' used.'
+            )
+
+        meta = {
+            'data': 'O',
+            'wcs': 'O',
+            'header': 'O',
+            'selavy_overlay': 'O',
+            'beam': 'O',
+            'name': 'U',
+            'dateobs': 'datetime64[ns]'
+        }
+
+        cutouts = (
+            dd.from_pandas(self.sources_df, self.ncpu)
+            .groupby('image')
+            .apply(
+                self._grouped_fetch_cutouts,
+                imsize=imsize,
+                meta=meta,
+            ).compute(num_workers=self.ncpu, scheduler='processes')
+        )
+
+        cutouts.index = cutouts.index.droplevel()
+
+        return cutouts
+
+    def _gen_all_source_products(
+        self,
+        fits=True,
+        png=False,
+        ann=False,
+        reg=False,
+        lightcurve=False,
+        measurements=False,
+        fits_outfile=None,
+        png_selavy=True,
+        png_percentile=99.9,
+        png_zscale=False,
+        png_contrast=0.2,
+        png_no_islands=True,
+        png_no_colorbar=False,
+        png_crossmatch_overlay=False,
+        png_hide_beam=False,
+        png_disable_autoscaling=False,
+        ann_crossmatch_overlay=False,
+        reg_crossmatch_overlay=False,
+        lc_sigma_thresh=5,
+        lc_figsize=(8, 4),
+        lc_min_points=2,
+        lc_min_detections=1,
+        lc_mjd=False,
+        lc_grid=False,
+        lc_yaxis_start="auto",
+        lc_peak_flux=True,
+        lc_use_forced_for_limits=False,
+        lc_use_forced_for_all=False,
+        lc_hide_legend=False,
+        measurements_simple=False,
+        imsize=Angle(5. * u.arcmin)
+    ):
+        '''
+        Generate products for all sources.
+        This function is not intended to be used interactively - Script only.
+
+        :param fits: Create and save fits cutouts, defaults to `True`
+        :type fits: bool, optional
+        :param png: Create and save png postagestamps, defaults to `False`
+        :type png: bool, optional
+        :param ann: Create and save kvis annotation files for all components, \
+        defaults to `False`
+        :type ann: bool, optional
+        :param reg: Create and save DS9 annotation files for all components, \
+        defaults to `False`
+        :type reg: bool, optional
+        :param lightcurve: Create and save lightcurves for all sources, \
+        defaults to `False`
+        :type lightcurve: bool, optional
+        :param measurements: Create and save measurements for all sources, \
+        defaults to `False`
+        :type measurements: bool, optional
+        :param fits_outfile: File to save fits cutout to, defaults to None
+        :type fits_outfile: str, optional
+        :param png_selavy: Overlay selavy components onto png postagestamp, \
+        defaults to `True`
+        :type png_selavy: bool, optional
+        :param png_percentile: Percentile level for the png normalisation, \
+        defaults to 99.9
+        :type png_percentile: float, optional
+        :param png_zscale: Use z-scale normalisation rather than linear, \
+        defaults to `False`
+        :type png_zscale: bool, optional
+        :param png_contrast: Z-scale constrast, defaults to 0.2
+        :type png_contrast: float, optional
+        :param png_no_islands: Don't overlay selavy islands on png \
+        postagestamps, defaults to `True`
+        :type png_no_islands: bool, optional
+        :param png_no_colorbar: Don't include colourbar on png output, \
+        defaults to `False`
+        :type png_no_colorbar: bool, optional
+        :param png_crossmatch_overlay: Overlay the crossmatch radius on png \
+        postagestamps, defaults to `False`
+        :type png_crossmatch_overlay: bool, optional
+        :param png_hide_beam: Do not show the beam shape on png postagestamps,\
+         defaults to `False`
+        :type png_hide_beam: bool, optional
+        :param ann_crossmatch_overlay: Include crossmatch radius in ann, \
+        defaults to `False`
+        :type ann_crossmatch_overlay: bool, optional
+        :param reg_crossmatch_overlay: Include crossmatch radius in reg, \
+        defaults to `False`
+        :type reg_crossmatch_overlay: bool, optional
+        :param lc_sigma_thresh: Detection threshold (in sigma) for \
+        lightcurves, defaults to 5
+        :type lc_sigma_thresh: float, optional
+        :param lc_figsize: Size of lightcurve figure, defaults to (8, 4)
+        :type lc_figsize: tuple, optional
+        :param lc_min_points: Minimum number of source observations required\
+        for a lightcurve to be generated, defaults to 2
+        :type lc_min_points: int, optional
+        :param lc_min_detections: Minimum number of source detections required\
+         for a lightcurve to be generated, defaults to 1
+        :type lc_min_detections: int, optional
+        :param lc_mjd: Use MJD for lightcurve x-axis, defaults to `False`
+        :type lc_mjd: bool, optional
+        :param lc_grid: Include grid on lightcurve plot, defaults to `False`
+        :type lc_grid: bool, optional
+        :param lc_yaxis_start: Start the lightcurve y-axis at 0 ("0") or use \
+        the matpotlib default ("auto"). Defaults to "auto"
+        :type lc_yaxis_start: str, optional
+        :param lc_peak_flux: Generate lightcurve using peak flux density \
+        rather than integrated flux density, defaults to `True`
+        :type lc_peak_flux: bool, optional
+        :param measurements_simple: Use simple schema for measurement output, \
+        defaults to `False`
+        :type measurements_simple: bool, optional
+        :param imsize: Size of the requested cutout
+        :type imsize: `astropy.coordinates.angles.Angle`
+        '''
+
+        if self.settings['search_around']:
+            raise Exception(
+                'Getting source products cannot be run when'
+                ' search around coordinates mode has been'
+                ' used.'
+            )
+
+        if sum([fits, png, ann, reg]) > 0:
+            self.logger.info(
+                "Fetching cutout data for sources..."
+            )
+            cutouts_df = self._get_all_cutout_data(imsize)
+            self.logger.info('Done.')
+            to_process = [(s, cutouts_df.loc[
+                cutouts_df['name'] == s.name
+            ].sort_values(
+                by='dateobs'
+            ).reset_index()) for s in self.results.values]
+
+            del cutouts_df
+            gc.collect()
+        else:
+            to_process = [(s, None) for s in self.results.values]
+            cutouts_df = None
+
+        self.logger.info(
+            'Saving source products, please be paitent for large queries...'
+        )
+
+        produce_source_products_multi = partial(
+            self._produce_source_products,
+            fits=fits,
+            png=png,
+            ann=ann,
+            reg=reg,
+            lightcurve=lightcurve,
+            measurements=measurements,
+            png_selavy=png_selavy,
+            png_percentile=png_percentile,
+            png_zscale=png_zscale,
+            png_contrast=png_contrast,
+            png_no_islands=png_no_islands,
+            png_no_colorbar=png_no_colorbar,
+            png_crossmatch_overlay=png_crossmatch_overlay,
+            png_hide_beam=png_hide_beam,
+            png_disable_autoscaling=png_disable_autoscaling,
+            ann_crossmatch_overlay=ann_crossmatch_overlay,
+            reg_crossmatch_overlay=reg_crossmatch_overlay,
+            lc_sigma_thresh=lc_sigma_thresh,
+            lc_figsize=lc_figsize,
+            lc_min_points=lc_min_points,
+            lc_min_detections=lc_min_detections,
+            lc_mjd=lc_mjd,
+            lc_grid=lc_grid,
+            lc_yaxis_start=lc_yaxis_start,
+            lc_peak_flux=lc_peak_flux,
+            lc_use_forced_for_limits=lc_use_forced_for_limits,
+            lc_use_forced_for_all=lc_use_forced_for_all,
+            lc_hide_legend=lc_hide_legend,
+            measurements_simple=measurements_simple,
+            calc_script_norms=~(png_disable_autoscaling)
+        )
+
+        original_sigint_handler = signal.signal(
+            signal.SIGINT, signal.SIG_IGN
+        )
+        signal.signal(signal.SIGINT, original_sigint_handler)
+        workers = Pool(processes=self.ncpu, maxtasksperchild=100)
+
+        try:
+            workers.map(
+                produce_source_products_multi,
+                to_process,
+            )
+        except KeyboardInterrupt:
+            self.logger.error(
+                "Caught KeyboardInterrupt, terminating workers."
+            )
+            workers.terminate()
+            sys.exit()
+        except Exception as e:
+            self.logger.error(
+                "Encountered error!."
+            )
+            self.logger.error(
+                e
+            )
+            workers.terminate()
+            sys.exit()
+        else:
+            self.logger.debug("Normal termination")
+            workers.close()
+            # workers.join()
+
+    def _produce_source_products(
+        self,
+        i,
+        fits=True,
+        png=False,
+        ann=False,
+        reg=False,
+        lightcurve=False,
+        measurements=False,
+        png_selavy=True,
+        png_percentile=99.9,
+        png_zscale=False,
+        png_contrast=0.2,
+        png_no_islands=True,
+        png_no_colorbar=False,
+        png_crossmatch_overlay=False,
+        png_hide_beam=False,
+        png_disable_autoscaling=False,
+        ann_crossmatch_overlay=False,
+        reg_crossmatch_overlay=False,
+        lc_sigma_thresh=5,
+        lc_figsize=(8, 4),
+        lc_min_points=2,
+        lc_min_detections=1,
+        lc_mjd=False,
+        lc_grid=False,
+        lc_yaxis_start="auto",
+        lc_peak_flux=True,
+        lc_use_forced_for_limits=False,
+        lc_use_forced_for_all=False,
+        lc_hide_legend=False,
+        measurements_simple=False,
+        calc_script_norms=False
+    ):
+        '''
+        Produce source products for one source
+
+        :param i: Tuple containing source and cutout data
+        :type i: tuple
+        :param fits: Create and save fits cutouts, defaults to `True`
+        :type fits: bool, optional
+        :param png: Create and save png postagestamps, defaults to `False`
+        :type png: bool, optional
+        :param ann: Create and save kvis annotation files for all components, \
+        defaults to `False`
+        :type ann: bool, optional
+        :param reg: Create and save DS9 annotation files for all components, \
+        defaults to `False`
+        :type reg: bool, optional
+        :param lightcurve: Create and save lightcurves for all sources, \
+        defaults to `False`
+        :type lightcurve: bool, optional
+        :param measurements: Create and save measurements for all sources, \
+        defaults to `False`
+        :type measurements: bool, optional
+        :param png_selavy: Overlay selavy components onto png postagestamp, \
+        defaults to `True`
+        :type png_selavy: bool, optional
+        :param png_percentile: Percentile level for the png normalisation, \
+        defaults to 99.9
+        :type png_percentile: float, optional
+        :param png_zscale: Use z-scale normalisation rather than linear, \
+        defaults to `False`
+        :type png_zscale: bool, optional
+        :param png_contrast: Z-scale constrast, defaults to 0.2
+        :type png_contrast: float, optional
+        :param png_no_islands: Don't overlay selavy islands on png \
+        postagestamps, defaults to `True`
+        :type png_no_islands: bool, optional
+        :param png_no_colorbar: Don't include colourbar on png output, \
+        defaults to `False`
+        :type png_no_colorbar: bool, optional
+        :param png_crossmatch_overlay: Overlay the crossmatch radius on png \
+        postagestamps, defaults to `False`
+        :type png_crossmatch_overlay: bool, optional
+        :param png_hide_beam: Do not show the beam shape on png postagestamps,\
+         defaults to `False`
+        :type png_hide_beam: bool, optional
+        :param ann_crossmatch_overlay: Include crossmatch radius in ann, \
+        defaults to `False`
+        :type ann_crossmatch_overlay: bool, optional
+        :param reg_crossmatch_overlay: Include crossmatch radius in reg, \
+        defaults to `False`
+        :type reg_crossmatch_overlay: bool, optional
+        :param lc_sigma_thresh: Detection threshold (in sigma) for \
+        lightcurves, defaults to 5
+        :type lc_sigma_thresh: float, optional
+        :param lc_figsize: Size of lightcurve figure, defaults to (8, 4)
+        :type lc_figsize: tuple, optional
+        :param lc_min_points: Minimum number of source observations required\
+        for a lightcurve to be generated, defaults to 2
+        :type lc_min_points: int, optional
+        :param lc_min_detections: Minimum number of source detections required\
+         for a lightcurve to be generated, defaults to 1
+        :type lc_min_detections: int, optional
+        :param lc_mjd: Use MJD for lightcurve x-axis, defaults to `False`
+        :type lc_mjd: bool, optional
+        :param lc_grid: Include grid on lightcurve plot, defaults to `False`
+        :type lc_grid: bool, optional
+        :param lc_yaxis_start: Start the lightcurve y-axis at 0 ("0") or use \
+        the matpotlib default ("auto"). Defaults to "auto"
+        :type lc_yaxis_start: str, optional
+        :param lc_peak_flux: Generate lightcurve using peak flux density \
+        rather than integrated flux density, defaults to `True`
+        :type lc_peak_flux: bool, optional
+        :param lc_use_forced_for_limits: Generate lightcurves using forced \
+        photometry for non-detections only
+        :type lc_use_forced_for_limits: bool, optional
+        :param lc_use_forced_for_all: Generate lightcurves using forced \
+        photometry for all measurements
+        :type lc_use_forced_for_all: bool, optional
+        :param measurements_simple: Use simple schema for measurement output, \
+        defaults to `False`
+        :type measurements_simple: bool, optional
+        :param calc_script_norms: Calculate the png normalisation if it \
+        hasn't been already
+        :type calc_script_norms: bool, optional
+        '''
+
+        source, cutout_data = i
+
+        if fits:
+            source.save_all_fits_cutouts(cutout_data=cutout_data)
+
+        if png:
+            source.save_all_png_cutouts(
+                selavy=png_selavy,
+                percentile=png_percentile,
+                zscale=png_zscale,
+                contrast=png_contrast,
+                no_islands=png_no_islands,
+                no_colorbar=png_no_colorbar,
+                crossmatch_overlay=png_crossmatch_overlay,
+                hide_beam=png_hide_beam,
+                disable_autoscaling=png_disable_autoscaling,
+                cutout_data=cutout_data,
+                calc_script_norms=calc_script_norms
+            )
+
+        if ann:
+            source.save_all_ann(
+                crossmatch_overlay=ann_crossmatch_overlay,
+                cutout_data=cutout_data
+            )
+
+        if reg:
+            source.save_all_reg(
+                crossmatch_overlay=reg_crossmatch_overlay,
+                cutout_data=cutout_data
+            )
+
+        if lightcurve:
+            source.plot_lightcurve(
+                sigma_thresh=lc_sigma_thresh,
+                figsize=lc_figsize,
+                min_points=lc_min_points,
+                min_detections=lc_min_detections,
+                mjd=lc_mjd,
+                grid=lc_grid,
+                yaxis_start=lc_yaxis_start,
+                peak_flux=lc_peak_flux,
+                save=True,
+                outfile=None,
+                use_forced_for_limits=lc_use_forced_for_limits,
+                use_forced_for_all=lc_use_forced_for_all,
+                hide_legend=lc_hide_legend
+            )
+
+        if measurements:
+            source.write_measurements(simple=measurements_simple)
+
+        return
+
+    def _summary_log(self):
+        '''
+        Print a summary log
+        '''
+
+        self.logger.info("-------------------------")
+        self.logger.info("Summary:")
+        self.logger.info("-------------------------")
+        self.logger.info(
+            "Number of sources within footprint: %i",
+            self.num_sources_searched
+        )
+        try:
+            self.logger.info(
+                "Number of sources with detections: %i",
+                self.num_sources_detected
+            )
+        except Exception as e:
+            # Means that find sources has not been run
+            pass
+        self.logger.info("-------------------------")
+
+    def _add_source_cutout_data(self, s):
+        '''
+        Add cutout data to the source of interest
+
+        :param s: Source of interest
+        :type s: `vasttools.source.Source`
+
+        :returns: Updated source of interest
+        :rtype: `vasttools.source.Source`
+        '''
+
+        s_name = s.name
+        s_cutout = self.sources_df[[
+            'data',
+            'wcs',
+            'header',
+            'selavy_overlay',
+            'beam'
+        ]][self.sources_df.name == s_name].reset_index(drop=True)
+
+        s.cutout_df = s_cutout
+        s._cutouts_got = True
+
+        del s_cutout
+
+        return s
+
+    def _grouped_fetch_cutouts(self, group, imsize):
+        '''
+        Function that handles fetching the cutout data per
+        group object, where the requested sources have been
+        grouped by image.
+
+        :param group: Catalogue of sources grouped by field
+        :type group: `pandas.core.frame.DataFrame`
+        :param imsize: Size of the requested cutout
+        :type imsize: `astropy.coordinates.angles.Angle`
+
+        :returns: Dataframe containing the cutout data
+            for the group.
         :rtype: `pandas.core.frame.DataFrame`
         '''
 
-        if " " not in self.args.coords:
-            self.logger.info("Loading file {}".format(self.args.coords))
-            # Give explicit check to file existence
-            user_file = os.path.abspath(self.args.coords)
-            if not os.path.isfile(user_file):
-                self.logger.critical("{} not found!".format(user_file))
-                self.logger.critical("Exiting.")
-                sys.exit()
-            try:
-                catalog = pd.read_csv(user_file, comment="#")
-                catalog.dropna(how="all", inplace=True)
-                self.logger.debug(catalog)
-                catalog.columns = map(str.lower, catalog.columns)
-                self.logger.debug(catalog.columns)
-                no_ra_col = "ra" not in catalog.columns
-                no_dec_col = "dec" not in catalog.columns
-                if no_ra_col or no_dec_col:
-                    self.logger.critical(
-                        "Cannot find one of 'ra' or 'dec' in input file.")
-                    self.logger.critical("Please check column headers!")
-                    sys.exit()
-                if "name" not in catalog.columns:
-                    catalog["name"] = [
-                        "{}_{}".format(
-                            i, j) for i, j in zip(
-                            catalog['ra'], catalog['dec'])]
-            except Exception as e:
-                self.logger.critical(
-                    "Pandas reading of {} failed!".format(self.args.coords))
-                self.logger.critical("Check format!")
-                sys.exit()
+        image_file = group.iloc[0]['image']
+
+        image = Image(
+            group.iloc[0].field,
+            group.iloc[0].epoch,
+            self.settings['stokes'],
+            self.base_folder,
+            sbid=group.iloc[0].sbid,
+            tiles=self.settings['tiles']
+        )
+
+        cutout_data = group.apply(
+            self._get_cutout,
+            args=(image, imsize),
+            axis=1,
+            result_type='expand'
+        ).rename(columns={
+            0: "data",
+            1: "wcs",
+            2: "header",
+            3: "selavy_overlay",
+            4: "beam"
+        })
+
+        cutout_data['name'] = group['name'].values
+        cutout_data['dateobs'] = group['dateobs'].values
+
+        del image
+
+        return cutout_data
+
+    def _get_cutout(self, row, image, size=Angle(5. * u.arcmin)):
+        '''
+        Create cutout centered on a source location
+
+        :param row: Row of query catalogue corresponding to the source of \
+        interest
+        :type row: `pandas.core.series.Series`
+        :param image: Image to create cutout from
+        :type image: `vasttools.survey.Image`
+        :param size: Size of the cutout, defaults to Angle(5.*u.arcmin)
+        :type size: `astropy.coordinates.Angle`, optional
+
+        :returns: Tuple containing cutout data, WCS, image header, \
+        associated selavy components and beam information
+        :rtype: tuple
+        '''
+
+        cutout = Cutout2D(
+            image.data,
+            position=row.skycoord,
+            size=size,
+            wcs=image.wcs
+        )
+
+        selavy_components = pd.read_fwf(row.selavy, skiprows=[1, ], usecols=[
+            'island_id',
+            'ra_deg_cont',
+            'dec_deg_cont',
+            'maj_axis',
+            'min_axis',
+            'pos_ang'
+        ])
+
+        selavy_coords = SkyCoord(
+            selavy_components.ra_deg_cont.values,
+            selavy_components.dec_deg_cont.values,
+            unit=(u.deg, u.deg)
+        )
+
+        selavy_components = filter_selavy_components(
+            selavy_components,
+            selavy_coords,
+            size,
+            row.skycoord
+        )
+
+        header = image.header.copy()
+        header.update(cutout.wcs.to_header())
+
+        beam = image.beam
+
+        del selavy_coords
+
+        return (
+            cutout.data, cutout.wcs, header, selavy_components, beam
+        )
+
+    def find_sources(self):
+        '''
+        Run source search. Results are stored in attributes.
+
+        Steps:
+        1. Run find_fields if not already run.
+        2. Add the file paths to each measurement point.
+        3. Obtain forced fits if requested.
+        4. Run selavy matching and upper limit fetching.
+        5. Package up results into vasttools.source.Source objects.
+        '''
+
+        if self.fields_found is False:
+            self.find_fields()
+
+        self.logger.info("Finding sources in PILOT data...")
+
+        self.sources_df = self.fields_df.sort_values(
+            by=['name', 'dateobs']
+        ).reset_index(drop=True)
+
+        self.sources_df[
+            ['selavy', 'image', 'rms']
+        ] = self.sources_df[['epoch', 'field', 'sbid']].apply(
+            self._add_files,
+            axis=1,
+            result_type='expand'
+        )
+
+        if self.settings['forced_fits']:
+            self.logger.info("Obtaining forced fits...")
+            meta = {
+                'f_island_id': 'U',
+                'f_component_id': 'U',
+                'f_ra_deg_cont': 'f',
+                'f_dec_deg_cont': 'f',
+                'f_flux_peak': 'f',
+                'f_flux_peak_err': 'f',
+                'f_flux_int': 'f',
+                'f_flux_int_err': 'f',
+                'f_chi_squared_fit': 'f',
+                'f_rms_image': 'f',
+                'f_maj_axis': 'f',
+                'f_min_axis': 'f',
+                'f_pos_ang': 'f',
+            }
+
+            f_results = (
+                dd.from_pandas(self.sources_df, self.ncpu)
+                .groupby('image')
+                .apply(
+                    self._get_forced_fits,
+                    meta=meta,
+                ).compute(num_workers=self.ncpu, scheduler='processes')
+            )
+
+            f_results.index = f_results.index.droplevel()
+
+            self.logger.info("Done.")
+
+        meta = {
+            '#': 'f',
+            'island_id': 'U',
+            'component_id': 'U',
+            'component_name': 'U',
+            'ra_hms_cont': 'U',
+            'dec_dms_cont': 'U',
+            'ra_deg_cont': 'f',
+            'dec_deg_cont': 'f',
+            'ra_err': 'f',
+            'dec_err': 'f',
+            'freq': 'f',
+            'flux_peak': 'f',
+            'flux_peak_err': 'f',
+            'flux_int': 'f',
+            'flux_int_err': 'f',
+            'maj_axis': 'f',
+            'min_axis': 'f',
+            'pos_ang': 'f',
+            'maj_axis_err': 'f',
+            'min_axis_err': 'f',
+            'pos_ang_err': 'f',
+            'maj_axis_deconv': 'f',
+            'min_axis_deconv': 'f',
+            'pos_ang_deconv': 'f',
+            'maj_axis_deconv_err': 'f',
+            'min_axis_deconv_err': 'f',
+            'pos_ang_deconv_err': 'f',
+            'chi_squared_fit': 'f',
+            'rms_fit_gauss': 'f',
+            'spectral_index': 'f',
+            'spectral_curvature': 'f',
+            'spectral_index_err': 'f',
+            'spectral_curvature_err': 'f',
+            'rms_image': 'f',
+            'has_siblings': 'f',
+            'fit_is_estimate': 'f',
+            'spectral_index_from_TT': 'f',
+            'flag_c4': 'f',
+            'comment': 'f',
+            'detection': '?',
+        }
+
+        results = (
+            dd.from_pandas(self.sources_df, self.ncpu)
+            .groupby('selavy')
+            .apply(
+                self._get_components,
+                meta=meta,
+            ).compute(num_workers=self.ncpu, scheduler='processes')
+        )
+
+        results.index = results.index.droplevel()
+
+        if self.settings['forced_fits']:
+            results = results.merge(
+                f_results, left_index=True, right_index=True
+            )
+
+            del f_results
+
+        if self.settings['search_around']:
+            how = 'inner'
         else:
-            catalog_dict = {'ra': [], 'dec': []}
-            coords = self.args.coords.split(",")
-            for i in coords:
-                ra_str, dec_str = i.split(" ")
-                catalog_dict['ra'].append(ra_str)
-                catalog_dict['dec'].append(dec_str)
+            how = 'left'
 
-            if self.args.source_names != "":
-                source_names = self.args.source_names.split(",")
-                if len(source_names) != len(catalog_dict['ra']):
-                    self.logger.critical(
-                        ("All sources must be named "
-                         "when using '--source-names'."))
-                    self.logger.critical("Please check inputs.")
-                    sys.exit()
+        self.crossmatch_results = self.sources_df.merge(
+            results, how=how, left_index=True, right_index=True
+        )
+
+        meta = {'name': 'O'}
+
+        self.num_sources_detected = (
+            self.crossmatch_results.groupby('name').agg({
+                'detection': any
+            }).sum()
+        )
+
+        if self.settings['search_around']:
+            self.results = self.crossmatch_results
+        else:
+            self.results = (
+                dd.from_pandas(self.crossmatch_results, self.ncpu)
+                .groupby('name')
+                .apply(
+                    self._init_sources,
+                    meta=meta,
+                ).compute(num_workers=self.ncpu, scheduler='processes')
+            )
+            self.results = self.results.dropna()
+
+        self.logger.info("Done.")
+
+    def save_search_around_results(self, sort_output=False):
+        '''
+        Save results from cone search
+
+        :param sort_output: Whether to sort the output, defaults to `False`
+        :type sort_output: bool, optional
+        '''
+
+        meta = {}
+        # also have the sort output setting as a function
+        # input in case of interactive use.
+        if self.settings['sort_output']:
+            sort_output = True
+        result = (
+            dd.from_pandas(self.results, self.ncpu)
+            .groupby('name')
+            .apply(
+                self._write_search_around_results,
+                sort_output=sort_output,
+                meta=meta,
+            ).compute(num_workers=self.ncpu, scheduler='processes')
+        )
+
+    def _write_search_around_results(self, group, sort_output):
+        '''
+        Write cone search results to file
+
+        :param group: The group from the pandas groupby function,
+            which in this case is grouped by image.
+        :type group: pandas.core.series.Dataframe`
+        :param sort_output: Whether to sort the output
+        :type sort_output: bool
+        '''
+        source_name = group.iloc[0]['name'].replace(
+            " ", "_"
+        ).replace("/", "_")
+
+        matches_df = group.drop(
+            columns=[
+                'fields',
+                'stokes',
+                'skycoord',
+                'selavy',
+                'image',
+                'rms',
+                '#'
+            ]
+        ).sort_values(by=['dateobs', 'component_id'])
+
+        outname = "{}_matches_around.csv".format(
+            source_name
+        )
+
+        if sort_output:
+            base = os.path.join(
+                self.settings['output_dir'],
+                source_name
+            )
+        else:
+            base = self.settings['output_dir'],
+
+        outname = os.path.join(
+            base,
+            outname
+        )
+
+        matches_df.to_csv(outname, index=False)
+
+    def _check_for_duplicate_epochs(self, epochs):
+        '''
+        Checks whether a source has been detected in an
+        epoch twice, which usually affects planets. If
+        a duplicate is detected it adds `-N` to the epoch
+        where N is the ith occurance of the epoch. E.g. 0,0
+        is converted to 0-1, 0-2.
+
+        :param epochs: The epochs of the source.
+        :type epochs: `pandas.core.series.Series`
+
+        :returns: Corrected epochs.
+        :rtype: `pandas.core.series.Series`
+        '''
+
+        dup_mask = epochs.duplicated(keep=False)
+        if dup_mask.any():
+            epochs.loc[dup_mask] = (
+                epochs.loc[dup_mask]
+                + "-"
+                + (epochs[dup_mask].groupby(
+                    epochs[dup_mask]
+                ).cumcount() + 1).astype(str)
+            )
+
+        return epochs
+
+    def _init_sources(self, group):
+        '''
+        Initialises the vasttools.source.Source objects
+        which are returned by find_sources.
+
+        :param group: The grouped measurements to initialise
+            a source object.
+        :type group: `pandas.core.frame.DataFrame`
+
+        :returns: Source of interest
+        :rtype: vasttools.source.Source
+        '''
+
+        group = group.sort_values(by='dateobs')
+
+        m = group.iloc[0]
+
+        if self.settings['matches_only']:
+            if group['detection'].sum() == 0:
+                return
+        if m['planet']:
+            source_coord = group.skycoord
+            source_primary_field = group.primary_field
+            group['epoch'] = self._check_for_duplicate_epochs(
+                group['epoch']
+            )
+        else:
+            source_coord = m.skycoord
+            source_primary_field = m.primary_field
+        source_name = m['name']
+        source_epochs = group['epoch'].to_list()
+        source_fields = group['field'].to_list()
+        source_stokes = self.settings['stokes']
+        source_base_folder = self.base_folder
+        source_crossmatch_radius = self.settings['crossmatch_radius']
+        source_outdir = self.settings['output_dir']
+        if self.settings['sort_output']:
+            source_outdir = os.path.join(
+                source_outdir,
+                source_name.replace(" ", "_").replace("/", "_")
+            )
+        if self.settings['tiles']:
+            source_image_type = "TILES"
+        else:
+            source_image_type = "COMBINED"
+        source_islands = self.settings['islands']
+
+        source_df = group.drop(
+            columns=[
+                '#'
+            ]
+        )
+
+        source_df = source_df.sort_values('dateobs').reset_index(drop=True)
+
+        thesource = Source(
+            source_coord,
+            source_name,
+            source_epochs,
+            source_fields,
+            source_stokes,
+            source_primary_field,
+            source_crossmatch_radius,
+            source_df,
+            source_base_folder,
+            source_image_type,
+            islands=source_islands,
+            forced_fits=self.settings['forced_fits'],
+            outdir=source_outdir,
+        )
+
+        return thesource
+
+    def _get_forced_fits(self, group):
+        '''
+        Perform the forced fits on an image, on the coordinates
+        supplied by the group.
+
+        :param group: A dataframe of sources/positions which have been
+            supplied by grouping the queried sources by image.
+        :type group: `pandas.core.frame.DataFrame`
+
+        :returns: Dataframe containing the forced fit measurements for
+            each source.
+        :rtype: `pandas.core.frame.DataFrame`
+        '''
+
+        image = group.name
+        if image is None:
+            return
+
+        group = group.sort_values(by='dateobs')
+
+        m = group.iloc[0]
+        image_name = image.split("/")[-1]
+        rms = m['rms']
+        bkg = rms.replace('rms', 'bkg')
+
+        field = m['field']
+        epoch = m['epoch']
+        stokes = m['stokes']
+
+        img_beam = Image(
+            field,
+            epoch,
+            stokes,
+            self.base_folder
+        ).beam
+
+        major = img_beam.major.to(u.arcsec).value
+        minor = img_beam.minor.to(u.arcsec).value
+        pa = img_beam.pa.to(u.deg).value
+
+        to_fit = SkyCoord(
+            group.ra, group.dec, unit=(u.deg, u.deg)
+        )
+
+        # make the Forced Photometry object
+        FP = ForcedPhot(image, bkg, rms)
+
+        # run the forced photometry
+        (
+            flux_islands, flux_err_islands,
+            chisq_islands, DOF_islands
+        ) = FP.measure(
+            to_fit,
+            [major for i in range(to_fit.shape[0])] * u.arcsec,
+            [minor for i in range(to_fit.shape[0])] * u.arcsec,
+            [pa for i in range(to_fit.shape[0])] * u.deg,
+            cluster_threshold=3
+        )
+
+        flux_islands *= 1.e3
+        flux_err_islands *= 1.e3
+
+        source_names = [
+            "{}_{:04d}".format(
+                image_name, i
+            ) for i in range(len(flux_islands))
+        ]
+
+        data = {
+            'f_island_id': source_names,
+            'f_component_id': source_names,
+            'f_ra_deg_cont': group.ra,
+            'f_dec_deg_cont': group.dec,
+            'f_flux_peak': flux_islands,
+            'f_flux_peak_err': flux_err_islands,
+            'f_flux_int': flux_islands,
+            'f_flux_int_err': flux_err_islands,
+            'f_chi_squared_fit': chisq_islands,
+            'f_rms_image': flux_err_islands,
+        }
+
+        df = pd.DataFrame(data)
+
+        df['f_maj_axis'] = major
+        df['f_min_axis'] = minor
+        df['f_pos_ang'] = pa
+
+        df.index = group.index.values
+
+        return df
+
+    def _get_components(self, group):
+        '''
+        Obtains the matches from the selavy catalogue for each coordinate
+        in the group. The group is the queried sources grouped by image
+        (the result from find_fields). If no component is found then the
+        rms is measured at the source location.
+
+        :param group: The grouped coordinates to search in the image.
+        :type group: `pandas.core.frame.DataFrame`
+
+        :returns: The selavy matched component and/or upper limits for the
+            queried coordinates.
+        :rtype: `pandas.core.frame.DataFrame`
+        '''
+        selavy_file = str(group.name)
+        if selavy_file is None:
+            return
+
+        master = pd.DataFrame()
+
+        selavy_df = pd.read_fwf(
+            selavy_file, skiprows=[1, ]
+        )
+
+        selavy_coords = SkyCoord(
+            selavy_df.ra_deg_cont,
+            selavy_df.dec_deg_cont,
+            unit=(u.deg, u.deg)
+        )
+        group_coords = SkyCoord(
+            group.ra,
+            group.dec,
+            unit=(u.deg, u.deg)
+        )
+
+        if self.settings['search_around']:
+            idxselavy, idxc, d2d, _ = group_coords.search_around_sky(
+                selavy_coords, self.settings['crossmatch_radius']
+            )
+            if idxc.shape[0] == 0:
+                return
+            copy = selavy_df.iloc[idxselavy].reset_index(drop=True)
+            copy['detection'] = True
+            copy.index = group.iloc[idxc].index.values
+            master = master.append(copy, sort=False)
+        else:
+            idx, d2d, _ = group_coords.match_to_catalog_sky(selavy_coords)
+            mask = d2d < self.settings['crossmatch_radius']
+            idx_matches = idx[mask]
+
+            copy = selavy_df.iloc[idx_matches].reset_index(drop=True)
+            copy['detection'] = True
+            copy.index = group[mask].index.values
+
+            master = master.append(copy, sort=False)
+
+            missing = group_coords[~mask]
+            if missing.shape[0] > 0:
+                if not self.settings['no_rms']:
+                    image = Image(
+                        group.iloc[0].field,
+                        group.iloc[0].epoch,
+                        self.settings['stokes'],
+                        self.base_folder,
+                        sbid=group.iloc[0].sbid,
+                        tiles=self.settings['tiles']
+                    )
+                    rms_values = image.measure_coord_pixel_values(
+                        missing, rms=True
+                    )
+                    rms_df = pd.DataFrame(rms_values, columns=['rms_image'])
+
+                    # to mJy
+                    rms_df['rms_image'] = rms_df['rms_image'] * 1.e3
+                else:
+                    rms_df = pd.DataFrame(
+                        [-99 for i in range(missing.shape[0])],
+                        columns=['rms_image']
+                    )
+
+                rms_df['detection'] = False
+
+                rms_df.index = group[~mask].index.values
+
+                master = master.append(rms_df, sort=False)
+
+        return master
+
+    def _add_files(self, row):
+        '''
+        Adds the file paths for the image, selavy catalogues and
+        rms images for each source to be queried.
+
+        :param row: The input row of the dataframe (this function
+            is called with a .apply())
+        :type row:  `pandas.core.series.Series`
+
+        :returns: The paths of the image, selavy catalogue and rms image.
+        :rtype: tuple
+        '''
+
+        epoch_string = "EPOCH{}".format(
+            RELEASED_EPOCHS[row.epoch]
+        )
+
+        if self.settings['islands']:
+            cat_type = 'islands'
+        else:
+            cat_type = 'components'
+
+        if self.settings['tiles']:
+
+            dir_name = "TILES"
+
+            selavy_file_fmt = (
+                "selavy-image.i.SB{}.cont.{}."
+                "linmos.taylor.0.restored.components.txt".format(
+                    row.sbid, row.field
+                )
+            )
+
+            image_file_fmt = (
+                "image.i.SB{}.cont.{}"
+                ".linmos.taylor.0.restored.fits".format(
+                    row.sbid, row.field
+                )
+            )
+
+        else:
+
+            dir_name = "COMBINED"
+
+            selavy_file_fmt = "{}.EPOCH{}.{}.selavy.{}.txt".format(
+                row.field,
+                RELEASED_EPOCHS[row.epoch],
+                self.settings['stokes'],
+                cat_type
+            )
+
+            image_file_fmt = "{}.EPOCH{}.{}.fits".format(
+                row.field,
+                RELEASED_EPOCHS[row.epoch],
+                self.settings['stokes'],
+            )
+
+            rms_file_fmt = "{}.EPOCH{}.{}_rms.fits".format(
+                row.field,
+                RELEASED_EPOCHS[row.epoch],
+                self.settings['stokes'],
+            )
+
+        selavy_file = os.path.join(
+            self.base_folder,
+            epoch_string,
+            dir_name,
+            "STOKES{}_SELAVY".format(self.settings['stokes']),
+            selavy_file_fmt
+        )
+
+        image_file = os.path.join(
+            self.base_folder,
+            epoch_string,
+            dir_name,
+            "STOKES{}_IMAGES".format(self.settings['stokes']),
+            image_file_fmt
+        )
+
+        if self.settings['tiles']:
+            rms_file = "N/A"
+        else:
+            rms_file = os.path.join(
+                self.base_folder,
+                epoch_string,
+                dir_name,
+                "STOKES{}_RMSMAPS".format(self.settings['stokes']),
+                rms_file_fmt
+            )
+
+        return selavy_file, image_file, rms_file
+
+    def write_find_fields(self, outname=None):
+        '''
+        Write the results of a field search to file
+
+        :param outname: Name of file to write output to, defaults to None
+        :type outname: str, optional
+        '''
+
+        if self.fields_found is False:
+            self.find_fields()
+
+        if outname is None:
+            name = 'find_fields_result.csv'
+        else:
+            name = outname + '.pkl'
+
+        outdir = self.settings['output_dir']
+        if outdir is not None:
+            name = os.path.join(outdir, name)
+
+        self.fields_df[[
+            'name',
+            'ra',
+            'dec',
+            'field',
+            'epoch',
+            'sbid',
+            'dateobs',
+            'primary_field'
+        ]].to_csv(name, index=False)
+
+        self.logger.info('Find fields output saved as {}.'.format(
+            name
+        ))
+
+    def find_fields(self):
+        '''
+        Find the corresponding field for each source.
+
+        Planet fields are also found here if any are selected.
+        '''
+
+        self.logger.info(
+            "Matching queried sources to VAST Pilot fields..."
+        )
+
+        if self.racs:
+            base_epoch = '0'
+            base_fc = 'RACS'
+        else:
+            base_epoch = '1'
+            base_fc = 'VAST'
+
+        fields = Fields(base_epoch)
+        field_centres = FIELD_CENTRES.loc[
+            FIELD_CENTRES['field'].str.contains(base_fc)
+        ].reset_index()
+
+        field_centres_sc = SkyCoord(
+            field_centres["centre-ra"],
+            field_centres["centre-dec"],
+            unit=(u.deg, u.deg)
+        )
+
+        # if RACS is being use we convert all the names to 'VAST'
+        # to match the VAST field names, makes matching easier.
+        if self.racs:
+            field_centres['field'] = [
+                f.replace("RACS", "VAST") for f in field_centres.field
+            ]
+
+        field_centre_names = field_centres.field
+
+        if self.query_df is not None:
+            self.fields_df = self.query_df.copy()
+
+            meta = {
+                0: 'O',
+                1: 'U',
+                2: 'O',
+                3: 'O',
+                4: 'O',
+                5: 'O',
+            }
+
+            self.fields_df[[
+                'fields',
+                'primary_field',
+                'epochs',
+                'field_per_epoch',
+                'sbids',
+                'dates'
+            ]] = (
+                dd.from_pandas(self.fields_df, self.ncpu)
+                .apply(
+                    self._field_matching,
+                    args=(
+                        fields.direction,
+                        fields.fields.FIELD_NAME,
+                        field_centres_sc,
+                        field_centre_names
+                    ),
+                    meta=meta,
+                    axis=1,
+                    result_type='expand'
+                ).compute(num_workers=self.ncpu, scheduler='processes')
+            )
+
+            self.fields_df = self.fields_df.dropna()
+            if self.fields_df.empty:
+                raise Exception(
+                    "No requested sources are within the requested footprint!")
+
+            self.fields_df = self.fields_df.explode(
+                'field_per_epoch'
+            ).reset_index(drop=True)
+
+            self.fields_df[
+                ['epoch', 'field', 'sbid', 'dateobs']
+            ] = self.fields_df.field_per_epoch.apply(pd.Series)
+
+            to_drop = [
+                'field_per_epoch',
+                'epochs',
+                'sbids',
+                'dates'
+            ]
+
+            self.fields_df = self.fields_df.drop(
+                labels=to_drop, axis=1
+            ).sort_values(
+                by=['name', 'dateobs']
+            ).reset_index(drop=True)
+
+            self.fields_df['planet'] = False
+        else:
+            self.fields_df = None
+
+        # Handle Planets
+        if self.planets is not None:
+            planet_fields = self._search_planets()
+
+            if self.fields_df is None:
+                self.fields_df = planet_fields
             else:
-                source_names = [
-                    "{}_{}".format(
-                        i, j) for i, j in zip(
-                        catalog_dict['ra'], catalog_dict['dec'])]
+                self.fields_df = self.fields_df.append(
+                    planet_fields
+                ).reset_index(drop=True)
 
-            catalog_dict['name'] = source_names
+        self.logger.debug(self.fields_df)
 
-            catalog = pd.DataFrame.from_dict(catalog_dict)
-            catalog = catalog[['name', 'ra', 'dec']]
+        if self.query_df is None:
+            prev_num = 0
+        else:
+            prev_num = self.query_df.shape[0]
 
-        catalog['name'] = catalog['name'].astype(str)
+        if self.planets is not None:
+            prev_num += len(self.planets)
+
+        self.num_sources_searched = self.fields_df.name.unique().shape[0]
+
+        if self.racs:
+            self.logger.info(
+                "%i/%i sources in RACS & VAST Pilot footprint.",
+                self.num_sources_searched,
+                prev_num
+            )
+        else:
+            self.logger.info(
+                "%i/%i sources in VAST Pilot footprint.",
+                self.num_sources_searched,
+                prev_num
+            )
+
+        self.fields_df['dateobs'] = pd.to_datetime(
+            self.fields_df['dateobs']
+        )
+
+        self.logger.info("Done.")
+        self.fields_found = True
+
+    def _field_matching(
+        self,
+        row,
+        fields_coords,
+        fields_names,
+        field_centres,
+        field_centre_names
+    ):
+        '''
+        This function does the actual field matching for each queried
+        coordinate, which is a 'row' here in the fuction.
+
+        :param row: The row from the query_df, i.e. the coodinates to match
+            to a field.
+        :type row: pandas.core.series.Series
+        :param fields_coords: SkyCoord object representing the beam
+            centres of the VAST or RACS survey.
+        :type fields_coords: astropy.coordinates.sky_coordinate.SkyCoord
+        :param fields_names: Field names to match with the SkyCoord object.
+        :type fields_names: pandas.core.series.Series
+        :param field_centres: SkyCoord object representing the field centres
+        :type field_centres: astropy.coordinates.sky_coordinate.SkyCoord
+        :param field_centre_names: Field names matching the field
+            centre skycoord.
+        :type field_centre_names: list
+
+        :returns: Field information
+        :rtype: tuple (str, str, list, list, list, list)
+        '''
+
+        seps = row.skycoord.separation(fields_coords)
+        accept = seps.deg < self.settings['max_sep']
+        fields = np.unique(fields_names[accept])
+        if self.racs:
+            vast_fields = np.array(
+                [f.replace("RACS", "VAST") for f in fields]
+            )
+
+        if fields.shape[0] == 0:
+            if self.racs:
+                self.logger.info(
+                    "Source '%s' not in RACS & VAST Pilot footprint.",
+                    row['name']
+                )
+            else:
+                self.logger.info(
+                    "Source '%s' not in VAST Pilot footprint.",
+                    row['name']
+                )
+            return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
+
+        centre_seps = row.skycoord.separation(field_centres)
+        primary_field = field_centre_names.iloc[np.argmin(centre_seps.deg)]
+        epochs = []
+        field_per_epochs = []
+        sbids = []
+        dateobs = []
+
+        for i in self.settings['epochs']:
+
+            if i != '0' and self.racs:
+                the_fields = vast_fields
+            else:
+                the_fields = fields
+
+            available_fields = [
+                f for f in the_fields if f in self._epoch_fields.loc[
+                    i
+                ].index.to_list()
+            ]
+
+            if i == '0':
+                available_fields = [
+                    j.replace("RACS", "VAST") for j in available_fields
+                ]
+
+            if len(available_fields) == 0:
+                continue
+
+            elif primary_field in available_fields:
+                field = primary_field
+
+            elif len(available_fields) == 1:
+                field = available_fields[0]
+
+            else:
+                field_indexes = [
+                    field_centre_names[
+                        field_centre_names == f
+                    ].index[0] for f in available_fields
+                ]
+                min_field_index = np.argmin(
+                    centre_seps[field_indexes].deg
+                )
+
+                field = available_fields[min_field_index]
+
+            # Change VAST back to RACS
+            if i == '0':
+                field = field.replace("VAST", "RACS")
+            epochs.append(i)
+            sbid = self._epoch_fields.loc[i, field]["SBID"]
+            date = self._epoch_fields.loc[i, field]["DATEOBS"]
+            sbids.append(sbid)
+            dateobs.append(date)
+            field_per_epochs.append([i, field, sbid, date])
+
+        return fields, primary_field, epochs, field_per_epochs, sbids, dateobs
+
+    def _get_planets_epoch_df_template(self):
+        '''
+        Generate template df for fields containing planets in all epochs
+
+        :returns: Dataframe containing fields and epoch info
+        :rtype: `pandas.core.frame.DataFrame`
+        '''
+        epochs = self.settings['epochs']
+
+        planet_epoch_fields = self._epoch_fields.loc[epochs].reset_index()
+
+        planet_epoch_fields = planet_epoch_fields.merge(
+            FIELD_CENTRES, left_on='FIELD_NAME',
+            right_on='field', how='left'
+        ).drop('field', axis=1).rename(
+            columns={'EPOCH': 'epoch'}
+        )
+
+        return planet_epoch_fields
+
+    def _search_planets(self):
+        '''
+        Search for planets in all requested epochs
+
+        :returns: Dataframe containing search results
+        :rtype: `pandas.core.frame.DataFrame`
+        '''
+
+        template = self._get_planets_epoch_df_template()
+
+        template['planet'] = [self.planets for i in range(template.shape[0])]
+
+        template = template.explode('planet')
+        template['planet'] = template['planet'].str.capitalize()
+
+        meta = {
+            'epoch': 'U',
+            'FIELD_NAME': 'U',
+            'SBID': 'i',
+            'DATEOBS': 'datetime64[ns]',
+            'centre-ra': 'f',
+            'centre-dec': 'f',
+            'planet': 'U',
+            'ra': 'f',
+            'dec': 'f',
+            'sep': 'f'
+        }
+
+        results = (
+            dd.from_pandas(template, self.ncpu)
+            .groupby('planet')
+            .apply(
+                match_planet_to_field,
+                meta=meta,
+            ).compute(num_workers=self.ncpu, scheduler='processes')
+        )
+
+        results = results.reset_index(drop=True).drop(
+            ['centre-ra', 'centre-dec', 'sep'], axis=1
+        ).rename(columns={
+            'planet': 'name',
+            'FIELD_NAME': 'field',
+            'DATEOBS': 'dateobs',
+            'SBID': 'sbid',
+        }).sort_values(by=['name', 'dateobs'])
+
+        results['stokes'] = self.settings['stokes'].upper()
+        results['primary_field'] = results['field']
+        results['skycoord'] = SkyCoord(
+            results['ra'], results['dec'], unit=(u.deg, u.deg)
+        )
+        results['fields'] = [[i] for i in results['field']]
+        results['planet'] = True
+
+        return results
+
+    def _build_catalog(self):
+        '''
+        Generate source catalogue from requested coordinates, \
+        removing those outside of the VAST pilot fields
+
+        :returns: Catalogue of source positions
+        :rtype: `pandas.core.frame.DataFrame`
+        '''
+        cols = ['ra', 'dec', 'name', 'skycoord', 'stokes']
+
+        if '0' in self.settings['epochs']:
+            mask = self.coords.dec.deg > 42
+
+            if mask.any():
+                self.logger.warning(
+                    "Removing %i sources outside the RACS area", sum(mask)
+                )
+                self.coords = self.coords[~mask]
+                self.source_names = self.source_names[~mask]
+        else:
+            mocs = VASTMOCS()
+            vast_pilot_moc = mocs.load_pilot_epoch_moc('1')
+            mask = vast_pilot_moc.contains(
+                self.coords.ra, self.coords.dec, keep_inside=False
+            )
+            if mask.any():
+                self.logger.warning(
+                    "Removing %i sources outside"
+                    " the VAST Pilot Footprint", sum(mask)
+                )
+                self.coords = self.coords[~mask]
+                self.source_names = self.source_names[~mask]
+
+        if self.coords.shape == ():
+            catalog = pd.DataFrame(
+                [[
+                    self.coords.ra.deg,
+                    self.coords.dec.deg,
+                    self.source_names[0],
+                    self.coords,
+                    self.settings['stokes']
+                ]], columns=cols
+            )
+        else:
+            catalog = pd.DataFrame(
+                self.source_names,
+                columns=['name']
+            )
+            catalog['ra'] = self.coords.ra.deg
+            catalog['dec'] = self.coords.dec.deg
+            catalog['skycoord'] = self.coords
+            catalog['stokes'] = self.settings['stokes']
 
         return catalog
 
-    def build_SkyCoord(self):
-        '''
-        Create a SkyCoord array for each target source
-
-        :returns: Target source SkyCoord
-        :rtype: `astropy.coordinates.sky_coordinate.SkyCoord`
-        '''
-
-        ra_str = self.catalog['ra'].iloc[0]
-        if self.catalog['ra'].dtype == np.float64:
-            hms = False
-            deg = True
-
-        elif ":" in ra_str or " " in ra_str:
-            hms = True
-            deg = False
-        else:
-            deg = True
-            hms = False
-
-        if hms:
-            src_coords = SkyCoord(
-                self.catalog['ra'],
-                self.catalog['dec'],
-                unit=(
-                    u.hourangle,
-                    u.deg))
-        else:
-            src_coords = SkyCoord(
-                self.catalog['ra'],
-                self.catalog['dec'],
-                unit=(
-                    u.deg,
-                    u.deg))
-
-        return src_coords
-
-    def get_epochs(self):
+    def _get_epochs(self, req_epochs):
         '''
         Parse the list of epochs to query.
 
-        :returns: Epochs to query, as a list of string
+        :param req_epochs: Requested epochs to query
+        :type req_epochs: str
+
+        :returns: Epochs to query, as a list of strings
         :rtype: list
         '''
 
         available_epochs = sorted(RELEASED_EPOCHS, key=RELEASED_EPOCHS.get)
-        self.logger.debug(available_epochs)
+        self.logger.debug("Available epochs: " + str(available_epochs))
 
-        if HOST == HOST_ADA or self.args.find_fields:
-            available_epochs.insert(0, "0")
+        if req_epochs == 'all':
+            epochs = available_epochs
+        elif req_epochs == 'all-vast':
+            epochs = available_epochs
+            epochs.remove('0')
+        else:
+            epochs = []
+            for epoch in req_epochs.split(','):
+                if epoch in available_epochs:
+                    epochs.append(epoch)
+                else:
+                    if self.logger is None:
+                        self.logger.info(
+                            "Epoch {} is not available. Ignoring.".format(
+                                epoch
+                            )
+                        )
+                    else:
+                        warnings.warn(
+                            "Removing Epoch {} as it"
+                            " is not a valid epoch.".format(epoch),
+                            stacklevel=2
+                        )
 
-        epochs = []
-
-        epoch_arg = self.args.vast_pilot
-        if epoch_arg == 'all':
-            return available_epochs
-
-        for epoch in epoch_arg.split(','):
-            if epoch in available_epochs:
-                epochs.append(epoch)
+        # RACS check
+        if '0' in epochs:
+            if not check_racs_exists(self.base_folder):
+                self.logger.warning('RACS EPOCH00 directory not found!')
+                self.logger.warning('Removing RACS from requested epochs.')
+                epochs.remove('0')
+                self.racs = False
             else:
-                self.logger.info(
-                    "Epoch {} is not available. Ignoring.".format(epoch))
+                self.logger.warning('RACS data selected!')
+                self.logger.warning(
+                    'Remember RACS data supplied by VAST is not final '
+                    'and results may vary.'
+                )
+                self.racs = True
+        else:
+            self.racs = False
 
         if len(epochs) == 0:
             self.logger.critical("No requested epochs are available")
@@ -223,297 +1992,29 @@ class Query:
 
         return epochs
 
-    def set_output_directory(self):
-        '''
-        Build the output directory and store the path
-        '''
-
-        output_dir = self.args.out_folder
-        if os.path.isdir(output_dir):
-            if self.args.clobber:
-                self.logger.warning(("Directory {} already exists "
-                                     "but clobber selected. "
-                                     "Removing current directory."
-                                     ).format(output_dir))
-                shutil.rmtree(output_dir)
-            else:
-                self.logger.critical(
-                    ("Requested output directory '{}' already exists! "
-                     "Will not overwrite.").format(output_dir))
-                self.logger.critical("Exiting.")
-                sys.exit()
-
-        self.logger.info("Creating directory '{}'.".format(output_dir))
-        os.mkdir(output_dir)
-
-        self.output_dir = output_dir
-
-    def set_stokes_param(self):
+    def _get_stokes(self, req_stokes):
         '''
         Set the stokes Parameter
-        '''
 
-        self.stokes_param = self.args.stokes
+        :param req_stokes: Requested stokes parameter to check
+        :type req_stokes: str
 
-    def set_outfile_prefix(self):
-        '''
-        Return general parameters of the requested survey
-
-        :returns: prefix for output file
+        :returns: Valid stokes parameter
         :rtype: str
         '''
 
-        if self.stokes_param != "I" and self.args.use_tiles:
-            self.logger.critical(
-                ("Only Stokes I tiles can be queried right now."))
-            self.logger.critical(
-                "Run again but remove the option '--use-tiles'.")
-            sys.exit()
+        valid = ["I", "Q", "U", "V"]
 
-        if self.args.use_tiles:
-            outfile_prefix = "tile"
+        if req_stokes.upper() not in valid:
+            raise ValueError(
+                "Stokes {} is not valid!".format(req_stokes.upper())
+            )
+        elif self.racs and req_stokes.upper() == 'V':
+            raise ValueError(
+                "Stokes V is not supported with RACS!"
+            )
         else:
-            outfile_prefix = "combined"
-            if self.stokes_param != "I":
-                outfile_prefix += "_stokes{}".format(
-                    self.stokes_param.lower())
-
-        self.outfile_prefix = outfile_prefix
-
-    def run_query(self):
-        '''
-        Run the requested query
-        '''
-
-        for epoch in self.epochs:
-            self.run_epoch(epoch)
-        self.logger.info(
-            "-----------------------------------------------------")
-        self.logger.info("Query executed successfully!")
-        self.logger.info("All results in {}.".format(self.output_dir))
-
-    def run_epoch(self, epoch):
-        '''
-        Query a specific epoch
-
-        :param epoch: The epoch to query
-        :type epoch: str
-        '''
-
-        EPOCH_INFO = EpochInfo(self.args, epoch, self.stokes_param)
-        survey = EPOCH_INFO.survey
-        epoch_str = EPOCH_INFO.epoch_str
-        self.logger.info("Querying {}".format(epoch_str))
-        crossmatch_only = EPOCH_INFO.CROSSMATCH_ONLY
-
-        fields = Fields(epoch)
-        src_fields, coords_mask = fields.find(
-            self.src_coords, self.max_sep, self.catalog)
-
-        src_coords_field = self.src_coords[coords_mask]
-
-        uniq_fields = src_fields['field_name'].unique().tolist()
-
-        if len(uniq_fields) == 0:
-            self.logger.error(
-                "Source(s) not in {}!".format(EPOCH_INFO.epoch_str))
-            return
-
-        if EPOCH_INFO.FIND_FIELDS:
-            if survey == "racs":
-                fields_cat_file = "{}_racs_fields.csv".format(self.output_dir)
-            else:
-                fields_cat_file = "{}_VAST_{}_fields.csv".format(
-                    self.output_dir, epoch)
-
-            fields_cat_file = os.path.join(self.output_dir, fields_cat_file)
-            fields.write_fields_cat(fields_cat_file)
-
-            return
-
-        crossmatch_output_check = False
-
-        self.logger.info(
-            "Performing crossmatching for sources, please wait...")
-
-        for uf in uniq_fields:
-            self.logger.info(
-                "-----------------------------------------------------")
-
-            mask = src_fields["field_name"] == uf
-            srcs = src_fields[mask]
-            indexes = srcs.index
-            srcs = srcs.reset_index()
-            field_src_coords = src_coords_field[mask]
-
-            if survey == "vast_pilot":
-                fieldname = "{}.EPOCH{}.{}".format(
-                    uf, RELEASED_EPOCHS[epoch], self.stokes_param)
-            else:
-                fieldname = uf
-
-            if crossmatch_only:
-                self.logger.warning(
-                    "Crossmatch only mode selected."
-                    " Ignore any possible image errors below."
-                )
-            image = Image(srcs["sbid"].iloc[0],
-                          fieldname,
-                          EPOCH_INFO.IMAGE_FOLDER,
-                          EPOCH_INFO.RMS_FOLDER,
-                          epoch,
-                          tiles=self.args.use_tiles)
-
-            if not self.args.no_background_rms:
-                image.get_rms_img()
-
-            for i, row in srcs.iterrows():
-                SBID = row['sbid']
-
-                number = row["original_index"] + 1
-
-                label = row["name"]
-
-                self.logger.info(
-                    "Searching for crossmatch to source {}".format(label))
-
-                outfile = "{}_{}_{}.fits".format(
-                    label.replace(" ", "_"), fieldname, self.outfile_prefix)
-                outfile = os.path.join(self.output_dir, outfile)
-
-                src_coord = field_src_coords[i]
-
-                source = Source(
-                    fieldname,
-                    src_coord,
-                    SBID,
-                    EPOCH_INFO.SELAVY_FOLDER,
-                    vast_pilot=epoch,
-                    tiles=self.args.use_tiles,
-                    stokes=self.stokes_param,
-                    islands=self.args.islands)
-
-                source.extract_source(
-                    self.crossmatch_radius)
-                if not self.args.no_background_rms and not image.rms_fail:
-                    self.logger.debug(src_coord)
-                    self.logger.debug(image.rmspath)
-                    self.logger.debug(image.imgpath)
-                    source.get_background_rms(image.rms_data, image.rms_wcs)
-                else:
-                    source.selavy_info["SELAVY_rms"] = 0.0
-
-                if self.args.process_matches and not source.has_match:
-                    self.logger.info("Source does not have a selavy match, "
-                                     "not continuing processing")
-                    continue
-                else:
-                    if not crossmatch_only and not image.image_fail:
-                        source.make_postagestamp(
-                            image.data,
-                            image.header,
-                            image.wcs,
-                            self.imsize,
-                            outfile)
-
-                    # not ideal but line below has to be run after those above
-                    crossmatch_overlay = self.args.crossmatch_radius_overlay
-                    if source.selavy_fail is False:
-                        source.filter_selavy_components(self.imsize)
-                        if self.args.ann:
-                            source.write_ann(
-                                outfile,
-                                crossmatch_overlay=crossmatch_overlay)
-                        if self.args.reg:
-                            source.write_reg(
-                                outfile,
-                                crossmatch_overlay=crossmatch_overlay)
-                    else:
-                        self.logger.error(
-                            "Selavy failed! No region or annotation files "
-                            "will be made if requested.")
-
-                    if self.args.create_png:
-                        if not crossmatch_only and not image.image_fail:
-                            if survey == "racs":
-                                png_title = "{} RACS {}".format(
-                                    label,
-                                    uf.split("_")[-1]
-                                )
-                            else:
-                                png_title = "{} VAST Pilot {} Epoch {}".format(
-                                    label,
-                                    uf.split("_")[-1],
-                                    epoch
-                                )
-                            source.make_png(
-                                self.args.png_selavy_overlay,
-                                self.args.png_linear_percentile,
-                                self.args.png_use_zscale,
-                                self.args.png_zscale_contrast,
-                                outfile,
-                                image.beam,
-                                no_islands=self.args.png_no_island_labels,
-                                label=label,
-                                no_colorbar=self.args.png_no_colorbar,
-                                title=png_title,
-                                crossmatch_overlay=crossmatch_overlay,
-                                hide_beam=self.args.png_hide_beam)
-
-                if not crossmatch_output_check:
-                    crossmatch_output = source.selavy_info
-                    crossmatch_output.index = [indexes[i]]
-                    crossmatch_output_check = True
-                else:
-                    temp_crossmatch_output = source.selavy_info
-                    temp_crossmatch_output.index = [indexes[i]]
-                    buffer = io.StringIO()
-                    crossmatch_output.info(buf=buffer)
-                    df_info = buffer.getvalue()
-                    self.logger.debug("Crossmatch df:\n{}".format(df_info))
-                    buffer = io.StringIO()
-                    source.selavy_info.info(buf=buffer)
-                    df_info = buffer.getvalue()
-                    self.logger.debug("Selavy info df:\n{}".format(df_info))
-                    crossmatch_output = crossmatch_output.append(
-                        source.selavy_info, sort=False)
-                self.logger.info(
-                    "-----------------------------------------------------")
-
-        self.logger.info(
-            "-----------------------------------------------------")
-        self.logger.info("Epoch Summary ({})".format(epoch_str))
-        self.logger.info(
-            "-----------------------------------------------------")
-        self.logger.info("Number of sources searched for: {}".format(
-            len(self.catalog.index)))
-        self.logger.info("Number of sources in survey: {}".format(
-            len(src_fields.index)))
-
-        matched = crossmatch_output[~crossmatch_output["island_id"].isna()]
-        num_matched = len(matched.index)
-        self.logger.info((
-            "Number of sources with matches"
-            " < {} arcsec: {}").format(
-            self.crossmatch_radius.arcsec,
-            num_matched))
-
-        if self.args.selavy_simple:
-            crossmatch_output = crossmatch_output.filter(
-                items=["flux_int", "rms_image", "BANE_rms"])
-            crossmatch_output = crossmatch_output.rename(
-                columns={"flux_int": "S_int", "rms_image": "S_err"})
-
-        final = src_fields.join(crossmatch_output)
-
-        output_crossmatch_name = "{}_crossmatch_{}.csv".format(
-            self.output_dir, epoch_str)
-        output_crossmatch_name = os.path.join(
-            self.output_dir, output_crossmatch_name)
-        final.to_csv(output_crossmatch_name, index=False)
-        self.logger.info("Written {}.".format(output_crossmatch_name))
-        self.logger.info(
-            "-----------------------------------------------------")
+            return req_stokes.upper()
 
 
 class EpochInfo:
@@ -522,156 +2023,131 @@ class EpochInfo:
     epoch query including the relevant folders, whether to only find fields,
     the survey and epoch.
 
-    :param args: Arguments namespace
-    :type args: `argparse.Namespace`
-    :param pilot_epoch: Pilot epoch (0 for RACS)
-    :type pilot_epoch: str
-    :param stokes_param: Stokes parameter (I or V)
-    :type stokes_param: str
+    Attributes
+    ----------
+
+    use_tiles : bool
+        Use tiles or combined images
+    pilot_epoch : str
+        Epoch to query
+    stokes_param : str
+        Stokes parameter of interest
+    survey : str
+        Distinguish between RACS and the VAST Pilot
+    epoch_str :str
+        String representation of the requested epoch
+    survey_folder : str
+        Path to folder containing data from the epoch of interest
+    IMAGE_FOLDER : str
+        Path to image data
+    SELAVY_FOLDER : str
+        Path to selavy catalogues
+    RMS_FOLDER :
+        Path to noise maps
+
+    Methods
+    ----------
+
+    None
     '''
 
-    def __init__(self, args, pilot_epoch, stokes_param):
+    def __init__(
+        self, pilot_epoch, base_folder, stokes, tiles
+    ):
+        '''
+        Constructor Method
+
+        :param pilot_epoch: Pilot epoch (0 for RACS)
+        :type pilot_epoch: str
+        :param base_folder: Path to base folder in default directory structure
+        :type base_folder: str
+        :param stokes: Stokes parameter (I, Q, U or V)
+        :type stokes: str
+        :param tiles: Use the individual tiles instead of combined mosaics.
+        :type tiles: bool
+        '''
+
         self.logger = logging.getLogger('vasttools.find_sources.EpochInfo')
 
-        FIND_FIELDS = args.find_fields
-        CROSSMATCH_ONLY = args.crossmatch_only
-        if FIND_FIELDS:
-            self.logger.info(
-                "find-fields selected, only outputting field catalogue."
-            )
-        elif CROSSMATCH_ONLY:
-            self.logger.info(
-                "crossmatch only selected, only outputting crossmatches."
-            )
+        BASE_FOLDER = base_folder
 
-        BASE_FOLDER = args.base_folder
-        IMAGE_FOLDER = args.img_folder
-        SELAVY_FOLDER = args.cat_folder
-        RMS_FOLDER = args.rms_folder
-
-        self.use_tiles = args.use_tiles
+        self.use_tiles = tiles
         self.pilot_epoch = pilot_epoch
-        self.stokes_param = stokes_param
-
-        racsv = False
+        self.stokes_param = stokes
 
         if pilot_epoch == "0":
             survey = "racs"
-            epoch_str = "RACS"
-            if not BASE_FOLDER:
-                survey_folder = "RACS/release/racs_v3/"
-            else:
-                survey_folder = "racs_v3"
-
-            # if stokes_param == "V":
-            #    self.logger.critical(
-            #        "Stokes V is currently unavailable for RACS V3. "
-            #        "Using V2 instead")
-            #    racsv = True
-            if stokes_param != "I":
-                self.logger.critical(
-                    "Stokes {} is currently unavailable for RACS".format(
-                        stokes_param))
-                sys.exit()
-
         else:
             survey = "vast_pilot"
-            epoch_str = "EPOCH{}".format(RELEASED_EPOCHS[pilot_epoch])
-            if not BASE_FOLDER:
-                survey_folder = "PILOT/release/{}".format(epoch_str)
-            else:
-                survey_folder = epoch_str
+        epoch_str = "EPOCH{}".format(RELEASED_EPOCHS[pilot_epoch])
+        survey_folder = os.path.join(
+            base_folder, "{}".format(epoch_str)
+        )
 
         self.survey = survey
         self.epoch_str = epoch_str
         self.survey_folder = survey_folder
-        self.racsv = racsv
 
-        if not BASE_FOLDER:
-            if HOST != HOST_ADA:
-                if not FIND_FIELDS:
-                    self.logger.critical(
-                        "Base folder must be specified if not running on ada")
-                    sys.exit()
-            BASE_FOLDER = "/import/ada1/askap/"
+        if self.use_tiles:
+            image_dir = "TILES"
+            stokes_dir = "STOKES{}_IMAGES".format(self.stokes_param)
+        else:
+            image_dir = "COMBINED"
+            stokes_dir = "STOKES{}_IMAGES".format(self.stokes_param)
 
-        if not IMAGE_FOLDER:
-            if self.use_tiles:
-                image_dir = "FLD_IMAGES/"
-                stokes_dir = "stokesI"
-            else:
-                image_dir = "COMBINED"
-                stokes_dir = "STOKES{}_IMAGES".format(stokes_param)
-
-            IMAGE_FOLDER = os.path.join(
-                BASE_FOLDER,
-                survey_folder,
-                image_dir,
-                stokes_dir)
-
-            if self.racsv:
-                IMAGE_FOLDER = ("/import/ada1/askap/RACS/aug2019_reprocessing/"
-                                "COMBINED_MOSAICS/V_mosaic_1.0")
+        IMAGE_FOLDER = os.path.join(
+            BASE_FOLDER,
+            survey_folder,
+            image_dir,
+            stokes_dir)
 
         if not os.path.isdir(IMAGE_FOLDER):
-            if not CROSSMATCH_ONLY:
-                self.logger.critical(
-                    ("{} does not exist. "
-                     "Switching to crossmatch only.").format(IMAGE_FOLDER))
-                CROSSMATCH_ONLY = True
+            # if not CROSSMATCH_ONLY:
+            self.logger.warning(
+                "{} does not exist. "
+                "Can only do crossmatching.".format(IMAGE_FOLDER)
+            )
 
-        if not RMS_FOLDER:
-            if self.use_tiles:
-                self.logger.warning(
-                    "Background noise estimates are not supported for tiles.")
-                self.logger.warning(
-                    "Estimating background from mosaics instead.")
-            image_dir = "COMBINED"
-            rms_dir = "STOKES{}_RMSMAPS".format(stokes_param)
+        if self.use_tiles:
+            self.logger.warning(
+                "Background noise estimates are not supported for tiles.")
+            self.logger.warning(
+                "Estimating background from mosaics instead.")
+        image_dir = "COMBINED"
+        rms_dir = "STOKES{}_RMSMAPS".format(self.stokes_param)
 
-            RMS_FOLDER = os.path.join(
-                BASE_FOLDER,
-                survey_folder,
-                image_dir,
-                rms_dir)
-
-            if racsv:
-                RMS_FOLDER = ("/import/ada1/askap/RACS/aug2019_reprocessing/"
-                              "COMBINED_MOSAICS/V_mosaic_1.0_BANE")
+        RMS_FOLDER = os.path.join(
+            BASE_FOLDER,
+            survey_folder,
+            image_dir,
+            rms_dir)
 
         if not os.path.isdir(RMS_FOLDER):
-            if not CROSSMATCH_ONLY:
-                self.logger.critical(
-                    ("{} does not exist. "
-                     "Switching to crossmatch only.").format(RMS_FOLDER))
-                CROSSMATCH_ONLY = True
+            # if not CROSSMATCH_ONLY:
+            self.logger.critical((
+                "{} does not exist. "
+                "Switching to crossmatch only."
+            ).format(RMS_FOLDER))
 
-        if not SELAVY_FOLDER:
-            image_dir = "COMBINED"
-            selavy_dir = "STOKES{}_SELAVY".format(stokes_param)
+        image_dir = "COMBINED"
+        selavy_dir = "STOKES{}_SELAVY".format(self.stokes_param)
 
-            SELAVY_FOLDER = os.path.join(
-                BASE_FOLDER,
-                survey_folder,
-                image_dir,
-                selavy_dir)
-            if self.use_tiles:
-                SELAVY_FOLDER = ("/import/ada1/askap/RACS/aug2019_"
-                                 "reprocessing/SELAVY_OUTPUT/stokesI_cat/")
-
-            if racsv:
-                SELAVY_FOLDER = ("/import/ada1/askap/RACS/aug2019_"
-                                 "reprocessing/COMBINED_MOSAICS/racs_catv")
+        SELAVY_FOLDER = os.path.join(
+            BASE_FOLDER,
+            survey_folder,
+            image_dir,
+            selavy_dir
+        )
 
         if not os.path.isdir(SELAVY_FOLDER):
-            if not FIND_FIELDS and not CROSSMATCH_ONLY:
-                self.logger.critical(
-                    ("{} does not exist. "
-                     "Only finding fields").format(SELAVY_FOLDER))
-                FIND_FIELDS = True
+            # if not FIND_FIELDS and not CROSSMATCH_ONLY:
+            self.logger.critical((
+                "{} does not exist. "
+                "Only finding fields"
+            ).format(SELAVY_FOLDER))
 
-        self.FIND_FIELDS = FIND_FIELDS
-        self.CROSSMATCH_ONLY = CROSSMATCH_ONLY
+        # self.FIND_FIELDS = FIND_FIELDS
+        # self.CROSSMATCH_ONLY = CROSSMATCH_ONLY
         self.IMAGE_FOLDER = IMAGE_FOLDER
         self.SELAVY_FOLDER = SELAVY_FOLDER
         self.RMS_FOLDER = RMS_FOLDER
@@ -683,12 +2159,34 @@ class FieldQuery:
     fields, returning basic information such as observation dates and psf
     information.
 
-    :param args: Arguments namespace
-    :type args: `argparse.Namespace`
+    Attributes
+    ----------
+
+    field : str
+        Name of requested field
+    valid : bool
+        Confirm the requested field exists
+    pilot_info : `pandas.core.frame.DataFrame`
+        Dataframe describing the pilot survey
+    field_info : `pandas.core.frame.DataFrame`
+        Dataframe describing properties of the field
+    epochs : `pandas.core.frame.DataFrame`
+        Dataframe containing epochs this field was observed in
+
+
+    Methods
+    ----------
+
+    run_query(psf=False, largest_psf=False, common_psf=False, all_psf=False, \
+        save=False, _pilot_info=None)
+        Run the query to find the fields and associated information
     '''
 
     def __init__(self, field):
         '''Constructor method
+
+        :param field: Name of requested field
+        :type field: str
         '''
         self.logger = logging.getLogger('vasttools.query.FieldQuery')
 
@@ -699,12 +2197,11 @@ class FieldQuery:
         '''
         Check that the field is a valid pilot survey field.
         Epoch 1 is checked against as it is a complete observation.
-
         :returns: Bool representing if field is valid.
         :rtype: bool.
         '''
 
-        epoch_01 = pd.read_csv(FIELD_FILES["1"])
+        epoch_01 = pd.read_csv(FIELD_FILES["1"], comment='#')
         self.logger.debug("Field name: {}".format(self.field))
         result = epoch_01['FIELD_NAME'].str.contains(
             re.escape(self.field)
@@ -726,7 +2223,7 @@ class FieldQuery:
         :rtype: dict.
         '''
         epoch_beams = {}
-        for e in self.epochs:
+        for e in self.settings['epochs']:
             epoch_cut = self.field_info[self.field_info.EPOCH == e]
             epoch_beams[e] = Beams(
                 epoch_cut.BMAJ.values * u.arcsec,
@@ -737,6 +2234,7 @@ class FieldQuery:
 
     def run_query(
             self,
+            psf=False,
             largest_psf=False,
             common_psf=False,
             all_psf=False,
@@ -761,8 +2259,9 @@ class FieldQuery:
         :param _pilot_info: Allows for the pilot info to be provided
             rather than the function building it locally. If not provided
             then the dataframe is built. Defaults to None.
-        :type _pilot_info: pandas.DataFrame, optional
+        :type _pilot_info: `pandas.core.frame.DataFrame`, optional
         '''
+
         if not self.valid:
             self.logger.error("Field doesn't exist.")
             return
@@ -773,10 +2272,14 @@ class FieldQuery:
             self.logger.debug("Building pilot info file.")
             for i, val in enumerate(sorted(RELEASED_EPOCHS)):
                 if i == 0:
-                    self.pilot_info = pd.read_csv(FIELD_FILES[val])
+                    self.pilot_info = pd.read_csv(
+                        FIELD_FILES[val], comment='#'
+                    )
                     self.pilot_info["EPOCH"] = RELEASED_EPOCHS[val]
                 else:
-                    to_append = pd.read_csv(FIELD_FILES[val])
+                    to_append = pd.read_csv(
+                        FIELD_FILES[val], comment='#'
+                    )
                     to_append["EPOCH"] = RELEASED_EPOCHS[val]
                     self.pilot_info = self.pilot_info.append(
                         to_append, sort=False
@@ -806,7 +2309,7 @@ class FieldQuery:
 
         self.epochs = self.field_info.EPOCH.unique()
 
-        if largest_psf or common_psf or all_psf:
+        if psf or largest_psf or common_psf or all_psf:
             self.logger.info("Getting psf information.")
             epoch_beams = self._get_beams()
 
@@ -876,6 +2379,20 @@ class FieldQuery:
             }, inplace=True)
 
             self.field_info.drop_duplicates("EPOCH", inplace=True)
+            if psf:
+                beams_zero = []
+                for i in sorted(epoch_beams):
+                    beams_zero.append(epoch_beams[i][0])
+
+                self.field_info["BMAJ (arcsec)"] = [
+                    b.major.value for b in beams_zero
+                ]
+                self.field_info["BMIN (arcsec)"] = [
+                    b.minor.value for b in beams_zero
+                ]
+                self.field_info["BPA (deg)"] = [
+                    b.pa.value for b in beams_zero
+                ]
             if largest_psf:
                 largest_beams = []
                 for i in sorted(epoch_beams):
