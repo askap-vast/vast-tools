@@ -586,12 +586,10 @@ class PipeRun(object):
         ap = ALLOWED_PLANETS
 
         planets_df = self.images.loc[:, [
-            'id',
             'datetime',
             'duration',
             'centre_ra',
             'centre_dec',
-            'xtr_radius'
         ]].rename(
             columns={
                 'datetime': 'DATEOBS',
