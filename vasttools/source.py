@@ -542,7 +542,7 @@ class Source:
             uplims = False
             sigma_thresh = 1.0
             label = 'Forced'
-            markerfacecolor = 'k'
+            markerfacecolor = 'w'
         else:
             if use_forced_for_limits:
                 value_col = 'f_flux_peak'
@@ -550,7 +550,7 @@ class Source:
                 uplims = False
                 marker = "D"
                 sigma_thresh = 1.0
-                markerfacecolor = 'k'
+                markerfacecolor = 'w'
                 label = "Forced"
             else:
                 value_col = err_value_col = 'rms_image'
@@ -595,7 +595,7 @@ class Source:
 
         if use_forced_for_all:
             marker = "D"
-            markerfacecolor = 'k'
+            markerfacecolor = 'w'
             label = 'Forced'
         else:
             marker = 'o'
