@@ -646,7 +646,7 @@ class Source:
                 ))
 
             elif not outfile.endswith(".png"):
-                outname += ".png"
+                outfile += ".png"
 
             if self.outdir != ".":
                 outfile = os.path.join(
