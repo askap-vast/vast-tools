@@ -370,15 +370,14 @@ if __name__ == '__main__':
             "please check input and try again."
         )
         sys.exit()
-        
+
     if args.lc_use_forced_for_limits or args.lc_use_forced_for_all:
         if not args.forced_fits:
             logger.error(
                 "Forced fits requested for lightcurve, "
                 "please use --forced-fits flag and try again."
             )
-            sys.exit()
-        
+            sys.exit()    
 
     output_ok = check_output_directory(args)
 
