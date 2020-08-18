@@ -112,7 +112,7 @@ class Source:
 
     plot_lightcurve(
         sigma_thresh=5, figsize=(8, 4), min_points=2,
-        min_detections=0, mjd=False, grid=False,
+        min_detections=0, mjd=False, start_date=None, grid=False,
         yaxis_start="auto", peak_flux=True, save=False,
         outfile=None, use_forced_for_limits=False,
         use_forced_for_all=False, hide_legend=False
@@ -417,9 +417,10 @@ class Source:
 
     def plot_lightcurve(self, sigma_thresh=5, figsize=(8, 4),
                         min_points=2, min_detections=0, mjd=False,
-                        grid=False, yaxis_start="auto", peak_flux=True,
-                        save=False, outfile=None, use_forced_for_limits=False,
-                        use_forced_for_all=False, hide_legend=False):
+                        start_date=None, grid=False, yaxis_start="auto",
+                        peak_flux=True, save=False, outfile=None,
+                        use_forced_for_limits=False, use_forced_for_all=False,
+                        hide_legend=False):
         '''
         Plot source lightcurves and save to file
 
@@ -435,6 +436,8 @@ class Source:
         :type min_detections: float, optional
         :param mjd: Plot x-axis in MJD rather than datetime, defaults to False
         :type mjd: bool, optional
+        :param start_date: Plot in days from start date, defaults to None
+        :type start_date: pandas datetime, optional
         :param grid: Turn on matplotlib grid, defaults to False
         :type grid: bool, optional
         :param yaxis_start: Define where the y-axis begins from, either 'auto'
@@ -500,6 +503,8 @@ class Source:
         plot_dates = measurements['dateobs']
         if mjd:
             plot_dates = Time(plot_dates.to_numpy()).mjd
+        elif start_date:
+            plot_dates = (plot_dates-start_date)/pd.Timedelta(1, unit='d')
 
         fig = plt.figure(figsize=figsize)
         ax = fig.add_subplot(111)
@@ -542,7 +547,7 @@ class Source:
             uplims = False
             sigma_thresh = 1.0
             label = 'Forced'
-            markerfacecolor = 'k'
+            markerfacecolor = 'w'
         else:
             if use_forced_for_limits:
                 value_col = 'f_flux_peak'
@@ -550,7 +555,7 @@ class Source:
                 uplims = False
                 marker = "D"
                 sigma_thresh = 1.0
-                markerfacecolor = 'k'
+                markerfacecolor = 'w'
                 label = "Forced"
             else:
                 value_col = err_value_col = 'rms_image'
@@ -595,7 +600,7 @@ class Source:
 
         if use_forced_for_all:
             marker = "D"
-            markerfacecolor = 'k'
+            markerfacecolor = 'w'
             label = 'Forced'
         else:
             marker = 'o'
@@ -624,6 +629,8 @@ class Source:
 
         if mjd:
             ax.set_xlabel('Date (MJD)')
+        elif start_date:
+            ax.set_xlabel('Days since {}'.format(start_date))
         else:
             fig.autofmt_xdate()
             ax.set_xlabel('Date')
@@ -646,7 +653,7 @@ class Source:
                 ))
 
             elif not outfile.endswith(".png"):
-                outname += ".png"
+                outfile += ".png"
 
             if self.outdir != ".":
                 outfile = os.path.join(
@@ -1173,7 +1180,7 @@ class Source:
         percentile=99.9,
         zscale=False,
         contrast=0.2,
-        islands=True,
+        no_islands=True,
         no_colorbar=False,
         crossmatch_overlay=False,
         hide_beam=False,
@@ -1250,7 +1257,7 @@ class Source:
                 zscale,
                 contrast,
                 None,
-                islands,
+                no_islands,
                 "Source",
                 no_colorbar,
                 None,

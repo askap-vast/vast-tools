@@ -264,6 +264,14 @@ def parse_args():
         action="store_true",
         help='Plot lightcurve in MJD rather than datetime.')
     parser.add_argument(
+        '--lc-start-date',
+        type=str,
+        help=(
+            "Plot lightcurve in days from some start date, "
+            "formatted as YYYY-MM-DD HH:MM:SS or any other form "
+            "that is accepted by pd.to_datetime()"
+        ))
+    parser.add_argument(
         '--lc-grid',
         action="store_true",
         help="Turn on the 'grid' in the lightcurve plot.")
@@ -371,6 +379,24 @@ if __name__ == '__main__':
         )
         sys.exit()
 
+    if args.lc_use_forced_for_limits or args.lc_use_forced_for_all:
+        if not args.forced_fits:
+            logger.error(
+                "Forced fits requested for lightcurve, "
+                "please use --forced-fits flag and try again."
+            )
+            sys.exit()
+
+    if args.lc_start_date:
+        try:
+            args.lc_start_date = pd.to_datetime(args.lc_start_date)
+        except:
+            logger.error(
+                "Invalid lightcurve start date, "
+                "please check input and try again"
+            )
+            sys.exit()
+
     output_ok = check_output_directory(args)
 
     if not output_ok:
@@ -477,6 +503,7 @@ if __name__ == '__main__':
                 lc_min_points=args.lc_min_points,
                 lc_min_detections=args.lc_min_detections,
                 lc_mjd=args.lc_mjd,
+                lc_start_date=args.lc_start_date,
                 lc_grid=args.lc_grid,
                 lc_yaxis_start=args.lc_yaxis_start,
                 lc_peak_flux=(not args.lc_use_int_flux),
