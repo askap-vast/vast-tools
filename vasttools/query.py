@@ -617,7 +617,7 @@ class Query:
         lc_min_points=2,
         lc_min_detections=1,
         lc_mjd=False,
-        lc_start_date=None
+        lc_start_date=None,
         lc_grid=False,
         lc_yaxis_start="auto",
         lc_peak_flux=True,
@@ -754,7 +754,7 @@ class Query:
                 min_points=lc_min_points,
                 min_detections=lc_min_detections,
                 mjd=lc_mjd,
-                start_date=lc_start_date
+                start_date=lc_start_date,
                 grid=lc_grid,
                 yaxis_start=lc_yaxis_start,
                 peak_flux=lc_peak_flux,
