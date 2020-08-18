@@ -377,7 +377,7 @@ if __name__ == '__main__':
                 "Forced fits requested for lightcurve, "
                 "please use --forced-fits flag and try again."
             )
-            sys.exit()    
+            sys.exit()
 
     output_ok = check_output_directory(args)
 

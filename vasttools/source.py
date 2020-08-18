@@ -417,9 +417,10 @@ class Source:
 
     def plot_lightcurve(self, sigma_thresh=5, figsize=(8, 4),
                         min_points=2, min_detections=0, mjd=False,
-                        grid=False, yaxis_start="auto", peak_flux=True,
-                        save=False, outfile=None, use_forced_for_limits=False,
-                        use_forced_for_all=False, hide_legend=False, start_date=None):
+                        start_date=None, grid=False, yaxis_start="auto",
+                        peak_flux=True, save=False, outfile=None,
+                        use_forced_for_limits=False,use_forced_for_all=False, 
+                        hide_legend=False):
         '''
         Plot source lightcurves and save to file
 
@@ -435,6 +436,8 @@ class Source:
         :type min_detections: float, optional
         :param mjd: Plot x-axis in MJD rather than datetime, defaults to False
         :type mjd: bool, optional
+        :param start_date: Plot in days from start date, defaults to None
+        :type start_date: pandas datetime, optional
         :param grid: Turn on matplotlib grid, defaults to False
         :type grid: bool, optional
         :param yaxis_start: Define where the y-axis begins from, either 'auto'
@@ -456,8 +459,6 @@ class Source:
         :type use_forced_for_all: bool, optional
         :param hide_legend: Hide the legend, defaults to `False`
         :type hide_legend: bool, optional
-        :param start_date: Plot in days from start date, defaults to None
-        :type start_date: pandas datetime, optional
 
         :returns: None if save is `True` or the matplotlib figure
             if save is `False`.
