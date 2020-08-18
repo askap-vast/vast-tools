@@ -419,7 +419,7 @@ class Source:
                         min_points=2, min_detections=0, mjd=False,
                         grid=False, yaxis_start="auto", peak_flux=True,
                         save=False, outfile=None, use_forced_for_limits=False,
-                        use_forced_for_all=False, hide_legend=False):
+                        use_forced_for_all=False, hide_legend=False, start_date=None):
         '''
         Plot source lightcurves and save to file
 
@@ -456,6 +456,8 @@ class Source:
         :type use_forced_for_all: bool, optional
         :param hide_legend: Hide the legend, defaults to `False`
         :type hide_legend: bool, optional
+        :param start_date: Plot in days from start date, defaults to None
+        :type start_date: pandas datetime, optional
 
         :returns: None if save is `True` or the matplotlib figure
             if save is `False`.
@@ -500,6 +502,8 @@ class Source:
         plot_dates = measurements['dateobs']
         if mjd:
             plot_dates = Time(plot_dates.to_numpy()).mjd
+        elif start_date:
+            plot_dates = (plot_dates-start_date)/pd.Timedelta(1, unit='d')
 
         fig = plt.figure(figsize=figsize)
         ax = fig.add_subplot(111)
@@ -624,6 +628,8 @@ class Source:
 
         if mjd:
             ax.set_xlabel('Date (MJD)')
+        elif start_date:
+            ax.set_xlabel('Days since {}'.format(start_date))
         else:
             fig.autofmt_xdate()
             ax.set_xlabel('Date')
