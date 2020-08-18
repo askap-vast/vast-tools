@@ -138,6 +138,10 @@ optional arguments:
   --lc-min-detections LC_MIN_DETECTIONS
                         Minimum number of times a source must be detected (default: 0)
   --lc-mjd              Plot lightcurve in MJD rather than datetime. (default: False)
+  --lc-start-date LC_START_DATE
+                        Plot lightcurve in days from some start date, formatted
+                        as YYYY-MM-DD HH:MM:SS or any other form that is
+                        accepted by pd.to_datetime() (default: None)
   --lc-grid             Turn on the 'grid' in the lightcurve plot. (default: False)
   --lc-yaxis-start {auto,0}
                         Define where the y axis on the lightcurve plot starts from. 'auto' will let

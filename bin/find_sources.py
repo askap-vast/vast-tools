@@ -267,8 +267,8 @@ def parse_args():
         '--lc-start-date',
         type=str,
         help=(
-            "Plot lightcurve in days from some start date,"
-            "formatted as YYYY-MM-DD HH:MM:SS or any other form"
+            "Plot lightcurve in days from some start date, "
+            "formatted as YYYY-MM-DD HH:MM:SS or any other form "
             "that is accepted by pd.to_datetime()"
         ))
     parser.add_argument(
