@@ -419,7 +419,7 @@ class Source:
                         min_points=2, min_detections=0, mjd=False,
                         start_date=None, grid=False, yaxis_start="auto",
                         peak_flux=True, save=False, outfile=None,
-                        use_forced_for_limits=False,use_forced_for_all=False, 
+                        use_forced_for_limits=False, use_forced_for_all=False,
                         hide_legend=False):
         '''
         Plot source lightcurves and save to file
