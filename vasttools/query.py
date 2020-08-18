@@ -617,6 +617,7 @@ class Query:
         lc_min_points=2,
         lc_min_detections=1,
         lc_mjd=False,
+        lc_start_date=None
         lc_grid=False,
         lc_yaxis_start="auto",
         lc_peak_flux=True,
@@ -689,6 +690,9 @@ class Query:
         :type lc_min_detections: int, optional
         :param lc_mjd: Use MJD for lightcurve x-axis, defaults to `False`
         :type lc_mjd: bool, optional
+        :param lc_start_date: Plot lightcurve in days from start date, \
+        defaults to None
+        :type lc_start_date: pandas datetime, optional
         :param lc_grid: Include grid on lightcurve plot, defaults to `False`
         :type lc_grid: bool, optional
         :param lc_yaxis_start: Start the lightcurve y-axis at 0 ("0") or use \
@@ -750,6 +754,7 @@ class Query:
                 min_points=lc_min_points,
                 min_detections=lc_min_detections,
                 mjd=lc_mjd,
+                start_date=lc_start_date
                 grid=lc_grid,
                 yaxis_start=lc_yaxis_start,
                 peak_flux=lc_peak_flux,
