@@ -112,7 +112,7 @@ class Source:
 
     plot_lightcurve(
         sigma_thresh=5, figsize=(8, 4), min_points=2,
-        min_detections=0, mjd=False, grid=False,
+        min_detections=0, mjd=False, start_date=None, grid=False,
         yaxis_start="auto", peak_flux=True, save=False,
         outfile=None, use_forced_for_limits=False,
         use_forced_for_all=False, hide_legend=False
