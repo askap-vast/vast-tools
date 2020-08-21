@@ -390,11 +390,12 @@ if __name__ == '__main__':
     if args.lc_start_date:
         try:
             args.lc_start_date = pd.to_datetime(args.lc_start_date)
-        except:
+        except Exception as e:
             logger.error(
                 "Invalid lightcurve start date, "
                 "please check input and try again"
             )
+            logger.error("Error: %s", e)
             sys.exit()
 
     output_ok = check_output_directory(args)
