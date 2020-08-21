@@ -1643,7 +1643,10 @@ class Query:
 
             self.fields_df[
                 ['epoch', 'field', 'sbid', 'dateobs']
-            ] = self.fields_df.field_per_epoch.apply(pd.Series)
+            ] = pd.DataFrame(
+                self.fields_df['field_per_epoch'].tolist(),
+                index=self.fields_df.index
+            )
 
             to_drop = [
                 'field_per_epoch',
