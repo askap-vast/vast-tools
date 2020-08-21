@@ -22,6 +22,7 @@ import re
 import signal
 import numexpr
 import gc
+import time
 
 from multiprocessing import Pool, cpu_count
 from multiprocessing_logging import install_mp_handler
@@ -592,10 +593,10 @@ class Query:
             )
             workers.terminate()
             sys.exit()
-        else:
-            self.logger.debug("Normal termination")
+        finally:
+            self.logger.debug("Closing workers.")
             workers.close()
-            # workers.join()
+            workers.join()
 
     def _produce_source_products(
         self,
@@ -772,6 +773,9 @@ class Query:
 
         if measurements:
             source.write_measurements(simple=measurements_simple)
+
+        # attempt to avoid join hangs
+        time.sleep(0.2)
 
         return
 
