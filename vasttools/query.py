@@ -22,6 +22,7 @@ import re
 import signal
 import numexpr
 import gc
+import time
 
 from multiprocessing import Pool, cpu_count
 from multiprocessing_logging import install_mp_handler
@@ -410,6 +411,7 @@ class Query:
         lc_min_points=2,
         lc_min_detections=1,
         lc_mjd=False,
+        lc_start_date=None,
         lc_grid=False,
         lc_yaxis_start="auto",
         lc_peak_flux=True,
@@ -483,6 +485,9 @@ class Query:
         :type lc_min_detections: int, optional
         :param lc_mjd: Use MJD for lightcurve x-axis, defaults to `False`
         :type lc_mjd: bool, optional
+        :param lc_start_date: Plot lightcurve in days from start date, \
+        defaults to None
+        :type lc_start_date: pandas datetime, optional
         :param lc_grid: Include grid on lightcurve plot, defaults to `False`
         :type lc_grid: bool, optional
         :param lc_yaxis_start: Start the lightcurve y-axis at 0 ("0") or use \
@@ -551,6 +556,7 @@ class Query:
             lc_min_points=lc_min_points,
             lc_min_detections=lc_min_detections,
             lc_mjd=lc_mjd,
+            lc_start_date=lc_start_date,
             lc_grid=lc_grid,
             lc_yaxis_start=lc_yaxis_start,
             lc_peak_flux=lc_peak_flux,
@@ -587,10 +593,10 @@ class Query:
             )
             workers.terminate()
             sys.exit()
-        else:
-            self.logger.debug("Normal termination")
+        finally:
+            self.logger.debug("Closing workers.")
             workers.close()
-            # workers.join()
+            workers.join()
 
     def _produce_source_products(
         self,
@@ -617,6 +623,7 @@ class Query:
         lc_min_points=2,
         lc_min_detections=1,
         lc_mjd=False,
+        lc_start_date=None,
         lc_grid=False,
         lc_yaxis_start="auto",
         lc_peak_flux=True,
@@ -689,6 +696,9 @@ class Query:
         :type lc_min_detections: int, optional
         :param lc_mjd: Use MJD for lightcurve x-axis, defaults to `False`
         :type lc_mjd: bool, optional
+        :param lc_start_date: Plot lightcurve in days from start date, \
+        defaults to None
+        :type lc_start_date: pandas datetime, optional
         :param lc_grid: Include grid on lightcurve plot, defaults to `False`
         :type lc_grid: bool, optional
         :param lc_yaxis_start: Start the lightcurve y-axis at 0 ("0") or use \
@@ -750,6 +760,7 @@ class Query:
                 min_points=lc_min_points,
                 min_detections=lc_min_detections,
                 mjd=lc_mjd,
+                start_date=lc_start_date,
                 grid=lc_grid,
                 yaxis_start=lc_yaxis_start,
                 peak_flux=lc_peak_flux,
@@ -762,6 +773,9 @@ class Query:
 
         if measurements:
             source.write_measurements(simple=measurements_simple)
+
+        # attempt to avoid join hangs
+        time.sleep(0.2)
 
         return
 
@@ -1629,7 +1643,10 @@ class Query:
 
             self.fields_df[
                 ['epoch', 'field', 'sbid', 'dateobs']
-            ] = self.fields_df.field_per_epoch.apply(pd.Series)
+            ] = pd.DataFrame(
+                self.fields_df['field_per_epoch'].tolist(),
+                index=self.fields_df.index
+            )
 
             to_drop = [
                 'field_per_epoch',
