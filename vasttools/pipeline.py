@@ -934,7 +934,7 @@ class PipeAnalysis(PipeRun):
 
         pairs_df = (
             pd.DataFrame(pairs_df['pair'].tolist())
-            .rename(columns={0:'image_id_x', 1:'image_id_y'})
+            .rename(columns={0: 'image_id_x', 1: 'image_id_y'})
             .merge(
                 self.images[['datetime']],
                 left_on='image_id_x', right_index=True
