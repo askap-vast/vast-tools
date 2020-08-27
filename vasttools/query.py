@@ -1071,7 +1071,9 @@ class Query:
         )
 
         if self.settings['search_around']:
-            self.results = self.crossmatch_results
+            self.results = self.crossmatch_results.rename(
+                columns={'#': 'distance'}
+            )
         else:
             self.results = (
                 dd.from_pandas(self.crossmatch_results, self.ncpu)
@@ -1092,14 +1094,21 @@ class Query:
         :param sort_output: Whether to sort the output, defaults to `False`
         :type sort_output: bool, optional
         '''
-
         meta = {}
         # also have the sort output setting as a function
         # input in case of interactive use.
         if self.settings['sort_output']:
             sort_output = True
         result = (
-            dd.from_pandas(self.results, self.ncpu)
+            dd.from_pandas(
+                self.results.drop([
+                    'fields',
+                    'stokes',
+                    'skycoord',
+                    'selavy',
+                    'image',
+                    'rms',
+                ], axis=1), self.ncpu)
             .groupby('name')
             .apply(
                 self._write_search_around_results,
@@ -1118,21 +1127,11 @@ class Query:
         :param sort_output: Whether to sort the output
         :type sort_output: bool
         '''
-        source_name = group.iloc[0]['name'].replace(
+        source_name = group['name'].iloc[0].replace(
             " ", "_"
         ).replace("/", "_")
 
-        matches_df = group.drop(
-            columns=[
-                'fields',
-                'stokes',
-                'skycoord',
-                'selavy',
-                'image',
-                'rms',
-                '#'
-            ]
-        ).sort_values(by=['dateobs', 'component_id'])
+        group = group.sort_values(by=['dateobs', 'component_id'])
 
         outname = "{}_matches_around.csv".format(
             source_name
@@ -1144,14 +1143,16 @@ class Query:
                 source_name
             )
         else:
-            base = self.settings['output_dir'],
+            base = self.settings['output_dir']
 
         outname = os.path.join(
             base,
             outname
         )
 
-        matches_df.to_csv(outname, index=False)
+        group.to_csv(outname, index=False)
+
+        time.sleep(0.1)
 
     def _check_for_duplicate_epochs(self, epochs):
         '''
@@ -1387,6 +1388,7 @@ class Query:
                 return
             copy = selavy_df.iloc[idxselavy].reset_index(drop=True)
             copy['detection'] = True
+            copy['#'] = d2d.arcsec
             copy.index = group.iloc[idxc].index.values
             master = master.append(copy, sort=False)
         else:
