@@ -942,7 +942,8 @@ class ForcedPhot:
         xx, yy = np.meshgrid(x, y)
         x0, y0 = astropy.wcs.utils.skycoord_to_pixel(p, im.wcs)
         g = G2D(
-            x0, y0, (a / self.pixelscale).value, (b / self.pixelscale).value, pa
+            x0, y0, (a / self.pixelscale).value,
+            (b / self.pixelscale).value, pa
         )
         kernel = g(xx, yy)
         flux = (
