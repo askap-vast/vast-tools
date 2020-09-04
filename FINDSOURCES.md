@@ -47,72 +47,75 @@ All output is placed in an output directory of which the name can be set with th
 
 Can be run on any Stokes parameter, but only one at a time.
 ```
-usage: find_sources.py [-h] [--coords COORDS] [--source-names SOURCE_NAMES] [--ncpu NCPU]
-                       [--epochs EPOCHS] [--imsize IMSIZE] [--maxsep MAXSEP] [--out-folder OUT_FOLDER]
-                       [--crossmatch-radius CROSSMATCH_RADIUS] [--use-tiles] [--islands]
-                       [--base-folder BASE_FOLDER] [--stokes {I,Q,U,V}] [--quiet] [--forced-fits]
-                       [--crossmatch-only] [--selavy-simple] [--process-matches] [--debug]
-                       [--no-background-rms] [--planets PLANETS] [--find-fields]
-                       [--search-around-coordinates] [--clobber] [--sort-output] [--nice NICE]
-                       [--crossmatch-radius-overlay] [--no-fits] [--create-png] [--png-selavy-overlay]
+usage: find_sources.py [-h] [--coords COORDS] [--source-names SOURCE_NAMES] [--ncpu NCPU] [--epochs EPOCHS]
+                       [--imsize IMSIZE] [--maxsep MAXSEP] [--out-folder OUT_FOLDER]
+                       [--crossmatch-radius CROSSMATCH_RADIUS] [--use-tiles] [--islands] [--base-folder BASE_FOLDER]
+                       [--stokes {I,Q,U,V}] [--quiet] [--forced-fits]
+                       [--forced-cluster-threshold FORCED_CLUSTER_THRESHOLD] [--forced-allow-nan]
+                       [--crossmatch-only] [--selavy-simple] [--process-matches] [--debug] [--no-background-rms]
+                       [--planets PLANETS] [--find-fields] [--search-around-coordinates] [--clobber] [--sort-output]
+                       [--nice NICE] [--crossmatch-radius-overlay] [--no-fits] [--create-png] [--png-selavy-overlay]
                        [--png-linear-percentile PNG_LINEAR_PERCENTILE] [--png-use-zscale]
-                       [--png-zscale-contrast PNG_ZSCALE_CONTRAST] [--png-hide-beam]
-                       [--png-no-island-labels] [--png-no-colorbar] [--png-disable-autoscaling]
-                       [--ann] [--reg] [--lightcurves] [--lc-use-int-flux] [--lc-no-plotting]
-                       [--lc-min-points LC_MIN_POINTS] [--lc-min-detections LC_MIN_DETECTIONS]
-                       [--lc-mjd] [--lc-grid] [--lc-yaxis-start {auto,0}] [--lc-use-forced-for-limits]
+                       [--png-zscale-contrast PNG_ZSCALE_CONTRAST] [--png-hide-beam] [--png-no-island-labels]
+                       [--png-no-colorbar] [--png-disable-autoscaling] [--ann] [--reg] [--lightcurves]
+                       [--lc-use-int-flux] [--lc-no-plotting] [--lc-min-points LC_MIN_POINTS]
+                       [--lc-min-detections LC_MIN_DETECTIONS] [--lc-mjd] [--lc-start-date LC_START_DATE]
+                       [--lc-grid] [--lc-yaxis-start {auto,0}] [--lc-use-forced-for-limits]
                        [--lc-use-forced-for-all] [--lc-hide-legend]
 
 optional arguments:
   -h, --help            show this help message and exit
-  --coords COORDS       Right Ascension and Declination in quotes. Can be formatted as "HH:MM:SS
-                        [+/-]DD:MM:SS" (e.g. "12:00:00 -20:00:00") or decimal degrees (e.g. "12.123
-                        -20.123"). Multiple coordinates are supported by separating with a comma (no
-                        space) e.g. "12.231 -56.56,123.4 +21.3". Finally you can also enter
-                        coordinates using a .csv file. See example file for format. (default: None)
+  --coords COORDS       Right Ascension and Declination in quotes. Can be formatted as "HH:MM:SS [+/-]DD:MM:SS"
+                        (e.g. "12:00:00 -20:00:00") or decimal degrees (e.g. "12.123 -20.123"). Multiple coordinates
+                        are supported by separating with a comma (no space) e.g. "12.231 -56.56,123.4 +21.3".
+                        Finally you can also enter coordinates using a .csv file. See example file for format.
+                        (default: None)
   --source-names SOURCE_NAMES
-                        Only for use when entering coordaintes via the command line. State the name of
-                        the source being searched. Use quote marks for names that contain a space. For
-                        multiple sources separate with a comma with no space, e.g. "SN 1994N,SN
-                        2003D,SN 2019A". (default: )
+                        Only for use when entering coordaintes via the command line. State the name of the source
+                        being searched. Use quote marks for names that contain a space. For multiple sources
+                        separate with a comma with no space, e.g. "SN 1994N,SN 2003D,SN 2019A". (default: )
   --ncpu NCPU           Number of cpus to use in queries (default: 2)
-  --epochs EPOCHS       Select the VAST Pilot Epoch to query. Epoch 0 is RACS. All available epochs
-                        can be queried using 'all' or all VAST Epochs using 'all-vast'. Otherwise
-                        enter as a comma separated list with no spaces, e.g. '1,2,3x,4x'. (default: 1)
+  --epochs EPOCHS       Select the VAST Pilot Epoch to query. Epoch 0 is RACS. All available epochs can be queried
+                        using 'all' or all VAST Epochs using 'all-vast'. Otherwise enter as a comma separated list
+                        with no spaces, e.g. '1,2,3x,4x'. (default: 1)
   --imsize IMSIZE       Edge size of the postagestamp in arcmin (default: 30.0)
   --maxsep MAXSEP       Maximum separation of source from beam centre in degrees. (default: 1.5)
   --out-folder OUT_FOLDER
                         Name of the output directory to place all results in. (default:
-                        find_sources_output_20200812_16:11:31)
+                        find_sources_output_20200904_23:59:27)
   --crossmatch-radius CROSSMATCH_RADIUS
                         Crossmatch radius in arcseconds (default: 15.0)
   --use-tiles           Use the individual tiles instead of combined mosaics. (default: False)
   --islands             Search islands instead of components. (default: False)
   --base-folder BASE_FOLDER
                         Path to base folder if using default directory structure. Not required if the
-                         `VAST_DATA_DIR` environment variable' has been set. (default: None)
+                        `VAST_DATA_DIR` environment variable has been set. (default: None)
   --stokes {I,Q,U,V}    Select the Stokes parameter. (default: I)
   --quiet               Turn off non-essential terminal output. (default: False)
   --forced-fits         Perform forced fits at the locations requested. (default: False)
+  --forced-cluster-threshold FORCED_CLUSTER_THRESHOLD
+                        Multiple of `major_axes` to use for identifying clusters, when performing forced fits.
+                        (default: 1.5)
+  --forced-allow-nan    When used, forced fits are attempted even when NaN values are present. (default: False)
   --crossmatch-only     Only run crossmatch, do not generate any fits or png files. (default: False)
   --selavy-simple       Only include flux density and uncertainty in returned table. (default: False)
   --process-matches     Only produce data products for sources with a selavy match. (default: False)
   --debug               Turn on debug output. (default: False)
   --no-background-rms   Do not estimate the background RMS around each source. (default: False)
   --planets PLANETS     Also search for solar system objects. Enter as a comma separated list, e.g.
-                        'jupiter,venus,moon'. Allowed choices are: ['mercury', 'venus', 'mars',
-                        'jupiter', 'saturn', 'uranus', 'neptune', 'sun', 'moon'] (default: [])
+                        'jupiter,venus,moon'. Allowed choices are: ['mercury', 'venus', 'mars', 'jupiter', 'saturn',
+                        'uranus', 'neptune', 'sun', 'moon'] (default: [])
   --find-fields         Only return the associated field for each source. (default: False)
   --search-around-coordinates
-                        Return all crossmatches within the queried crossmatch radius.Plotting options
-                        will be unavailable. (default: False)
+                        Return all crossmatches within the queried crossmatch radius.Plotting options will be
+                        unavailable. (default: False)
   --clobber             Overwrite the output directory if it already exists. (default: False)
-  --sort-output         Place results into individual source directories within the main output
-                        directory. (default: False)
+  --sort-output         Place results into individual source directories within the main output directory. (default:
+                        False)
   --nice NICE           Set nice level. (default: 5)
   --crossmatch-radius-overlay
-                        A circle is placed on all PNG and region/annotation files to represent the
-                        crossmatch radius. (default: False)
+                        A circle is placed on all PNG and region/annotation files to represent the crossmatch
+                        radius. (default: False)
   --no-fits             Do not save the FITS cutouts. (default: False)
   --create-png          Create a png of the fits cutout. (default: False)
   --png-selavy-overlay  Overlay selavy components onto the png image. (default: False)
@@ -126,8 +129,8 @@ optional arguments:
                         Disable island lables on the png. (default: False)
   --png-no-colorbar     Do not show the colorbar on the png. (default: False)
   --png-disable-autoscaling
-                        Do not use the auto normalisation and instead apply scale settings to each
-                        epoch individually. (default: False)
+                        Do not use the auto normalisation and instead apply scale settings to each epoch
+                        individually. (default: False)
   --ann                 Create a kvis annotation file of the components. (default: False)
   --reg                 Create a DS9 region file of the components. (default: False)
   --lightcurves         Create lightcurve plots. (default: False)
@@ -139,13 +142,12 @@ optional arguments:
                         Minimum number of times a source must be detected (default: 0)
   --lc-mjd              Plot lightcurve in MJD rather than datetime. (default: False)
   --lc-start-date LC_START_DATE
-                        Plot lightcurve in days from some start date, formatted
-                        as YYYY-MM-DD HH:MM:SS or any other form that is
-                        accepted by pd.to_datetime() (default: None)
+                        Plot lightcurve in days from some start date, formatted as YYYY-MM-DD HH:MM:SS or any other
+                        form that is accepted by pd.to_datetime() (default: None)
   --lc-grid             Turn on the 'grid' in the lightcurve plot. (default: False)
   --lc-yaxis-start {auto,0}
-                        Define where the y axis on the lightcurve plot starts from. 'auto' will let
-                        matplotlib decide the best range and '0' will start from 0. (default: 0)
+                        Define where the y axis on the lightcurve plot starts from. 'auto' will let matplotlib
+                        decide the best range and '0' will start from 0. (default: 0)
   --lc-use-forced-for-limits
                         Use the forced fits values instead of upper limits. (default: False)
   --lc-use-forced-for-all

@@ -126,7 +126,8 @@ class Query:
         use_islands=False, base_folder=None, matches_only=False,
         no_rms=False, search_around_coordinates=False,
         output_dir=".", planets=[], ncpu=2, sort_output=False,
-        forced_fits=False
+        forced_fits=False, forced_cluster_threshold=1.5,
+        forced_allow_nan=False
     ):
         '''
         :param coords: List of coordinates to query, defaults to None
@@ -171,6 +172,14 @@ class Query:
         :param forced_fits: Turns on the option to perform forced fits
             on the locations queried, defaults to `False`.
         :type forced_fits: bool, optional
+        :param forced_cluster_threshold: The cluster_threshold value passed to
+            the forced photometry. Beam width distance limit for which a
+            cluster is formed for extraction, defaults to 3.0.
+        :type forced_cluster_threshold: float, optional.
+        :param forced_allow_nan: `allow_nan` value passed to the forced photometry.
+            If False then any cluster containing a NaN is ignored. Defaults
+            to False.
+        :type forced_allow_nan: bool, optional
         '''
         self.logger = logging.getLogger('vasttools.find_sources.Query')
 
@@ -279,6 +288,10 @@ class Query:
         self.settings['search_around'] = search_around_coordinates
         self.settings['sort_output'] = sort_output
         self.settings['forced_fits'] = forced_fits
+        self.settings[
+            'forced_cluster_threshold'
+        ] = forced_cluster_threshold
+        self.settings['forced_allow_nan'] = forced_allow_nan
 
         self.settings['output_dir'] = output_dir
 
@@ -984,6 +997,10 @@ class Query:
                 .groupby('image')
                 .apply(
                     self._get_forced_fits,
+                    cluster_threshold=(
+                        self.settings['forced_cluster_threshold']
+                    ),
+                    allow_nan=self.settings['forced_allow_nan'],
                     meta=meta,
                 ).compute(num_workers=self.ncpu, scheduler='processes')
             )
@@ -1254,7 +1271,9 @@ class Query:
 
         return thesource
 
-    def _get_forced_fits(self, group):
+    def _get_forced_fits(
+        self, group, cluster_threshold: float = 1.5, allow_nan: bool = False
+    ):
         '''
         Perform the forced fits on an image, on the coordinates
         supplied by the group.
@@ -1262,6 +1281,14 @@ class Query:
         :param group: A dataframe of sources/positions which have been
             supplied by grouping the queried sources by image.
         :type group: `pandas.core.frame.DataFrame`
+        :param cluster_threshold: The cluster_threshold value passed to
+            the forced photometry. Beam width distance limit for which a
+            cluster is formed for extraction, defaults to 3.0.
+        :type cluster_threshold: float, optional.
+        :param allow_nan: `allow_nan` value passed to the forced photometry.
+            If False then any cluster containing a NaN is ignored. Defaults
+            to False.
+        :type allow_nan: bool, optional
 
         :returns: Dataframe containing the forced fit measurements for
             each source.
@@ -1310,7 +1337,8 @@ class Query:
             [major for i in range(to_fit.shape[0])] * u.arcsec,
             [minor for i in range(to_fit.shape[0])] * u.arcsec,
             [pa for i in range(to_fit.shape[0])] * u.deg,
-            cluster_threshold=3
+            cluster_threshold=cluster_threshold,
+            allow_nan=allow_nan
         )
 
         flux_islands *= 1.e3
