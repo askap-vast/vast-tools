@@ -176,9 +176,9 @@ class Query:
             the forced photometry. Beam width distance limit for which a
             cluster is formed for extraction, defaults to 3.0.
         :type forced_cluster_threshold: float, optional.
-        :param forced_allow_nan: `allow_nan` value passed to the forced photometry.
-            If False then any cluster containing a NaN is ignored. Defaults
-            to False.
+        :param forced_allow_nan: `allow_nan` value passed to the
+            forced photometry. If False then any cluster containing a
+            NaN is ignored. Defaults to False.
         :type forced_allow_nan: bool, optional
         '''
         self.logger = logging.getLogger('vasttools.find_sources.Query')

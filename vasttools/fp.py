@@ -72,11 +72,13 @@ class G2D:
         y0 (float): the mean y coordinate (pixels)
         fwhm_x (float): the FWHM in the x coordinate (pixels)
         fwhm_y (float): the FWHM in the y coordinate (pixels)
-        pa (float): the position angle of the Gaussian (E of N) as a Quantity or in
-            radians.
+        pa (float): the position angle of the Gaussian (E of N)
+            as a Quantity or in radians.
     """
 
-    def __init__(self, x0: float, y0: float, fwhm_x: float, fwhm_y: float, pa: float):
+    def __init__(
+        self, x0: float, y0: float, fwhm_x: float, fwhm_y: float, pa: float
+    ):
         self.x0 = x0
         self.y0 = y0
         self.fwhm_x = fwhm_x
@@ -122,15 +124,22 @@ class ForcedPhot:
 
     Example usage:
         forced_phot_obj = ForcedPhot(image, background, noise)
-        flux_islands, flux_err_islands, chisq_islands, dof_islands = forced_phot_obj.measure(islands)
+        (
+            flux_islands, flux_err_islands,
+            chisq_islands, dof_islands
+        )= forced_phot_obj.measure(islands)
 
         where `islands` is an array `astropy.coordinates.SkyCoord` objects.
 
     Args:
-        image (Union[str, fits.HDUList]): name of the primary image or FITS handle.
-        background (Union[str, fits.HDUList]): name of the background image or FITS handle.
-        noise (Union[str, fits.HDUList]): name of the noise map image or FITS handle.
-        verbose (bool, optional): whether to be verbose in output. Defaults to False.
+        image (Union[str, fits.HDUList]): name of the primary image
+            or FITS handle.
+        background (Union[str, fits.HDUList]): name of the background
+            image or FITS handle.
+        noise (Union[str, fits.HDUList]): name of the noise map image
+            or FITS handle.
+        verbose (bool, optional): whether to be verbose in output.
+            Defaults to False.
 
     Raises:
         ArgumentError: an input type is not a supported.
@@ -184,7 +193,9 @@ class ForcedPhot:
             and ("BPA" in self.fi[0].header.keys())
         ):
 
-            raise KeyError("Image header does not have BMAJ, BMIN, BPA keywords")
+            raise KeyError(
+                "Image header does not have BMAJ, BMIN, BPA keywords"
+            )
 
         self.BMAJ = self.fi[0].header["BMAJ"] * u.deg
         self.BMIN = self.fi[0].header["BMIN"] * u.deg
@@ -201,20 +212,26 @@ class ForcedPhot:
         self.twod = True  # TODO remove
 
         self.w = WCS(self.fi[0].header).celestial
-        self.pixelscale = (proj_plane_pixel_scales(self.w)[1] * u.deg).to(u.arcsec)
+        self.pixelscale = (
+            proj_plane_pixel_scales(self.w)[1] * u.deg
+        ).to(u.arcsec)
 
-    def cluster(self, X0: np.ndarray, Y0: np.ndarray, threshold: Optional[float] = 1.5):
-        """Identifies clusters among the given X, Y points that are within `threshold` * BMAJ
-            of each other using a KDTree algorithm. Results are stored in `self.clusters`
-            and `self.in_cluster`:
-                - `self.clusters` is a dict mapping cluster indices to a set of their members.
-                - `self.in_cluster` is a list of all of the sources in a cluster
+    def cluster(
+        self, X0: np.ndarray, Y0: np.ndarray, threshold: Optional[float] = 1.5
+    ):
+        """Identifies clusters among the given X, Y points that are within
+            `threshold` * BMAJ of each other using a KDTree algorithm.
+            Results are stored in `self.clusters` and `self.in_cluster`:
+                - `self.clusters` is a dict mapping cluster
+                    indices to a set of their members.
+                - `self.in_cluster` is a list of all of the
+                    sources in a cluster
 
         Args:
             X0 (np.ndarray): array of X coordinates of sources.
             Y0 (np.ndarray): array of Y coordinates of sources.
-            threshold (float, optional): multiple of BMAJ for finding clusters.
-                Set to 0 or None to disable. Defaults to 1.5.
+            threshold (float, optional): multiple of BMAJ for finding
+                clusters. Set to 0 or None to disable. Defaults to 1.5.
         """
         self.clusters: Dict[int, set]
         self.in_cluster: List[int]
@@ -223,7 +240,9 @@ class ForcedPhot:
             self.in_cluster = []
             return
 
-        threshold_pixels = threshold * (self.BMAJ / self.pixelscale).decompose().value
+        threshold_pixels = (
+            threshold * (self.BMAJ / self.pixelscale).decompose().value
+        )
         t = scipy.spatial.KDTree(np.c_[X0, Y0])
 
         # this is somewhat convoluted
@@ -234,7 +253,8 @@ class ForcedPhot:
         self.clusters = {}
         for i in range(len(X0)):
             dists, indices = t.query(
-                np.c_[X0[i], Y0[i]], k=10, distance_upper_bound=threshold_pixels
+                np.c_[X0[i], Y0[i]], k=10,
+                distance_upper_bound=threshold_pixels
             )
             indices = indices[~np.isinf(dists)]
             if len(indices) > 1:
@@ -246,7 +266,9 @@ class ForcedPhot:
                         self.clusters[j].add(k)
                 else:
                     self.clusters[i] = set(indices)
-        self.in_cluster = sorted(list((chain.from_iterable([*self.clusters.values()]))))
+        self.in_cluster = sorted(
+            list((chain.from_iterable([*self.clusters.values()])))
+        )
 
     def measure(
         self,
@@ -259,50 +281,64 @@ class ForcedPhot:
         allow_nan: bool = True,
         stamps: bool = False,
     ) -> Tuple[Any, ...]:
-        """Perform the forced photometry returning the flux density and uncertainty.
+        """
+        Perform the forced photometry returning the flux density and
+        uncertainty.
         Example usage:
-            flux, flux_err, chisq, dof = forced_phot_obj.measure(positions, nbeam=3)
+            flux, flux_err, chisq, dof = forced_phot_obj.measure(
+                positions, nbeam=3
+            )
 
             or
 
-            flux, flux_err, chisq, dof, data, model = forced_phot_obj.measure(
-                positions, nbeam=3, allow_nan=True, stamps=True)
+            flux, flux_err, chisq, dof, data, model = (
+                forced_phot_obj.measure(
+                    positions, nbeam=3, allow_nan=True, stamps=True
+                )
+            )
 
         Args:
             positions: Coordinates of sources to measure.
-            major_axes: FWHMs along major axes of sources to measure. If None, will use
-                header BMAJ. Defaults to None.
-            minor_axes: FWHMs along minor axes of sources to measure. If None, will use
-                header BMIN. Defaults to None.
-            position_angles: Position angles of sources to measure. If None, will use
-                header BPA. Defaults to None.
+            major_axes: FWHMs along major axes of sources to measure. If None,
+                will use header BMAJ. Defaults to None.
+            minor_axes: FWHMs along minor axes of sources to measure. If None,
+                will use header BMIN. Defaults to None.
+            position_angles: Position angles of sources to measure. If None,
+                will use header BPA. Defaults to None.
             nbeam: Diameter of the square cutout for fitting in units of
                 the major axis. Defaults to 3.
-            cluster_threshold: Multiple of `major_axes` to use for identifying clusters.
-                Set to 0 or None to disable. Defaults to 1.5.
-            allow_nan: whether or not to try to measure sources where some RMS values may
-                be NaN.  Defaults to True.
-            stamps: whether or not to also return a postage stamp. Can only be used on a
-                single source. Defaults to False.
+            cluster_threshold: Multiple of `major_axes` to use for
+                identifying clusters. Set to 0 or None to disable.
+                Defaults to 1.5.
+            allow_nan: whether or not to try to measure sources where some
+                RMS values may be NaN.  Defaults to True.
+            stamps: whether or not to also return a postage stamp. Can only
+                be used on a single source. Defaults to False.
 
         Raises:
             ArgumentError: stamps were requested for more than one object.
             ArgumentError: an input argument was not a supported type.
 
         Returns:
-            A tuple containing the flux, flux error, chi-squared value, degrees of
-            freedom. If `stamps` is True, the data and model are also returned.
+            A tuple containing the flux, flux error, chi-squared value,
+            degrees of freedom. If `stamps` is True, the data and model
+            are also returned.
         """
         X0, Y0 = map(
-            np.atleast_1d, astropy.wcs.utils.skycoord_to_pixel(positions, self.w)
+            np.atleast_1d, astropy.wcs.utils.skycoord_to_pixel(
+                positions, self.w
+            )
         )
         self.cluster(X0, Y0, threshold=cluster_threshold)
 
         if stamps:
             if len(X0) > 1 and not (
-                len(self.in_cluster) == len(X0) and len(self.clusters.keys()) == 1
+                len(self.in_cluster) == len(X0)
+                and len(self.clusters.keys()) == 1
             ):
-                raise ArgumentError("Cannot output postage stamps for >1 object")
+                raise ArgumentError(
+                    "Cannot output postage stamps for >1 object"
+                )
 
         if major_axes is None:
             a = np.ones(len(X0)) * (self.BMAJ).to(u.arcsec)
@@ -382,9 +418,13 @@ class ForcedPhot:
             if self.verbose:
                 print("Fitting a cluster of sources %s" % ii)
             xmin = max(int(round((X0[ii] - npix[ii]).min())), 0)
-            xmax = min(int(round((X0[ii] + npix[ii]).max())), self.data.shape[-1]) + 1
+            xmax = min(
+                int(round((X0[ii] + npix[ii]).max())), self.data.shape[-1]
+            ) + 1
             ymin = max(int(round((Y0[ii] - npix[ii]).min())), 0)
-            ymax = min(int(round((Y0[ii] + npix[ii]).max())), self.data.shape[-2]) + 1
+            ymax = min(
+                int(round((Y0[ii] + npix[ii]).max())), self.data.shape[-2]
+            ) + 1
 
             out = self._measure_cluster(
                 X0[ii],
@@ -408,7 +448,10 @@ class ForcedPhot:
 
         if positions.isscalar:
             if stamps:
-                return flux[0], flux_err[0], chisq[0], dof[0], out[-3], out[-2], out[-1]
+                return (
+                    flux[0], flux_err[0], chisq[0], dof[0],
+                    out[-3], out[-2], out[-1]
+                )
             else:
                 return flux[0], flux_err[0], chisq[0], dof[0]
         else:
@@ -426,23 +469,25 @@ class ForcedPhot:
         position_angles: Optional["astropy.coordinates.Angle"] = None,
         nbeam: int = 3,
     ):
-        """Inject one or more fake point sources (defined by the header) into `self.data`
-        with the flux(es) and position(s) specified.
+        """
+        Inject one or more fake point sources (defined by the header) into
+        `self.data` with the flux(es) and position(s) specified.
 
         Args:
             flux: Flux(es) of source(s) to inject in same units as the image.
             positions: Position(s) of source(s) to inject.
-            major_axes: FWHMs along major axes of sources to measure. If None, will use
-                header BMAJ. Defaults to None.
-            minor_axes: FWHMs along minor axes of sources to measure. If None, will use
-                header BMIN. Defaults to None.
-            position_angles: Position angles of sources to measure. If None, will use
-                header BPA. Defaults to None.
-            nbeam: Diameter of the square cutout for injection in units of the major axis.
-                Defaults to 3.
+            major_axes: FWHMs along major axes of sources to measure. If None,
+                will use header BMAJ. Defaults to None.
+            minor_axes: FWHMs along minor axes of sources to measure. If None,
+                will use header BMIN. Defaults to None.
+            position_angles: Position angles of sources to measure. If None,
+                will use header BPA. Defaults to None.
+            nbeam: Diameter of the square cutout for injection in units of the
+                major axis. Defaults to 3.
         """
         X0, Y0 = map(
-            np.atleast_1d, astropy.wcs.utils.skycoord_to_pixel(positions, self.w)
+            np.atleast_1d,
+            astropy.wcs.utils.skycoord_to_pixel(positions, self.w)
         )
         flux = np.atleast_1d(flux)
 
@@ -505,15 +550,21 @@ class ForcedPhot:
             )
 
     def _measure(
-        self, X0, Y0, xmin, xmax, ymin, ymax, a, b, pa, allow_nan=True, stamps=False
+        self, X0, Y0, xmin, xmax, ymin, ymax, a, b,
+        pa, allow_nan=True, stamps=False
     ):
         """
-        flux,flux_err,chisq,DOF=_measure(X0, Y0, xmin, xmax, ymin, ymax, a, b, pa, allow_nan=True, stamps=False)
+        flux, flux_err, chisq, DOF=_measure(
+            X0, Y0, xmin, xmax, ymin, ymax, a, b,
+            pa, allow_nan=True, stamps=False
+        )
 
         or
 
-        flux,flux_err,chisq,DOF,data,model=_measure(X0, Y0, xmin, xmax, ymin, ymax, a, b,
-            pa, allow_nan=True, stamps=False)
+        flux, flux_err, chisq, DOF, data, model = _measure(
+            X0, Y0, xmin, xmax, ymin, ymax, a, b,
+            pa, allow_nan=True, stamps=False
+        )
 
         forced photometry for a single source
         if stamps is True, will also output data and kernel postage stamps
@@ -536,16 +587,18 @@ class ForcedPhot:
         :type b: `astropy.units.Quantity`
         :param pa: position angle in angular units
         :type pa: `astropy.units.Quantity`
-        :param allow_nan: whether or not to try to measure sources even if some RMS values
-            are NaN.  Defaults to True
+        :param allow_nan: whether or not to try to measure sources even if
+            some RMS values are NaN.  Defaults to True
         :type allow_nan: bool, optional
-        :param stamps: whether or not to return postage stamps of the data and model for
-            a single source, defaults to False
+        :param stamps: whether or not to return postage stamps of the data
+            and model for a single source, defaults to False
         :type stamps: bool, optional
 
-        :returns: flux, flux_err, chisq, DOF  or  flux, flux_err, chisq, DOF, data, model
+        :returns: flux, flux_err, chisq, DOF  or  flux, flux_err, chisq,
+            DOF, data, model
             if stamps=True
-        :rtype: float, float, float, float, optionally `np.ndarray`,`np.ndarray`
+        :rtype: float, float, float, float,
+            optionally `np.ndarray`,`np.ndarray`
         """
         sl = tuple((slice(ymin, ymax), slice(xmin, xmax)))
         # unfortunately we have to make a custom kernel for each object
@@ -553,13 +606,16 @@ class ForcedPhot:
         x = np.arange(xmin, xmax)
         y = np.arange(ymin, ymax)
         xx, yy = np.meshgrid(x, y)
-        g = G2D(X0, Y0, (a / self.pixelscale).value, (b / self.pixelscale).value, pa)
+        g = G2D(
+            X0, Y0, (a / self.pixelscale).value,
+            (b / self.pixelscale).value, pa
+        )
 
         kernel = g(xx, yy)
 
         # uncertainties: see discussion in Section 3 of Condon (1997)
-        # the uncertainty on the amplitude is just the noise at the position of the source
-        # so do a weighted average over the beam
+        # the uncertainty on the amplitude is just the noise at the
+        # position of the source so do a weighted average over the beam
         n = self.noisedata[sl]
         d = self.data[sl]
         ndata = np.prod(xx.shape)
@@ -585,7 +641,9 @@ class ForcedPhot:
                     )
 
         flux = ((d) * kernel / n ** 2).sum() / (kernel ** 2 / n ** 2).sum()
-        flux_err = ((n) * kernel / n ** 2).sum() / (kernel ** 2 / n ** 2).sum()
+        flux_err = (
+            ((n) * kernel / n ** 2).sum() / (kernel ** 2 / n ** 2).sum()
+        )
 
         chisq = (((d - kernel * flux) / n) ** 2).sum()
 
@@ -634,7 +692,10 @@ class ForcedPhot:
         x = np.arange(xmin, xmax)
         y = np.arange(ymin, ymax)
         xx, yy = np.meshgrid(x, y)
-        g = G2D(X0, Y0, (a / self.pixelscale).value, (b / self.pixelscale).value, pa)
+        g = G2D(
+            X0, Y0, (a / self.pixelscale).value,
+            (b / self.pixelscale).value, pa
+        )
 
         kernel = g(xx, yy).value
         self.data[sl] += kernel * flux
@@ -655,11 +716,16 @@ class ForcedPhot:
         fitter=fitting.LevMarLSQFitter(),
     ):
         """
-        flux,flux_err,chisq,DOF=_measure(X0, Y0, xmin, xmax, ymin, ymax, a, b, pa, allow_nan=True,
-            stamps=False, fitter = fitting.LevMarLSQFitter())
+        flux, flux_err, chisq, DOF = _measure(
+            X0, Y0, xmin, xmax, ymin, ymax, a, b, pa, allow_nan=True,
+            stamps=False, fitter = fitting.LevMarLSQFitter()
+        )
         or
-        flux,flux_err,chisq,DOF,data,model=_measure(X0, Y0, xmin, xmax, ymin, ymax, a, b,
-            pa, allow_nan=True, stamps=False, fitter = fitting.LevMarLSQFitter())
+        flux, flux_err, chisq, DOF, data, model = _measure(
+            X0, Y0, xmin, xmax, ymin, ymax, a, b,
+            pa, allow_nan=True, stamps=False,
+            fitter = fitting.LevMarLSQFitter()
+        )
 
         forced photometry for a cluster of sources using astropy fitting
 
@@ -681,19 +747,19 @@ class ForcedPhot:
         :type b: `astropy.units.Quantity`
         :param pa: position angle of each source in angular units
         :type pa: `astropy.units.Quantity`
-        :param allow_nan: whether or not to try to measure sources even if some RMS values
-            are NaN.  Defaults to True
+        :param allow_nan: whether or not to try to measure sources even if
+            some RMS values are NaN.  Defaults to True
         :type allow_nan: bool, optional
-        :param stamps: whether or not to return postage stamps of the data and model,
-            defaults to False
+        :param stamps: whether or not to return postage stamps of the data
+            and model, defaults to False
         :type stamps: bool, optional
         :param fitter: fitting object, defaults to `fitting.LevMarLSQFitter()`
         :type fitter: optional
 
-        :returns: flux, flux_err, chisq, DOF  or  flux, flux_err, chisq, DOF, data, model
-            if stamps=True
-        :rtype: numpy.ndarray, numpy.ndarray, numpy.ndarray, numpy.ndarray, optionally
-            `np.ndarray`,`np.ndarray`
+        :returns: flux, flux_err, chisq, DOF  or  flux, flux_err, chisq, DOF,
+            data, model if stamps=True
+        :rtype: numpy.ndarray, numpy.ndarray, numpy.ndarray, numpy.ndarray,
+            optionally `np.ndarray`,`np.ndarray`
 
         """
         x = np.arange(xmin, xmax)
@@ -771,7 +837,9 @@ class ForcedPhot:
                 )
 
         try:
-            out = fitter(g, xx[good], yy[good], d[good], weights=1.0 / n[good])
+            out = fitter(
+                g, xx[good], yy[good], d[good], weights=1.0 / n[good]
+            )
         except TypeError as err:
             print("Unable to fit cluster: {0}".format(err))
             if stamps:
@@ -791,14 +859,23 @@ class ForcedPhot:
                     flux,
                 )
         model = out(xx, yy)
-        chisq = np.zeros(len(X0)) + (((d[good] - model[good]) / n[good]) ** 2).sum()
-        dof = np.zeros(len(X0), dtype=np.int16) + np.prod(xx[good].shape) - len(X0)
+        chisq = (
+            np.zeros(len(X0))
+            + (((d[good] - model[good]) / n[good]) ** 2).sum()
+        )
+        dof = (
+            np.zeros(len(X0), dtype=np.int16)
+            + np.prod(xx[good].shape) - len(X0)
+        )
 
         for k in range(len(X0)):
             flux[k] = out.__getattr__("amplitude_%d" % k).value
             # a weighted average would be better for the noise here, but
-            # to simplify just use the noise map at the central source position
-            flux_err[k] = self.noisedata[np.int16(round(Y0[k])), np.int16(round(X0[k]))]
+            # to simplify just use the noise map at the central
+            # source position
+            flux_err[k] = self.noisedata[
+                np.int16(round(Y0[k])), np.int16(round(X0[k]))
+            ]
 
         if stamps:
             return flux, flux_err, chisq, dof, d, model
@@ -806,7 +883,8 @@ class ForcedPhot:
             return flux, flux_err, chisq, dof
 
     def _measure_astropy(
-        self, X0, Y0, xmin, xmax, ymin, ymax, a, b, pa, nbeam=3, stamps=False
+        self, X0, Y0, xmin, xmax, ymin, ymax,
+        a, b, pa, nbeam=3, stamps=False
     ):
         """
         flux, flux_err, chisq, DOF = _measure_astropy(
@@ -831,14 +909,16 @@ class ForcedPhot:
         """
         p = astropy.wcs.utils.pixel_to_skycoord(X0, Y0, self.w)
         if self.twod:
-            im = astropy.nddata.Cutout2D(self.fi[0].data, p, nbeam * a, wcs=self.w)
+            im = astropy.nddata.Cutout2D(
+                self.fi[0].data, p, nbeam * a, wcs=self.w
+            )
             bg = self.fb[0].data[
-                im.ymin_original : im.ymax_original + 1,
-                im.xmin_original : im.xmax_original + 1,
+                im.ymin_original: im.ymax_original + 1,
+                im.xmin_original: im.xmax_original + 1,
             ]
             ns = self.fn[0].data[
-                im.ymin_original : im.ymax_original + 1,
-                im.xmin_original : im.xmax_original + 1,
+                im.ymin_original: im.ymax_original + 1,
+                im.xmin_original: im.xmax_original + 1,
             ]
         else:
             im = astropy.nddata.Cutout2D(
@@ -847,24 +927,31 @@ class ForcedPhot:
             bg = self.fb[0].data[
                 0,
                 0,
-                im.ymin_original : im.ymax_original + 1,
-                im.xmin_original : im.xmax_original + 1,
+                im.ymin_original: im.ymax_original + 1,
+                im.xmin_original: im.xmax_original + 1,
             ]
             ns = self.fn[0].data[
                 0,
                 0,
-                im.ymin_original : im.ymax_original + 1,
-                im.xmin_original : im.xmax_original + 1,
+                im.ymin_original: im.ymax_original + 1,
+                im.xmin_original: im.xmax_original + 1,
             ]
 
         x = np.arange(im.data.shape[1])
         y = np.arange(im.data.shape[0])
         xx, yy = np.meshgrid(x, y)
         x0, y0 = astropy.wcs.utils.skycoord_to_pixel(p, im.wcs)
-        g = G2D(x0, y0, (a / self.pixelscale).value, (b / self.pixelscale).value, pa)
+        g = G2D(
+            x0, y0, (a / self.pixelscale).value, (b / self.pixelscale).value, pa
+        )
         kernel = g(xx, yy)
-        flux = ((im.data - bg) * kernel / ns ** 2).sum() / (kernel ** 2 / ns ** 2).sum()
-        flux_err = ((ns) * kernel / ns ** 2).sum() / (kernel ** 2 / ns ** 2).sum()
+        flux = (
+            ((im.data - bg) * kernel / ns ** 2).sum()
+            / (kernel ** 2 / ns ** 2).sum()
+        )
+        flux_err = (
+            ((ns) * kernel / ns ** 2).sum() / (kernel ** 2 / ns ** 2).sum()
+        )
         chisq = (((im.data - flux * kernel) / ns.data) ** 2).sum()
         dof = np.prod(xx.shape) - 1
         if not stamps:
