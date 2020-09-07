@@ -213,12 +213,6 @@ class Pipeline(object):
             )
         )
 
-        m_files = images['measurements_path'].tolist()
-        m_files += sorted(glob.glob(os.path.join(
-            run_dir,
-            "forced_measurements*.parquet"
-        )))
-
         associations = pd.read_parquet(
             os.path.join(
                 run_dir,
@@ -281,17 +275,20 @@ class Pipeline(object):
                 'sources.parquet'
             ),
             engine='pyarrow'
-        ).set_index('id')
-
-        measurements = pd.read_parquet(
-            m_files[0],
-            engine='pyarrow'
         )
 
-        for m in m_files[1:]:
-            measurements = measurements.append(
-                pd.read_parquet(m)
-            )
+        m_files = images['measurements_path'].tolist()
+        m_files += sorted(glob.glob(os.path.join(
+            run_dir,
+            "forced_measurements*.parquet"
+        )))
+
+        # use dask to open measurement parquets
+        # as they are spread over many different files
+        measurements = dd.read_parquet(
+            m_files,
+            engine='pyarrow'
+        ).compute()
 
         measurements = measurements.merge(
             associations, left_on='id', right_on='meas_id',
@@ -302,7 +299,7 @@ class Pipeline(object):
             columns={
                 'source_id': 'source',
             }
-        )
+        ).dropna(subset=['source'])
 
         measurements = measurements.merge(
             images[[
@@ -713,14 +710,19 @@ class PipeRun(object):
 
         return moc
 
-    def create_moc(self, max_depth=9):
+    def create_moc(self, max_depth=9, ignore_large_run_warning=False):
         '''
         Create a MOC file that represents the area covered by
         the pipeline run.
 
+        WARNING! This will take a very long time for large runs.
+
         :param max_depth: Max depth parameter passed to the
             MOC.from_polygon_skycoord() function, defaults to 9.
         :type max_depth: int, optional
+        :param ignore_large_run_warning: Ignores the warning of
+            creating a MOC on a large run.
+        :type ignore_large_run_warning: bool, optional
 
         :returns: MOC object.
         :rtype: mocpy.moc.moc.MOC
@@ -729,6 +731,15 @@ class PipeRun(object):
         images_to_use = self.images.drop_duplicates(
             'skyreg_id'
         )['path'].values
+
+        if not ignore_large_run_warning and images_to_use.shape[0] > 20:
+            warnings.warn(
+                "Creating a MOC for a large run will take a long time!"
+                " Run again with 'ignore_large_run_warning=True` if you"
+                " are sure you want to run this. A smaller `max_depth` is"
+                " highly recommended."
+            )
+            return
 
         moc = self._create_moc_from_fits(
             images_to_use[0],
@@ -904,13 +915,9 @@ class PipeAnalysis(PipeRun):
         :returns: Tuple containing the pairs dataframe and the
             two epoch dataframe containg the results of each pair
             of source measurements.
-        :rtype:
+        :rtype: pandas.core.frame.DataFrame, pandas.core.frame.DataFrame
         '''
-        image_ids = self.images.index.tolist()
-
-        combs = combinations(
-            image_ids, 2
-        )
+        image_ids = self.images.sort_values(by='datetime').index.tolist()
 
         if len(allowed_sources) > 0:
             measurements = self.measurements.loc[
@@ -921,80 +928,96 @@ class PipeAnalysis(PipeRun):
         else:
             measurements = self.measurements
 
-        measurements_images = {}
-        for i in image_ids:
-            measurements_images[i] = measurements[[
-                'image_id',
-                'source',
-                'id',
-                'flux_peak',
-                'flux_peak_err',
-                'flux_int',
-                'flux_int_err',
-                'has_siblings',
-                'forced'
-            ]].loc[
-                measurements['image_id'] == i
-            ]
+        pairs_df = pd.DataFrame.from_dict(
+            {'pair': combinations(image_ids, 2)}
+        )
 
-        pairs = {
-            'pair': [],
-            'id': [],
-            'td': [],
-            'total_pairs': [],
-        }
-
-        for i, c in enumerate(combs):
-            img_1 = c[0]
-            img_2 = c[1]
-
-            pair_key = i+1
-
-            pair_td = (
-                self.images.loc[img_2].datetime
-                - self.images.loc[img_1].datetime
+        pairs_df = (
+            pd.DataFrame(pairs_df['pair'].tolist())
+            .rename(columns={0: 'image_id_x', 1: 'image_id_y'})
+            .merge(
+                self.images[['datetime']],
+                left_on='image_id_x', right_index=True
             )
+            .merge(
+                self.images[['datetime']],
+                left_on='image_id_y', right_index=True
+            )
+        ).reset_index().rename(columns={'index': 'id'})
 
-            if pair_td.total_seconds() < 0:
-                img_1 = c[1]
-                img_2 = c[0]
+        pairs_df['td'] = pairs_df['datetime_y'] - pairs_df['datetime_x']
 
-                pair_td *= -1
+        pairs_df.drop(['datetime_x', 'datetime_y'], axis=1)
 
-            pairs['id'].append(pair_key)
-            pairs['td'].append(pair_td)
+        pairs_df['pair_key'] = pairs_df[['image_id_x', 'image_id_y']].apply(
+            lambda x: "{}_{}".format(x['image_id_x'], x['image_id_y']), axis=1
+        )
 
-            pairs['pair'].append("{}_{}".format(
-                img_1, img_2
-            ))
+        two_epoch_df = (
+            measurements.sort_values(by='time')
+            .groupby("source")["id"]
+            .apply(lambda x: pd.DataFrame(list(combinations(x, 2))))
+            .reset_index(level=1, drop=True)
+            .rename(
+                columns={0: "meas_id_a", 1: "meas_id_b"}
+            ).astype(int).reset_index()
+        )
 
-            first_set = measurements_images[img_1]
-            second_set = measurements_images[img_2]
+        measurements = measurements.set_index(["source", "id"])[[
+            'image_id',
+            'flux_peak',
+            'flux_peak_err',
+            'flux_int',
+            'flux_int_err',
+            'has_siblings',
+            'forced'
+        ]]
 
-            first_set = first_set.merge(second_set, on='source')
+        two_epoch_df = two_epoch_df.join(
+            measurements,
+            on=["source", "meas_id_a"],
+        ).join(
+            measurements,
+            on=["source", "meas_id_b"],
+            lsuffix="_x",
+            rsuffix="_y",
+        )
 
-            pairs['total_pairs'].append(first_set.shape[0])
+        two_epoch_df['forced_count'] = two_epoch_df[
+            ['forced_x', 'forced_y']
+        ].sum(axis=1)
 
-            first_set['pair'] = pair_key
-            first_set['forced_count'] = first_set[
-                ['forced_x', 'forced_y']
-            ].sum(axis=1)
-            first_set['siblings_count'] = first_set[
-                ['has_siblings_x', 'has_siblings_y']
-            ].sum(axis=1)
+        two_epoch_df['siblings_count'] = two_epoch_df[
+            ['has_siblings_x', 'has_siblings_y']
+        ].sum(axis=1)
 
-            if i == 0:
-                two_epoch_df = first_set
-            else:
-                two_epoch_df = two_epoch_df.append(first_set)
+        two_epoch_df['pair_key'] = two_epoch_df[
+            ['image_id_x', 'image_id_y']
+        ].apply(
+            lambda x: "{}_{}".format(x['image_id_x'], x['image_id_y']), axis=1
+        )
 
-        pairs = pd.DataFrame.from_dict(pairs).set_index(
-            'id'
-        ).sort_values(by='td')
+        two_epoch_df = two_epoch_df.merge(
+            pairs_df[['id', 'pair_key']].rename(columns={'id': 'pair_id'}),
+            left_on='pair_key',
+            right_on='pair_key'
+        )
 
-        pairs = pairs.loc[pairs['total_pairs'] != 0]
+        two_epoch_df['source'] = two_epoch_df['source'].astype(int)
 
-        return pairs, two_epoch_df
+        pair_counts = two_epoch_df[
+            ['pair_key', 'image_id_x']
+        ].groupby('pair_key').count().rename(
+            columns={'image_id_x': 'total_pairs'}
+        )
+
+        pairs_df = pairs_df.merge(
+            pair_counts, left_on='pair_key', right_index=True
+        )
+
+        pairs_df = pairs_df.dropna(subset=['total_pairs']).set_index('id')
+
+        return pairs_df, two_epoch_df
 
     def _calculate_metrics(self, df, use_int_flux=False):
         '''
@@ -1083,7 +1106,7 @@ class PipeAnalysis(PipeRun):
         epoch_pair_figs = []
         for epoch_pair in light_curve_pairs:
             td_days = pairs.loc[epoch_pair]['td'].days
-            df_filter = df.query("pair == @epoch_pair")
+            df_filter = df.query("pair_id == @epoch_pair")
             fig = figure(
                 plot_width=PLOT_WIDTH,
                 plot_height=PLOT_HEIGHT,

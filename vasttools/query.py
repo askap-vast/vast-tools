@@ -126,7 +126,8 @@ class Query:
         use_islands=False, base_folder=None, matches_only=False,
         no_rms=False, search_around_coordinates=False,
         output_dir=".", planets=[], ncpu=2, sort_output=False,
-        forced_fits=False
+        forced_fits=False, forced_cluster_threshold=1.5,
+        forced_allow_nan=False
     ):
         '''
         :param coords: List of coordinates to query, defaults to None
@@ -171,6 +172,14 @@ class Query:
         :param forced_fits: Turns on the option to perform forced fits
             on the locations queried, defaults to `False`.
         :type forced_fits: bool, optional
+        :param forced_cluster_threshold: The cluster_threshold value passed to
+            the forced photometry. Beam width distance limit for which a
+            cluster is formed for extraction, defaults to 3.0.
+        :type forced_cluster_threshold: float, optional.
+        :param forced_allow_nan: `allow_nan` value passed to the
+            forced photometry. If False then any cluster containing a
+            NaN is ignored. Defaults to False.
+        :type forced_allow_nan: bool, optional
         '''
         self.logger = logging.getLogger('vasttools.find_sources.Query')
 
@@ -279,6 +288,10 @@ class Query:
         self.settings['search_around'] = search_around_coordinates
         self.settings['sort_output'] = sort_output
         self.settings['forced_fits'] = forced_fits
+        self.settings[
+            'forced_cluster_threshold'
+        ] = forced_cluster_threshold
+        self.settings['forced_allow_nan'] = forced_allow_nan
 
         self.settings['output_dir'] = output_dir
 
@@ -984,6 +997,10 @@ class Query:
                 .groupby('image')
                 .apply(
                     self._get_forced_fits,
+                    cluster_threshold=(
+                        self.settings['forced_cluster_threshold']
+                    ),
+                    allow_nan=self.settings['forced_allow_nan'],
                     meta=meta,
                 ).compute(num_workers=self.ncpu, scheduler='processes')
             )
@@ -1071,7 +1088,9 @@ class Query:
         )
 
         if self.settings['search_around']:
-            self.results = self.crossmatch_results
+            self.results = self.crossmatch_results.rename(
+                columns={'#': 'distance'}
+            )
         else:
             self.results = (
                 dd.from_pandas(self.crossmatch_results, self.ncpu)
@@ -1092,14 +1111,21 @@ class Query:
         :param sort_output: Whether to sort the output, defaults to `False`
         :type sort_output: bool, optional
         '''
-
         meta = {}
         # also have the sort output setting as a function
         # input in case of interactive use.
         if self.settings['sort_output']:
             sort_output = True
         result = (
-            dd.from_pandas(self.results, self.ncpu)
+            dd.from_pandas(
+                self.results.drop([
+                    'fields',
+                    'stokes',
+                    'skycoord',
+                    'selavy',
+                    'image',
+                    'rms',
+                ], axis=1), self.ncpu)
             .groupby('name')
             .apply(
                 self._write_search_around_results,
@@ -1118,21 +1144,11 @@ class Query:
         :param sort_output: Whether to sort the output
         :type sort_output: bool
         '''
-        source_name = group.iloc[0]['name'].replace(
+        source_name = group['name'].iloc[0].replace(
             " ", "_"
         ).replace("/", "_")
 
-        matches_df = group.drop(
-            columns=[
-                'fields',
-                'stokes',
-                'skycoord',
-                'selavy',
-                'image',
-                'rms',
-                '#'
-            ]
-        ).sort_values(by=['dateobs', 'component_id'])
+        group = group.sort_values(by=['dateobs', 'component_id'])
 
         outname = "{}_matches_around.csv".format(
             source_name
@@ -1144,14 +1160,16 @@ class Query:
                 source_name
             )
         else:
-            base = self.settings['output_dir'],
+            base = self.settings['output_dir']
 
         outname = os.path.join(
             base,
             outname
         )
 
-        matches_df.to_csv(outname, index=False)
+        group.to_csv(outname, index=False)
+
+        time.sleep(0.1)
 
     def _check_for_duplicate_epochs(self, epochs):
         '''
@@ -1253,7 +1271,9 @@ class Query:
 
         return thesource
 
-    def _get_forced_fits(self, group):
+    def _get_forced_fits(
+        self, group, cluster_threshold: float = 1.5, allow_nan: bool = False
+    ):
         '''
         Perform the forced fits on an image, on the coordinates
         supplied by the group.
@@ -1261,6 +1281,14 @@ class Query:
         :param group: A dataframe of sources/positions which have been
             supplied by grouping the queried sources by image.
         :type group: `pandas.core.frame.DataFrame`
+        :param cluster_threshold: The cluster_threshold value passed to
+            the forced photometry. Beam width distance limit for which a
+            cluster is formed for extraction, defaults to 3.0.
+        :type cluster_threshold: float, optional.
+        :param allow_nan: `allow_nan` value passed to the forced photometry.
+            If False then any cluster containing a NaN is ignored. Defaults
+            to False.
+        :type allow_nan: bool, optional
 
         :returns: Dataframe containing the forced fit measurements for
             each source.
@@ -1309,7 +1337,8 @@ class Query:
             [major for i in range(to_fit.shape[0])] * u.arcsec,
             [minor for i in range(to_fit.shape[0])] * u.arcsec,
             [pa for i in range(to_fit.shape[0])] * u.deg,
-            cluster_threshold=3
+            cluster_threshold=cluster_threshold,
+            allow_nan=allow_nan
         )
 
         flux_islands *= 1.e3
@@ -1387,6 +1416,7 @@ class Query:
                 return
             copy = selavy_df.iloc[idxselavy].reset_index(drop=True)
             copy['detection'] = True
+            copy['#'] = d2d.arcsec
             copy.index = group.iloc[idxc].index.values
             master = master.append(copy, sort=False)
         else:

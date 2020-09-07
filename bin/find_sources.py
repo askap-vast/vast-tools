@@ -124,7 +124,25 @@ def parse_args():
         action="store_true",
         help=(
             'Perform forced fits at the locations requested.'
-        ))
+        )
+    )
+    parser.add_argument(
+        '--forced-cluster-threshold',
+        type=float,
+        default=1.5,
+        help=(
+            'Multiple of `major_axes` to use for identifying clusters,'
+            ' when performing forced fits.'
+        )
+    )
+    parser.add_argument(
+        '--forced-allow-nan',
+        action="store_true",
+        help=(
+            'When used, forced fits are attempted even when NaN'
+            ' values are present.'
+        )
+    )
     parser.add_argument(
         '--crossmatch-only',
         action="store_true",
@@ -439,7 +457,9 @@ if __name__ == '__main__':
         ncpu=args.ncpu,
         search_around_coordinates=args.search_around_coordinates,
         sort_output=args.sort_output,
-        forced_fits=args.forced_fits
+        forced_fits=args.forced_fits,
+        forced_cluster_threshold=args.forced_cluster_threshold,
+        forced_allow_nan=args.forced_allow_nan
     )
 
     if args.find_fields:
