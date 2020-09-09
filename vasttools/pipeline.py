@@ -3,6 +3,7 @@ import os
 import warnings
 import glob
 import gc
+import vaex
 import dask.dataframe as dd
 from typing import Dict, List, Tuple
 import bokeh.colors.named as colors
@@ -213,14 +214,6 @@ class Pipeline(object):
             )
         )
 
-        associations = pd.read_parquet(
-            os.path.join(
-                run_dir,
-                'associations.parquet'
-            ),
-            engine='pyarrow'
-        )
-
         skyregions = pd.read_parquet(
             os.path.join(
                 run_dir,
@@ -277,51 +270,55 @@ class Pipeline(object):
             engine='pyarrow'
         )
 
-        m_files = images['measurements_path'].tolist()
-        m_files += sorted(glob.glob(os.path.join(
-            run_dir,
-            "forced_measurements*.parquet"
-        )))
-
-        # use dask to open measurement parquets
-        # as they are spread over many different files
-        measurements = dd.read_parquet(
-            m_files,
+        associations = pd.read_parquet(
+            os.path.join(
+                run_dir,
+                'associations.parquet'
+            ),
             engine='pyarrow'
-        ).compute()
-
-        measurements = measurements.merge(
-            associations, left_on='id', right_on='meas_id',
-            how='left'
-        ).drop([
-            'meas_id',
-        ], axis=1).rename(
-            columns={
-                'source_id': 'source',
-            }
-        ).dropna(subset=['source'])
-
-        measurements = measurements.merge(
-            images[[
-                'id',
-                'path',
-                'noise_path',
-                'measurements_path',
-                'frequency'
-            ]], how='left',
-            left_on='image_id',
-            right_on='id'
-        ).drop(
-            'id_y',
-            axis=1
-        ).rename(
-            columns={
-                'id_x': 'id',
-                'path': 'image',
-                'noise_path': 'rms',
-                'measurements_path': 'selavy'
-            }
         )
+
+        vaex_meas = False
+
+        if os.path.isfile(os.path.join(
+            run_dir,
+            'measurements.arrow'
+        )):
+            measurements = vaex.open(
+                os.path.join(run_dir, 'measurements.arrow')
+            )
+
+            vaex_meas = True
+
+        else:
+
+            m_files = images['measurements_path'].tolist()
+            m_files += sorted(glob.glob(os.path.join(
+                run_dir,
+                "forced_measurements*.parquet"
+            )))
+
+            # use dask to open measurement parquets
+            # as they are spread over many different files
+            measurements = dd.read_parquet(
+                m_files,
+                engine='pyarrow'
+            ).compute()
+
+            measurements = measurements.loc[
+                measurements['id'].isin(associations['meas_id'].values)
+            ]
+
+            measurements = (
+                associations.loc[:, ['meas_id', 'source_id']]
+                .set_index('meas_id')
+                .merge(
+                    measurements,
+                    left_index=True,
+                    right_on='id'
+                )
+                .rename(columns={'source_id': 'source'})
+            )
 
         to_move = ['n_meas', 'n_meas_sel', 'n_meas_forced', 'n_sibl', 'n_rel']
         sources_len = sources.shape[1]
@@ -347,7 +344,9 @@ class Pipeline(object):
             skyregions=skyregions,
             relations=relations,
             sources=sources,
+            associations=associations,
             measurements=measurements,
+            vaex_meas=vaex_meas
         )
 
         return piperun
@@ -406,8 +405,8 @@ class PipeRun(object):
     '''
     def __init__(
         self, name, images,
-        skyregions, relations, sources,
-        measurements, n_workers=cpu_count() - 1
+        skyregions, relations, sources, associations,
+        measurements, vaex_meas=False, n_workers=cpu_count() - 1
     ):
         '''
         Constructor method.
@@ -438,9 +437,12 @@ class PipeRun(object):
         self.images = images
         self.skyregions = skyregions
         self.sources = sources
+        self.associations = associations
         self.measurements = measurements
         self.relations = relations
         self.n_workers = n_workers
+        self._vaex_meas = vaex_meas
+
 
     def get_source(self, id, field=None, stokes='I', outdir='.'):
         '''
@@ -462,10 +464,32 @@ class PipeRun(object):
         :returns: vast tools Source object
         :rtype: vasttools.source.Source
         '''
+        if self._vaex_meas:
+            measurements = self.measurements[
+                self.measurements['source'] == id
+            ].to_pandas_df()
 
-        measurements = self.measurements.groupby(
-            'source'
-        ).get_group(id)
+        else:
+            measurements = self.measurements.loc[
+                self.measurements['source'] == id
+            ]
+
+        measurements = measurements.merge(
+            self.images[[
+                'path',
+                'noise_path',
+                'measurements_path',
+                'frequency'
+            ]], how='left',
+            left_on='image_id',
+            right_index=True
+        ).rename(
+            columns={
+                'path': 'image',
+                'noise_path': 'rms',
+                'measurements_path': 'selavy'
+            }
+        )
 
         measurements = measurements.rename(
             columns={
@@ -869,8 +893,8 @@ class PipeAnalysis(PipeRun):
     '''
     def __init__(
         self, name, images,
-        skyregions, relations, sources,
-        measurements, n_workers=cpu_count() - 1
+        skyregions, relations, sources, associations,
+        measurements, vaex_meas=False, n_workers=cpu_count() - 1
     ):
         '''
         Constructor method.
@@ -899,7 +923,8 @@ class PipeAnalysis(PipeRun):
         super().__init__(
             name, images,
             skyregions, relations, sources,
-            measurements, n_workers
+            associations, measurements,
+            vaex_meas, n_workers
         )
 
     def _get_two_epoch_df(self, allowed_sources=[]):
