@@ -39,7 +39,8 @@ RELEASED_EPOCHS = {
     "8": "08",
     "9": "09",
     "10x": "10x",
-    "11x": "11x"
+    "11x": "11x",
+    "12": :"12"
 }
 
 FIELD_FILES = {
@@ -66,7 +67,9 @@ FIELD_FILES = {
     "10x": pkg_resources.resource_filename(
         __name__, "./data/csvs/vast_epoch10x_info.csv"),
     "11x": pkg_resources.resource_filename(
-        __name__, "./data/csvs/vast_epoch11x_info.csv")
+        __name__, "./data/csvs/vast_epoch11x_info.csv"),
+    "12": pkg_resources.resource_filename(
+        __name__, "./data/csvs/vast_epoch12_info.csv")
 }
 
 FIELD_CENTRES = pd.read_csv(
