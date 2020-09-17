@@ -275,7 +275,7 @@ class Pipeline(object):
                 'sources.parquet'
             ),
             engine='pyarrow'
-        )
+        ).set_index('id')
 
         m_files = images['measurements_path'].tolist()
         m_files += sorted(glob.glob(os.path.join(
