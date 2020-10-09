@@ -430,3 +430,39 @@ def create_source_directories(outdir, sources):
         name = i.replace(" ", "_").replace("/", "_")
         name = os.path.join(outdir, name)
         os.makedirs(name)
+
+
+def optimize_floats(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Downcast float columns in a pd.DataFrame to the smallest
+    data type without losing any information.
+    Credit to Robbert van der Gugten.
+
+    :param df: Input dataframe.
+    :type outdir: pandas.core.frame.DataFrame
+
+    :returns df: The dataframe with floats downcasted to types without
+        losing any information.
+    :rtype: pandas.core.frame.DataFrame
+    """
+    floats = df.select_dtypes(include=['float64']).columns.tolist()
+    df[floats] = df[floats].apply(pd.to_numeric, downcast='float')
+    return df
+
+
+def optimize_ints(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Downcast integer columns in a pd.DataFrame to the smallest
+    data type without losing any information.
+    Credit to Robbert van der Gugten.
+
+    :param df: Input dataframe.
+    :type outdir: pandas.core.frame.DataFrame
+
+    :returns df: The dataframe with ints downcasted to types without
+        losing any information.
+    :rtype: pandas.core.frame.DataFrame
+    """
+    ints = df.select_dtypes(include=['int64']).columns.tolist()
+    df[ints] = df[ints].apply(pd.to_numeric, downcast='integer')
+    return df

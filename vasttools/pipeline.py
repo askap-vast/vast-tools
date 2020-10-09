@@ -33,7 +33,9 @@ from astropy.coordinates import SkyCoord
 from astropy import units as u
 from mocpy import MOC
 from vasttools.source import Source
-from vasttools.utils import match_planet_to_field
+from vasttools.utils import (
+    match_planet_to_field, optimize_floats, optimize_ints
+)
 from vasttools.survey import Image
 from multiprocessing import cpu_count
 from datetime import timedelta
@@ -270,6 +272,22 @@ class Pipeline(object):
             engine='pyarrow'
         )
 
+        to_move = ['n_meas', 'n_meas_sel', 'n_meas_forced', 'n_sibl', 'n_rel']
+        sources_len = sources.shape[1]
+        for c in to_move:
+            col = sources.pop(c)
+            sources.insert(sources_len - 1, c, col)
+
+        sources = sources.rename(
+            columns={
+                'n_meas_forced': 'n_forced',
+                'n_meas': 'n_measurements',
+                'n_meas_sel': 'n_selavy',
+                'n_sibl': 'n_siblings',
+                'n_rel': 'n_relations'
+            }
+        )
+
         associations = pd.read_parquet(
             os.path.join(
                 run_dir,
@@ -290,8 +308,15 @@ class Pipeline(object):
 
             vaex_meas = True
 
-        else:
+            meas_extract = (
+                measurements[['id', 'image_id', 'forced', 'has_siblings']]
+                .extract()
+                .to_pandas_df()
+                .drop_duplicates('id')
+                .set_index('id')
+            )
 
+        else:
             m_files = images['measurements_path'].tolist()
             m_files += sorted(glob.glob(os.path.join(
                 run_dir,
@@ -320,21 +345,34 @@ class Pipeline(object):
                 .rename(columns={'source_id': 'source'})
             )
 
-        to_move = ['n_meas', 'n_meas_sel', 'n_meas_forced', 'n_sibl', 'n_rel']
-        sources_len = sources.shape[1]
-        for c in to_move:
-            col = sources.pop(c)
-            sources.insert(sources_len - 1, c, col)
+            meas_extract = (
+                measurements[['id', 'image_id', 'forced', 'has_siblings']]
+                .drop_duplicates('id')
+                .set_index('id')
+            )
 
-        sources = sources.rename(
-            columns={
-                'n_meas_forced': 'n_forced',
-                'n_meas': 'n_measurements',
-                'n_meas_sel': 'n_selavy',
-                'n_sibl': 'n_siblings',
-                'n_rel': 'n_relations'
-            }
+        measurement_pairs = optimize_ints(optimize_floats(pd.read_parquet(os.path.join(
+            run_dir, 'measurement_pairs.parquet'
+        ))))
+
+        measurement_pairs = (
+            measurement_pairs
+            .merge(
+                meas_extract,
+                left_on='meas_id_a', right_index=True, suffixes=(None, "_a")
+            )
+            .merge(
+                meas_extract,
+                left_on='meas_id_b', right_index=True, suffixes=(None, "_b")
+            )
+            .rename(columns={
+                'image_id': 'image_id_a',
+                'forced': 'forced_a',
+                'has_siblings': 'has_siblings_a'
+            })
         )
+
+        del meas_extract
 
         images = images.set_index('id')
 
@@ -346,6 +384,7 @@ class Pipeline(object):
             sources=sources,
             associations=associations,
             measurements=measurements,
+            measurement_pairs=measurement_pairs,
             vaex_meas=vaex_meas
         )
 
@@ -373,12 +412,14 @@ class PipeRun(object):
     measurements : pandas.core.frame.DataFrame
         Dataframe containing all the information on the measurements
         of the pipeline run.
+    measurement_pairs : pandas.core.frame.DataFrame
+        Dataframe containing all the two epoch pairs metrics for all sources in
+        the pipeline run.
     relations : pandas.core.frame.DataFrame
         Dataframe containing all the information on the relations
         of the pipeline run.
     n_workers : pandas.core.frame.DataFrame
         Number of workers (cpus) available.
-
 
     Methods
     -------
@@ -405,8 +446,8 @@ class PipeRun(object):
     '''
     def __init__(
         self, name, images,
-        skyregions, relations, sources, associations,
-        measurements, vaex_meas=False, n_workers=cpu_count() - 1
+        skyregions, relations, sources, associations,measurements,
+        measurement_pairs, vaex_meas=False, n_workers=cpu_count() - 1
     ):
         '''
         Constructor method.
@@ -426,6 +467,9 @@ class PipeRun(object):
             loaded from measurements.parquet and the forced measurements
             parquet files.
         :type measurements: pandas.core.frame.DataFrame
+        :param measurement_pairs: Two epoch pairs dataframe from the pipeline
+            run loaded from measurement_pairs.parquet.
+        :type measurement_pairs: pandas.core.frame.DataFrame
         :param relations: Relations dataframe from the pipeline run
             loaded from relations.parquet.
         :type relations: pandas.core.frame.DataFrame
@@ -439,6 +483,7 @@ class PipeRun(object):
         self.sources = sources
         self.associations = associations
         self.measurements = measurements
+        self.measurement_pairs = measurement_pairs
         self.relations = relations
         self.n_workers = n_workers
         self._vaex_meas = vaex_meas
@@ -849,6 +894,9 @@ class PipeAnalysis(PipeRun):
     measurements : pandas.core.frame.DataFrame
         Dataframe containing all the information on the measurements
         of the pipeline run.
+    measurement_pairs : pandas.core.frame.DataFrame
+        Dataframe containing all the two epoch pairs metrics for all sources in
+        the pipeline run.
     relations : pandas.core.frame.DataFrame
         Dataframe containing all the information on the relations
         of the pipeline run.
@@ -893,8 +941,8 @@ class PipeAnalysis(PipeRun):
     '''
     def __init__(
         self, name, images,
-        skyregions, relations, sources, associations,
-        measurements, vaex_meas=False, n_workers=cpu_count() - 1
+        skyregions, relations, sources, associations, measurements,
+        measurement_pairs, vaex_meas=False, n_workers=cpu_count() - 1
     ):
         '''
         Constructor method.
@@ -914,6 +962,9 @@ class PipeAnalysis(PipeRun):
            loaded from measurements.parquet and the forced measurements
            parquet files.
         :type measurements: pandas.core.frame.DataFrame
+        :param measurement_pairs: Two epoch pairs dataframe from the pipeline
+            run loaded from measurement_pairs.parquet.
+        :type measurement_pairs: pandas.core.frame.DataFrame
         :param relations: Relations dataframe from the pipeline run
            loaded from relations.parquet.
         :type relations: pandas.core.frame.DataFrame
@@ -921,10 +972,8 @@ class PipeAnalysis(PipeRun):
         :type n_workers: int, optional
         '''
         super().__init__(
-            name, images,
-            skyregions, relations, sources,
-            associations, measurements,
-            vaex_meas, n_workers
+            name, images, skyregions, relations, sources, associations,
+            measurements, measurement_pairs, vaex_meas, n_workers
         )
 
     def _get_two_epoch_df(self, allowed_sources=[]):
