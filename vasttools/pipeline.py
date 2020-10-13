@@ -1,4 +1,4 @@
-import pandas as pd
+import numexpr
 import os
 import warnings
 import glob
@@ -31,13 +31,11 @@ import scipy.ndimage as ndi
 from astropy.stats import sigma_clip, mad_std
 from astropy.coordinates import SkyCoord
 from astropy import units as u
+from multiprocessing import cpu_count
 from mocpy import MOC
 from vasttools.source import Source
-from vasttools.utils import (
-    match_planet_to_field, optimize_floats, optimize_ints
-)
+from vasttools.utils import match_planet_to_field
 from vasttools.survey import Image
-from multiprocessing import cpu_count
 from datetime import timedelta
 from itertools import combinations
 import matplotlib
@@ -47,6 +45,8 @@ from matplotlib.font_manager import FontProperties
 from astroML import density_estimation
 
 
+HOST_NCPU = cpu_count()
+numexpr.set_num_threads(int(HOST_NCPU / 4))
 matplotlib.pyplot.switch_backend('Agg')
 
 
@@ -308,14 +308,6 @@ class Pipeline(object):
 
             vaex_meas = True
 
-            meas_extract = (
-                measurements[['id', 'image_id', 'forced', 'has_siblings']]
-                .extract()
-                .to_pandas_df()
-                .drop_duplicates('id')
-                .set_index('id')
-            )
-
         else:
             m_files = images['measurements_path'].tolist()
             m_files += sorted(glob.glob(os.path.join(
@@ -345,36 +337,12 @@ class Pipeline(object):
                 .rename(columns={'source_id': 'source'})
             )
 
-            meas_extract = (
-                measurements[['id', 'image_id', 'forced', 'has_siblings']]
-                .drop_duplicates('id')
-                .set_index('id')
-            )
-
-        measurement_pairs = optimize_ints(optimize_floats(pd.read_parquet(os.path.join(
-            run_dir, 'measurement_pairs.parquet'
-        ))))
-
-        measurement_pairs = (
-            measurement_pairs
-            .merge(
-                meas_extract,
-                left_on='meas_id_a', right_index=True, suffixes=(None, "_a")
-            )
-            .merge(
-                meas_extract,
-                left_on='meas_id_b', right_index=True, suffixes=(None, "_b")
-            )
-            .rename(columns={
-                'image_id': 'image_id_a',
-                'forced': 'forced_a',
-                'has_siblings': 'has_siblings_a'
-            })
-        )
-
-        del meas_extract
-
         images = images.set_index('id')
+
+        measurement_pairs_file = [os.path.join(
+            run_dir,
+            "measurement_pairs.parquet"
+        )]
 
         piperun = PipeAnalysis(
             name=run_name,
@@ -384,7 +352,7 @@ class Pipeline(object):
             sources=sources,
             associations=associations,
             measurements=measurements,
-            measurement_pairs=measurement_pairs,
+            measurement_pairs_file=measurement_pairs_file,
             vaex_meas=vaex_meas
         )
 
@@ -445,9 +413,9 @@ class PipeRun(object):
         returned.
     '''
     def __init__(
-        self, name, images,
-        skyregions, relations, sources, associations,measurements,
-        measurement_pairs, vaex_meas=False, n_workers=cpu_count() - 1
+        self, name, images, skyregions, relations, sources,
+        associations, measurements, measurement_pairs_file, vaex_meas=False,
+        n_workers=cpu_count() - 1
     ):
         '''
         Constructor method.
@@ -483,11 +451,80 @@ class PipeRun(object):
         self.sources = sources
         self.associations = associations
         self.measurements = measurements
-        self.measurement_pairs = measurement_pairs
+        self.measurement_pairs_file = measurement_pairs_file
         self.relations = relations
         self.n_workers = n_workers
         self._vaex_meas = vaex_meas
+        self._loaded_two_epoch_metrics = False
 
+    def combine_with_run(self, other_PipeRun, new_name=None):
+        '''
+        Combines the output of another PipeRun object with the PipeRun
+        from which this method is being called from.
+
+        WARNING! It is assumed you are loading runs from the same Pipeline
+        instance. If this is not the case then erroneous results may be
+        returned.
+
+        :param other_PipeRun: The other pipeline run to merge.
+        :type other_PipeRun: vasttools.pipeline.PipeRun
+        :param new_name: If not None then the PipeRun attribute 'name'
+            is changed to the given value.
+        :type new_name: str, optional
+        '''
+
+        self.images = self.images.append(
+            other_PipeRun.images,
+        ).drop_duplicates('path')
+
+        self.skyregions = self.skyregions.append(
+            other_PipeRun.skyregions,
+            ignore_index=True
+        ).drop_duplicates('id')
+
+        if self._vaex_meas and other_PipeRun._vaex_meas:
+            self.measurements = self.measurements.concat(
+                other_PipeRun.measurements
+            )
+
+        elif self._vaex_meas and not other_PipeRun._vaex_meas:
+            self.measurements = self.measurements.concat(
+                vaex.from_pandas(other_PipeRun.measurements)
+            )
+
+        elif not self._vaex_meas and other_PipeRun._vaex_meas:
+            self.measurements = vaex.from_pandas(self.measurements).concat(
+                other_PipeRun.measurements
+            )
+            self._vaex_meas = True
+
+        else:
+            self.measurements = self.measurements.append(
+                other_PipeRun.measurements,
+                ignore_index=True
+            ).drop_duplicates(['id', 'source'])
+
+        sources_to_add = other_PipeRun.sources.loc[
+            ~(other_PipeRun.sources.index.isin(
+                self.sources.index
+            ))
+        ]
+
+        self.sources = self.sources.append(
+            sources_to_add
+        )
+
+        # need to keep access to all the different pairs files
+        # for two epoch metrics.
+        for i in other_PipeRun.measurement_pairs_file:
+            self.measurement_pairs_file.append(i)
+
+        del sources_to_add
+
+        if new_name is not None:
+            self.name = new_name
+
+        return self
 
     def get_source(self, id, field=None, stokes='I', outdir='.'):
         '''
@@ -595,6 +632,110 @@ class PipeRun(object):
         )
 
         return thesource
+
+    def load_two_epoch_metrics(self):
+
+        image_ids = self.images.sort_values(by='datetime').index.tolist()
+
+        pairs_df = pd.DataFrame.from_dict(
+            {'pair': combinations(image_ids, 2)}
+        )
+
+        pairs_df = (
+            pd.DataFrame(pairs_df['pair'].tolist())
+            .rename(columns={0: 'image_id_a', 1: 'image_id_b'})
+            .merge(
+                self.images[['datetime']],
+                left_on='image_id_a', right_index=True,
+                suffixes=('_a', '_b')
+            )
+            .merge(
+                self.images[['datetime']],
+                left_on='image_id_b', right_index=True,
+                suffixes=('_a', '_b')
+            )
+        ).reset_index().rename(columns={'index': 'id'})
+
+        pairs_df['td'] = pairs_df['datetime_b'] - pairs_df['datetime_a']
+
+        pairs_df.drop(['datetime_a', 'datetime_b'], axis=1)
+
+        pairs_df['pair_key'] = (
+            pairs_df[['image_id_a', 'image_id_b']]
+            .apply(
+                lambda x: "{}_{}".format(x['image_id_a'], x['image_id_b']),
+                axis=1
+            )
+        )
+
+        if self._vaex_meas:
+            meas_extract = (
+                self.measurements[['id', 'image_id', 'forced', 'has_siblings']]
+                .extract()
+                .to_pandas_df()
+                .drop_duplicates('id')
+                .set_index('id')
+            )
+
+        else:
+            meas_extract = (
+                self.measurements[['id', 'image_id', 'forced', 'has_siblings']]
+                .drop_duplicates('id')
+                .set_index('id')
+            )
+
+        measurement_pairs_df = (
+            dd.read_parquet(self.measurement_pairs_file).compute()
+        )
+
+        measurement_pairs_df = (
+            measurement_pairs_df
+            .merge(
+                meas_extract,
+                left_on='meas_id_a', right_index=True, suffixes=(None, "_a")
+            )
+            .merge(
+                meas_extract,
+                left_on='meas_id_b', right_index=True, suffixes=(None, "_b")
+            )
+            .rename(columns={
+                'image_id': 'image_id_a',
+                'forced': 'forced_a',
+                'has_siblings': 'has_siblings_a'
+            })
+        )
+
+        del meas_extract
+
+        measurement_pairs_df['pair_key'] = (
+            measurement_pairs_df[['image_id_a', 'image_id_b']]
+            .apply(
+                lambda x: f"{x['image_id_a']}_{x['image_id_b']}", axis=1
+            )
+        )
+
+        measurement_pairs_df = measurement_pairs_df.merge(
+            pairs_df[['id', 'pair_key']].rename(columns={'id': 'pair_id'}),
+            left_on='pair_key',
+            right_on='pair_key'
+        )
+
+        pair_counts = measurement_pairs_df[
+            ['pair_key', 'image_id_a']
+        ].groupby('pair_key').count().rename(
+            columns={'image_id_a': 'total_pairs'}
+        )
+
+        pairs_df = pairs_df.merge(
+            pair_counts, left_on='pair_key', right_index=True
+        )
+
+        pairs_df = pairs_df.dropna(subset=['total_pairs']).set_index('id')
+
+        self.measurement_pairs_df = measurement_pairs_df
+        self.pairs_df = pairs_df.sort_values(by='td')
+
+        self._loaded_two_epoch_metrics = True
 
     def _add_times(self, row, duration=True, every_hour=False):
         '''
@@ -825,52 +966,6 @@ class PipeRun(object):
 
         return moc
 
-    def combine_with_run(self, other_PipeRun, new_name=None):
-        '''
-        Combines the output of another PipeRun object with the PipeRun
-        from which this method is being called from.
-
-        WARNING! It is assumed you are loading runs from the same Pipeline
-        instance. If this is not the case then erroneous results may be
-        returned.
-
-        :param other_PipeRun: The other pipeline run to merge.
-        :type other_PipeRun: vasttools.pipeline.PipeRun
-        :param new_name: If not None then the PipeRun attribute 'name'
-            is changed to the given value.
-        :type new_name: str, optional
-        '''
-
-        self.images = self.images.append(
-            other_PipeRun.images,
-        ).drop_duplicates('path')
-
-        self.skyregions = self.skyregions.append(
-            other_PipeRun.skyregions,
-            ignore_index=True
-        ).drop_duplicates('id')
-
-        self.measurements = self.measurements.append(
-            other_PipeRun.measurements,
-            ignore_index=True
-        ).drop_duplicates(['id', 'source'])
-
-        sources_to_add = other_PipeRun.sources.loc[
-            ~(other_PipeRun.sources.index.isin(
-                self.sources.index
-            ))
-        ]
-        self.sources = self.sources.append(
-            sources_to_add
-        )
-
-        del sources_to_add
-
-        if new_name is not None:
-            self.name = new_name
-
-        return self
-
 
 class PipeAnalysis(PipeRun):
     '''
@@ -940,9 +1035,9 @@ class PipeAnalysis(PipeRun):
         dataframe.
     '''
     def __init__(
-        self, name, images,
-        skyregions, relations, sources, associations, measurements,
-        measurement_pairs, vaex_meas=False, n_workers=cpu_count() - 1
+        self, name, images, skyregions, relations, sources, associations,
+        measurements, measurement_pairs_file, vaex_meas=False,
+        n_workers=cpu_count() - 1
     ):
         '''
         Constructor method.
@@ -973,173 +1068,8 @@ class PipeAnalysis(PipeRun):
         '''
         super().__init__(
             name, images, skyregions, relations, sources, associations,
-            measurements, measurement_pairs, vaex_meas, n_workers
+            measurements, measurement_pairs_file, vaex_meas, n_workers
         )
-
-    def _get_two_epoch_df(self, allowed_sources=[]):
-        '''
-        Workhorse function of the two epoch analysis which
-        calculates the unique pairs of images and the metrics
-        between each source datapoint for each pair.
-
-        :param allowed_sources: List of the allowed source ids in
-            the analysis.
-        :type allowed_sources: list, optional
-
-        :returns: Tuple containing the pairs dataframe and the
-            two epoch dataframe containg the results of each pair
-            of source measurements.
-        :rtype: pandas.core.frame.DataFrame, pandas.core.frame.DataFrame
-        '''
-        image_ids = self.images.sort_values(by='datetime').index.tolist()
-
-        if len(allowed_sources) > 0:
-            measurements = self.measurements.loc[
-                self.measurements['source'].isin(
-                    allowed_sources
-                )
-            ]
-        else:
-            measurements = self.measurements
-
-        pairs_df = pd.DataFrame.from_dict(
-            {'pair': combinations(image_ids, 2)}
-        )
-
-        pairs_df = (
-            pd.DataFrame(pairs_df['pair'].tolist())
-            .rename(columns={0: 'image_id_x', 1: 'image_id_y'})
-            .merge(
-                self.images[['datetime']],
-                left_on='image_id_x', right_index=True
-            )
-            .merge(
-                self.images[['datetime']],
-                left_on='image_id_y', right_index=True
-            )
-        ).reset_index().rename(columns={'index': 'id'})
-
-        pairs_df['td'] = pairs_df['datetime_y'] - pairs_df['datetime_x']
-
-        pairs_df.drop(['datetime_x', 'datetime_y'], axis=1)
-
-        pairs_df['pair_key'] = pairs_df[['image_id_x', 'image_id_y']].apply(
-            lambda x: "{}_{}".format(x['image_id_x'], x['image_id_y']), axis=1
-        )
-
-        two_epoch_df = (
-            measurements.sort_values(by='time')
-            .groupby("source")["id"]
-            .apply(lambda x: pd.DataFrame(list(combinations(x, 2))))
-            .reset_index(level=1, drop=True)
-            .rename(
-                columns={0: "meas_id_a", 1: "meas_id_b"}
-            ).astype(int).reset_index()
-        )
-
-        measurements = measurements.set_index(["source", "id"])[[
-            'image_id',
-            'flux_peak',
-            'flux_peak_err',
-            'flux_int',
-            'flux_int_err',
-            'has_siblings',
-            'forced'
-        ]]
-
-        two_epoch_df = two_epoch_df.join(
-            measurements,
-            on=["source", "meas_id_a"],
-        ).join(
-            measurements,
-            on=["source", "meas_id_b"],
-            lsuffix="_x",
-            rsuffix="_y",
-        )
-
-        two_epoch_df['forced_count'] = two_epoch_df[
-            ['forced_x', 'forced_y']
-        ].sum(axis=1)
-
-        two_epoch_df['siblings_count'] = two_epoch_df[
-            ['has_siblings_x', 'has_siblings_y']
-        ].sum(axis=1)
-
-        two_epoch_df['pair_key'] = two_epoch_df[
-            ['image_id_x', 'image_id_y']
-        ].apply(
-            lambda x: "{}_{}".format(x['image_id_x'], x['image_id_y']), axis=1
-        )
-
-        two_epoch_df = two_epoch_df.merge(
-            pairs_df[['id', 'pair_key']].rename(columns={'id': 'pair_id'}),
-            left_on='pair_key',
-            right_on='pair_key'
-        )
-
-        two_epoch_df['source'] = two_epoch_df['source'].astype(int)
-
-        pair_counts = two_epoch_df[
-            ['pair_key', 'image_id_x']
-        ].groupby('pair_key').count().rename(
-            columns={'image_id_x': 'total_pairs'}
-        )
-
-        pairs_df = pairs_df.merge(
-            pair_counts, left_on='pair_key', right_index=True
-        )
-
-        pairs_df = pairs_df.dropna(subset=['total_pairs']).set_index('id')
-
-        return pairs_df, two_epoch_df
-
-    def _calculate_metrics(self, df, use_int_flux=False):
-        '''
-        Calcualtes the V and m two epoch metrics.
-
-        :param df: Dataframe of source pairs with flux information.
-        :type df: pandas.core.frame.DataFrame
-        :param use_int_flux: When 'True', integrated flux is used
-            instead of peak flux, defaults to 'False'.
-        :type use_int_flux: bool, optional.
-
-        :returns: Dataframe with the metrics added.
-        :rtype: pandas.core.frame.DataFrame
-        '''
-
-        if use_int_flux:
-            flux = 'int'
-        else:
-            flux = 'peak'
-
-        flux_x_label = "flux_{}_x".format(flux)
-        flux_err_x_label = "flux_{}_err_x".format(flux)
-        flux_y_label = "flux_{}_y".format(flux)
-        flux_err_y_label = "flux_{}_err_y".format(flux)
-
-        df["Vs"] = np.abs(
-            (
-                df[flux_x_label]
-                - df[flux_y_label]
-            )
-            / np.hypot(
-                df[flux_err_x_label],
-                df[flux_err_y_label]
-            )
-        )
-
-        df["m"] = (
-            (
-                df[flux_x_label]
-                - df[flux_y_label]
-            )
-            / ((
-                df[flux_x_label]
-                + df[flux_y_label]
-            ) / 2.)
-        )
-
-        return df
 
     def plot_epoch_pairs_bokeh(
         self,
@@ -1147,6 +1077,7 @@ class PipeAnalysis(PipeRun):
         pairs: pd.DataFrame,
         vs_min=4.3,
         m_min=0.26,
+        use_int_flux=False
     ) -> Model:
         '''
         Adapted from code written by Andrew O'Brien.
@@ -1154,7 +1085,7 @@ class PipeAnalysis(PipeRun):
         'run_two_epoch_analysis' but can also be run separately.
         Returns a bokeh plot.
 
-        :param df: Dataframe of source pairs with metric information.
+        :param df: Dataframe of measurement pairs with metric information.
         :type df: pandas.core.frame.DataFrame.
         :param pairs: Dataframe containing the pairs information.
         :type pairs: pandas.core.frame.DataFrame.
@@ -1164,6 +1095,9 @@ class PipeAnalysis(PipeRun):
         :param m_min: The minimum m metric absolute value to be
             considered a candidates, defaults to 0.26.
         :type m_min: float, optional.
+        :param use_int_flux: Whether to use the integrated fluxes instead of
+            the peak fluxes.
+        :type use_int_flux: bool, optional.
 
         :returns: Bokeh grid containing plots.
         :rtype: bokeh.models.grids.Grid
@@ -1171,15 +1105,23 @@ class PipeAnalysis(PipeRun):
 
         light_curve_pairs = pairs.index.values
 
+        vs_label = 'vs_int' if use_int_flux else 'vs_peak'
+        m_label = 'm_int' if use_int_flux else 'm_peak'
+
         GRID_WIDTH = 3
         PLOT_WIDTH = 500
         PLOT_HEIGHT = 300
         x_range = DataRange1d(start=0.5)
-        m_max_abs = df.query("Vs >= @vs_min")["m"].abs().max()
+        m_max_abs = (
+            df.query(f"{vs_label} >= @vs_min")[f"{m_label}"]
+            .abs().max()
+        )
         y_range = Range1d(start=-m_max_abs, end=m_max_abs)
         epoch_pair_figs = []
         for epoch_pair in light_curve_pairs:
-            td_days = pairs.loc[epoch_pair]['td'].days
+            td_days = (
+                pairs.loc[epoch_pair]['td'].total_seconds() / (3600. * 24.)
+            )
             df_filter = df.query("pair_id == @epoch_pair")
             fig = figure(
                 plot_width=PLOT_WIDTH,
@@ -1194,8 +1136,8 @@ class PipeAnalysis(PipeRun):
                 tooltips=[("source", "@source")],
             )
             fig.scatter(
-                f"Vs",
-                f"m",
+                f"{vs_label}",
+                f"{m_label}",
                 source=df_filter,
                 marker="circle",
                 size=2,
@@ -1227,8 +1169,7 @@ class PipeAnalysis(PipeRun):
         return grid
 
     def run_two_epoch_analysis(
-        self, v, m, query=None,
-        df=None, use_int_flux=False
+        self, v, m, query=None, df=None, use_int_flux=False, plot=False
     ):
         '''
         Run the two epoch analysis on the pipeline run, with optional
@@ -1257,6 +1198,9 @@ class PipeAnalysis(PipeRun):
         :rtype: pandas.core.frame.DataFrame, pandas.core.frame.DataFrame,
             pandas.core.frame.DataFrame, bokeh.models.grids.Grid
         '''
+        if plot and not self._loaded_two_epoch_metrics:
+            self.load_two_epoch_metrics()
+
         if df is None:
             df = self.sources
 
@@ -1265,19 +1209,20 @@ class PipeAnalysis(PipeRun):
 
         allowed_sources = df.index.tolist()
 
-        pairs, df = self._get_two_epoch_df(
-            allowed_sources=allowed_sources
-        )
+        vs_label = 'vs_max_int' if use_int_flux else 'vs_max_peak'
+        m_abs_label = 'm_abs_max_int' if use_int_flux else 'm_abs_max_peak'
 
-        df = self._calculate_metrics(df, use_int_flux=use_int_flux)
+        candidates = df.loc[(df[vs_label] > v) & (df[m_abs_label] > m)]
 
-        candidates = df.loc[(df['Vs'] > v) & (df['m'].abs() > m)]
+        if plot:
+            plot = self.plot_epoch_pairs_bokeh(
+                self.measurement_pairs_df, self.pairs_df, vs_min=v, m_min=m,
+                use_int_flux=use_int_flux
+            )
+            return candidates, plot
 
-        plot = self.plot_epoch_pairs_bokeh(
-            df, pairs, vs_min=v, m_min=m
-        )
-
-        return pairs, df, candidates, plot
+        else:
+            return candidates
 
     def _fit_eta_v(self, df, use_int_flux=False):
         '''
