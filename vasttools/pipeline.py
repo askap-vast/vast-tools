@@ -668,69 +668,69 @@ class PipeRun(object):
             )
         )
 
-        if self._vaex_meas:
-            meas_extract = (
-                self.measurements[['id', 'image_id', 'forced', 'has_siblings']]
-                .extract()
-                .to_pandas_df()
-                .drop_duplicates('id')
-                .set_index('id')
-            )
-
-        else:
-            meas_extract = (
-                self.measurements[['id', 'image_id', 'forced', 'has_siblings']]
-                .drop_duplicates('id')
-                .set_index('id')
-            )
+        # if self._vaex_meas:
+        #     meas_extract = (
+        #         self.measurements[['id', 'image_id', 'forced', 'has_siblings']]
+        #         .extract()
+        #         .to_pandas_df()
+        #         .drop_duplicates('id')
+        #         .set_index('id')
+        #     )
+        #
+        # else:
+        #     meas_extract = (
+        #         self.measurements[['id', 'image_id', 'forced', 'has_siblings']]
+        #         .drop_duplicates('id')
+        #         .set_index('id')
+        #     )
 
         measurement_pairs_df = (
             dd.read_parquet(self.measurement_pairs_file).compute()
         )
 
-        measurement_pairs_df = (
-            measurement_pairs_df
-            .merge(
-                meas_extract,
-                left_on='meas_id_a', right_index=True, suffixes=(None, "_a")
-            )
-            .merge(
-                meas_extract,
-                left_on='meas_id_b', right_index=True, suffixes=(None, "_b")
-            )
-            .rename(columns={
-                'image_id': 'image_id_a',
-                'forced': 'forced_a',
-                'has_siblings': 'has_siblings_a'
-            })
-        )
-
-        del meas_extract
-
-        measurement_pairs_df['pair_key'] = (
-            measurement_pairs_df[['image_id_a', 'image_id_b']]
-            .apply(
-                lambda x: f"{x['image_id_a']}_{x['image_id_b']}", axis=1
-            )
-        )
-
-        measurement_pairs_df = measurement_pairs_df.merge(
-            pairs_df[['id', 'pair_key']].rename(columns={'id': 'pair_id'}),
-            left_on='pair_key',
-            right_on='pair_key'
-        )
-
-        pair_counts = measurement_pairs_df[
-            ['pair_key', 'image_id_a']
-        ].groupby('pair_key').count().rename(
-            columns={'image_id_a': 'total_pairs'}
-        )
-
-        pairs_df = pairs_df.merge(
-            pair_counts, left_on='pair_key', right_index=True
-        )
-
-        pairs_df = pairs_df.dropna(subset=['total_pairs']).set_index('id')
+        # measurement_pairs_df = (
+        #     measurement_pairs_df
+        #     .merge(
+        #         meas_extract,
+        #         left_on='meas_id_a', right_index=True, suffixes=(None, "_a")
+        #     )
+        #     .merge(
+        #         meas_extract,
+        #         left_on='meas_id_b', right_index=True, suffixes=(None, "_b")
+        #     )
+        #     .rename(columns={
+        #         'image_id': 'image_id_a',
+        #         'forced': 'forced_a',
+        #         'has_siblings': 'has_siblings_a'
+        #     })
+        # )
+        #
+        # del meas_extract
+        #
+        # measurement_pairs_df['pair_key'] = (
+        #     measurement_pairs_df[['image_id_a', 'image_id_b']]
+        #     .apply(
+        #         lambda x: f"{x['image_id_a']}_{x['image_id_b']}", axis=1
+        #     )
+        # )
+        #
+        # measurement_pairs_df = measurement_pairs_df.merge(
+        #     pairs_df[['id', 'pair_key']].rename(columns={'id': 'pair_id'}),
+        #     left_on='pair_key',
+        #     right_on='pair_key'
+        # )
+        #
+        # pair_counts = measurement_pairs_df[
+        #     ['pair_key', 'image_id_a']
+        # ].groupby('pair_key').count().rename(
+        #     columns={'image_id_a': 'total_pairs'}
+        # )
+        #
+        # pairs_df = pairs_df.merge(
+        #     pair_counts, left_on='pair_key', right_index=True
+        # )
+        #
+        # pairs_df = pairs_df.dropna(subset=['total_pairs']).set_index('id')
 
         self.measurement_pairs_df = measurement_pairs_df
         self.pairs_df = pairs_df.sort_values(by='td')
@@ -1169,7 +1169,7 @@ class PipeAnalysis(PipeRun):
         return grid
 
     def run_two_epoch_analysis(
-        self, v, m, query=None, df=None, use_int_flux=False, plot=False
+        self, v, m, query=None, df=None, use_int_flux=False
     ):
         '''
         Run the two epoch analysis on the pipeline run, with optional
@@ -1198,8 +1198,8 @@ class PipeAnalysis(PipeRun):
         :rtype: pandas.core.frame.DataFrame, pandas.core.frame.DataFrame,
             pandas.core.frame.DataFrame, bokeh.models.grids.Grid
         '''
-        if plot and not self._loaded_two_epoch_metrics:
-            self.load_two_epoch_metrics()
+        # if plot and not self._loaded_two_epoch_metrics:
+        #     self.load_two_epoch_metrics()
 
         if df is None:
             df = self.sources
@@ -1214,15 +1214,15 @@ class PipeAnalysis(PipeRun):
 
         candidates = df.loc[(df[vs_label] > v) & (df[m_abs_label] > m)]
 
-        if plot:
-            plot = self.plot_epoch_pairs_bokeh(
-                self.measurement_pairs_df, self.pairs_df, vs_min=v, m_min=m,
-                use_int_flux=use_int_flux
-            )
-            return candidates, plot
+        # if plot:
+        #     plot = self.plot_epoch_pairs_bokeh(
+        #         self.measurement_pairs_df, self.pairs_df, vs_min=v, m_min=m,
+        #         use_int_flux=use_int_flux
+        #     )
+        #     return candidates, plot
 
-        else:
-            return candidates
+        # else:
+        return candidates
 
     def _fit_eta_v(self, df, use_int_flux=False):
         '''
