@@ -210,6 +210,23 @@ class Query:
                 " used together! Check inputs and try again."
             )
 
+        if (
+            self.coords is not None and
+            len(source_names) > 1 and
+            len(source_names) != len(self.coords)
+        ):
+            raise Exception(
+                "The number of entered source names does not match the"
+                " number of coordinates!"
+            )
+
+        if self.coords is not None and len(self.source_names) == 0:
+            self.source_names = [
+                i.to_string(
+                    'hmsdms', sep="", precision=1
+                ).replace(" ", "") for i in self.coords
+            ]
+
         if self.coords is None:
             if len(source_names) != 0:
                 pre_simbad = len(source_names)
@@ -234,6 +251,7 @@ class Query:
                     raise ValueError(
                         "SIMBAD search failed!"
                     )
+
         if len(planets) != 0:
             valid_planets = sum([i in ALLOWED_PLANETS for i in planets])
 
