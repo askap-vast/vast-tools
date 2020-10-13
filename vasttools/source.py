@@ -141,7 +141,7 @@ class Source:
     )
         Saves the FITS cutout of the epoch selected.
 
-    plot_all_cutouts(
+    show_all_png_cutouts(
         columns=4, percentile=99.9, zscale=False, contrast=0.1,
         outfile=None, save=False, size=None, figsize=(10, 5),
         force=False, no_selavy=False, disable_autoscaling=False
@@ -1272,7 +1272,7 @@ class Source:
             )
         )
 
-    def plot_all_cutouts(
+    def show_all_png_cutouts(
         self, columns=4, percentile=99.9, zscale=False,
         contrast=0.1, outfile=None, save=False, size=None, figsize=(10, 5),
         force=False, no_selavy=False, disable_autoscaling=False
@@ -1373,8 +1373,10 @@ class Source:
                 cutout_row.data * 1.e3, norm=img_norms, cmap="gray_r"
             )
 
-            plots[i].set_title('Epoch {}'.format(
-                measurement_row.epoch
+            epoch_time = measurement_row.dateobs
+
+            plots[i].set_title('{}'.format(
+                epoch_time.strftime("%Y-%m-%d %H:%M:%S")
             ))
 
             cross_target_coords = cutout_row.wcs.wcs_world2pix(

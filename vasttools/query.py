@@ -608,7 +608,11 @@ class Query:
             sys.exit()
         finally:
             self.logger.debug("Closing workers.")
-            workers.close()
+            # Using terminate below as close was prone to hanging
+            # when join is called. I believe the hang comes from
+            # a child processes not getting returned properly
+            # because of the large number of file I/O.
+            workers.terminate()
             workers.join()
 
     def _produce_source_products(

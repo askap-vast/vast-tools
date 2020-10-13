@@ -270,7 +270,7 @@ class Pipeline(object):
                 'sources.parquet'
             ),
             engine='pyarrow'
-        )
+        ).set_index('id')
 
         to_move = ['n_meas', 'n_meas_sel', 'n_meas_forced', 'n_sibl', 'n_rel']
         sources_len = sources.shape[1]

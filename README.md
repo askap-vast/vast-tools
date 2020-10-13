@@ -25,6 +25,8 @@ pip install -r requirements.txt
 
 As of version v2.0 the module has been made 'notebook friendly' and can be used interactively. See the `notebook-examples` directory in this repository for examples on how to use the module in a notebook environment. Note that for large queries it is better to use the `find_sources.py` script as pre version v2.0.
 
+**Note**: Jupyter is not included in the requirements, hence please install the required packages to the environment if you wish to use a notebook interface.
+
 ## System Variables
 
 To save specifying the data directories in every call to VAST tools there are two system variables you can set that will be read by the module:
