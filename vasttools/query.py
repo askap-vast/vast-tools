@@ -212,12 +212,13 @@ class Query:
 
         if (
             self.coords is not None and
-            len(source_names) > 1 and
-            len(source_names) != len(self.coords)
+            len(self.source_names) > 0 and
+            len(self.source_names) != len(self.coords)
         ):
             raise Exception(
-                "The number of entered source names does not match the"
-                " number of coordinates!"
+                "The number of entered source names (%i) does not match the"
+                " number of coordinates (%i)!", len(self.source_names),
+                len(self.coords)
             )
 
         if self.coords is not None and len(self.source_names) == 0:
