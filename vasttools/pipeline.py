@@ -598,9 +598,7 @@ class PipeRun(object):
                 " ", ""
             )[:15]
         )
-        source_epochs = range(
-            1, num_measurements + 1
-        )
+        source_epochs = [str(i) for i in range(1, num_measurements + 1)]
         if field is None:
             field = self.name
         measurements['field'] = field
@@ -645,92 +643,61 @@ class PipeRun(object):
             pd.DataFrame(pairs_df['pair'].tolist())
             .rename(columns={0: 'image_id_a', 1: 'image_id_b'})
             .merge(
-                self.images[['datetime']],
+                self.images[['datetime', 'name']],
                 left_on='image_id_a', right_index=True,
                 suffixes=('_a', '_b')
             )
             .merge(
-                self.images[['datetime']],
+                self.images[['datetime', 'name']],
                 left_on='image_id_b', right_index=True,
                 suffixes=('_a', '_b')
             )
-        ).reset_index().rename(columns={'index': 'id'})
+        ).reset_index().rename(
+            columns={
+                'index': 'id',
+                'name_a': 'image_name_a',
+                'name_b': 'image_name_b'
+            }
+        )
 
         pairs_df['td'] = pairs_df['datetime_b'] - pairs_df['datetime_a']
 
         pairs_df.drop(['datetime_a', 'datetime_b'], axis=1)
 
         pairs_df['pair_key'] = (
-            pairs_df[['image_id_a', 'image_id_b']]
+            pairs_df[['image_name_a', 'image_name_b']]
             .apply(
-                lambda x: "{}_{}".format(x['image_id_a'], x['image_id_b']),
-                axis=1
+                lambda x: f"{x['image_name_a']}_{x['image_name_b']}", axis=1
             )
         )
 
-        # if self._vaex_meas:
-        #     meas_extract = (
-        #         self.measurements[['id', 'image_id', 'forced', 'has_siblings']]
-        #         .extract()
-        #         .to_pandas_df()
-        #         .drop_duplicates('id')
-        #         .set_index('id')
-        #     )
-        #
-        # else:
-        #     meas_extract = (
-        #         self.measurements[['id', 'image_id', 'forced', 'has_siblings']]
-        #         .drop_duplicates('id')
-        #         .set_index('id')
-        #     )
+        if len(self.measurement_pairs_file) > 1:
+            measurement_pairs_df = (
+                dd.read_parquet(self.measurement_pairs_file).compute()
+            )
+        else:
+            measurement_pairs_df = (
+                pd.read_parquet(self.measurement_pairs_file[0])
+            )
 
-        measurement_pairs_df = (
-            dd.read_parquet(self.measurement_pairs_file).compute()
+        measurement_pairs_df['pair_key'] = (
+            measurement_pairs_df[['image_name_a', 'image_name_b']]
+            .apply(
+                lambda x: f"{x['image_name_a']}_{x['image_name_b']}", axis=1
+            )
         )
 
-        # measurement_pairs_df = (
-        #     measurement_pairs_df
-        #     .merge(
-        #         meas_extract,
-        #         left_on='meas_id_a', right_index=True, suffixes=(None, "_a")
-        #     )
-        #     .merge(
-        #         meas_extract,
-        #         left_on='meas_id_b', right_index=True, suffixes=(None, "_b")
-        #     )
-        #     .rename(columns={
-        #         'image_id': 'image_id_a',
-        #         'forced': 'forced_a',
-        #         'has_siblings': 'has_siblings_a'
-        #     })
-        # )
-        #
-        # del meas_extract
-        #
-        # measurement_pairs_df['pair_key'] = (
-        #     measurement_pairs_df[['image_id_a', 'image_id_b']]
-        #     .apply(
-        #         lambda x: f"{x['image_id_a']}_{x['image_id_b']}", axis=1
-        #     )
-        # )
-        #
-        # measurement_pairs_df = measurement_pairs_df.merge(
-        #     pairs_df[['id', 'pair_key']].rename(columns={'id': 'pair_id'}),
-        #     left_on='pair_key',
-        #     right_on='pair_key'
-        # )
-        #
-        # pair_counts = measurement_pairs_df[
-        #     ['pair_key', 'image_id_a']
-        # ].groupby('pair_key').count().rename(
-        #     columns={'image_id_a': 'total_pairs'}
-        # )
-        #
-        # pairs_df = pairs_df.merge(
-        #     pair_counts, left_on='pair_key', right_index=True
-        # )
-        #
-        # pairs_df = pairs_df.dropna(subset=['total_pairs']).set_index('id')
+        pair_counts = measurement_pairs_df[
+            ['pair_key', 'image_name_a']
+        ].groupby('pair_key').count().rename(
+            columns={'image_name_a': 'total_pairs'}
+        )
+
+        pairs_df = pairs_df.merge(
+            pair_counts, left_on='pair_key', right_index=True
+        )
+
+        pairs_df = pairs_df.dropna(subset=['total_pairs']).set_index('id')
 
         self.measurement_pairs_df = measurement_pairs_df
         self.pairs_df = pairs_df.sort_values(by='td')
@@ -1071,20 +1038,53 @@ class PipeAnalysis(PipeRun):
             measurements, measurement_pairs_file, vaex_meas, n_workers
         )
 
-    def plot_epoch_pairs_bokeh(
+    def _get_epoch_pair_plotting_df(self, df_filter):
+        unique_meas_ids = (
+            pd.unique(df_filter[['meas_id_a', 'meas_id_b']].values.ravel('K'))
+        )
+
+        temp_meas = self.measurements[
+            self.measurements['id'].isin(unique_meas_ids)
+        ]['id', 'forced']
+
+        if self._vaex_meas:
+            temp_meas = temp_meas.extract().to_pandas_df()
+
+        temp_meas = temp_meas.drop_duplicates('id').set_index('id')
+
+        df_filter = df_filter.merge(
+            temp_meas, left_on='meas_id_a', right_index=True,
+            suffixes=('_a', '_b')
+        )
+
+        df_filter = df_filter.merge(
+            temp_meas, left_on='meas_id_b', right_index=True,
+            suffixes=('_a', '_b')
+        ).rename(columns={'forced': 'forced_a'})
+
+        df_filter['forced_sum'] = (
+            df_filter[['forced_a', 'forced_b']].agg('sum', axis=1)
+        ).astype(str)
+
+        return df_filter
+
+
+    def _plot_epoch_pair_bokeh(
         self,
-        df: pd.DataFrame,
-        pairs: pd.DataFrame,
+        epoch_pair_id,
+        df,
         vs_min=4.3,
         m_min=0.26,
-        use_int_flux=False
+        use_int_flux=False,
+        remove_two_forced=False
     ) -> Model:
         '''
         Adapted from code written by Andrew O'Brien.
-        Plot the results of the two epoch analysis. It is run in
-        'run_two_epoch_analysis' but can also be run separately.
-        Returns a bokeh plot.
+        Plot the results of the two epoch analysis. Currently this can only
+        plot one epoch pair at a time.
 
+        :param epoch_pair_id: The epoch pair to plot.
+        :type epoch_pair_id: int.
         :param df: Dataframe of measurement pairs with metric information.
         :type df: pandas.core.frame.DataFrame.
         :param pairs: Dataframe containing the pairs information.
@@ -1102,71 +1102,190 @@ class PipeAnalysis(PipeRun):
         :returns: Bokeh grid containing plots.
         :rtype: bokeh.models.grids.Grid
         '''
-
-        light_curve_pairs = pairs.index.values
-
         vs_label = 'vs_int' if use_int_flux else 'vs_peak'
         m_label = 'm_int' if use_int_flux else 'm_peak'
 
-        GRID_WIDTH = 3
-        PLOT_WIDTH = 500
-        PLOT_HEIGHT = 300
-        x_range = DataRange1d(start=0.5)
-        m_max_abs = (
-            df.query(f"{vs_label} >= @vs_min")[f"{m_label}"]
-            .abs().max()
+        pair_key = self.pairs_df.loc[epoch_pair_id]['pair_key']
+        td_days = (
+            self.pairs_df.loc[epoch_pair_id]['td'].total_seconds()
+            / (3600. * 24.)
         )
-        y_range = Range1d(start=-m_max_abs, end=m_max_abs)
-        epoch_pair_figs = []
-        for epoch_pair in light_curve_pairs:
-            td_days = (
-                pairs.loc[epoch_pair]['td'].total_seconds() / (3600. * 24.)
-            )
-            df_filter = df.query("pair_id == @epoch_pair")
-            fig = figure(
-                plot_width=PLOT_WIDTH,
-                plot_height=PLOT_HEIGHT,
-                x_axis_type="log",
-                x_range=x_range,
-                y_range=y_range,
-                x_axis_label="Vs",
-                y_axis_label="m",
-                title=f"{epoch_pair}: {td_days:.2f} days",
-                tools="pan,box_select,lasso_select,box_zoom,wheel_zoom,reset",
-                tooltips=[("source", "@source")],
-            )
+        num_pairs = self.pairs_df.loc[epoch_pair_id]['total_pairs']
+        df_filter = df.query("pair_key == @pair_key")
+        num_candidates = df_filter[
+            (df_filter[vs_label] > vs_min) & (df_filter[m_label].abs() > m_min)
+        ].shape[0]
+        candidate_perc = num_candidates / num_pairs * 100.
+
+        df_filter = self._get_epoch_pair_plotting_df(df_filter)
+
+        cmap = factor_cmap(
+            'forced_sum', palette=Category10_3, factors=['0', '1', '2']
+        )
+
+        fig = figure(
+            x_axis_label="Vs",
+            y_axis_label="m",
+            title=(
+                f"{epoch_pair_id}: {td_days:.2f} days"
+                f" {num_candidates}/{num_pairs} candidates "
+                f"({candidate_perc:.2f}%)"
+            ),
+            tools="pan,box_select,lasso_select,box_zoom,wheel_zoom,reset",
+            tooltips=[("source", "@source_id")],
+        )
+
+        range_len = 2 if remove_two_forced else 3
+
+        for i in range(range_len):
             fig.scatter(
                 f"{vs_label}",
                 f"{m_label}",
-                source=df_filter,
+                source=df_filter[df_filter['forced_sum'] == str(i)],
+                color=cmap,
                 marker="circle",
+                legend_label=f"{i} forced",
                 size=2,
                 nonselection_fill_alpha=0.1,
                 nonselection_fill_color="grey",
                 nonselection_line_color=None,
             )
-            variable_region_1 = BoxAnnotation(
-                left=vs_min, bottom=m_min,
-                fill_color="orange", level="underlay"
-            )
-            variable_region_2 = BoxAnnotation(
-                left=vs_min, top=-m_min, fill_color="orange", level="underlay"
-            )
-            fig.add_layout(variable_region_1)
-            fig.add_layout(variable_region_2)
-            epoch_pair_figs.append(fig)
 
-        # reshape fig list for grid layout
-        epoch_pair_figs = [
-            epoch_pair_figs[i: i + GRID_WIDTH]
-            for i in range(0, len(epoch_pair_figs), GRID_WIDTH)
-        ]
-        grid = gridplot(
-            epoch_pair_figs, plot_width=PLOT_WIDTH, plot_height=PLOT_HEIGHT
+        variable_region_1 = BoxAnnotation(
+            left=vs_min, bottom=m_min,
+            fill_color="orange", level="underlay"
         )
-        grid.css_classes.append("mx-auto")
+        variable_region_2 = BoxAnnotation(
+            left=vs_min, top=-m_min, fill_color="orange", level="underlay"
+        )
+        fig.add_layout(variable_region_1)
+        fig.add_layout(variable_region_2)
 
-        return grid
+        fig.legend.location = "top_left"
+        fig.legend.click_policy="hide"
+
+        return fig
+
+    def _plot_epoch_pair_matplotlib(
+        self,
+        epoch_pair_id,
+        df,
+        vs_min=4.3,
+        m_min=0.26,
+        use_int_flux=False,
+        remove_two_forced=False
+    ):
+        vs_label = 'vs_int' if use_int_flux else 'vs_peak'
+        m_label = 'm_int' if use_int_flux else 'm_peak'
+
+        pair_key = self.pairs_df.loc[epoch_pair_id]['pair_key']
+        td_days = (
+            self.pairs_df.loc[epoch_pair_id]['td'].total_seconds()
+            / (3600. * 24.)
+        )
+        num_pairs = self.pairs_df.loc[epoch_pair_id]['total_pairs']
+        df_filter = df.query("pair_key == @pair_key")
+        num_candidates = df_filter[
+            (df_filter[vs_label] > vs_min) & (df_filter[m_label].abs() > m_min)
+        ].shape[0]
+
+        df_filter = self._get_epoch_pair_plotting_df(df_filter)
+
+        fig = plt.figure(figsize=(8,8))
+        ax = fig.add_subplot(111)
+
+        ax.fill_between([4.3, 100], 0.26, 4.2, color="gold", alpha=0.3)
+        ax.fill_between([4.3, 100], -4.2, -0.26, color="gold", alpha=0.3)
+
+        colors = ["C0", "C1", "C2"]
+        labels = ["0 forced", "1 forced", "2 forced"]
+
+        range_len = 2 if remove_two_forced else 3
+
+        for i in range(range_len):
+            mask = df_filter['forced_sum'] == str(i)
+            ax.scatter(
+                df_filter[mask][vs_label], df_filter[mask][m_label],
+                c=colors[i], label=labels[i]
+            )
+        ax.set_xlim(0.5, 50)
+        ax.set_ylim(-4.0, 4.0)
+        date_string = "Epoch {} (Time {:.2f} days)".format(
+            epoch_pair_id, td_days
+        )
+        number_string = "Candidates: {}/{} ({:.2f} %)".format(
+            num_candidates, num_pairs, (100.*num_candidates/num_pairs)
+        )
+        ax.text(
+            0.6, 0.05, date_string + '\n' + number_string, transform=ax.transAxes
+        )
+        ax.legend()
+
+        ax.set_ylabel(r"$m$")
+        ax.set_xlabel(r"$V_{s}$")
+
+        return fig
+
+    def plot_two_epoch_pair(
+        self,
+        epoch_pair_id,
+        query=None,
+        df=None,
+        vs_min=4.3,
+        m_min=0.26,
+        use_int_flux=False,
+        remove_two_forced=False,
+        mode='bokeh'
+    ):
+        if not self._loaded_two_epoch_metrics:
+            raise Exception(
+                "The two epoch metrics must first be loaded to use the plotting"
+                " function. Please do so with the command:\n"
+                "'mypiperun.load_two_epoch_metrics()'\n"
+                "and try again."
+            )
+
+        if mode not in ['bokeh', 'matplotlib']:
+            raise Exception(
+                "Plotting mode is not recongised!"
+                " Must be either 'bokeh' or 'matplotlib'."
+            )
+
+        if epoch_pair_id not in self.pairs_df.index.values:
+            raise Exception(f"Pair with ID '{epoch_pair_id}' does not exist!")
+
+        if df is None:
+            df = self.sources
+
+        if query is not None:
+            df = df.query(query)
+
+        df = (
+            self.measurement_pairs_df[
+                self.measurement_pairs_df['source_id'].isin(df.index.values)
+            ]
+        )
+
+        if mode == 'bokeh':
+            fig = self._plot_epoch_pair_bokeh(
+                epoch_pair_id,
+                df,
+                vs_min,
+                m_min,
+                use_int_flux,
+                remove_two_forced
+            )
+        else:
+            fig = self._plot_epoch_pair_matplotlib(
+                epoch_pair_id,
+                df,
+                vs_min,
+                m_min,
+                use_int_flux,
+                remove_two_forced
+            )
+
+        return fig
 
     def run_two_epoch_analysis(
         self, v, m, query=None, df=None, use_int_flux=False
@@ -1190,17 +1309,11 @@ class PipeAnalysis(PipeRun):
         :type df: pandas.core.frame.DataFrame, optional.
         :param use_int_flux: Use integrated fluxes for the analysis instead of
             peak fluxes, defaults to 'False'.
-        :type pairs: bool, optional.
+        :type use_int_flux: bool, optional.
 
-        :returns: tuple containing the pairs dataframe, the two epoch dataframe
-            containing the calculated metrics, the dataframe of candidates and
-            the bokeh plot.
-        :rtype: pandas.core.frame.DataFrame, pandas.core.frame.DataFrame,
-            pandas.core.frame.DataFrame, bokeh.models.grids.Grid
+        :returns: dataframe containing the candidates only.
+        :rtype: pandas.core.frame.DataFrame
         '''
-        # if plot and not self._loaded_two_epoch_metrics:
-        #     self.load_two_epoch_metrics()
-
         if df is None:
             df = self.sources
 
@@ -1214,14 +1327,6 @@ class PipeAnalysis(PipeRun):
 
         candidates = df.loc[(df[vs_label] > v) & (df[m_abs_label] > m)]
 
-        # if plot:
-        #     plot = self.plot_epoch_pairs_bokeh(
-        #         self.measurement_pairs_df, self.pairs_df, vs_min=v, m_min=m,
-        #         use_int_flux=use_int_flux
-        #     )
-        #     return candidates, plot
-
-        # else:
         return candidates
 
     def _fit_eta_v(self, df, use_int_flux=False):

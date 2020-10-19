@@ -1275,7 +1275,8 @@ class Source:
     def show_all_png_cutouts(
         self, columns=4, percentile=99.9, zscale=False,
         contrast=0.1, outfile=None, save=False, size=None, figsize=(10, 5),
-        force=False, no_selavy=False, disable_autoscaling=False
+        force=False, no_selavy=False, disable_autoscaling=False,
+        hide_epoch_labels=False
     ):
         '''
         Creates a grid plot showing the source in each epoch.
@@ -1313,6 +1314,9 @@ class Source:
              calculate the normalizations separately for each epoch,
             defaults to `False`
         :type disable_autoscaling: bool, optional
+        :param hide_epoch_labels: Turn off the epoch number label (found in
+            top left corner of image).
+        :type hide_epoch_labels: bool, optional
 
         :returns: None is save is `True` or the Figure if `False`.
         :rtype: None or matplotlib.pyplot.Figure.
@@ -1374,10 +1378,16 @@ class Source:
             )
 
             epoch_time = measurement_row.dateobs
+            epoch = measurement_row.epoch
 
             plots[i].set_title('{}'.format(
                 epoch_time.strftime("%Y-%m-%d %H:%M:%S")
             ))
+
+            if not hide_epoch_labels:
+                plots[i].text(
+                    0.05, 0.9, f"{epoch}", transform=plots[i].transAxes
+                )
 
             cross_target_coords = cutout_row.wcs.wcs_world2pix(
                 target_coords, 0
