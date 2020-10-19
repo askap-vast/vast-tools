@@ -1094,10 +1094,14 @@ class PipeAnalysis(PipeRun):
             / (3600. * 24.)
         )
         print(2)
-        df_filter = df[df["pair_epoch_key"] == pair_epoch_key]
+        df_filter = (
+            df[df["pair_epoch_key"] == pair_epoch_key][
+                vs_label, m_label, 'source_id', 'meas_id_a', 'meas_id_b'
+            ]
+        )
         print(3)
         if self._vaex_meas_pairs:
-            df_filter = df_filter.to_pandas_df()
+            df_filter = df_filter.extract().to_pandas_df()
         print(4)
         num_pairs = df_filter.shape[0]
         print(5)
@@ -1293,7 +1297,7 @@ class PipeAnalysis(PipeRun):
         m_min=0.26,
         use_int_flux=False,
         remove_two_forced=False,
-        mode='bokeh'
+        plot_type='bokeh'
     ):
         if not self._loaded_two_epoch_metrics:
             raise Exception(
@@ -1303,9 +1307,9 @@ class PipeAnalysis(PipeRun):
                 "and try again."
             )
 
-        if mode not in ['bokeh', 'matplotlib']:
+        if plot_type not in ['bokeh', 'matplotlib']:
             raise Exception(
-                "Plotting mode is not recongised!"
+                "'plot_type' value is not recongised!"
                 " Must be either 'bokeh' or 'matplotlib'."
             )
 
@@ -1327,7 +1331,7 @@ class PipeAnalysis(PipeRun):
         if self._vaex_meas_pairs:
             df = df.extract()
 
-        if mode == 'bokeh':
+        if plot_type == 'bokeh':
             fig = self._plot_epoch_pair_bokeh(
                 epoch_pair_id,
                 df,
