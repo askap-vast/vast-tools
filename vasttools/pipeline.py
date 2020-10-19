@@ -1401,20 +1401,20 @@ class PipeAnalysis(PipeRun):
 
         if query is not None:
             df = df.query(query)
-        print(1)
+
         pair_epoch_key = self.pairs_df.loc[epoch_pair_id]['pair_epoch_key']
-        print(2)
+
         pairs_df = (
             self.measurement_pairs_df[
                 self.measurement_pairs_df.pair_epoch_key == pair_epoch_key
             ]
         )
-        print(3)
+
         if self._vaex_meas_pairs:
             pairs_df = pairs_df.extract().to_pandas_df()
-        print(4)
+
         pairs_df = pairs_df[pairs_df['source_id'].isin(df.index.values)]
-        print(5)
+
         if plot_type == 'bokeh':
             fig = self._plot_epoch_pair_bokeh(
                 epoch_pair_id,
