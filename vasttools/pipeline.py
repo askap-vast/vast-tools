@@ -1097,7 +1097,7 @@ class PipeAnalysis(PipeRun):
         df_filter = df[df["pair_epoch_key"] == pair_epoch_key]
         print(3)
         if self._vaex_meas_pairs:
-            df_filter = df_filter.extract().to_pandas_df()
+            df_filter = df_filter.to_pandas_df()
         print(4)
         num_pairs = df_filter.shape[0]
         print(5)
@@ -1198,18 +1198,20 @@ class PipeAnalysis(PipeRun):
         range_len = 2 if remove_two_forced else 3
 
         for i in range(range_len):
-            fig.scatter(
-                f"{vs_label}",
-                f"{m_label}",
-                source=df_filter[df_filter['forced_sum'] == str(i)],
-                color=cmap,
-                marker="circle",
-                legend_label=f"{i} forced",
-                size=2,
-                nonselection_fill_alpha=0.1,
-                nonselection_fill_color="grey",
-                nonselection_line_color=None,
-            )
+            source = df_filter[df_filter['forced_sum'] == str(i)]
+            if not source.empty:
+                fig.scatter(
+                    f"{vs_label}",
+                    f"{m_label}",
+                    source=source,
+                    color=cmap,
+                    marker="circle",
+                    legend_label=f"{i} forced",
+                    size=2,
+                    nonselection_fill_alpha=0.1,
+                    nonselection_fill_color="grey",
+                    nonselection_line_color=None,
+                )
 
         variable_region_1 = BoxAnnotation(
             left=vs_min, bottom=m_min,
@@ -1259,10 +1261,11 @@ class PipeAnalysis(PipeRun):
 
         for i in range(range_len):
             mask = df_filter['forced_sum'] == str(i)
-            ax.scatter(
-                df_filter[mask][vs_label], df_filter[mask][m_label],
-                c=colors[i], label=labels[i]
-            )
+            if np.any(mask):
+                ax.scatter(
+                    df_filter[mask][vs_label], df_filter[mask][m_label],
+                    c=colors[i], label=labels[i]
+                )
         ax.set_xlim(0.5, 50)
         ax.set_ylim(-4.0, 4.0)
         date_string = "Epoch {} (Time {:.2f} days)".format(
