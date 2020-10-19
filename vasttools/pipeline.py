@@ -673,7 +673,7 @@ class PipeRun(object):
 
         pairs_df.drop(['datetime_a', 'datetime_b'], axis=1)
 
-        pairs_df['pair_key'] = (
+        pairs_df['pair_epoch_key'] = (
             pairs_df[['image_name_a', 'image_name_b']]
             .apply(
                 lambda x: f"{x['image_name_a']}_{x['image_name_b']}", axis=1
@@ -710,7 +710,7 @@ class PipeRun(object):
                 )
 
         if self._vaex_meas_pairs:
-            measurement_pairs_df['pair_key'] = (
+            measurement_pairs_df['pair_epoch_key'] = (
                 measurement_pairs_df['image_name_a'] + "_"
                 + measurement_pairs_df['image_name_b']
             )
@@ -721,9 +721,9 @@ class PipeRun(object):
 
             pair_counts = pair_counts.to_pandas_df().rename(
                 columns={'count': 'total_pairs'}
-            ).set_index('pair_key')
+            ).set_index('pair_epoch_key')
         else:
-            measurement_pairs_df['pair_key'] = (
+            measurement_pairs_df['pair_epoch_key'] = (
                 measurement_pairs_df[['image_name_a', 'image_name_b']]
                 .apply(
                     lambda x: f"{x['image_name_a']}_{x['image_name_b']}", axis=1
@@ -731,13 +731,13 @@ class PipeRun(object):
             )
 
             pair_counts = measurement_pairs_df[
-                ['pair_key', 'image_name_a']
-            ].groupby('pair_key').count().rename(
+                ['pair_epoch_key', 'image_name_a']
+            ].groupby('pair_epoch_key').count().rename(
                 columns={'image_name_a': 'total_pairs'}
             )
 
         pairs_df = pairs_df.merge(
-            pair_counts, left_on='pair_key', right_index=True
+            pair_counts, left_on='pair_epoch_key', right_index=True
         )
 
         del pair_counts
@@ -1083,7 +1083,26 @@ class PipeAnalysis(PipeRun):
             measurements, measurement_pairs_file, vaex_meas, n_workers
         )
 
-    def _get_epoch_pair_plotting_df(self, df_filter):
+    def _get_epoch_pair_plotting_df(self, df, epoch_pair_id):
+
+        pair_epoch_key = self.pairs_df.loc[epoch_pair_id]['pair_epoch_key']
+
+        td_days = (
+            self.pairs_df.loc[epoch_pair_id]['td'].total_seconds()
+            / (3600. * 24.)
+        )
+
+        num_pairs = self.pairs_df.loc[epoch_pair_id]['total_pairs']
+
+        df_filter = df[df["pair_epoch_key"] == pair_epoch_key]
+
+        if self._vaex_meas_pairs:
+            df_filter = df_filter.extract().to_pandas_df()
+
+        num_candidates = df_filter[
+            (df_filter[vs_label] > vs_min) & (df_filter[m_label].abs() > m_min)
+        ].shape[0]
+
         unique_meas_ids = (
             pd.unique(df_filter[['meas_id_a', 'meas_id_b']].values.ravel('K'))
         )
@@ -1111,7 +1130,7 @@ class PipeAnalysis(PipeRun):
             df_filter[['forced_a', 'forced_b']].agg('sum', axis=1)
         ).astype(str)
 
-        return df_filter
+        return df_filter, num_pairs, num_candidates, td_days
 
 
     def _plot_epoch_pair_bokeh(
@@ -1150,19 +1169,11 @@ class PipeAnalysis(PipeRun):
         vs_label = 'vs_int' if use_int_flux else 'vs_peak'
         m_label = 'm_int' if use_int_flux else 'm_peak'
 
-        pair_key = self.pairs_df.loc[epoch_pair_id]['pair_key']
-        td_days = (
-            self.pairs_df.loc[epoch_pair_id]['td'].total_seconds()
-            / (3600. * 24.)
+        df_filter, num_pairs, num_candidates, td_days = (
+            self._get_epoch_pair_plotting_df(df_filter, epoch_pair_id)
         )
-        num_pairs = self.pairs_df.loc[epoch_pair_id]['total_pairs']
-        df_filter = df.query("pair_key == @pair_key")
-        num_candidates = df_filter[
-            (df_filter[vs_label] > vs_min) & (df_filter[m_label].abs() > m_min)
-        ].shape[0]
-        candidate_perc = num_candidates / num_pairs * 100.
 
-        df_filter = self._get_epoch_pair_plotting_df(df_filter)
+        candidate_perc = num_candidates / num_pairs * 100.
 
         cmap = factor_cmap(
             'forced_sum', palette=Category10_3, factors=['0', '1', '2']
@@ -1223,18 +1234,11 @@ class PipeAnalysis(PipeRun):
         vs_label = 'vs_int' if use_int_flux else 'vs_peak'
         m_label = 'm_int' if use_int_flux else 'm_peak'
 
-        pair_key = self.pairs_df.loc[epoch_pair_id]['pair_key']
-        td_days = (
-            self.pairs_df.loc[epoch_pair_id]['td'].total_seconds()
-            / (3600. * 24.)
+        df_filter, num_pairs, num_candidates, td_days = (
+            self._get_epoch_pair_plotting_df(df_filter, epoch_pair_id)
         )
-        num_pairs = self.pairs_df.loc[epoch_pair_id]['total_pairs']
-        df_filter = df.query("pair_key == @pair_key")
-        num_candidates = df_filter[
-            (df_filter[vs_label] > vs_min) & (df_filter[m_label].abs() > m_min)
-        ].shape[0]
 
-        df_filter = self._get_epoch_pair_plotting_df(df_filter)
+        candidate_perc = num_candidates / num_pairs * 100.
 
         fig = plt.figure(figsize=(8,8))
         ax = fig.add_subplot(111)
@@ -1310,6 +1314,9 @@ class PipeAnalysis(PipeRun):
                 self.measurement_pairs_df['source_id'].isin(df.index.values)
             ]
         )
+
+        if self._vaex_meas_pairs:
+            df = df.extract()
 
         if mode == 'bokeh':
             fig = self._plot_epoch_pair_bokeh(
