@@ -716,7 +716,7 @@ class PipeRun(object):
             )
 
             pair_counts = measurement_pairs_df.groupby(
-                measurement_pairs_df.pair_key, agg='count'
+                measurement_pairs_df.pair_epoch_key, agg='count'
             )
 
             pair_counts = pair_counts.to_pandas_df().rename(
