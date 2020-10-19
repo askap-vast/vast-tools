@@ -1083,7 +1083,9 @@ class PipeAnalysis(PipeRun):
             measurements, measurement_pairs_file, vaex_meas, n_workers
         )
 
-    def _get_epoch_pair_plotting_df(self, df, epoch_pair_id, vs_label, m_label):
+    def _get_epoch_pair_plotting_df(
+        self, df, epoch_pair_id, vs_label, m_label, vs_min, m_min
+    ):
 
         pair_epoch_key = self.pairs_df.loc[epoch_pair_id]['pair_epoch_key']
         print(1)
@@ -1171,7 +1173,7 @@ class PipeAnalysis(PipeRun):
 
         df_filter, num_pairs, num_candidates, td_days = (
             self._get_epoch_pair_plotting_df(
-                df, epoch_pair_id, vs_label, m_label
+                df, epoch_pair_id, vs_label, m_label, vs_min, m_min
             )
         )
 
@@ -1238,7 +1240,7 @@ class PipeAnalysis(PipeRun):
 
         df_filter, num_pairs, num_candidates, td_days = (
             self._get_epoch_pair_plotting_df(
-                df, epoch_pair_id, vs_label, m_label
+                df, epoch_pair_id, vs_label, m_label, vs_min, m_min
             )
         )
 
