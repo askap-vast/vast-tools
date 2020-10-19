@@ -339,10 +339,19 @@ class Pipeline(object):
 
         images = images.set_index('id')
 
-        measurement_pairs_file = [os.path.join(
+        if os.path.isfile(os.path.join(
             run_dir,
-            "measurement_pairs.parquet"
-        )]
+            "measurement_pairs.arrow"
+        )):
+            measurement_pairs_file = [os.path.join(
+                run_dir,
+                "measurement_pairs.arrow"
+            )]
+        else:
+            measurement_pairs_file = [os.path.join(
+                run_dir,
+                "measurement_pairs.parquet"
+            )]
 
         piperun = PipeAnalysis(
             name=run_name,
@@ -671,31 +680,65 @@ class PipeRun(object):
             )
         )
 
+        self._vaex_meas_pairs = False
         if len(self.measurement_pairs_file) > 1:
-            measurement_pairs_df = (
-                dd.read_parquet(self.measurement_pairs_file).compute()
+            arrow_files = (
+                [i.endswith(".arrow") for i in self.measurement_pairs_file]
             )
+            if np.any(arrow_files):
+                measurement_pairs_df = vaex.open_many(
+                    self.measurement_pairs_file[arrow_files]
+                )
+                for i in self.measurement_pairs_file[~arrow_files]:
+                    temp = pd.read_parquet(i)
+                    temp = vaex.from_pandas(temp)
+                    measurement_pairs_df = measurement_pairs_df.concat(temp)
+                self._vaex_meas_pairs = True
+            else:
+                measurement_pairs_df = (
+                    dd.read_parquet(self.measurement_pairs_file).compute()
+                )
         else:
-            measurement_pairs_df = (
-                pd.read_parquet(self.measurement_pairs_file[0])
+            if self.measurement_pairs_file[0].endswith('.arrow'):
+                measurement_pairs_df = (
+                    vaex.open(self.measurement_pairs_file[0])
+                )
+                self._vaex_meas_pairs = True
+            else:
+                measurement_pairs_df = (
+                    pd.read_parquet(self.measurement_pairs_file[0])
+                )
+
+        if self._vaex_meas_pairs:
+            measurement_pairs_df['pair_key'] = (
+                measurement_pairs_df['image_name_a'] + "_"
+                + measurement_pairs_df['image_name_b']
             )
 
-        measurement_pairs_df['pair_key'] = (
-            measurement_pairs_df[['image_name_a', 'image_name_b']]
-            .apply(
-                lambda x: f"{x['image_name_a']}_{x['image_name_b']}", axis=1
+            pair_counts = measurement_pairs_df.groupby(
+                measurement_pairs_df.pair_key, agg='count'
             )
-        )
 
-        pair_counts = measurement_pairs_df[
-            ['pair_key', 'image_name_a']
-        ].groupby('pair_key').count().rename(
-            columns={'image_name_a': 'total_pairs'}
-        )
+            pair_counts = pair_counts.to_pandas_df()
+        else:
+            measurement_pairs_df['pair_key'] = (
+                measurement_pairs_df[['image_name_a', 'image_name_b']]
+                .apply(
+                    lambda x: f"{x['image_name_a']}_{x['image_name_b']}", axis=1
+                )
+            )
+
+            pair_counts = measurement_pairs_df[
+                ['pair_key', 'image_name_a']
+            ].groupby('pair_key').count().rename(
+                columns={'image_name_a': 'total_pairs'}
+            )
 
         pairs_df = pairs_df.merge(
             pair_counts, left_on='pair_key', right_index=True
         )
+
+        del pair_counts
 
         pairs_df = pairs_df.dropna(subset=['total_pairs']).set_index('id')
 
@@ -909,7 +952,7 @@ class PipeRun(object):
             'skyreg_id'
         )['path'].values
 
-        if not ignore_large_run_warning and images_to_use.shape[0] > 20:
+        if not ignore_large_run_warning and images_to_use.shape[0] > 10:
             warnings.warn(
                 "Creating a MOC for a large run will take a long time!"
                 " Run again with 'ignore_large_run_warning=True` if you"
