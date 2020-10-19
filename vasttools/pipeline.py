@@ -1189,7 +1189,7 @@ class PipeAnalysis(PipeRun):
             the peak fluxes.
         :type use_int_flux: bool, optional.
         :param remove_two_forced: Will exclude any pairs that are both forced
-            extractions if True, defaults tto False.
+            extractions if True, defaults to False.
         :type remove_two_forced: bool, optional.
 
         :returns: Bokeh figure.
