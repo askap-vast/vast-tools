@@ -389,9 +389,9 @@ class PipeRun(object):
     measurements : pandas.core.frame.DataFrame
         Dataframe containing all the information on the measurements
         of the pipeline run.
-    measurement_pairs : pandas.core.frame.DataFrame
-        Dataframe containing all the two epoch pairs metrics for all sources in
-        the pipeline run.
+    measurement_pairs_file : list
+        List containing the locations of the measurement_pairs.parquet (or
+        .arrow) file(s).
     relations : pandas.core.frame.DataFrame
         Dataframe containing all the information on the relations
         of the pipeline run.
@@ -641,7 +641,16 @@ class PipeRun(object):
         return thesource
 
     def load_two_epoch_metrics(self):
+        """
+        Loads the two epoch metrics dataframe, usually stored as either
+        'measurement_pairs.parquet' or 'measurement_pairs.arrow'. Adds an epoch
+        'key' to the dataframe. Also creates a 'pairs_df' that lists all the
+        possible epoch pairs.
 
+        :param None:
+
+        :returns: None
+        """
         image_ids = self.images.sort_values(by='datetime').index.tolist()
 
         pairs_df = pd.DataFrame.from_dict(
@@ -1001,9 +1010,9 @@ class PipeAnalysis(PipeRun):
     measurements : pandas.core.frame.DataFrame
         Dataframe containing all the information on the measurements
         of the pipeline run.
-    measurement_pairs : pandas.core.frame.DataFrame
-        Dataframe containing all the two epoch pairs metrics for all sources in
-        the pipeline run.
+    measurement_pairs_file : list
+        List containing the locations of the measurement_pairs.parquet (or
+        .arrow) file(s).
     relations : pandas.core.frame.DataFrame
         Dataframe containing all the information on the relations
         of the pipeline run.
@@ -1025,13 +1034,14 @@ class PipeAnalysis(PipeRun):
     run_two_epoch_analysis(v, m, query=None, df=None, use_int_flux=False)
         Runs the two epoch variability analysis on the pipeline run. Filters
         can be applied using query argument or directly passing the filtered
-        sources df. Returns pairs dataframe, two epoch metrics dataframe, a
-        dataframe of candidates given the input v and m values, and a bokeh
-        plot of the metrics.
+        sources df. Returns a dataframe of candidates given the input v and m
+        values.
 
-    plot_epoch_pairs_bokeh(df, pairs, vs_min=4.3, m_min=0.26)
-        Creates the bokeh plot of the two epoch analysis. It is run as part
-        of `run_two_epoch_analysis` or can be called separately.
+    plot_two_epoch_pairs(epoch_pair_id, query=None, df=None, vs_min=4.3,
+        m_min=0.26, use_int_flux=False, remove_two_forced=False,
+        plot_type='bokeh')
+        Create and returns a bokeh or matplotlib plot of the two epoch pairs of
+        a defined 'pair epoch'.
 
     run_eta_v_analysis(eta_sigma, v_sigma, query=None, df=None,
         use_int_flux=False, plot_type='bokeh', diagnostic=False)
@@ -1084,58 +1094,70 @@ class PipeAnalysis(PipeRun):
         )
 
     def _get_epoch_pair_plotting_df(
-        self, df, epoch_pair_id, vs_label, m_label, vs_min, m_min
+        self, df_filter, epoch_pair_id, vs_label, m_label, vs_min, m_min
     ):
+        """
+        Generates some standard parameters used by both two epoch plotting
+        routines (bokeh and matplotlib).
 
-        pair_epoch_key = self.pairs_df.loc[epoch_pair_id]['pair_epoch_key']
-        print(1)
+        :param df_filter: Dataframe of measurement pairs with metric information
+            (pre-filtered).
+        :type df_filter: pandas.core.frame.DataFrame.
+        :param epoch_pair_id: The epoch pair to plot.
+        :type epoch_pair_id: int.
+        :param vs_label: The name of the vs column to use (vs_int or vs_peak).
+        :type vs_min: str
+        :param m_label: The name of the m column to use (m_int or m_peak).
+        :type m_min: str
+        :param vs_min: The minimum Vs metric value to be considered
+            a candidate.
+        :type vs_min: float
+        :param m_min: The minimum m metric absolute value to be
+            considered a candidates.
+        :type m_min: float
+
+        :returns: Tuple of (df_filter, num_pairs, num_candidates, td_days).
+        :rtype: (pd.DataFrame, int, int, float)
+        """
+
         td_days = (
             self.pairs_df.loc[epoch_pair_id]['td'].total_seconds()
             / (3600. * 24.)
         )
-        print(2)
-        df_filter = (
-            df[df["pair_epoch_key"] == pair_epoch_key][
-                vs_label, m_label, 'source_id', 'meas_id_a', 'meas_id_b'
-            ]
-        )
-        print(3)
-        if self._vaex_meas_pairs:
-            df_filter = df_filter.extract().to_pandas_df()
-        print(4)
+
         num_pairs = df_filter.shape[0]
-        print(5)
+
         num_candidates = df_filter[
             (df_filter[vs_label] > vs_min) & (df_filter[m_label].abs() > m_min)
         ].shape[0]
-        print(6)
+
         unique_meas_ids = (
             pd.unique(df_filter[['meas_id_a', 'meas_id_b']].values.ravel('K'))
         )
-        print(7)
+
         temp_meas = self.measurements[
             self.measurements['id'].isin(unique_meas_ids)
         ]['id', 'forced']
-        print(7)
+
         if self._vaex_meas:
             temp_meas = temp_meas.extract().to_pandas_df()
-        print(8)
+
         temp_meas = temp_meas.drop_duplicates('id').set_index('id')
-        print(9)
+
         df_filter = df_filter.merge(
             temp_meas, left_on='meas_id_a', right_index=True,
             suffixes=('_a', '_b')
         )
-        print(10)
+
         df_filter = df_filter.merge(
             temp_meas, left_on='meas_id_b', right_index=True,
             suffixes=('_a', '_b')
         ).rename(columns={'forced': 'forced_a'})
-        print(11)
+
         df_filter['forced_sum'] = (
             df_filter[['forced_a', 'forced_b']].agg('sum', axis=1)
         ).astype(str)
-        print(12)
+
         return df_filter, num_pairs, num_candidates, td_days
 
 
@@ -1150,15 +1172,13 @@ class PipeAnalysis(PipeRun):
     ) -> Model:
         '''
         Adapted from code written by Andrew O'Brien.
-        Plot the results of the two epoch analysis. Currently this can only
-        plot one epoch pair at a time.
+        Plot the results of the two epoch analysis using bokeh. Currently this
+        can only plot one epoch pair at a time.
 
         :param epoch_pair_id: The epoch pair to plot.
         :type epoch_pair_id: int.
         :param df: Dataframe of measurement pairs with metric information.
         :type df: pandas.core.frame.DataFrame.
-        :param pairs: Dataframe containing the pairs information.
-        :type pairs: pandas.core.frame.DataFrame.
         :param vs_min: The minimum Vs metric value to be considered
             a candidate, defaults to 4.3.
         :type vs_min: float, optional.
@@ -1168,9 +1188,12 @@ class PipeAnalysis(PipeRun):
         :param use_int_flux: Whether to use the integrated fluxes instead of
             the peak fluxes.
         :type use_int_flux: bool, optional.
+        :param remove_two_forced: Will exclude any pairs that are both forced
+            extractions if True, defaults tto False.
+        :type remove_two_forced: bool, optional.
 
-        :returns: Bokeh grid containing plots.
-        :rtype: bokeh.models.grids.Grid
+        :returns: Bokeh figure.
+        :rtype: bokeh.plotting.figure
         '''
         vs_label = 'vs_int' if use_int_flux else 'vs_peak'
         m_label = 'm_int' if use_int_flux else 'm_peak'
@@ -1241,6 +1264,30 @@ class PipeAnalysis(PipeRun):
         use_int_flux=False,
         remove_two_forced=False
     ):
+        """
+        Plot the results of the two epoch analysis using matplotlib. Currently
+        this can only plot one epoch pair at a time.
+
+        :param epoch_pair_id: The epoch pair to plot.
+        :type epoch_pair_id: int.
+        :param df: Dataframe of measurement pairs with metric information.
+        :type df: pandas.core.frame.DataFrame OR vaex.dataframe.DataFrame.
+        :param vs_min: The minimum Vs metric value to be considered
+            a candidate, defaults to 4.3.
+        :type vs_min: float, optional.
+        :param m_min: The minimum m metric absolute value to be
+            considered a candidates, defaults to 0.26.
+        :type m_min: float, optional.
+        :param use_int_flux: Whether to use the integrated fluxes instead of
+            the peak fluxes.
+        :type use_int_flux: bool, optional.
+        :param remove_two_forced: Will exclude any pairs that are both forced
+            extractions if True, defaults tto False.
+        :type remove_two_forced: bool, optional.
+
+        :returns: matplotlib pyplot figure.
+        :rtype: matplotlib.pyplot.figure
+        """
         vs_label = 'vs_int' if use_int_flux else 'vs_peak'
         m_label = 'm_int' if use_int_flux else 'm_peak'
 
@@ -1288,7 +1335,7 @@ class PipeAnalysis(PipeRun):
 
         return fig
 
-    def plot_two_epoch_pair(
+    def plot_two_epoch_pairs(
         self,
         epoch_pair_id,
         query=None,
@@ -1299,6 +1346,39 @@ class PipeAnalysis(PipeRun):
         remove_two_forced=False,
         plot_type='bokeh'
     ):
+        """
+        Adapted from code written by Andrew O'Brien.
+        Plot the results of the two epoch analysis. Currently this can only
+        plot one epoch pair at a time.
+
+        :param epoch_pair_id: The epoch pair to plot.
+        :type epoch_pair_id: int.
+        :param query: String query to apply to the dataframe before
+            the analysis is run, defaults to None.
+        :type query: str, optional.
+        :param df: Dataframe of sources from the pipeline run, defaults
+            to None. If None then the sources from the PipeAnalysis object
+            are used.
+        :type df: pandas.core.frame.DataFrame, optional.
+        :param vs_min: The minimum Vs metric value to be considered
+            a candidate, defaults to 4.3.
+        :type vs_min: float, optional.
+        :param m_min: The minimum m metric absolute value to be
+            considered a candidates, defaults to 0.26.
+        :type m_min: float, optional.
+        :param use_int_flux: Whether to use the integrated fluxes instead of
+            the peak fluxes.
+        :type use_int_flux: bool, optional.
+        :param remove_two_forced: Will exclude any pairs that are both forced
+            extractions if True, defaults tto False.
+        :type remove_two_forced: bool, optional.
+        :param plot_type: Selects whether the returned plot is 'bokeh' or
+            'matplotlib', defaults to 'bokeh'.
+        :type plot_type: str, optional.
+
+        :returns: Bokeh or matplotlib figure.
+        :rtype: bokeh.plotting.figure or matplotlib.pyplot.figure
+        """
         if not self._loaded_two_epoch_metrics:
             raise Exception(
                 "The two epoch metrics must first be loaded to use the plotting"
@@ -1322,14 +1402,17 @@ class PipeAnalysis(PipeRun):
         if query is not None:
             df = df.query(query)
 
+        pair_epoch_key = self.pairs_df.loc[epoch_pair_id]['pair_epoch_key']
+
         df = (
             self.measurement_pairs_df[
-                self.measurement_pairs_df['source_id'].isin(df.index.values)
+                (self.measurement_pairs_df['source_id'].isin(df.index.values))
+                & (self.measurement_pairs_df.pair_epoch_key == pair_epoch_key)
             ]
         )
 
         if self._vaex_meas_pairs:
-            df = df.extract()
+            df = df.extract().to_pandas_df()
 
         if plot_type == 'bokeh':
             fig = self._plot_epoch_pair_bokeh(
