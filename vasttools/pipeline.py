@@ -719,7 +719,9 @@ class PipeRun(object):
                 measurement_pairs_df.pair_key, agg='count'
             )
 
-            pair_counts = pair_counts.to_pandas_df()
+            pair_counts = pair_counts.to_pandas_df().rename(
+                columns={'count': 'total_pairs'}
+            ).set_index('pair_key')
         else:
             measurement_pairs_df['pair_key'] = (
                 measurement_pairs_df[['image_name_a', 'image_name_b']]
