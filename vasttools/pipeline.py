@@ -1404,20 +1404,21 @@ class PipeAnalysis(PipeRun):
 
         pair_epoch_key = self.pairs_df.loc[epoch_pair_id]['pair_epoch_key']
 
-        df = (
+        pairs_df = (
             self.measurement_pairs_df[
-                (self.measurement_pairs_df['source_id'].isin(df.index.values))
-                & (self.measurement_pairs_df.pair_epoch_key == pair_epoch_key)
+                self.measurement_pairs_df.pair_epoch_key == pair_epoch_key
             ]
         )
 
+        pairs_df = pairs_df[pairs_df['source_id'].isin(df.index.values)]
+
         if self._vaex_meas_pairs:
-            df = df.extract().to_pandas_df()
+            pairs_df = pairs_df.extract().to_pandas_df()
 
         if plot_type == 'bokeh':
             fig = self._plot_epoch_pair_bokeh(
                 epoch_pair_id,
-                df,
+                pairs_df,
                 vs_min,
                 m_min,
                 use_int_flux,
@@ -1426,7 +1427,7 @@ class PipeAnalysis(PipeRun):
         else:
             fig = self._plot_epoch_pair_matplotlib(
                 epoch_pair_id,
-                df,
+                pairs_df,
                 vs_min,
                 m_min,
                 use_int_flux,
