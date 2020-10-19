@@ -1170,7 +1170,7 @@ class PipeAnalysis(PipeRun):
         m_label = 'm_int' if use_int_flux else 'm_peak'
 
         df_filter, num_pairs, num_candidates, td_days = (
-            self._get_epoch_pair_plotting_df(df_filter, epoch_pair_id)
+            self._get_epoch_pair_plotting_df(df, epoch_pair_id)
         )
 
         candidate_perc = num_candidates / num_pairs * 100.
@@ -1235,7 +1235,7 @@ class PipeAnalysis(PipeRun):
         m_label = 'm_int' if use_int_flux else 'm_peak'
 
         df_filter, num_pairs, num_candidates, td_days = (
-            self._get_epoch_pair_plotting_df(df_filter, epoch_pair_id)
+            self._get_epoch_pair_plotting_df(df, epoch_pair_id)
         )
 
         candidate_perc = num_candidates / num_pairs * 100.
