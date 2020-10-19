@@ -735,7 +735,8 @@ class PipeRun(object):
             measurement_pairs_df['pair_epoch_key'] = (
                 measurement_pairs_df[['image_name_a', 'image_name_b']]
                 .apply(
-                    lambda x: f"{x['image_name_a']}_{x['image_name_b']}", axis=1
+                    lambda x: f"{x['image_name_a']}_{x['image_name_b']}",
+                    axis=1
                 )
             )
 
@@ -1100,8 +1101,8 @@ class PipeAnalysis(PipeRun):
         Generates some standard parameters used by both two epoch plotting
         routines (bokeh and matplotlib).
 
-        :param df_filter: Dataframe of measurement pairs with metric information
-            (pre-filtered).
+        :param df_filter: Dataframe of measurement pairs with metric
+            information (pre-filtered).
         :type df_filter: pandas.core.frame.DataFrame.
         :param epoch_pair_id: The epoch pair to plot.
         :type epoch_pair_id: int.
@@ -1159,7 +1160,6 @@ class PipeAnalysis(PipeRun):
         ).astype(str)
 
         return df_filter, num_pairs, num_candidates, td_days
-
 
     def _plot_epoch_pair_bokeh(
         self,
@@ -1251,7 +1251,7 @@ class PipeAnalysis(PipeRun):
         fig.add_layout(variable_region_2)
 
         fig.legend.location = "top_left"
-        fig.legend.click_policy="hide"
+        fig.legend.click_policy = "hide"
 
         return fig
 
@@ -1299,7 +1299,7 @@ class PipeAnalysis(PipeRun):
 
         candidate_perc = num_candidates / num_pairs * 100.
 
-        fig = plt.figure(figsize=(8,8))
+        fig = plt.figure(figsize=(8, 8))
         ax = fig.add_subplot(111)
 
         ax.fill_between([4.3, 100], 0.26, 4.2, color="gold", alpha=0.3)
@@ -1326,7 +1326,8 @@ class PipeAnalysis(PipeRun):
             num_candidates, num_pairs, (100.*num_candidates/num_pairs)
         )
         ax.text(
-            0.6, 0.05, date_string + '\n' + number_string, transform=ax.transAxes
+            0.6, 0.05, date_string + '\n' + number_string,
+            transform=ax.transAxes
         )
         ax.legend()
 
@@ -1381,8 +1382,8 @@ class PipeAnalysis(PipeRun):
         """
         if not self._loaded_two_epoch_metrics:
             raise Exception(
-                "The two epoch metrics must first be loaded to use the plotting"
-                " function. Please do so with the command:\n"
+                "The two epoch metrics must first be loaded to use the"
+                " plotting function. Please do so with the command:\n"
                 "'mypiperun.load_two_epoch_metrics()'\n"
                 "and try again."
             )
