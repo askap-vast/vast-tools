@@ -1083,53 +1083,53 @@ class PipeAnalysis(PipeRun):
             measurements, measurement_pairs_file, vaex_meas, n_workers
         )
 
-    def _get_epoch_pair_plotting_df(self, df, epoch_pair_id):
+    def _get_epoch_pair_plotting_df(self, df, epoch_pair_id, vs_label, m_label):
 
         pair_epoch_key = self.pairs_df.loc[epoch_pair_id]['pair_epoch_key']
-
+        print(1)
         td_days = (
             self.pairs_df.loc[epoch_pair_id]['td'].total_seconds()
             / (3600. * 24.)
         )
-
-        num_pairs = self.pairs_df.loc[epoch_pair_id]['total_pairs']
-
+        print(2)
         df_filter = df[df["pair_epoch_key"] == pair_epoch_key]
-
+        print(3)
         if self._vaex_meas_pairs:
             df_filter = df_filter.extract().to_pandas_df()
-
+        print(4)
+        num_pairs = df_filter.shape[0]
+        print(5)
         num_candidates = df_filter[
             (df_filter[vs_label] > vs_min) & (df_filter[m_label].abs() > m_min)
         ].shape[0]
-
+        print(6)
         unique_meas_ids = (
             pd.unique(df_filter[['meas_id_a', 'meas_id_b']].values.ravel('K'))
         )
-
+        print(7)
         temp_meas = self.measurements[
             self.measurements['id'].isin(unique_meas_ids)
         ]['id', 'forced']
-
+        print(7)
         if self._vaex_meas:
             temp_meas = temp_meas.extract().to_pandas_df()
-
+        print(8)
         temp_meas = temp_meas.drop_duplicates('id').set_index('id')
-
+        print(9)
         df_filter = df_filter.merge(
             temp_meas, left_on='meas_id_a', right_index=True,
             suffixes=('_a', '_b')
         )
-
+        print(10)
         df_filter = df_filter.merge(
             temp_meas, left_on='meas_id_b', right_index=True,
             suffixes=('_a', '_b')
         ).rename(columns={'forced': 'forced_a'})
-
+        print(11)
         df_filter['forced_sum'] = (
             df_filter[['forced_a', 'forced_b']].agg('sum', axis=1)
         ).astype(str)
-
+        print(12)
         return df_filter, num_pairs, num_candidates, td_days
 
 
@@ -1170,7 +1170,9 @@ class PipeAnalysis(PipeRun):
         m_label = 'm_int' if use_int_flux else 'm_peak'
 
         df_filter, num_pairs, num_candidates, td_days = (
-            self._get_epoch_pair_plotting_df(df, epoch_pair_id)
+            self._get_epoch_pair_plotting_df(
+                df, epoch_pair_id, vs_label, m_label
+            )
         )
 
         candidate_perc = num_candidates / num_pairs * 100.
@@ -1235,7 +1237,9 @@ class PipeAnalysis(PipeRun):
         m_label = 'm_int' if use_int_flux else 'm_peak'
 
         df_filter, num_pairs, num_candidates, td_days = (
-            self._get_epoch_pair_plotting_df(df, epoch_pair_id)
+            self._get_epoch_pair_plotting_df(
+                df, epoch_pair_id, vs_label, m_label
+            )
         )
 
         candidate_perc = num_candidates / num_pairs * 100.
