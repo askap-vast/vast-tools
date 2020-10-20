@@ -308,6 +308,8 @@ class Pipeline(object):
 
             vaex_meas = True
 
+            warnings.warn("Measurements have been loaded with vaex.")
+
         else:
             m_files = images['measurements_path'].tolist()
             m_files += sorted(glob.glob(os.path.join(
@@ -703,6 +705,7 @@ class PipeRun(object):
                     temp = vaex.from_pandas(temp)
                     measurement_pairs_df = measurement_pairs_df.concat(temp)
                 self._vaex_meas_pairs = True
+                warnings.warn("Measurement pairs have been loaded with vaex.")
             else:
                 measurement_pairs_df = (
                     dd.read_parquet(self.measurement_pairs_file).compute()
@@ -713,6 +716,7 @@ class PipeRun(object):
                     vaex.open(self.measurement_pairs_file[0])
                 )
                 self._vaex_meas_pairs = True
+                warnings.warn("Measurement pairs have been loaded with vaex.")
             else:
                 measurement_pairs_df = (
                     pd.read_parquet(self.measurement_pairs_file[0])
