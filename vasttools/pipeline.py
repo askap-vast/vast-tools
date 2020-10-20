@@ -1035,8 +1035,8 @@ class PipeAnalysis(PipeRun):
     run_two_epoch_analysis(v, m, query=None, df=None, use_int_flux=False)
         Runs the two epoch variability analysis on the pipeline run. Filters
         can be applied using query argument or directly passing the filtered
-        sources df. Returns a dataframe of candidates given the input v and m
-        values.
+        sources df. Returns two dataframes: the candidates sources given the
+        input v and m values and the pair values that met the thresholds.
 
     plot_two_epoch_pairs(epoch_pair_id, query=None, df=None, vs_min=4.3,
         m_min=0.26, use_int_flux=False, remove_two_forced=False,
