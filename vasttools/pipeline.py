@@ -1159,6 +1159,9 @@ class PipeAnalysis(PipeRun):
             df_filter[['forced_a', 'forced_b']].agg('sum', axis=1)
         ).astype(str)
 
+        # convert Vs to absolute for plotting purposes.
+        df_filter[vs_label] = df_filter[vs_label].abs()
+
         return df_filter, num_pairs, num_candidates, td_days
 
     def _plot_epoch_pair_bokeh(
@@ -1461,23 +1464,55 @@ class PipeAnalysis(PipeRun):
             peak fluxes, defaults to 'False'.
         :type use_int_flux: bool, optional.
 
-        :returns: dataframe containing the candidates only.
-        :rtype: pandas.core.frame.DataFrame
+        :returns: Tuple containing two dataframes of the candidate sources
+            and pairs.
+        :rtype: (pandas.core.frame.DataFrame, pandas.core.frame.DataFrame)
         '''
+        if not self._loaded_two_epoch_metrics:
+            raise Exception(
+                "The two epoch metrics must first be loaded to use the"
+                " plotting function. Please do so with the command:\n"
+                "'mypiperun.load_two_epoch_metrics()'\n"
+                "and try again."
+            )
+
         if df is None:
             df = self.sources
 
         if query is not None:
             df = df.query(query)
 
-        allowed_sources = df.index.tolist()
+        allowed_sources = df.index.values
 
-        vs_label = 'vs_max_int' if use_int_flux else 'vs_max_peak'
-        m_abs_label = 'm_abs_max_int' if use_int_flux else 'm_abs_max_peak'
+        pairs_df = self.measurement_pairs_df
 
-        candidates = df.loc[(df[vs_label] > v) & (df[m_abs_label] > m)]
+        if len(allowed_sources) != self.sources.shape[0]:
+            pairs_df = pairs_df[pairs_df['source_id'].isin(allowed_sources)]
 
-        return candidates
+        vs_label = 'vs_int' if use_int_flux else 'vs_peak'
+        m_abs_label = 'm_int' if use_int_flux else 'm_peak'
+
+        pairs_df[vs_label] = pairs_df[vs_label].abs()
+
+        candidate_pairs = pairs_df[
+            (pairs_df[vs_label] > v) & (pairs_df[m_abs_label] > m)
+        ]
+
+        # If vaex convert these to pandas
+        if self._vaex_meas_pairs:
+            candidate_sources = (
+                candidate_pairs[['source_id']].extract().to_pandas_df()
+            )
+            candidate_pairs = candidate_pairs.to_pandas_df()
+        else:
+            candidate_pairs = candidate_pairs.copy()
+
+
+        unique_sources = candidate_sources['source_id'].unique()
+
+        candidate_sources = self.sources.loc[unique_sources]
+
+        return candidate_sources, candidate_pairs
 
     def _fit_eta_v(self, df, use_int_flux=False):
         '''
