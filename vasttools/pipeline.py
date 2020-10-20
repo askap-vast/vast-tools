@@ -24,6 +24,7 @@ from bokeh.layouts import gridplot, Spacer
 from bokeh.palettes import Category10_3
 from bokeh.plotting import figure, from_networkx
 from bokeh.transform import linear_cmap, factor_cmap
+import colorcet as cc
 import numpy as np
 import pandas as pd
 from scipy.stats import norm
@@ -1132,6 +1133,9 @@ class PipeAnalysis(PipeRun):
 
         num_pairs = df_filter.shape[0]
 
+        # convert Vs to absolute for plotting purposes.
+        df_filter[vs_label] = df_filter[vs_label].abs()
+
         num_candidates = df_filter[
             (df_filter[vs_label] > vs_min) & (df_filter[m_label].abs() > m_min)
         ].shape[0]
@@ -1142,7 +1146,7 @@ class PipeAnalysis(PipeRun):
 
         temp_meas = self.measurements[
             self.measurements['id'].isin(unique_meas_ids)
-        ]['id', 'forced']
+        ][['id', 'forced']]
 
         if self._vaex_meas:
             temp_meas = temp_meas.extract().to_pandas_df()
@@ -1162,9 +1166,6 @@ class PipeAnalysis(PipeRun):
         df_filter['forced_sum'] = (
             df_filter[['forced_a', 'forced_b']].agg('sum', axis=1)
         ).astype(str)
-
-        # convert Vs to absolute for plotting purposes.
-        df_filter[vs_label] = df_filter[vs_label].abs()
 
         return df_filter, num_pairs, num_candidates, td_days
 
@@ -1257,7 +1258,7 @@ class PipeAnalysis(PipeRun):
         fig.add_layout(variable_region_1)
         fig.add_layout(variable_region_2)
 
-        fig.legend.location = "top_left"
+        fig.legend.location = "top_right"
         fig.legend.click_policy = "hide"
 
         return fig
@@ -1295,6 +1296,8 @@ class PipeAnalysis(PipeRun):
         :returns: matplotlib pyplot figure.
         :rtype: matplotlib.pyplot.figure
         """
+        plt.close()  # close any previous ones
+
         vs_label = 'vs_int' if use_int_flux else 'vs_peak'
         m_label = 'm_int' if use_int_flux else 'm_peak'
 
@@ -1309,8 +1312,10 @@ class PipeAnalysis(PipeRun):
         fig = plt.figure(figsize=(8, 8))
         ax = fig.add_subplot(111)
 
-        ax.fill_between([4.3, 100], 0.26, 4.2, color="gold", alpha=0.3)
-        ax.fill_between([4.3, 100], -4.2, -0.26, color="gold", alpha=0.3)
+        ax.fill_between([vs_min, 100], m_min, 4.2, color="gold", alpha=0.3)
+        ax.fill_between(
+            [vs_min, 100], -4.2, m_min * -1, color="gold", alpha=0.3
+        )
 
         colors = ["C0", "C1", "C2"]
         labels = ["0 forced", "1 forced", "2 forced"]
@@ -1488,31 +1493,42 @@ class PipeAnalysis(PipeRun):
 
         allowed_sources = df.index.values
 
-        pairs_df = self.measurement_pairs_df
+        pairs_df = self.measurement_pairs_df.copy()
 
         if len(allowed_sources) != self.sources.shape[0]:
-            pairs_df = pairs_df[pairs_df['source_id'].isin(allowed_sources)]
+            if self._vaex_meas_pairs:
+                pairs_df = pairs_df[
+                    pairs_df['source_id'].isin(allowed_sources)
+                ]
+            else:
+                pairs_df = pairs_df.loc[
+                    pairs_df['source_id'].isin(allowed_sources)
+                ]
 
         vs_label = 'vs_int' if use_int_flux else 'vs_peak'
         m_abs_label = 'm_int' if use_int_flux else 'm_peak'
 
         pairs_df[vs_label] = pairs_df[vs_label].abs()
 
-        candidate_pairs = pairs_df[
-            (pairs_df[vs_label] > v) & (pairs_df[m_abs_label] > m)
-        ]
-
         # If vaex convert these to pandas
         if self._vaex_meas_pairs:
+            candidate_pairs = pairs_df[
+                (pairs_df[vs_label] > v) & (pairs_df[m_abs_label] > m)
+            ]
+
+            candidate_pairs = candidate_pairs.to_pandas_df()
+
             candidate_sources = (
                 candidate_pairs[['source_id']].extract().to_pandas_df()
             )
-            candidate_pairs = candidate_pairs.to_pandas_df()
+
+            unique_sources = candidate_sources['source_id'].unique()
         else:
-            candidate_pairs = candidate_pairs.copy()
+            candidate_pairs = pairs_df.loc[
+                (pairs_df[vs_label] > v) & (pairs_df[m_abs_label] > m)
+            ]
 
-
-        unique_sources = candidate_sources['source_id'].unique()
+            unique_sources = candidate_pairs['source_id'].unique()
 
         candidate_sources = self.sources.loc[unique_sources]
 
@@ -1891,7 +1907,7 @@ class PipeAnalysis(PipeRun):
         )
         cmap = linear_cmap(
             "n_selavy",
-            'Viridis256',
+            cc.kb,
             df["n_selavy"].min(),
             df["n_selavy"].max(),
         )

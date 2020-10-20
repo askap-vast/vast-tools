@@ -16,6 +16,7 @@ setup(
         "astropy>=3.2,<4.2,!=4.0",
         "astroquery>=0.4.1,<0.5",
         "bokeh>=2.1.1,<2.2",
+        "colorcet==2.0.2",
         "colorlog>=4.0.2,<5.0",
         "dask[dataframe]>=2.25.0,<2.30.0",
         "matplotlib>=3.1.2,<3.3.0",
