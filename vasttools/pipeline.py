@@ -1176,7 +1176,8 @@ class PipeAnalysis(PipeRun):
         vs_min=4.3,
         m_min=0.26,
         use_int_flux=False,
-        remove_two_forced=False
+        remove_two_forced=False,
+        plot_style='a'
     ) -> Model:
         '''
         Adapted from code written by Andrew O'Brien.
@@ -1199,6 +1200,9 @@ class PipeAnalysis(PipeRun):
         :param remove_two_forced: Will exclude any pairs that are both forced
             extractions if True, defaults to False.
         :type remove_two_forced: bool, optional.
+        :param plot_style: Select whether to plot with style 'a' (Mooley) or
+            'b' (Radcliffe). Defaults to 'a'.
+        :type plot_style: str, optional.
 
         :returns: Bokeh figure.
         :rtype: bokeh.plotting.figure
@@ -1212,53 +1216,113 @@ class PipeAnalysis(PipeRun):
             )
         )
 
+
         candidate_perc = num_candidates / num_pairs * 100.
 
         cmap = factor_cmap(
             'forced_sum', palette=Category10_3, factors=['0', '1', '2']
         )
 
-        fig = figure(
-            x_axis_label="Vs",
-            y_axis_label="m",
-            title=(
-                f"{epoch_pair_id}: {td_days:.2f} days"
-                f" {num_candidates}/{num_pairs} candidates "
-                f"({candidate_perc:.2f}%)"
-            ),
-            tools="pan,box_select,lasso_select,box_zoom,wheel_zoom,reset",
-            tooltips=[("source", "@source_id")],
-        )
+        if plot_style == 'a':
+            df_filter[m_label] = df_filter[m_label].abs()
 
-        range_len = 2 if remove_two_forced else 3
+            fig = figure(
+                x_axis_label="m",
+                y_axis_label="Vs",
+                y_axis_type='log',
+                title=(
+                    f"{epoch_pair_id}: {td_days:.2f} days"
+                    f" {num_candidates}/{num_pairs} candidates "
+                    f"({candidate_perc:.2f}%)"
+                ),
+                tools="pan,box_select,lasso_select,box_zoom,wheel_zoom,reset",
+                tooltips=[("source", "@source_id")],
+            )
 
-        for i in range(range_len):
-            source = df_filter[df_filter['forced_sum'] == str(i)]
-            if not source.empty:
-                fig.scatter(
-                    f"{vs_label}",
-                    f"{m_label}",
-                    source=source,
-                    color=cmap,
-                    marker="circle",
-                    legend_label=f"{i} forced",
-                    size=2,
-                    nonselection_fill_alpha=0.1,
-                    nonselection_fill_color="grey",
-                    nonselection_line_color=None,
-                )
+            range_len = 2 if remove_two_forced else 3
 
-        variable_region_1 = BoxAnnotation(
-            left=vs_min, bottom=m_min,
-            fill_color="orange", level="underlay"
-        )
-        variable_region_2 = BoxAnnotation(
-            left=vs_min, top=-m_min, fill_color="orange", level="underlay"
-        )
-        fig.add_layout(variable_region_1)
-        fig.add_layout(variable_region_2)
+            for i in range(range_len):
+                source = df_filter[df_filter['forced_sum'] == str(i)]
+                if not source.empty:
+                    fig.scatter(
+                        f"{m_label}",
+                        f"{vs_label}",
+                        source=source,
+                        color=cmap,
+                        marker="circle",
+                        legend_label=f"{i} forced",
+                        size=2,
+                        nonselection_fill_alpha=0.1,
+                        nonselection_fill_color="grey",
+                        nonselection_line_color=None,
+                    )
+            # Vertical line
+            vline = Span(
+                location=m_min, dimension='height', line_color='black',
+                line_dash='dashed'
+            )
+            fig.add_layout(vline)
+            # Horizontal line
+            hline = Span(
+                location=vs_min, dimension='width', line_color='black',
+                line_dash='dashed'
+            )
+            fig.add_layout(hline)
 
-        fig.legend.location = "top_right"
+            variable_region = BoxAnnotation(
+                left=m_min,
+                bottom=vs_min,
+                fill_color="orange",
+                fill_alpha=0.3,
+                level="underlay",
+            )
+            fig.add_layout(variable_region)
+            fig.legend.location = "bottom_right"
+
+        else:
+
+            fig = figure(
+                x_axis_label="Vs",
+                y_axis_label="m",
+                title=(
+                    f"{epoch_pair_id}: {td_days:.2f} days"
+                    f" {num_candidates}/{num_pairs} candidates "
+                    f"({candidate_perc:.2f}%)"
+                ),
+                tools="pan,box_select,lasso_select,box_zoom,wheel_zoom,reset",
+                tooltips=[("source", "@source_id")],
+            )
+
+            range_len = 2 if remove_two_forced else 3
+
+            for i in range(range_len):
+                source = df_filter[df_filter['forced_sum'] == str(i)]
+                if not source.empty:
+                    fig.scatter(
+                        f"{vs_label}",
+                        f"{m_label}",
+                        source=source,
+                        color=cmap,
+                        marker="circle",
+                        legend_label=f"{i} forced",
+                        size=2,
+                        nonselection_fill_alpha=0.1,
+                        nonselection_fill_color="grey",
+                        nonselection_line_color=None,
+                    )
+
+            variable_region_1 = BoxAnnotation(
+                left=vs_min, bottom=m_min,
+                fill_color="orange", level="underlay"
+            )
+            variable_region_2 = BoxAnnotation(
+                left=vs_min, top=-m_min, fill_color="orange", level="underlay"
+            )
+            fig.add_layout(variable_region_1)
+            fig.add_layout(variable_region_2)
+
+            fig.legend.location = "top_right"
+
         fig.legend.click_policy = "hide"
 
         return fig
@@ -1270,7 +1334,8 @@ class PipeAnalysis(PipeRun):
         vs_min=4.3,
         m_min=0.26,
         use_int_flux=False,
-        remove_two_forced=False
+        remove_two_forced=False,
+        plot_style='a'
     ):
         """
         Plot the results of the two epoch analysis using matplotlib. Currently
@@ -1292,6 +1357,9 @@ class PipeAnalysis(PipeRun):
         :param remove_two_forced: Will exclude any pairs that are both forced
             extractions if True, defaults tto False.
         :type remove_two_forced: bool, optional.
+        :param plot_style: Select whether to plot with style 'a' (Mooley) or
+            'b' (Radcliffe). Defaults to 'a'.
+        :type plot_style: str, optional.
 
         :returns: matplotlib pyplot figure.
         :rtype: matplotlib.pyplot.figure
@@ -1312,25 +1380,59 @@ class PipeAnalysis(PipeRun):
         fig = plt.figure(figsize=(8, 8))
         ax = fig.add_subplot(111)
 
-        ax.fill_between([vs_min, 100], m_min, 4.2, color="gold", alpha=0.3)
-        ax.fill_between(
-            [vs_min, 100], -4.2, m_min * -1, color="gold", alpha=0.3
-        )
-
         colors = ["C0", "C1", "C2"]
         labels = ["0 forced", "1 forced", "2 forced"]
 
         range_len = 2 if remove_two_forced else 3
 
-        for i in range(range_len):
-            mask = df_filter['forced_sum'] == str(i)
-            if np.any(mask):
-                ax.scatter(
-                    df_filter[mask][vs_label], df_filter[mask][m_label],
-                    c=colors[i], label=labels[i]
-                )
-        ax.set_xlim(0.5, 50)
-        ax.set_ylim(-4.0, 4.0)
+        if plot_style == 'a':
+            for i in range(range_len):
+                mask = df_filter['forced_sum'] == str(i)
+                if np.any(mask):
+                    ax.scatter(
+                        df_filter[mask][m_label].abs(),
+                        df_filter[mask][vs_label],
+                        c=colors[i], label=labels[i],
+                        zorder=2
+                    )
+
+            ax.axhline(vs_min, ls="--", c='k', zorder=5)
+            ax.axvline(m_min, ls="--", c='k', zorder=5)
+            ax.set_yscale('log')
+
+            y_limits = ax.get_ylim()
+            x_limits = ax.get_xlim()
+
+            ax.fill_between(
+                [m_min, 1e5], vs_min, 1e5,
+                color='navajowhite', alpha=0.5, zorder=1
+            )
+
+            ax.set_xlim(x_limits)
+            ax.set_ylim(y_limits)
+
+            ax.set_xlabel(r"|$m$|")
+            ax.set_ylabel(r"$V_{s}$")
+
+        else:
+            ax.fill_between([vs_min, 100], m_min, 4.2, color="gold", alpha=0.3)
+            ax.fill_between(
+                [vs_min, 100], -4.2, m_min * -1, color="gold", alpha=0.3
+            )
+
+            for i in range(range_len):
+                mask = df_filter['forced_sum'] == str(i)
+                if np.any(mask):
+                    ax.scatter(
+                        df_filter[mask][vs_label], df_filter[mask][m_label],
+                        c=colors[i], label=labels[i]
+                    )
+            ax.set_xlim(0.5, 50)
+            ax.set_ylim(-4.0, 4.0)
+
+            ax.set_ylabel(r"$m$")
+            ax.set_xlabel(r"$V_{s}$")
+
         date_string = "Epoch {} (Time {:.2f} days)".format(
             epoch_pair_id, td_days
         )
@@ -1343,9 +1445,6 @@ class PipeAnalysis(PipeRun):
         )
         ax.legend()
 
-        ax.set_ylabel(r"$m$")
-        ax.set_xlabel(r"$V_{s}$")
-
         return fig
 
     def plot_two_epoch_pairs(
@@ -1357,7 +1456,8 @@ class PipeAnalysis(PipeRun):
         m_min=0.26,
         use_int_flux=False,
         remove_two_forced=False,
-        plot_type='bokeh'
+        plot_type='bokeh',
+        plot_style='a'
     ):
         """
         Adapted from code written by Andrew O'Brien.
@@ -1388,6 +1488,9 @@ class PipeAnalysis(PipeRun):
         :param plot_type: Selects whether the returned plot is 'bokeh' or
             'matplotlib', defaults to 'bokeh'.
         :type plot_type: str, optional.
+        :param plot_style: Select whether to plot with style 'a' (Mooley) or
+            'b' (Radcliffe). Defaults to 'a'.
+        :type plot_style: str, optional.
 
         :returns: Bokeh or matplotlib figure.
         :rtype: bokeh.plotting.figure or matplotlib.pyplot.figure
@@ -1404,6 +1507,12 @@ class PipeAnalysis(PipeRun):
             raise Exception(
                 "'plot_type' value is not recongised!"
                 " Must be either 'bokeh' or 'matplotlib'."
+            )
+
+        if plot_style not in ['a', 'b']:
+            raise Exception(
+                "'plot_style' value is not recongised!"
+                " Must be either 'a' for Mooley or 'b' for Radcliffe."
             )
 
         if epoch_pair_id not in self.pairs_df.index.values:
@@ -1435,7 +1544,8 @@ class PipeAnalysis(PipeRun):
                 vs_min,
                 m_min,
                 use_int_flux,
-                remove_two_forced
+                remove_two_forced,
+                plot_style
             )
         else:
             fig = self._plot_epoch_pair_matplotlib(
@@ -1444,7 +1554,8 @@ class PipeAnalysis(PipeRun):
                 vs_min,
                 m_min,
                 use_int_flux,
-                remove_two_forced
+                remove_two_forced,
+                plot_style
             )
 
         return fig
