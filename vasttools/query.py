@@ -189,7 +189,7 @@ class Query:
         self.source_names = np.array(source_names)
 
         if self.coords is None:
-            len_coords = 0:
+            len_coords = 0
         else:
             try:
                 len_coords = self.coords.shape[0]
