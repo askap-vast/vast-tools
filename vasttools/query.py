@@ -193,7 +193,7 @@ class Query:
         else:
             try:
                 len_coords = self.coords.shape[0]
-            except:
+            except Exception as e:
                 # if fails it means the user has passed a scaler SkyCoord
                 len_coords = 1
 
