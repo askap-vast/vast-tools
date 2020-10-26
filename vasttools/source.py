@@ -417,7 +417,7 @@ class Source:
 
     def plot_lightcurve(self, sigma_thresh=5, figsize=(8, 4),
                         min_points=2, min_detections=0, mjd=False,
-                        start_date=None, grid=False, yaxis_start="auto",
+                        start_date=None, grid=False, yaxis_start="0",
                         peak_flux=True, save=False, outfile=None,
                         use_forced_for_limits=False, use_forced_for_all=False,
                         hide_legend=False):
@@ -441,7 +441,7 @@ class Source:
         :param grid: Turn on matplotlib grid, defaults to False
         :type grid: bool, optional
         :param yaxis_start: Define where the y-axis begins from, either 'auto'
-            or 'zero', defaults to "auto".
+            or '0', defaults to "0".
         :type yaxis_start: str, optional
         :param peak_flux: Uses peak flux instead of integrated flux,
             defaults to `True`
