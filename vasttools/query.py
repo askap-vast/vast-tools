@@ -188,6 +188,11 @@ class Query:
         self.coords = coords
         self.source_names = np.array(source_names)
 
+        if self.coords is None:
+            len_coords = 0
+        else:
+            len_coords = 1 if self.coords.isscalar else self.coords.shape[0]
+
         if ncpu > HOST_NCPU:
             raise ValueError(
                 "Number of CPUs requested ({}) "
@@ -213,13 +218,13 @@ class Query:
         if (
             self.coords is not None and
             len(self.source_names) > 0 and
-            len(self.source_names) != len(self.coords)
+            len(self.source_names) != len_coords
         ):
             raise Exception(
                 "The number of entered source names ({}) does not match the"
                 " number of coordinates ({})!".format(
                     len(self.source_names),
-                    len(self.coords)
+                    len_coords
                 )
             )
 
