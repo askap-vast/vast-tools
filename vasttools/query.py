@@ -194,7 +194,7 @@ class Query:
             try:
                 len_coords = self.coords.shape[0]
             except Exception as e:
-                # if fails it means the user has passed a scaler SkyCoord
+                # if fails it means the user has passed a scalar SkyCoord
                 len_coords = 1
 
         if ncpu > HOST_NCPU:
