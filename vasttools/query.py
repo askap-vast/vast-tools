@@ -191,11 +191,7 @@ class Query:
         if self.coords is None:
             len_coords = 0
         else:
-            try:
-                len_coords = self.coords.shape[0]
-            except Exception as e:
-                # if fails it means the user has passed a scalar SkyCoord
-                len_coords = 1
+            len_coords = 1 if self.coords.isscalar else self.coords.shape[0]
 
         if ncpu > HOST_NCPU:
             raise ValueError(
