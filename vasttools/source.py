@@ -1093,7 +1093,7 @@ class Source:
         if cutout_data is None:
             cutout_row = self.cutout_df.iloc[index]
         else:
-            cutout_row = cutout_data.iloc[0]
+            cutout_row = cutout_data.iloc[index]
 
         hdu_stamp = fits.PrimaryHDU(
             data=cutout_row.data,
