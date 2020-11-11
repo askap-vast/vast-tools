@@ -207,6 +207,11 @@ def parse_args():
         action="store_true",
         help='Do not save the FITS cutouts.')
     parser.add_argument(
+        '--plot-dpi',
+        type=int,
+        help="Specify the DPI of all saved figures.",
+        default=150)
+    parser.add_argument(
         '--create-png',
         action="store_true",
         help='Create a png of the fits cutout.')
@@ -532,7 +537,8 @@ if __name__ == '__main__':
                 lc_use_forced_for_all=args.lc_use_forced_for_all,
                 lc_hide_legend=args.lc_hide_legend,
                 measurements_simple=args.selavy_simple,
-                imsize=Angle(args.imsize * u.arcmin)
+                imsize=Angle(args.imsize * u.arcmin),
+                plot_dpi=args.plot_dpi
             )
 
     query._summary_log()
