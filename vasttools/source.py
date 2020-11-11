@@ -1278,7 +1278,7 @@ class Source:
                 disable_autoscaling,
                 cutout_data,
                 norms,
-                plot_dpi=plot_dpi
+                plot_dpi
             )
         )
 

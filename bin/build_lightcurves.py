@@ -192,7 +192,7 @@ if __name__ == '__main__':
             save=True,
             use_forced_for_limits=args.use_forced_for_limits,
             use_forced_for_all=args.use_forced_for_all,
-            hide_legend=args.hide_legend
+            hide_legend=args.hide_legend,
             plot_dpi=args.plot_dpi
         )
 
