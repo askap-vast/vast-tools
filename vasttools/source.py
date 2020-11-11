@@ -115,7 +115,7 @@ class Source:
         min_detections=0, mjd=False, start_date=None, grid=False,
         yaxis_start="auto", peak_flux=True, save=False,
         outfile=None, use_forced_for_limits=False,
-        use_forced_for_all=False, hide_legend=False
+        use_forced_for_all=False, hide_legend=False, plot_dpi=150
     )
         Displays the lightcurve plot. Use the save parameter to write
         the plot to a png file.
@@ -132,7 +132,7 @@ class Source:
         epoch, selavy=True, percentile=99.9, zscale=False,
         contrast=0.2, no_islands=True, label="Source", no_colorbar=False,
         title=None, crossmatch_overlay=False, hide_beam=False, size=None,
-        force=False, outfile=None
+        force=False, outfile=None, plot_dpi=150
     )
         Saves the png cutout of the epoch selected.
 
@@ -144,7 +144,7 @@ class Source:
     show_all_png_cutouts(
         columns=4, percentile=99.9, zscale=False, contrast=0.1,
         outfile=None, save=False, size=None, figsize=(10, 5),
-        force=False, no_selavy=False, disable_autoscaling=False
+        force=False, no_selavy=False, disable_autoscaling=False, plot_dpi=150
     )
         Displays a grid view plot of all the cutouts.
 
@@ -152,7 +152,7 @@ class Source:
         epoch, survey, contour_levels=[3., 5., 10., 15.],
         percentile=99.9, zscale=False, contrast=0.2, outfile=None,
         no_colorbar=False, title=None, save=False, size=None,
-        force=False,
+        force=False, plot_dpi=150
     )
         Fetches the SkyView image FITS from the selected survey
         and overlays the ASKAP contours from the selected epoch.
@@ -177,7 +177,7 @@ class Source:
         selavy=True, percentile=99.9, zscale=False, contrast=0.2,
         islands=True, no_colorbar=False, crossmatch_overlay=False,
         hide_beam=False, size=None, disable_autoscaling=False,
-        cutout_data=None, calc_script_norms=False
+        cutout_data=None, calc_script_norms=False, plot_dpi=150
     )
         Saves all the png cutouts.
 
@@ -420,7 +420,7 @@ class Source:
                         start_date=None, grid=False, yaxis_start="0",
                         peak_flux=True, save=False, outfile=None,
                         use_forced_for_limits=False, use_forced_for_all=False,
-                        hide_legend=False):
+                        hide_legend=False, plot_dpi=150):
         '''
         Plot source lightcurves and save to file
 
@@ -459,6 +459,8 @@ class Source:
         :type use_forced_for_all: bool, optional
         :param hide_legend: Hide the legend, defaults to `False`
         :type hide_legend: bool, optional
+        :param plot_dpi: Specify the DPI of saved figures, defaults to 150
+        :type plot_dpi: int, optional
 
         :returns: None if save is `True` or the matplotlib figure
             if save is `False`.
@@ -661,7 +663,7 @@ class Source:
                     outfile
                 )
 
-            plt.savefig(outfile, bbox_inches='tight')
+            plt.savefig(outfile, bbox_inches='tight', dpi=plot_dpi)
             plt.close()
 
             return
@@ -879,7 +881,7 @@ class Source:
             crossmatch_overlay=False,
             hide_beam=False,
             size=None,
-            force=False
+            force=False,
     ):
         '''
         Wrapper for _make_png to make nicer interactive function.
@@ -955,7 +957,8 @@ class Source:
             hide_beam=False,
             size=None,
             force=False,
-            outfile=None
+            outfile=None,
+            plot_dpi=150
     ):
         '''
         Wrapper for _make_png to make nicer interactive function.
@@ -996,6 +999,8 @@ class Source:
         :param outfile: Name to give the file, if None then the name is
             automatically generated, defaults to None.
         :type outfile: None or str, optional
+        :param plot_dpi: Specify the DPI of saved figures, defaults to 150
+        :type plot_dpi: int, optional
         '''
 
         fig = self._make_png(
@@ -1013,7 +1018,8 @@ class Source:
             size=size,
             force=force,
             outfile=outfile,
-            save=True
+            save=True,
+            plot_dpi=plot_dpi
         )
 
         return
@@ -1187,7 +1193,8 @@ class Source:
         size=None,
         disable_autoscaling=False,
         cutout_data=None,
-        calc_script_norms=False
+        calc_script_norms=False,
+        plot_dpi=150
     ):
         '''
         Wrapper function to save all the png cutouts
@@ -1227,6 +1234,8 @@ class Source:
             can be set to True to pass this cutout data to the analyse norms
             function, defaults to False.
         :type calc_script_norms: bool, optional
+        :param plot_dpi: Specify the DPI of saved figures, defaults to 150
+        :type plot_dpi: int, optional
         '''
 
         if self._cutouts_got is False:
@@ -1268,7 +1277,8 @@ class Source:
                 False,
                 disable_autoscaling,
                 cutout_data,
-                norms
+                norms,
+                plot_dpi=plot_dpi
             )
         )
 
@@ -1276,7 +1286,7 @@ class Source:
         self, columns=4, percentile=99.9, zscale=False,
         contrast=0.1, outfile=None, save=False, size=None, figsize=(10, 5),
         force=False, no_selavy=False, disable_autoscaling=False,
-        hide_epoch_labels=False
+        hide_epoch_labels=False, plot_dpi=150
     ):
         '''
         Creates a grid plot showing the source in each epoch.
@@ -1317,6 +1327,8 @@ class Source:
         :param hide_epoch_labels: Turn off the epoch number label (found in
             top left corner of image).
         :type hide_epoch_labels: bool, optional
+        :param plot_dpi: Specify the DPI of saved figures, defaults to 150
+        :type plot_dpi: int, optional
 
         :returns: None is save is `True` or the Figure if `False`.
         :rtype: None or matplotlib.pyplot.Figure.
@@ -1443,7 +1455,7 @@ class Source:
                     outfile
                 )
 
-            plt.savefig(outfile, bbox_inches=True)
+            plt.savefig(outfile, bbox_inches=True, dpi=plot_dpi)
 
             plt.close()
 
@@ -1543,6 +1555,7 @@ class Source:
         save=False,
         size=None,
         force=False,
+        plot_dpi=150,
     ):
         '''
         Fetches a FITS file from SkyView of the requested survey at
@@ -1579,6 +1592,8 @@ class Source:
         :param force: Whether to force the re-fetching
             of the cutout data, defaults to `False`
         :type force: bool, optional
+        :param plot_dpi: Specify the DPI of saved figures, defaults to 150
+        :type plot_dpi: int, optional
 
         :returns: None if save is `True` or the figure object if `False`
         :rtype: None or matplotlib.pyplot.Figure
@@ -1680,7 +1695,7 @@ class Source:
             cb = fig.colorbar(im, cax=cax)
 
         if save:
-            plt.savefig(outfile, bbox_inches="tight")
+            plt.savefig(outfile, bbox_inches="tight", dpi=plot_dpi)
             self.logger.debug("Saved {}".format(outfile))
 
             plt.close(fig)
@@ -1708,7 +1723,8 @@ class Source:
             force=False,
             disable_autoscaling=False,
             cutout_data=None,
-            norms=None
+            norms=None,
+            plot_dpi=150
     ):
         '''
         Save a PNG of the image postagestamp
@@ -1765,6 +1781,8 @@ class Source:
         :param norms: Pass external normalization to be used
             instead of internal calculations.
         :type cutout_data: astropy.visualization.ImageNormalize
+        :param plot_dpi: Specify the DPI of saved figures, defaults to 150
+        :type plot_dpi: int, optional
 
         :returns:
         :rtype:
@@ -2005,7 +2023,7 @@ class Source:
             self.logger.debug("Hiding beam.")
 
         if save:
-            plt.savefig(outfile, bbox_inches="tight")
+            plt.savefig(outfile, bbox_inches="tight", dpi=plot_dpi)
             self.logger.debug("Saved {}".format(outfile))
 
             plt.close(fig)
