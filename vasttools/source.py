@@ -637,7 +637,7 @@ class Source:
 
             date_form = mdates.DateFormatter("%Y-%m-%d")
             ax.xaxis.set_major_formatter(date_form)
-            ax.xaxis.set_major_locator(mdates.WeekdayLocator(interval=2))
+            ax.xaxis.set_major_locator(mdates.AutoDateLocator(maxticks=15))
 
         ax.grid(grid)
 
