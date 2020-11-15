@@ -95,18 +95,21 @@ class Pipeline(object):
         '''
         super(Pipeline, self).__init__()
 
-        try:
-            pipeline_run_path = os.getenv(
-                'PIPELINE_WORKING_DIR',
-                os.path.abspath(str(project_dir))
-            )
-        except Exception as e:
-            raise Exception(
-                "The pipeline run directory could not be determined!"
-                " Either the system environment 'PIPELINE_WORKING_DIR'"
-                " must be defined or the 'project_dir' argument defined"
-                " when initialising the pipeline class object."
-            )
+        if project_dir is None:
+            try:
+                pipeline_run_path = os.getenv(
+                    'PIPELINE_WORKING_DIR',
+                    os.path.abspath(str(project_dir))
+                )
+            except Exception as e:
+                raise Exception(
+                    "The pipeline run directory could not be determined!"
+                    " Either the system environment 'PIPELINE_WORKING_DIR'"
+                    " must be defined or the 'project_dir' argument defined"
+                    " when initialising the pipeline class object."
+                )
+        else:
+            pipeline_run_path = os.path.abspath(str(project_dir))
 
         if not os.path.isdir(pipeline_run_path):
             raise Exception(
