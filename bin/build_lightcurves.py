@@ -87,6 +87,11 @@ def parse_args():
         action="store_true",
         help="Don't show the legend on the final plot.")
     parser.add_argument(
+        '--plot-dpi',
+        type=int,
+        help="Specify the DPI of all saved figures.",
+        default=150)
+    parser.add_argument(
         '--nice',
         type=int,
         help='Set nice level.',
@@ -187,7 +192,8 @@ if __name__ == '__main__':
             save=True,
             use_forced_for_limits=args.use_forced_for_limits,
             use_forced_for_all=args.use_forced_for_all,
-            hide_legend=args.hide_legend
+            hide_legend=args.hide_legend,
+            plot_dpi=args.plot_dpi
         )
 
     runend = datetime.datetime.now()

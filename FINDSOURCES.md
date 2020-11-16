@@ -54,8 +54,8 @@ usage: find_sources.py [-h] [--coords COORDS] [--source-names SOURCE_NAMES] [--n
                        [--forced-cluster-threshold FORCED_CLUSTER_THRESHOLD] [--forced-allow-nan]
                        [--crossmatch-only] [--selavy-simple] [--process-matches] [--debug] [--no-background-rms]
                        [--planets PLANETS] [--find-fields] [--search-around-coordinates] [--clobber] [--sort-output]
-                       [--nice NICE] [--crossmatch-radius-overlay] [--no-fits] [--create-png] [--png-selavy-overlay]
-                       [--png-linear-percentile PNG_LINEAR_PERCENTILE] [--png-use-zscale]
+                       [--nice NICE] [--crossmatch-radius-overlay] [--no-fits] [--plot-dpi PLOT_DPI] [--create-png]
+                       [--png-selavy-overlay] [--png-linear-percentile PNG_LINEAR_PERCENTILE] [--png-use-zscale]
                        [--png-zscale-contrast PNG_ZSCALE_CONTRAST] [--png-hide-beam] [--png-no-island-labels]
                        [--png-no-colorbar] [--png-disable-autoscaling] [--ann] [--reg] [--lightcurves]
                        [--lc-use-int-flux] [--lc-no-plotting] [--lc-min-points LC_MIN_POINTS]
@@ -117,6 +117,7 @@ optional arguments:
                         A circle is placed on all PNG and region/annotation files to represent the crossmatch
                         radius. (default: False)
   --no-fits             Do not save the FITS cutouts. (default: False)
+  --plot-dpi PLOT_DPI   Specify the DPI of all saved figures. (default: 150)
   --create-png          Create a png of the fits cutout. (default: False)
   --png-selavy-overlay  Overlay selavy components onto the png image. (default: False)
   --png-linear-percentile PNG_LINEAR_PERCENTILE

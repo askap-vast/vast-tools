@@ -15,7 +15,7 @@ Most options should be self explanatory. The lightcurve plots are saved in the s
 usage: build_lightcurves.py [-h] [--use-int-flux] [--quiet] [--debug] [--min-points MIN_POINTS]
                             [--min-detections MIN_DETECTIONS] [--mjd] [--grid]
                             [--yaxis-start {auto,0}] [--use-forced-for-limits] [--use-forced-for-all]
-                            [--hide-legend] [--nice NICE]
+                            [--hide-legend] [--plot-dpi PLOT_DPI] [--nice NICE]
                             folder
 
 positional arguments:
@@ -39,6 +39,7 @@ optional arguments:
                         Use the forced fits values instead of upper limits. (default: False)
   --use-forced-for-all  Use the forced fits for all datapoints. (default: False)
   --hide-legend         Don't show the legend on the final plot. (default: False)
+  --plot-dpi PLOT_DPI   Specify the DPI of all saved figures. (default: 150)
   --nice NICE           Set nice level. (default: 5)
 
 ```
