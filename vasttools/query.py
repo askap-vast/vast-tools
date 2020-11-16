@@ -277,18 +277,19 @@ class Query:
 
         self.settings = {}
 
-        try:
-            the_base_folder = os.getenv(
-                'VAST_DATA_DIR',
-                os.path.abspath(str(base_folder))
-            )
-        except Exception as e:
-            raise Exception(
-                "The base folder directory could not be determined!"
-                " Either the system environment 'VAST_DATA_DIR' must be"
-                " defined or the 'base_folder' argument defined when"
-                " initialising the query."
-            )
+        if base_folder is None:
+            try:
+                the_base_folder = os.getenv(
+                    'VAST_DATA_DIR')
+            except Exception as e:
+                raise Exception(
+                    "The base folder directory could not be determined!"
+                    " Either the system environment 'VAST_DATA_DIR' must be"
+                    " defined or the 'base_folder' argument defined when"
+                    " initialising the query."
+                )
+        else:
+            the_base_folder = os.path.abspath(str(base_folder))
 
         if not os.path.isdir(the_base_folder):
             raise Exception(
