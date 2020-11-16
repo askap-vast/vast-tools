@@ -32,7 +32,9 @@ As of version v2.0 the module has been made 'notebook friendly' and can be used 
 To save specifying the data directories in every call to VAST tools there are two system variables you can set that will be read by the module:
 
 * `VAST_DATA_DIR`: The path to the VAST Pilot data, i.e. the path which contains the `EPOCHXX` folders.
-* `PIPELINE_WORKING_DIR`: The path to the VAST Pipeline directory containing the pipeline runs. 
+* `PIPELINE_WORKING_DIR`: The path to the VAST Pipeline directory containing the pipeline runs.
+
+These can be overridden by specifying a `base_folder` when initialising the `Query` class, and a `project_dir` when initialising the `Pipeline` class.
 
 ## Current Scripts
 As part of the installation the following scripts are made available in your path:
