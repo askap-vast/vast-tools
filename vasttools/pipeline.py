@@ -98,9 +98,7 @@ class Pipeline(object):
         if project_dir is None:
             try:
                 pipeline_run_path = os.getenv(
-                    'PIPELINE_WORKING_DIR',
-                    os.path.abspath(str(project_dir))
-                )
+                    'PIPELINE_WORKING_DIR')
             except Exception as e:
                 raise Exception(
                     "The pipeline run directory could not be determined!"
