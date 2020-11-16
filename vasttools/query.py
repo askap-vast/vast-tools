@@ -459,7 +459,8 @@ class Query:
         lc_use_forced_for_all=False,
         lc_hide_legend=False,
         measurements_simple=False,
-        imsize=Angle(5. * u.arcmin)
+        imsize=Angle(5. * u.arcmin),
+        plot_dpi=150
     ):
         '''
         Generate products for all sources.
@@ -541,6 +542,8 @@ class Query:
         :type measurements_simple: bool, optional
         :param imsize: Size of the requested cutout
         :type imsize: `astropy.coordinates.angles.Angle`
+        :param plot_dpi: Specify the DPI of saved figures, defaults to 150
+        :type plot_dpi: int, optional
         '''
 
         if self.settings['search_around']:
@@ -604,7 +607,8 @@ class Query:
             lc_use_forced_for_all=lc_use_forced_for_all,
             lc_hide_legend=lc_hide_legend,
             measurements_simple=measurements_simple,
-            calc_script_norms=~(png_disable_autoscaling)
+            calc_script_norms=~(png_disable_autoscaling),
+            plot_dpi=plot_dpi
         )
 
         original_sigint_handler = signal.signal(
@@ -675,7 +679,8 @@ class Query:
         lc_use_forced_for_all=False,
         lc_hide_legend=False,
         measurements_simple=False,
-        calc_script_norms=False
+        calc_script_norms=False,
+        plot_dpi=150
     ):
         '''
         Produce source products for one source
@@ -763,6 +768,8 @@ class Query:
         :param calc_script_norms: Calculate the png normalisation if it \
         hasn't been already
         :type calc_script_norms: bool, optional
+        :param plot_dpi: Specify the DPI of saved figures, defaults to 150
+        :type plot_dpi: int, optional
         '''
 
         source, cutout_data = i
@@ -782,7 +789,8 @@ class Query:
                 hide_beam=png_hide_beam,
                 disable_autoscaling=png_disable_autoscaling,
                 cutout_data=cutout_data,
-                calc_script_norms=calc_script_norms
+                calc_script_norms=calc_script_norms,
+                plot_dpi=plot_dpi
             )
 
         if ann:
@@ -812,7 +820,8 @@ class Query:
                 outfile=None,
                 use_forced_for_limits=lc_use_forced_for_limits,
                 use_forced_for_all=lc_use_forced_for_all,
-                hide_legend=lc_hide_legend
+                hide_legend=lc_hide_legend,
+                plot_dpi=plot_dpi
             )
 
         if measurements:
