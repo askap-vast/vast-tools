@@ -35,7 +35,7 @@ from astropy import units as u
 from multiprocessing import cpu_count
 from mocpy import MOC
 from vasttools.source import Source
-from vasttools.utils import match_planet_to_field
+from vasttools.utils import match_planet_to_field, gen_skycoord_from_df
 from vasttools.survey import Image
 from datetime import timedelta
 from itertools import combinations
@@ -537,6 +537,35 @@ class PipeRun(object):
             self.name = new_name
 
         return self
+
+    def get_sources_skycoord(
+        self, user_sources=None, ra_col='wavg_ra', dec_col='wavg_dec'
+    ):
+        '''
+        A convenience function to generate a SkyCoord object from the
+        sources dataframe. Also has support for custom source lists.
+
+        :param user_sources: Provide a user generated source dataframe
+            in place of using the default run sources dataframe.
+        :type user_sources: pandas.core.frame.DataFrame, optional
+        :param ra_col: The column to use for the Right Ascension.
+        :type ra_col: str, optional
+        :param dec_col: The column to use for the Declination.
+        :type dec_col: str, optional
+
+        :returns: sources_skycoord
+        :rtype: astropy.coordinates.SkyCoord
+        '''
+        if user_sources is None:
+            the_sources = self.sources
+        else:
+            the_sources = user_sources
+
+        sources_skycoord = gen_skycoord_from_df(
+            the_sources, ra_col=ra_col, dec_col=dec_col
+        )
+
+        return sources_skycoord
 
     def get_source(self, id, field=None, stokes='I', outdir='.'):
         '''
