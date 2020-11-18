@@ -389,6 +389,8 @@ class PipeRun(object):
     sources : pandas.core.frame.DataFrame
         Dataframe containing all the information on the sources
         of the pipeline run.
+    sources_skycoord : astropy.coordinates.SkyCoord
+        A SkyCoord object of the default sources attribute.
     measurements : pandas.core.frame.DataFrame
         Dataframe containing all the information on the measurements
         of the pipeline run.
@@ -403,6 +405,11 @@ class PipeRun(object):
 
     Methods
     -------
+
+    get_sources_skycoord(user_sources=None, ra_col='wavg_ra',
+        dec_col='wavg_dec', ra_unit=u.degree, dec_unit=u.degree)
+        A convenience function to generate a SkyCoord object from the
+        sources dataframe. Also has support for custom source lists.
 
     get_source(id, field=None, stokes='I', outdir='.')
         Creates a vasttools.source.Source object for the requested
@@ -423,6 +430,12 @@ class PipeRun(object):
         WARNING! It is assumed you are loading runs from the same Pipeline
         instance. If this is not the case then erroneous results may be
         returned.
+
+    load_two_epoch_metrics()
+        Loads the two epoch metrics dataframe, usually stored as either
+        'measurement_pairs.parquet' or 'measurement_pairs.arrow'. Adds an epoch
+        'key' to the dataframe. Also creates a 'pairs_df' that lists all the
+        possible epoch pairs.
     '''
     def __init__(
         self, name, images, skyregions, relations, sources,
@@ -461,6 +474,7 @@ class PipeRun(object):
         self.images = images
         self.skyregions = skyregions
         self.sources = sources
+        self.sources_skycoord = self.get_sources_skycoord()
         self.associations = associations
         self.measurements = measurements
         self.measurement_pairs_file = measurement_pairs_file
@@ -1050,6 +1064,8 @@ class PipeAnalysis(PipeRun):
     sources : pandas.core.frame.DataFrame
         Dataframe containing all the information on the sources
         of the pipeline run.
+    sources_skycoord : astropy.coordinates.SkyCoord
+        A SkyCoord object of the default sources attribute.
     measurements : pandas.core.frame.DataFrame
         Dataframe containing all the information on the measurements
         of the pipeline run.
@@ -1066,6 +1082,11 @@ class PipeAnalysis(PipeRun):
     Methods
     -------
 
+    get_sources_skycoord(user_sources=None, ra_col='wavg_ra',
+        dec_col='wavg_dec', ra_unit=u.degree, dec_unit=u.degree)
+        A convenience function to generate a SkyCoord object from the
+        sources dataframe. Also has support for custom source lists.
+
     get_source(id, field=None, stokes='I', outdir='.')
         Creates a vasttools.source.Source object for the requested
         source.
@@ -1073,6 +1094,24 @@ class PipeAnalysis(PipeRun):
     check_for_planets()
         Searches the pipeline run images for any planets present.
         Returns pandas dataframe with results.
+
+    create_moc(max_depth=9)
+        Create a MOC file that represents the area covered by
+        the pipeline run.
+
+    combine_with_run(other_PipeRun, new_name=None)
+        Combines the output of another PipeRun object with the PipeRun
+        from which this method is being called from.
+
+        WARNING! It is assumed you are loading runs from the same Pipeline
+        instance. If this is not the case then erroneous results may be
+        returned.
+
+    load_two_epoch_metrics()
+        Loads the two epoch metrics dataframe, usually stored as either
+        'measurement_pairs.parquet' or 'measurement_pairs.arrow'. Adds an epoch
+        'key' to the dataframe. Also creates a 'pairs_df' that lists all the
+        possible epoch pairs.
 
     run_two_epoch_analysis(v, m, query=None, df=None, use_int_flux=False)
         Runs the two epoch variability analysis on the pipeline run. Filters
