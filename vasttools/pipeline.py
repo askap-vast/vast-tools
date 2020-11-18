@@ -539,7 +539,8 @@ class PipeRun(object):
         return self
 
     def get_sources_skycoord(
-        self, user_sources=None, ra_col='wavg_ra', dec_col='wavg_dec'
+        self, user_sources=None, ra_col='wavg_ra', dec_col='wavg_dec',
+        ra_unit=u.degree, dec_unit=u.degree
     ):
         '''
         A convenience function to generate a SkyCoord object from the
@@ -552,6 +553,12 @@ class PipeRun(object):
         :type ra_col: str, optional
         :param dec_col: The column to use for the Declination.
         :type dec_col: str, optional
+        :param ra_unit: The unit of the RA column, defaults to degrees. Must be
+            an astropy.unit value.
+        :type ra_unit: astropy.unit, optional
+        :param dec_unit: The unit of the Dec column, defaults to degrees. Must be
+            an astropy.unit value.
+        :type dec_unit: astropy.unit, optional
 
         :returns: sources_skycoord
         :rtype: astropy.coordinates.SkyCoord
@@ -562,7 +569,8 @@ class PipeRun(object):
             the_sources = user_sources
 
         sources_skycoord = gen_skycoord_from_df(
-            the_sources, ra_col=ra_col, dec_col=dec_col
+            the_sources, ra_col=ra_col, dec_col=dec_col, ra_unit=ra_unit,
+            dec_unit=dec_unit
         )
 
         return sources_skycoord
