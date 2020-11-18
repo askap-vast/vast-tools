@@ -430,3 +430,38 @@ def create_source_directories(outdir, sources):
         name = i.replace(" ", "_").replace("/", "_")
         name = os.path.join(outdir, name)
         os.makedirs(name)
+
+
+def pipeline_get_eta_metric(row, df, peak=False):
+    '''
+    Calculates the eta variability metric of a source.
+    Works on the grouped by dataframe using the fluxes
+    of the assoicated measurements.
+    '''
+    if df.shape[0] == 1:
+        return 0.
+
+    suffix = 'peak' if peak else 'int'
+    weights = 1. / df[f'flux_{suffix}_err'].values**2
+    fluxes = df[f'flux_{suffix}'].values
+    eta = (df.shape[0] / (df.shape[0]-1)) * (
+        (weights * fluxes**2).mean() - (
+            (weights * fluxes).mean()**2 / weights.mean()
+        )
+    )
+    return eta
+
+
+def pipeline_get_variable_metrics(df):
+    d = {}
+    for col in ['flux_int', 'flux_peak']:
+        d[f'{col}_sq'] = (df[col]**2).mean()
+    d['v_int'] = df['flux_int'].std() / df['flux_int'].mean()
+    d['v_peak'] = df['flux_peak'].std() / df['flux_peak'].mean()
+    d['eta_int'] = pipeline_get_eta_metric(d, df)
+    d['eta_peak'] = pipeline_get_eta_metric(d, df, peak=True)
+
+    for col in ['flux_int', 'flux_peak']:
+        d.pop(f'{col}_sq')
+
+    return pd.Series(d)

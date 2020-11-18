@@ -35,7 +35,11 @@ from astropy import units as u
 from multiprocessing import cpu_count
 from mocpy import MOC
 from vasttools.source import Source
-from vasttools.utils import match_planet_to_field
+from vasttools.utils import (
+    match_planet_to_field,
+    pipeline_get_variable_metrics,
+    pipeline_get_eta_metric
+)
 from vasttools.survey import Image
 from datetime import timedelta
 from itertools import combinations
@@ -538,7 +542,10 @@ class PipeRun(object):
 
         return self
 
-    def get_source(self, id, field=None, stokes='I', outdir='.'):
+    def get_source(
+        self, id, field=None, stokes='I', outdir='.', user_measurements=None,
+        user_sources=None
+    ):
         '''
         Fetches an individual source and returns a
         vasttools.source.Source object. Users do not need
@@ -558,14 +565,25 @@ class PipeRun(object):
         :returns: vast tools Source object
         :rtype: vasttools.source.Source
         '''
+
+        if user_measurements is None:
+            the_measurements = self.measurements
+        else:
+            the_measurements = user_measurements
+
+        if user_sources is None:
+            the_sources = self.sources
+        else:
+            the_sources = user_sources
+
         if self._vaex_meas:
-            measurements = self.measurements[
-                self.measurements['source'] == id
+            measurements = the_measurements[
+                the_measurements['source'] == id
             ].to_pandas_df()
 
         else:
-            measurements = self.measurements.loc[
-                self.measurements['source'] == id
+            measurements = the_measurements.loc[
+                the_measurements['source'] == id
             ]
 
         measurements = measurements.merge(
@@ -593,7 +611,7 @@ class PipeRun(object):
             by='dateobs'
         ).reset_index(drop=True)
 
-        s = self.sources.loc[id]
+        s = the_sources.loc[id]
 
         num_measurements = s['n_measurements']
 
@@ -1098,6 +1116,256 @@ class PipeAnalysis(PipeRun):
             name, images, skyregions, relations, sources, associations,
             measurements, measurement_pairs_file, vaex_meas, n_workers
         )
+
+    def recalc_sources_df(self, measurements_df, min_vs=4.3):
+        """
+        Regenreates a sources dataframe using a user provided measurements
+        dataframe.
+
+        :param measurements_df: Dataframe of measurements with default pipeline
+            columns.
+        :type measurements_df: pandas.core.frame.DataFrame.
+        :param min_vs: Minimum value of the Vs two epoch parameter to use
+            when appending the two epoch metrics maximum.
+        :type min_vs: float.
+
+        :returns: sources_df
+        :rtype: pandas.core.frame.DataFrame.
+        """
+
+        if not self._vaex_meas:
+            measurements_df = vaex.from_pandas(measurements_df)
+
+        # account for RA wrapping
+        ra_wrap_mask = measurements_df.ra <= 0.1
+        measurements_df['ra_wrap'] = measurements_df.func.where(
+            ra_wrap_mask, measurements_df[ra_wrap_mask].ra + 360.,
+            measurements_df['ra']
+        )
+
+        measurements_df['interim_ew'] = (
+           measurements_df['ra_wrap'] * measurements_df['weight_ew']
+        )
+
+        measurements_df['interim_ns'] = (
+           measurements_df['dec'] * measurements_df['weight_ns']
+        )
+
+        for col in ['flux_int', 'flux_peak']:
+            measurements_df[f'{col}_sq'] = (measurements_df[col] ** 2.)
+
+        sources_df = measurements_df.groupby(
+            by='source',
+            agg={
+                'interim_ew_sum': vaex.agg.sum(
+                    'interim_ew', selection='forced==False'
+                ),
+                'interim_ns_sum': vaex.agg.sum(
+                    'interim_ns', selection='forced==False'
+                ),
+                'weight_ew_sum': vaex.agg.sum(
+                    'weight_ew', selection='forced==False'
+                ),
+                'weight_ns_sum': vaex.agg.sum(
+                    'weight_ns', selection='forced==False'
+                ),
+                'avg_compactness': vaex.agg.mean(
+                    'compactness', selection='forced==False'
+                ),
+                'min_snr': vaex.agg.min(
+                    'snr', selection='forced==False'
+                ),
+                'max_snr': vaex.agg.max(
+                    'snr', selection='forced==False'
+                ),
+                'avg_flux_int': vaex.agg.mean('flux_int'),
+                'avg_flux_peak': vaex.agg.mean('flux_peak'),
+                'max_flux_peak': vaex.agg.max('flux_peak'),
+                'max_flux_int': vaex.agg.max('flux_int'),
+                'min_flux_peak': vaex.agg.min('flux_peak'),
+                'min_flux_int': vaex.agg.min('flux_int'),
+                'min_flux_peak_isl_ratio': vaex.agg.min('flux_peak_isl_ratio'),
+                'min_flux_int_isl_ratio': vaex.agg.min('flux_int_isl_ratio'),
+                'n_measurements': vaex.agg.count('id'),
+                'n_selavy': vaex.agg.count('id', selection='forced==False'),
+                'n_forced': vaex.agg.count('id', selection='forced==True'),
+                'n_siblings': vaex.agg.sum('has_siblings')
+            }
+        )
+
+        sources_df = sources_df[sources_df.n_selavy > 0].extract()
+
+        sources_df['wavg_ra'] = (
+            sources_df['interim_ew_sum'] / sources_df['weight_ew_sum']
+        )
+        sources_df['wavg_dec'] = (
+            sources_df['interim_ns_sum'] / sources_df['weight_ns_sum']
+        )
+
+        sources_df['wavg_uncertainty_ew'] = (
+            1. / np.sqrt(sources_df['weight_ew_sum'])
+        )
+        sources_df['wavg_uncertainty_ns'] = (
+            1. / np.sqrt(sources_df['weight_ns_sum'])
+        )
+
+        measurements_df_temp = measurements_df[[
+            'flux_int', 'flux_int_err', 'flux_peak', 'flux_peak_err', 'source'
+        ]].extract().to_pandas_df()
+
+        col_dtype = {
+            'v_int': 'f',
+            'v_peak': 'f',
+            'eta_int': 'f',
+            'eta_peak': 'f',
+        }
+
+        sources_df_fluxes = (
+            dd.from_pandas(measurements_df_temp, HOST_NCPU)
+            .groupby('source')
+            .apply(
+                pipeline_get_variable_metrics,
+                meta=col_dtype
+            )
+            .compute(num_workers=HOST_NCPU - 1, scheduler='processes')
+        )
+
+        sources_df = sources_df.to_pandas_df().set_index('source')
+
+        sources_df = sources_df.join(sources_df_fluxes)
+
+        sources_df = sources_df.join(
+            self.sources[['new', 'new_high_sigma']],
+        )
+
+        if not self._loaded_two_epoch_metrics:
+            self.load_two_epoch_metrics()
+
+        if self._vaex_meas_pairs:
+            new_measurement_pairs = (
+                self.measurement_pairs_df[
+                    self.measurement_pairs_df.vs_int.abs() >= min_vs
+                    or self.measurement_pairs_df.vs_peak.abs() >= min_vs
+                ]
+            )
+        else:
+            min_vs_mask = np.logical_or(
+                (self.measurement_pairs_df.vs_int.abs() >= min_vs).values,
+                (self.measurement_pairs_df.vs_peak.abs() >= min_vs).values
+            )
+            new_measurement_pairs = self.measurement_pairs_df.loc[min_vs_mask]
+
+        mask_a = new_measurement_pairs.meas_id_a.isin(
+            measurements_df.id.values
+        ).values
+
+        mask_b = new_measurement_pairs.meas_id_b.isin(
+            measurements_df.id.values
+        ).values
+
+        meas_mask = np.logical_and(mask_a, mask_b)
+
+        if self._vaex_meas_pairs:
+            new_measurement_pairs = new_measurement_pairs.extract()
+            new_measurement_pairs['mask_a'] = mask_a
+            new_measurement_pairs['mask_b'] = mask_b
+            new_measurement_pairs = new_measurement_pairs[
+                new_measurement_pairs.mask_a == True
+                and new_measurement_pairs.mask_b == True
+            ]
+        else:
+            new_measurement_pairs = new_measurement_pairs.loc[meas_mask]
+            new_measurement_pairs = vaex.from_pandas(new_measurement_pairs)
+
+        new_measurement_pairs['vs_int_abs'] = (
+            new_measurement_pairs.vs_int.abs()
+        )
+
+        new_measurement_pairs['vs_peak_abs'] = (
+            new_measurement_pairs.vs_peak.abs()
+        )
+
+        new_measurement_pairs['m_int_abs'] = (
+            new_measurement_pairs.m_int.abs()
+        )
+
+        new_measurement_pairs['m_peak_abs'] = (
+            new_measurement_pairs.m_peak.abs()
+        )
+
+        sources_df_two_epochs = new_measurement_pairs.groupby(
+            'source_id',
+            agg={
+                'vs_max_int': vaex.agg.max('vs_int_abs'),
+                'vs_max_peak': vaex.agg.max('vs_peak_abs'),
+                'm_abs_max_int': vaex.agg.max('m_int_abs'),
+                'm_abs_max_peak': vaex.agg.max('m_peak_abs'),
+            }
+        )
+
+        sources_df_two_epochs = (
+            sources_df_two_epochs.to_pandas_df().set_index('source_id')
+        )
+
+        # keep this here for when pipeline udpated.
+        # sources_df_two_epochs = sources_df_two_epochs.fillna(value={
+        #      "vs_significant_max_peak": 0.0,
+        #      "m_abs_significant_max_peak": 0.0,
+        #      "vs_significant_max_int": 0.0,
+        #      "m_abs_significant_max_int": 0.0,
+        #  })
+
+        sources_df = sources_df.join(sources_df_two_epochs)
+
+        del sources_df_two_epochs
+
+        relation_mask = np.logical_and(
+            (self.relations.from_source_id.isin(sources_df.index.values)),
+            (self.relations.to_source_id.isin(sources_df.index.values))
+        )
+
+        new_relations = self.relations.loc[relation_mask]
+
+        sources_df_relations = (
+            new_relations.groupby('from_source_id').agg('count')
+        ).rename(columns={'to_source_id': 'n_relations'})
+
+        sources_df = sources_df.join(sources_df_relations)
+
+        #TODO Change to use in built skycoord gen.
+
+        sources_sky_coord = SkyCoord(
+            sources_df['wavg_ra'].values, sources_df['wavg_dec'].values,
+            unit=(u.deg, u.deg)
+        )
+
+        idx, d2d, _ = sources_sky_coord.match_to_catalog_sky(
+            sources_sky_coord, nthneighbor=2
+        )
+
+        sources_df['n_neighbour_dist'] = d2d.degree
+
+        sources_df = sources_df.fillna(value={
+            # keep this here for when pipeline udpated.
+            # "vs_significant_max_peak": 0.0,
+            # "m_abs_significant_max_peak": 0.0,
+            # "vs_significant_max_int": 0.0,
+            # "m_abs_significant_max_int": 0.0,
+            "vs_max_int": 0.0,
+            "vs_max_peak": 0.0,
+            "m_abs_max_int": 0.0,
+            "m_abs_max_peak": 0.0,
+            'n_relations': 0,
+            'v_int': 0.,
+            'v_peak': 0.
+        }).drop([
+            'interim_ew_sum', 'interim_ns_sum',
+            'weight_ew_sum', 'weight_ns_sum'
+        ], axis=1)
+
+        sources_df['n_relations'] = sources_df['n_relations'].astype(int)
+
+        return sources_df
 
     def _get_epoch_pair_plotting_df(
         self, df_filter, epoch_pair_id, vs_label, m_label, vs_min, m_min
