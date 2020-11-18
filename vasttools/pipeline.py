@@ -1332,7 +1332,7 @@ class PipeAnalysis(PipeRun):
 
         sources_df = sources_df.join(sources_df_relations)
 
-        #TODO Change to use in built skycoord gen.
+        # TODO Change to use in built skycoord gen.
 
         sources_sky_coord = SkyCoord(
             sources_df['wavg_ra'].values, sources_df['wavg_dec'].values,
