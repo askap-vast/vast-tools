@@ -1122,7 +1122,7 @@ class PipeAnalysis(PipeRun):
 
     plot_two_epoch_pairs(epoch_pair_id, query=None, df=None, vs_min=4.3,
         m_min=0.26, use_int_flux=False, remove_two_forced=False,
-        plot_type='bokeh')
+        plot_type='bokeh', plot_style='a')
         Create and returns a bokeh or matplotlib plot of the two epoch pairs of
         a defined 'pair epoch'.
 
