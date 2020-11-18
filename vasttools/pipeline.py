@@ -433,7 +433,8 @@ class PipeRun(object):
 
     load_two_epoch_metrics()
         Loads the two epoch metrics dataframe, usually stored as either
-        'measurement_pairs.parquet' or 'measurement_pairs.arrow'. Adds an epoch
+        'measurement_pairs.parquet' or 'measurement_pairs.arrow', and is added
+        as an attribute named 'measurement_pairs_df'. Adds an epoch
         'key' to the dataframe. Also creates a 'pairs_df' that lists all the
         possible epoch pairs.
     '''
@@ -1078,7 +1079,6 @@ class PipeAnalysis(PipeRun):
     n_workers : pandas.core.frame.DataFrame
         Number of workers (cpus) available.
 
-
     Methods
     -------
 
@@ -1109,7 +1109,8 @@ class PipeAnalysis(PipeRun):
 
     load_two_epoch_metrics()
         Loads the two epoch metrics dataframe, usually stored as either
-        'measurement_pairs.parquet' or 'measurement_pairs.arrow'. Adds an epoch
+        'measurement_pairs.parquet' or 'measurement_pairs.arrow', and is added
+        as an attribute named 'measurement_pairs_df'. Adds an epoch
         'key' to the dataframe. Also creates a 'pairs_df' that lists all the
         possible epoch pairs.
 
