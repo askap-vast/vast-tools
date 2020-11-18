@@ -553,11 +553,11 @@ class PipeRun(object):
         :type ra_col: str, optional
         :param dec_col: The column to use for the Declination.
         :type dec_col: str, optional
-        :param ra_unit: The unit of the RA column, defaults to degrees. Must be
-            an astropy.unit value.
+        :param ra_unit: The unit of the RA column, defaults to degrees.
+            Must be an astropy.unit value.
         :type ra_unit: astropy.unit, optional
-        :param dec_unit: The unit of the Dec column, defaults to degrees. Must be
-            an astropy.unit value.
+        :param dec_unit: The unit of the Dec column, defaults to degrees.
+            Must be an astropy.unit value.
         :type dec_unit: astropy.unit, optional
 
         :returns: sources_skycoord
