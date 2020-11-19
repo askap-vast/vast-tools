@@ -614,6 +614,17 @@ class PipeRun(object):
         :param outdir: The output directory where generated plots will
             be saved, defauls to '.' (the current working directory).
         :type outdir: str, optional
+        :param user_measurements: A user generated measurements dataframe to
+            use instead of the default pipeline result. The type must match
+            the default type of the pipeline (vaex or pandas). Defaults to
+            None, in which case the default pipeline measurements are used.
+        :type user_measurements: pandas.core.frame.DataFrame or
+            vaex.dataframe.DataFrame, optional.
+        :param user_sources: A user generated sources dataframe to use
+            instead of the default pipeline result. Format is always a pandas
+            dataframe. Defaults to None, in which case the default pipeline
+            measurements are used.
+        :type user_sources: pandas.core.frame.DataFrame, optional.
 
         :returns: vast tools Source object
         :rtype: vasttools.source.Source
