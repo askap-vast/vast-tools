@@ -461,3 +461,62 @@ def gen_skycoord_from_df(
     )
 
     return sc
+
+
+def pipeline_get_eta_metric(row, df, peak=False):
+    '''
+    Calculates the eta variability metric of a source.
+    Works on the grouped by dataframe using the fluxes
+    of the assoicated measurements.
+
+    :param df: A dataframe containing the grouped measurements, i.e. only
+        the measurements from one source. Requires the flux_int/peak and
+        flux_peak/int_err columns.
+    :type df: pandas.core.frame.DataFrame, optional
+    :param peak: Whether to use peak flux instead of integrated, defaults to
+        False.
+    :type peak: bool, optional
+
+    :returns eta: The eta variability metric.
+    :rtype: float
+    '''
+    if df.shape[0] == 1:
+        return 0.
+
+    suffix = 'peak' if peak else 'int'
+    weights = 1. / df[f'flux_{suffix}_err'].values**2
+    fluxes = df[f'flux_{suffix}'].values
+    eta = (df.shape[0] / (df.shape[0]-1)) * (
+        (weights * fluxes**2).mean() - (
+            (weights * fluxes).mean()**2 / weights.mean()
+        )
+    )
+    return eta
+
+
+def pipeline_get_variable_metrics(df):
+    '''
+    Calculates the variability metrics of a source. Works on the grouped by
+    dataframe using the fluxes of the assoicated measurements.
+
+    :param df: A dataframe containing the grouped measurements, i.e. only
+        the measurements from one source. Requires the flux_int/peak and
+        flux_peak/int_err columns.
+    :type df: pandas.core.frame.DataFrame, optional
+
+    :returns d: The variability metrics, v_int, v_peak, eta_int and eta_peak
+        as a pandas series.
+    :rtype: pandas.core.frame.Series
+    '''
+    d = {}
+    for col in ['flux_int', 'flux_peak']:
+        d[f'{col}_sq'] = (df[col]**2).mean()
+    d['v_int'] = df['flux_int'].std() / df['flux_int'].mean()
+    d['v_peak'] = df['flux_peak'].std() / df['flux_peak'].mean()
+    d['eta_int'] = pipeline_get_eta_metric(d, df)
+    d['eta_peak'] = pipeline_get_eta_metric(d, df, peak=True)
+
+    for col in ['flux_int', 'flux_peak']:
+        d.pop(f'{col}_sq')
+
+    return pd.Series(d)
