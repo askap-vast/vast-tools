@@ -1470,7 +1470,7 @@ class PipeAnalysis(PipeRun):
         ra_wrap_mask = sources_df['wavg_ra'] >= 360.
         sources_df.at[
             ra_wrap_mask, 'wavg_ra'
-        ] = weighted_df[ra_wrap_mask].wavg_ra.values - 360.
+        ] = sources_df[ra_wrap_mask].wavg_ra.values - 360.
 
         # Switch relations column to int
         sources_df['n_relations'] = sources_df['n_relations'].astype(int)
