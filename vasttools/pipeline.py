@@ -1236,6 +1236,7 @@ class PipeAnalysis(PipeRun):
         for col in ['flux_int', 'flux_peak']:
             measurements_df[f'{col}_sq'] = (measurements_df[col] ** 2.)
 
+        # most of the aggregate calculations done in vaex
         sources_df = measurements_df.groupby(
             by='source',
             agg={
@@ -1275,8 +1276,10 @@ class PipeAnalysis(PipeRun):
             }
         )
 
+        # Drop sources which no longer have any selavy measurements
         sources_df = sources_df[sources_df.n_selavy > 0].extract()
 
+        # Calculate average position
         sources_df['wavg_ra'] = (
             sources_df['interim_ew_sum'] / sources_df['weight_ew_sum']
         )
@@ -1291,6 +1294,7 @@ class PipeAnalysis(PipeRun):
             1. / np.sqrt(sources_df['weight_ns_sum'])
         )
 
+        # TraP variability metrics, using Dask.
         measurements_df_temp = measurements_df[[
             'flux_int', 'flux_int_err', 'flux_peak', 'flux_peak_err', 'source'
         ]].extract().to_pandas_df()
@@ -1312,6 +1316,7 @@ class PipeAnalysis(PipeRun):
             .compute(num_workers=HOST_NCPU - 1, scheduler='processes')
         )
 
+        # Switch to pandas at this point to perform join
         sources_df = sources_df.to_pandas_df().set_index('source')
 
         sources_df = sources_df.join(sources_df_fluxes)
@@ -1320,6 +1325,7 @@ class PipeAnalysis(PipeRun):
             self.sources[['new', 'new_high_sigma']],
         )
 
+        # Two epoch metrics
         if not self._loaded_two_epoch_metrics:
             self.load_two_epoch_metrics()
 
@@ -1337,6 +1343,7 @@ class PipeAnalysis(PipeRun):
             )
             new_measurement_pairs = self.measurement_pairs_df.loc[min_vs_mask]
 
+        # make masks of dropped measurements
         mask_a = new_measurement_pairs.meas_id_a.isin(
             measurements_df.id.values
         ).values
@@ -1401,6 +1408,7 @@ class PipeAnalysis(PipeRun):
 
         del sources_df_two_epochs
 
+        # new relation numbers
         relation_mask = np.logical_and(
             (self.relations.from_source_id.isin(sources_df.index.values)),
             (self.relations.to_source_id.isin(sources_df.index.values))
@@ -1414,6 +1422,7 @@ class PipeAnalysis(PipeRun):
 
         sources_df = sources_df.join(sources_df_relations)
 
+        # nearest neighbour
         sources_sky_coord = gen_skycoord_from_df(
             sources_df, ra_col='wavg_ra', dec_col='wavg_dec'
         )
@@ -1424,6 +1433,7 @@ class PipeAnalysis(PipeRun):
 
         sources_df['n_neighbour_dist'] = d2d.degree
 
+        # Fill the NaN values.
         sources_df = sources_df.fillna(value={
             # keep this here for when pipeline udpated.
             # "vs_significant_max_peak": 0.0,
@@ -1442,6 +1452,7 @@ class PipeAnalysis(PipeRun):
             'weight_ew_sum', 'weight_ns_sum'
         ], axis=1)
 
+        # Switch relations column to int
         sources_df['n_relations'] = sources_df['n_relations'].astype(int)
 
         return sources_df
