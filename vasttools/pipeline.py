@@ -1294,6 +1294,9 @@ class PipeAnalysis(PipeRun):
             1. / np.sqrt(sources_df['weight_ns_sum'])
         )
 
+        # the RA wrapping is reverted at the end of the function when the
+        # df is in pandas format.
+
         # TraP variability metrics, using Dask.
         measurements_df_temp = measurements_df[[
             'flux_int', 'flux_int_err', 'flux_peak', 'flux_peak_err', 'source'
@@ -1451,6 +1454,12 @@ class PipeAnalysis(PipeRun):
             'interim_ew_sum', 'interim_ns_sum',
             'weight_ew_sum', 'weight_ns_sum'
         ], axis=1)
+
+        # correct the RA wrapping
+        ra_wrap_mask = sources_df['wavg_ra'] >= 360.
+        sources_df.at[
+            ra_wrap_mask, 'wavg_ra'
+        ] = weighted_df[ra_wrap_mask].wavg_ra.values - 360.
 
         # Switch relations column to int
         sources_df['n_relations'] = sources_df['n_relations'].astype(int)
