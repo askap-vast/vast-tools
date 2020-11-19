@@ -1101,6 +1101,10 @@ class PipeAnalysis(PipeRun):
     Methods
     -------
 
+    recalc_sources_df(measurements_df, min_vs=4.3)
+        Regenreates a sources dataframe using a user provided measurements
+        dataframe.
+
     get_sources_skycoord(user_sources=None, ra_col='wavg_ra',
         dec_col='wavg_dec', ra_unit=u.degree, dec_unit=u.degree)
         A convenience function to generate a SkyCoord object from the
@@ -1410,11 +1414,8 @@ class PipeAnalysis(PipeRun):
 
         sources_df = sources_df.join(sources_df_relations)
 
-        # TODO Change to use in built skycoord gen.
-
-        sources_sky_coord = SkyCoord(
-            sources_df['wavg_ra'].values, sources_df['wavg_dec'].values,
-            unit=(u.deg, u.deg)
+        sources_sky_coord = gen_skycoord_from_df(
+            sources_df, ra_col='wavg_ra', dec_col='wavg_dec'
         )
 
         idx, d2d, _ = sources_sky_coord.match_to_catalog_sky(

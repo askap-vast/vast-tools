@@ -468,6 +468,17 @@ def pipeline_get_eta_metric(row, df, peak=False):
     Calculates the eta variability metric of a source.
     Works on the grouped by dataframe using the fluxes
     of the assoicated measurements.
+
+    :param df: A dataframe containing the grouped measurements, i.e. only
+        the measurements from one source. Requires the flux_int/peak and
+        flux_peak/int_err columns.
+    :type df: pandas.core.frame.DataFrame, optional
+    :param peak: Whether to use peak flux instead of integrated, defaults to
+        False.
+    :type peak: bool, optional
+
+    :returns eta: The eta variability metric.
+    :rtype: float
     '''
     if df.shape[0] == 1:
         return 0.
@@ -484,6 +495,19 @@ def pipeline_get_eta_metric(row, df, peak=False):
 
 
 def pipeline_get_variable_metrics(df):
+    '''
+    Calculates the variability metrics of a source. Works on the grouped by
+    dataframe using the fluxes of the assoicated measurements.
+
+    :param df: A dataframe containing the grouped measurements, i.e. only
+        the measurements from one source. Requires the flux_int/peak and
+        flux_peak/int_err columns.
+    :type df: pandas.core.frame.DataFrame, optional
+
+    :returns d: The variability metrics, v_int, v_peak, eta_int and eta_peak
+        as a pandas series.
+    :rtype: pandas.core.frame.Series
+    '''
     d = {}
     for col in ['flux_int', 'flux_peak']:
         d[f'{col}_sq'] = (df[col]**2).mean()
