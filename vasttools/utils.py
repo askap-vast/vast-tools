@@ -432,6 +432,37 @@ def create_source_directories(outdir, sources):
         os.makedirs(name)
 
 
+def gen_skycoord_from_df(
+    df, ra_col='ra', dec_col='dec', ra_unit=u.degree, dec_unit=u.degree
+):
+    '''
+    Create a SkyCoord object from a provided dataframe.
+
+    :param df: A dataframe containing the RA and Dec columns.
+    :type df: pandas.core.frame.DataFrame, optional
+    :param ra_col: The column to use for the Right Ascension, defaults to
+        'ra'.
+    :type ra_col: str, optional
+    :param dec_col: The column to use for the Declination, defaults to 'dec'.
+    :type dec_col: str, optional
+    :param ra_unit: The unit of the RA column, defaults to degrees. Must be
+        an astropy.unit value.
+    :type ra_unit: astropy.unit, optional
+    :param dec_unit: The unit of the Dec column, defaults to degrees. Must be
+        an astropy.unit value.
+    :type dec_unit: astropy.unit, optional
+
+    :returns sc: SkyCoord object
+    :rtype: astropy.coordinates.SkyCoord
+    '''
+
+    sc = SkyCoord(
+        df[ra_col].values, df[dec_col].values, unit=(ra_unit, dec_unit)
+    )
+
+    return sc
+
+
 def pipeline_get_eta_metric(row, df, peak=False):
     '''
     Calculates the eta variability metric of a source.
