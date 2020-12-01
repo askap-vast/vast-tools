@@ -1466,7 +1466,7 @@ class Query:
             copy['#'] = d2d.arcsec
             copy.index = group.iloc[idxc].index.values
             master = master.append(copy, sort=False)
-            # move index to the end to match the meta
+            # reset index and move previous index to the end to match the meta
             master_cols = master.columns.to_list()
             master = master.reset_index()[master_cols + ['index']]
         else:
