@@ -1092,6 +1092,9 @@ class Query:
             'detection': '?',
         }
 
+        if self.settings['search_around']:
+            meta['index'] = 'i'
+
         results = (
             dd.from_pandas(self.sources_df, self.ncpu)
             .groupby('selavy')
@@ -1103,6 +1106,9 @@ class Query:
 
         if not results.empty:
             results.index = results.index.droplevel()
+
+        if self.settings['search_around']:
+            results = results.set_index('index')
 
         if self.settings['forced_fits']:
             results = results.merge(
@@ -1460,6 +1466,9 @@ class Query:
             copy['#'] = d2d.arcsec
             copy.index = group.iloc[idxc].index.values
             master = master.append(copy, sort=False)
+            # move index to the end to match the meta
+            master_cols = master.columns.to_list()
+            master = master.reset_index()[master_cols + ['index']]
         else:
             idx, d2d, _ = group_coords.match_to_catalog_sky(selavy_coords)
             mask = d2d < self.settings['crossmatch_radius']
