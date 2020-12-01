@@ -1101,7 +1101,8 @@ class Query:
             ).compute(num_workers=self.ncpu, scheduler='processes')
         )
 
-        results.index = results.index.droplevel()
+        if not results.empty:
+            results.index = results.index.droplevel()
 
         if self.settings['forced_fits']:
             results = results.merge(
