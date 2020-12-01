@@ -367,7 +367,7 @@ class Source:
                 'rms_image',
             ]
 
-            measurements_to_write = self.measurements[[cols]]
+            measurements_to_write = self.measurements[cols]
 
         else:
             cols = [
