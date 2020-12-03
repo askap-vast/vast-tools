@@ -21,7 +21,7 @@ setup(
         "dask[dataframe]==2.30.0",
         "matplotlib==3.2.1",
         # TODO Update mocpy when they update release
-        "mocpy @ git+https://github.com/cds-astro/mocpy.git",
+        "mocpy==0.8.4",
         "multiprocessing_logging==0.3.1",
         "numexpr==2.7.1",
         "numpy==1.19.2",
