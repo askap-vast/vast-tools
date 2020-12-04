@@ -9,7 +9,7 @@ from vasttools.utils import (
     check_racs_exists
 )
 from vasttools.moc import VASTMOCS
-from vasttools.fp import ForcedPhot
+from forced_phot import ForcedPhot
 
 import sys
 import numpy as np
@@ -422,7 +422,8 @@ class Query:
             ).compute(num_workers=self.ncpu, scheduler='processes')
         )
 
-        cutouts.index = cutouts.index.droplevel()
+        if not cutouts.empty:
+            cutouts.index = cutouts.index.droplevel()
 
         return cutouts
 
@@ -559,14 +560,24 @@ class Query:
             )
             cutouts_df = self._get_all_cutout_data(imsize)
             self.logger.info('Done.')
-            to_process = [(s, cutouts_df.loc[
-                cutouts_df['name'] == s.name
-            ].sort_values(
-                by='dateobs'
-            ).reset_index()) for s in self.results.values]
+            if cutouts_df.empty:
+                fits = False
+                png = False
+                self.logger.warning(
+                    'Cutout data could not be fetched, turning off fits and'
+                    ' png production.'
+                )
+                to_process = [(s, None) for s in self.results.values]
+                cutouts_df = None
+            else:
+                to_process = [(s, cutouts_df.loc[
+                    cutouts_df['name'] == s.name
+                ].sort_values(
+                    by='dateobs'
+                ).reset_index()) for s in self.results.values]
 
-            del cutouts_df
-            gc.collect()
+                del cutouts_df
+                gc.collect()
         else:
             to_process = [(s, None) for s in self.results.values]
             cutouts_df = None
@@ -899,32 +910,43 @@ class Query:
 
         image_file = group.iloc[0]['image']
 
-        image = Image(
-            group.iloc[0].field,
-            group.iloc[0].epoch,
-            self.settings['stokes'],
-            self.base_folder,
-            sbid=group.iloc[0].sbid,
-            tiles=self.settings['tiles']
-        )
+        try:
+            image = Image(
+                group.iloc[0].field,
+                group.iloc[0].epoch,
+                self.settings['stokes'],
+                self.base_folder,
+                sbid=group.iloc[0].sbid,
+                tiles=self.settings['tiles']
+            )
 
-        cutout_data = group.apply(
-            self._get_cutout,
-            args=(image, imsize),
-            axis=1,
-            result_type='expand'
-        ).rename(columns={
-            0: "data",
-            1: "wcs",
-            2: "header",
-            3: "selavy_overlay",
-            4: "beam"
-        })
+            cutout_data = group.apply(
+                self._get_cutout,
+                args=(image, imsize),
+                axis=1,
+                result_type='expand'
+            ).rename(columns={
+                0: "data",
+                1: "wcs",
+                2: "header",
+                3: "selavy_overlay",
+                4: "beam"
+            })
 
-        cutout_data['name'] = group['name'].values
-        cutout_data['dateobs'] = group['dateobs'].values
+            cutout_data['name'] = group['name'].values
+            cutout_data['dateobs'] = group['dateobs'].values
 
-        del image
+            del image
+        except:
+            cutout_data = pd.DataFrame(columns=[
+                'data',
+                'wcs',
+                'header',
+                'selavy_overlay',
+                'beam',
+                'name',
+                'dateobs'
+            ])
 
         return cutout_data
 
@@ -1045,7 +1067,10 @@ class Query:
                 ).compute(num_workers=self.ncpu, scheduler='processes')
             )
 
-            f_results.index = f_results.index.droplevel()
+            if not f_results.empty:
+                f_results.index = f_results.index.droplevel()
+            else:
+                self.settings['forced_fits'] = False
 
             self.logger.info("Done.")
 
@@ -1357,12 +1382,29 @@ class Query:
         epoch = m['epoch']
         stokes = m['stokes']
 
-        img_beam = Image(
-            field,
-            epoch,
-            stokes,
-            self.base_folder
-        ).beam
+        try:
+            img_beam = Image(
+                field,
+                epoch,
+                stokes,
+                self.base_folder
+            ).beam
+        except:
+            return pd.DataFrame(columns=[
+                'f_island_id',
+                'f_component_id',
+                'f_ra_deg_cont',
+                'f_dec_deg_cont',
+                'f_flux_peak',
+                'f_flux_peak_err',
+                'f_flux_int',
+                'f_flux_int_err',
+                'f_chi_squared_fit',
+                'f_rms_image',
+                'f_maj_axis',
+                'f_min_axis',
+                'f_pos_ang',
+            ])
 
         major = img_beam.major.to(u.arcsec).value
         minor = img_beam.minor.to(u.arcsec).value
@@ -1378,7 +1420,7 @@ class Query:
         # run the forced photometry
         (
             flux_islands, flux_err_islands,
-            chisq_islands, DOF_islands
+            chisq_islands, DOF_islands, iscluster
         ) = FP.measure(
             to_fit,
             [major for i in range(to_fit.shape[0])] * u.arcsec,
@@ -1483,21 +1525,27 @@ class Query:
             missing = group_coords[~mask]
             if missing.shape[0] > 0:
                 if not self.settings['no_rms']:
-                    image = Image(
-                        group.iloc[0].field,
-                        group.iloc[0].epoch,
-                        self.settings['stokes'],
-                        self.base_folder,
-                        sbid=group.iloc[0].sbid,
-                        tiles=self.settings['tiles']
-                    )
-                    rms_values = image.measure_coord_pixel_values(
-                        missing, rms=True
-                    )
-                    rms_df = pd.DataFrame(rms_values, columns=['rms_image'])
+                    try:
+                        image = Image(
+                            group.iloc[0].field,
+                            group.iloc[0].epoch,
+                            self.settings['stokes'],
+                            self.base_folder,
+                            sbid=group.iloc[0].sbid,
+                            tiles=self.settings['tiles']
+                        )
+                        rms_values = image.measure_coord_pixel_values(
+                            missing, rms=True
+                        )
+                        rms_df = pd.DataFrame(rms_values, columns=['rms_image'])
 
-                    # to mJy
-                    rms_df['rms_image'] = rms_df['rms_image'] * 1.e3
+                        # to mJy
+                        rms_df['rms_image'] = rms_df['rms_image'] * 1.e3
+                    except:
+                        rms_df = pd.DataFrame(
+                            [-99 for i in range(missing.shape[0])],
+                            columns=['rms_image']
+                        )
                 else:
                     rms_df = pd.DataFrame(
                         [-99 for i in range(missing.shape[0])],

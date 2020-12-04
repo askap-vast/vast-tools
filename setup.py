@@ -19,6 +19,7 @@ setup(
         "colorcet==2.0.2",
         "colorlog==4.1.0",
         "dask[dataframe]==2.30.0",
+        "forced-phot @ git+https://github.com/askap-vast/forced_phot.git@v0.1.0",
         "matplotlib==3.2.1",
         # TODO Update mocpy when they update release
         "mocpy==0.8.4",
