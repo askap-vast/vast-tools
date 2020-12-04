@@ -937,7 +937,7 @@ class Query:
             cutout_data['dateobs'] = group['dateobs'].values
 
             del image
-        except:
+        except Exception as e:
             cutout_data = pd.DataFrame(columns=[
                 'data',
                 'wcs',
@@ -1389,7 +1389,7 @@ class Query:
                 stokes,
                 self.base_folder
             ).beam
-        except:
+        except Exception as e:
             return pd.DataFrame(columns=[
                 'f_island_id',
                 'f_component_id',
@@ -1537,11 +1537,12 @@ class Query:
                         rms_values = image.measure_coord_pixel_values(
                             missing, rms=True
                         )
-                        rms_df = pd.DataFrame(rms_values, columns=['rms_image'])
+                        rms_df = pd.DataFrame(
+                            rms_values, columns=['rms_image'])
 
                         # to mJy
                         rms_df['rms_image'] = rms_df['rms_image'] * 1.e3
-                    except:
+                    except Exception as e:
                         rms_df = pd.DataFrame(
                             [-99 for i in range(missing.shape[0])],
                             columns=['rms_image']
