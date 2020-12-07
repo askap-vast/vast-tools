@@ -18,4 +18,4 @@ radio_beam==0.3.2
 scipy==1.4.1
 tables==3.6.1
 tabulate==0.8.7
-vaex==3.0.0
+vaex==4.0.0a5

@@ -32,7 +32,7 @@ setup(
         "scipy==1.4.1",
         "tables==3.6.1",
         "tabulate==0.8.7",
-        "vaex==3.0.0",
+        "vaex==4.0.0a5"
         ],
     scripts=[
         "bin/find_sources.py",
