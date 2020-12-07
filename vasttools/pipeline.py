@@ -2007,17 +2007,12 @@ class PipeAnalysis(PipeRun):
 
             candidate_pairs = candidate_pairs.to_pandas_df()
 
-            candidate_sources = (
-                candidate_pairs[['source_id']].extract().to_pandas_df()
-            )
-
-            unique_sources = candidate_sources['source_id'].unique()
         else:
             candidate_pairs = pairs_df.loc[
                 (pairs_df[vs_label] > v) & (pairs_df[m_abs_label] > m)
             ]
 
-            unique_sources = candidate_pairs['source_id'].unique()
+        unique_sources = candidate_pairs['source_id'].unique()
 
         candidate_sources = self.sources.loc[unique_sources]
 
