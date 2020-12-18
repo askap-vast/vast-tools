@@ -333,7 +333,7 @@ class Pipeline(object):
             ))
 
             measurements = associations_vaex.join(
-                measurements, left_on='meas_id', right_on='id'
+                measurements_temp, left_on='meas_id', right_on='id'
             )
 
             measurements.rename('source_id', 'source')
