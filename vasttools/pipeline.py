@@ -503,6 +503,9 @@ class PipeRun(object):
         :param new_name: If not None then the PipeRun attribute 'name'
             is changed to the given value.
         :type new_name: str, optional
+
+        :returns: self
+        :rtype: vasttools.Pipeline.PipeRun
         '''
 
         self.images = self.images.append(
@@ -973,6 +976,59 @@ class PipeRun(object):
             warnings.warn("No planets found.")
 
         return result
+
+    def filter_by_moc(self, moc):
+        '''
+        Filters the PipeRun object to only contain the sources that are
+        located within the provided moc area.
+
+        :param moc: MOC instance for which to filter the run by.
+        :type moc: mocpy.MOC
+
+        :returns: new_PipeRun
+        :rtype: vasttools.Pipeline.PipeAnalysis
+        '''
+
+        source_mask = moc.contains(
+            self.sources_skycoord.ra, self.sources_skycoord.dec)
+
+        new_sources = self.sources.loc[source_mask].copy()
+
+        if self._vaex_meas:
+            new_meas = self.measurements[
+                self.measurements.source.isin(new_sources.index.values)]
+            new_meas = new_meas.extract()
+        else:
+            new_meas = self.measurements.loc[
+                self.measurements.source.isin(new_sources.index.values)].copy()
+
+        new_images = self.images.loc[
+            self.images.index.isin(new_meas.image_id.tolist())].copy()
+
+        new_skyregions = self.skyregions[
+            self.skyregions.id.isin(new_images.skyreg_id.values)].copy()
+
+        new_associations = self.associations[
+            self.associations.source_id.isin(new_sources.index.values).copy()
+        ]
+
+        new_relations = self.relations[
+            self.relations.from_source_id.isin(new_sources.index.values).copy()
+        ]
+
+        new_PipeRun = PipeAnalysis(
+            name=self.name,
+            images=new_images,
+            skyregions=new_skyregions,
+            relations=new_relations,
+            sources=new_sources,
+            associations=new_associations,
+            measurements=new_meas,
+            measurement_pairs_file=self.measurement_pairs_file,
+            vaex_meas=self._vaex_meas
+        )
+
+        return new_PipeRun
 
     def _distance_from_edge(self, x):
         '''

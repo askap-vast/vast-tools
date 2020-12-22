@@ -95,16 +95,44 @@ class VASTMOCS(object):
 
         return moc
 
-    def load_pilot_field_moc(self, field, itype='COMBINED'):
+    def load_pilot_field_moc(self, field: str) -> MOC:
         '''
-        Load MOCs corresponding to pilot field
+        Load MOCs corresponding to the VAST Pilot 'field', which is a
+        collection of tiles.
+
+        :param field: number of the VAST Pilot field requested.
+        :type field: str
+
+        :returns: Tile MOC
+        :rtype: mocpy.moc.moc.MOC
+        '''
+        if isinstance(field, int):
+            field = str(field)
+        # While this could be an int it's left as string to be consistent
+        # with the other loads.
+        if field not in ['1', '2', '3', '4', '5', '6']:
+            raise Exception(
+                f"VAST Pilot field #{field} is not valid - valid fields"
+                " are numbered 1 - 6."
+            )
+
+        moc_path = os.path.join(
+            BASE_MOC_PATH, 'VAST_PILOT_FIELD_{}.fits'.format(field))
+
+        moc = MOC.from_fits(moc_path)
+
+        return moc
+
+    def load_pilot_tile_moc(self, field, itype='COMBINED'):
+        '''
+        Load MOCs corresponding to pilot tile field.
 
         :param field: name of field requested
         :type field: str
         :param itype: Image type (COMBINED or TILES), defaults to 'COMBINED'
         :type itype: str, optional
 
-        :returns: Field MOC
+        :returns: Tile MOC
         :rtype: mocpy.moc.moc.MOC
         '''
 
