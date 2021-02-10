@@ -281,6 +281,8 @@ class Query:
             try:
                 the_base_folder = os.getenv(
                     'VAST_DATA_DIR')
+                if the_base_folder is None:
+                    raise Exception
             except Exception as e:
                 raise Exception(
                     "The base folder directory could not be determined!"
