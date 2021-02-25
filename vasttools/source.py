@@ -621,7 +621,7 @@ class Source:
 
         if yaxis_start == "0":
             if use_forced_for_all:
-                max_y = np.nanmax(detections[flux_col])#.tolist())
+                max_y = np.nanmax(detections[flux_col])
             else:
                 max_y = np.nanmax(
                     measurements[flux_col].tolist() +
