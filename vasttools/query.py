@@ -278,10 +278,8 @@ class Query:
         self.settings = {}
 
         if base_folder is None:
-            try:
-                the_base_folder = os.getenv(
-                    'VAST_DATA_DIR')
-            except Exception as e:
+            the_base_folder = os.getenv('VAST_DATA_DIR')
+            if the_base_folder is None:
                 raise Exception(
                     "The base folder directory could not be determined!"
                     " Either the system environment 'VAST_DATA_DIR' must be"
