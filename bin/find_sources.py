@@ -435,7 +435,7 @@ if __name__ == '__main__':
         source_names = catalog.name.to_list()
     elif args.source_names != "":
         catalog = pd.DataFrame(
-            [args.source_names.split(",")],
+            args.source_names.split(","),
             columns=['name']
         )
         sky_coords = None
