@@ -333,7 +333,7 @@ def simbad_search(objects, logger=None):
     :returns: coordinates and source names
     :rtype: tuple
     '''
-    
+
     if logger is None:
         logger = logging.getLogger()
 
@@ -347,9 +347,9 @@ def simbad_search(objects, logger=None):
 
         ra = result_table['RA_d']
         dec = result_table['DEC_d']
-        
+
         c = SkyCoord(ra, dec, unit=(u.deg, u.deg))
-        
+
         return c, np.array(objects)
 
     except Exception as e:
