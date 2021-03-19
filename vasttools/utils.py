@@ -333,8 +333,12 @@ def simbad_search(objects, logger=None):
     :returns:
     :rtype:
     '''
+    
+    if logger is None:
+        logger = logging.getLogger()
 
     Simbad.add_votable_fields('ra(d)', 'dec(d)')
+    Simbad.add_votable_fields('typed_id')
 
     try:
         result_table = Simbad.query_objects(objects)
@@ -343,6 +347,8 @@ def simbad_search(objects, logger=None):
 
         ra = result_table['RA_d']
         dec = result_table['DEC_d']
+        
+        print(result_table.columns)
 
         c = SkyCoord(ra, dec, unit=(u.deg, u.deg))
 
