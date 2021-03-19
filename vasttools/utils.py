@@ -325,13 +325,13 @@ def simbad_search(objects, logger=None):
     '''
     Searches SIMBAD for object coordinates and returns coordinates and names
 
-    :param objects:
-    :type objects:
+    :param objects: List of object names to query
+    :type objects: list
     :param logger: Logger to use, defaults to None
     :type logger: , optional
 
-    :returns:
-    :rtype:
+    :returns: coordinates and source names
+    :rtype: tuple
     '''
     
     if logger is None:
