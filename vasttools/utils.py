@@ -350,7 +350,7 @@ def simbad_search(objects, logger=None):
         
         c = SkyCoord(ra, dec, unit=(u.deg, u.deg))
         
-        return c, objects
+        return c, np.array(objects)
 
     except Exception as e:
         logger.debug(
