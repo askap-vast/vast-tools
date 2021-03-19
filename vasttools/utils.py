@@ -352,7 +352,7 @@ def simbad_search(objects, logger=None):
 
         c = SkyCoord(ra, dec, unit=(u.deg, u.deg))
 
-        names = [i.decode("utf-8") for i in result_table['MAIN_ID']]
+        names = [i for i in result_table['MAIN_ID']]
 
         return c, names
 
