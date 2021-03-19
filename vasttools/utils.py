@@ -348,13 +348,9 @@ def simbad_search(objects, logger=None):
         ra = result_table['RA_d']
         dec = result_table['DEC_d']
         
-        print(result_table.columns)
-
         c = SkyCoord(ra, dec, unit=(u.deg, u.deg))
-
-        names = [i for i in result_table['MAIN_ID']]
-
-        return c, names
+        
+        return c, objects
 
     except Exception as e:
         logger.debug(
