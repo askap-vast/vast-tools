@@ -349,8 +349,9 @@ def simbad_search(objects, logger=None):
         dec = result_table['DEC_d']
 
         c = SkyCoord(ra, dec, unit=(u.deg, u.deg))
+        simbad_names = np.array(result_table['MAIN_ID'])
 
-        return c, np.array(objects)
+        return c, simbad_names
 
     except Exception as e:
         logger.debug(
