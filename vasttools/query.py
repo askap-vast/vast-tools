@@ -237,19 +237,19 @@ class Query:
 
         if self.coords is None:
             if len(source_names) != 0:
-                pre_simbad = len(source_names)
-                self.coords, self.source_names = simbad_search(
+                self.source_names = np.array(source_names)
+                num_sources = len(source_names)
+                self.coords, self.simbad_names = simbad_search(
                     source_names, logger=self.logger
                 )
-                num_simbad = len(list(filter(None, self.source_names)))
+                num_simbad = len(list(filter(None, self.simbad_names)))
                 if self.coords is not None:
-                    simbad_msg = "SIMBAD search found {}/{} source(s)".format(
+                    simbad_msg = "SIMBAD search found {}/{} source(s):".format(
                         num_simbad,
-                        pre_simbad
+                        num_sources
                     )
                     self.logger.info(simbad_msg)
-                    self.logger.info('Found:')
-                    for simbad_name, query_name in zip(self.source_names, source_names):
+                    for simbad_name, query_name in zip(self.simbad_names, self.source_names):
                         if simbad_name:
                             self.logger.info('{}: {}'.format(query_name, simbad_name))
                         else:
@@ -263,7 +263,6 @@ class Query:
                     raise ValueError(
                         "SIMBAD search failed!"
                     )
-                #exit()
 
         if len(planets) != 0:
             valid_planets = sum([i in ALLOWED_PLANETS for i in planets])
