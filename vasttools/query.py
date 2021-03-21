@@ -251,11 +251,16 @@ class Query:
                         num_sources
                     )
                     self.logger.info(simbad_msg)
-                    for simbad_name, query_name in zip(self.simbad_names, self.source_names):
+                    names = zip(self.simbad_names, self.source_names)
+                    for simbad_name, query_name in names:
                         if simbad_name:
-                            self.logger.info('{}: {}'.format(query_name, simbad_name))
+                            self.logger.info(
+                                '{}: {}'.format(query_name, simbad_name)
+                            )
                         else:
-                            self.logger.info('{}: No match.'.format(query_name))
+                            self.logger.info(
+                                '{}: No match.'.format(query_name)
+                            )
                     if self.logger is None:
                         warnings.warn(simbad_msg)
                 else:
@@ -2078,7 +2083,7 @@ class Query:
             catalog['dec'] = self.coords.dec.deg
             catalog['skycoord'] = self.coords
             catalog['stokes'] = self.settings['stokes']
-            
+
         if self.simbad_names is not None:
             self.simbad_names = self.simbad_names[~mask]
             catalog['simbad_name'] = self.simbad_names
