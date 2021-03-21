@@ -623,7 +623,7 @@ class Source:
             if use_forced_for_limits:
                 max_y = np.nanmax(
                     detections[flux_col].tolist() +
-                    upper_lims[err_value_col].tolist()
+                    upper_lims[value_col].tolist()
                 )
             elif self.pipeline:
                 max_y = np.nanmax(
