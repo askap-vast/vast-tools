@@ -78,6 +78,8 @@ class Query:
         The sky coordinates to be queried.
     source_names : list
         The names of the sources (coordinates) being queried.
+    simbad_names : list
+        The names of the sources queried, as resolved by Simbad.
     ncpu : int
         The number of cpus available.
     planets : bool
@@ -187,6 +189,7 @@ class Query:
 
         self.coords = coords
         self.source_names = np.array(source_names)
+        self.simbad_names = None
 
         if self.coords is None:
             len_coords = 0
@@ -237,7 +240,6 @@ class Query:
 
         if self.coords is None:
             if len(source_names) != 0:
-                self.source_names = np.array(source_names)
                 num_sources = len(source_names)
                 self.coords, self.simbad_names = simbad_search(
                     source_names, logger=self.logger
