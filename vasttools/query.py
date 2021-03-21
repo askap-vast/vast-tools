@@ -2078,6 +2078,10 @@ class Query:
             catalog['dec'] = self.coords.dec.deg
             catalog['skycoord'] = self.coords
             catalog['stokes'] = self.settings['stokes']
+            
+        if self.simbad_names is not None:
+            self.simbad_names = self.simbad_names[~mask]
+            catalog['simbad_name'] = self.simbad_names
 
         return catalog
 
