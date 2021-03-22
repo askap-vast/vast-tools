@@ -187,14 +187,20 @@ class Query:
 
         install_mp_handler(logger=self.logger)
 
-        self.coords = coords
         self.source_names = np.array(source_names)
         self.simbad_names = None
+
+        if coords is None:
+            self.coords = coords
+        elif coords.isscalar:
+            self.coords = SkyCoord([coords.ra], [coords.dec])
+        else:
+            self.coords = coords
 
         if self.coords is None:
             len_coords = 0
         else:
-            len_coords = 1 if self.coords.isscalar else self.coords.shape[0]
+            len_coords = self.coords.shape[0]
 
         if ncpu > HOST_NCPU:
             raise ValueError(
