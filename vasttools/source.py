@@ -620,16 +620,13 @@ class Source:
                 label=label)
 
         if yaxis_start == "0":
-            if use_forced_for_limits:
+            if use_forced_for_limits or self.pipeline:
                 max_y = np.nanmax(
                     detections[flux_col].tolist() +
                     upper_lims[value_col].tolist()
                 )
-            elif self.pipeline:
-                max_y = np.nanmax(
-                    detections[flux_col].tolist() +
-                    upper_lims[value_col].tolist()
-                )
+            elif use_forced_for_all:
+                max_y = np.nanmax(detections[flux_col].tolist())
             else:
                 max_y = np.nanmax(
                     detections[flux_col].tolist() +
