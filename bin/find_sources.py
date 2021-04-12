@@ -473,7 +473,11 @@ if __name__ == '__main__':
 
     # else if find sources or else find surrounding sources?
     else:
-        query.find_sources()
+        try:
+            query.find_sources()
+        except Exception as e:
+            logger.error(e)
+            sys.exit()
 
         if args.search_around_coordinates:
             logger.info(
