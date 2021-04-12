@@ -620,10 +620,18 @@ class Source:
                 label=label)
 
         if yaxis_start == "0":
-            max_y = np.nanmax(
-                detections[flux_col].tolist() +
-                (sigma_thresh * upper_lims[err_value_col]).tolist()
-            )
+            if use_forced_for_limits or self.pipeline:
+                max_y = np.nanmax(
+                    detections[flux_col].tolist() +
+                    upper_lims[value_col].tolist()
+                )
+            elif use_forced_for_all:
+                max_y = np.nanmax(detections[flux_col].tolist())
+            else:
+                max_y = np.nanmax(
+                    detections[flux_col].tolist() +
+                    (sigma_thresh * upper_lims[err_value_col]).tolist()
+                )
             ax.set_ylim(
                 bottom=0,
                 top=max_y * 1.1
