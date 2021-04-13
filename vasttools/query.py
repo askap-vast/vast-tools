@@ -1508,9 +1508,9 @@ class Query:
             nselavy_df = pd.read_fwf(
                 nselavy_file, skiprows=[1, ]
             )
-            
+
             nselavy_df[["flux_peak", "flux_int"]] *= -1.0
-            
+
             selavy_df = selavy_df.append(
                 nselavy_df, ignore_index=True, sort=False
             )
