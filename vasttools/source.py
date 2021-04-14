@@ -529,7 +529,6 @@ class Source:
         if self.stokes != "I":
             label = "Absolute " + label
             measurements[flux_col] = measurements[flux_col].abs()
-            
 
         ax.set_ylabel(label)
 
@@ -593,9 +592,7 @@ class Source:
             detections = measurements[
                 ~upper_lim_mask
             ]
-        
-        
-            
+
         if self.pipeline:
             if peak_flux:
                 err_value_col = 'flux_peak_err'
