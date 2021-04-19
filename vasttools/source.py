@@ -396,11 +396,13 @@ class Source:
             return
 
         if outfile is None:
-            outfile = "{}_measurements.csv".format(self.name.replace(
+            outfile = "{}_measurements.{}.csv".format(self.name.replace(
                 " ", "_"
             ).replace(
                 "/", "_"
-            ))
+            ),
+            self.stokes
+            )
 
         elif not outfile.endswith(".csv"):
             outfile += ".csv"
@@ -660,11 +662,12 @@ class Source:
 
         if save:
             if outfile is None:
-                outfile = "{}_lc.png".format(self.name.replace(
+                outfile = "{}_lc.{}.png".format(self.name.replace(
                     " ", "_"
                 ).replace(
                     "/", "_"
-                ))
+                ),
+                self.stokes)
 
             elif not outfile.endswith(".png"):
                 outfile += ".png"
@@ -1058,11 +1061,12 @@ class Source:
                 name_epoch = RELEASED_EPOCHS[e] + "-" + e_split[1]
             else:
                 name_epoch = RELEASED_EPOCHS[epoch]
-        outfile = "{}_EPOCH{}{}".format(
+        outfile = "{}_EPOCH{}.{}{}".format(
             self.name.replace(" ", "_").replace(
                 "/", "_"
             ),
             name_epoch,
+            self.stokes,
             ext
         )
         return outfile
