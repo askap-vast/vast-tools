@@ -624,7 +624,7 @@ class Source:
                 label=label)
 
         if yaxis_start == "0":
-            max_det = detections.loc[:,[flux_col,err_value_col]].sum(axis=1)
+            max_det = detections.loc[:, [flux_col, err_value_col]].sum(axis=1)
             if use_forced_for_limits or self.pipeline:
                 max_y = np.nanmax(
                     max_det.tolist() +
