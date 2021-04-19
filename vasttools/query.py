@@ -1033,6 +1033,7 @@ class Query:
         4. Run selavy matching and upper limit fetching.
         5. Package up results into vasttools.source.Source objects.
         '''
+        self.logger.debug('Running find_sources...')
 
         if self.fields_found is False:
             self.find_fields()
@@ -1492,6 +1493,7 @@ class Query:
         :rtype: `pandas.core.frame.DataFrame`
         '''
         selavy_file = str(group.name)
+
         if selavy_file is None:
             return
 
@@ -1500,6 +1502,18 @@ class Query:
         selavy_df = pd.read_fwf(
             selavy_file, skiprows=[1, ]
         )
+        if self.settings['stokes'] != "I":
+            head, tail = os.path.split(selavy_file)
+            nselavy_file = os.path.join(head, 'n{}'.format(tail))
+            nselavy_df = pd.read_fwf(
+                nselavy_file, skiprows=[1, ]
+            )
+
+            nselavy_df[["flux_peak", "flux_int"]] *= -1.0
+
+            selavy_df = selavy_df.append(
+                nselavy_df, ignore_index=True, sort=False
+            )
 
         selavy_coords = SkyCoord(
             selavy_df.ra_deg_cont,

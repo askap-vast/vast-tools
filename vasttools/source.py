@@ -526,6 +526,10 @@ class Source:
             label = "Forced " + label
             flux_col = "f_" + flux_col
 
+        if self.stokes != "I":
+            label = "Absolute " + label
+            measurements[flux_col] = measurements[flux_col].abs()
+
         ax.set_ylabel(label)
 
         self.logger.debug("Plotting upper limit")
