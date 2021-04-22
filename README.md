@@ -4,9 +4,9 @@ A Python module to interact with and obtain the VAST Pilot Survey data.
 
 ## Prerequisites
 
-Python 3 (3.8.0 tested).
+Python 3.8+.
 
-Recommended to use an environment created with conda or virtualenv.
+Recommended to use an environment created with your favourite manager (conda, virtualenv, pyenv, etc).
 
 ## Installation
 
@@ -16,10 +16,14 @@ git clone https://github.com/askap-vast/vast-tools.git
 pip install ./vast-tools
 ```
 
-There is a requirements.txt included in the repository that you can use to install the dependancies separately using
+### Development Install
+
+`vast-tools` uses [poetry](https://python-poetry.org/docs/) to manage the dependancies. 
+To install the full dependancies required for development (including the documentation) please install `poetry` as described in the linked documentation, and then perform:
 ```
-pip install -r requirements.txt
-````
+cd vast-tools
+poetry install
+```
 
 ## Notebook Usage
 

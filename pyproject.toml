@@ -1,0 +1,38 @@
+[tool.poetry]
+name = "vasttools"
+version = "2.0.0rc5"
+description = "Python module to interact with ASKAP VAST data."
+license = "MIT"
+homepage = "https://github.com/askap-vast/vasttools/"
+authors = ["Dougal Dobie <ddob1600@uni.sydney.edu.au>"]
+
+[tool.poetry.dependencies]
+python = "^3.7.1"
+astroml = "^0.4.1"
+astropy = "^4.2"
+astroquery = "^0.4.1"
+bokeh = "^2.1.1"
+colorcet = "^2.0.2"
+colorlog = "^4.1.0"
+dask = {extras = ["dataframe"], version = "^2021.3.0"}
+forced-phot = { git = "https://github.com/askap-vast/forced_phot.git" }
+jupyterlab = "^3.0.0"
+matplotlib = "^3.2.1"
+mocpy = "^0.8.4"
+multiprocessing-logging = "^0.3.1"
+numexpr = "^2.7.1"
+numpy = "^1.19.2"
+pandas = "^1.1.4"
+pyarrow = "^2.0.0"
+radio-beam = "^0.3.2"
+scipy = "^1.4.1"
+tables = "^3.6.1"
+tabulate = "^0.8.7"
+vaex = "^3.0.0"
+
+[tool.poetry.dev-dependencies]
+ipdb = "^0.13.6"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
