@@ -383,22 +383,16 @@ class Source:
             measurements_to_write = self.measurements[cols]
 
         else:
+            cols = [
+                'fields',
+                'skycoord',
+                'selavy',
+                'image',
+                'rms',
+            ]
+            
             if self.pipeline:
-                cols = [
-                    'field',
-                    'skycoord',
-                    'selavy',
-                    'image',
-                    'rms',
-                ]
-            else:
-                cols = [
-                    'fields',
-                    'skycoord',
-                    'selavy',
-                    'image',
-                    'rms',
-                ]
+                cols[0] = 'field'
 
             measurements_to_write = self.measurements.drop(
                 labels=cols, axis=1
