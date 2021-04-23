@@ -355,7 +355,7 @@ def check_output_directory(args):
     return True
 
 
-if __name__ == '__main__':
+def main():
     args = parse_args()
 
     os.nice(args.nice)
@@ -550,3 +550,7 @@ if __name__ == '__main__':
             runtime.seconds / 60.
         )
     )
+
+
+if __name__ == '__main__':
+    main()

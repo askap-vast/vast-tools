@@ -2,7 +2,7 @@
 name = "anyio"
 version = "2.2.0"
 description = "High level compatibility layer for multiple asynchronous event loop implementations"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.6.2"
 
@@ -128,7 +128,7 @@ tests_no_zope = ["coverage[toml] (>=5.0.2)", "hypothesis", "pympler", "pytest (>
 name = "babel"
 version = "2.9.0"
 description = "Internationalization utilities"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 
@@ -191,20 +191,20 @@ typing_extensions = ">=3.7.4"
 
 [[package]]
 name = "boto3"
-version = "1.17.55"
+version = "1.17.56"
 description = "The AWS SDK for Python"
 category = "main"
 optional = false
 python-versions = ">= 2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*"
 
 [package.dependencies]
-botocore = ">=1.20.55,<1.21.0"
+botocore = ">=1.20.56,<1.21.0"
 jmespath = ">=0.7.1,<1.0.0"
 s3transfer = ">=0.4.0,<0.5.0"
 
 [[package]]
 name = "botocore"
-version = "1.20.55"
+version = "1.20.56"
 description = "Low-level, data-driven core of boto 3."
 category = "main"
 optional = false
@@ -272,6 +272,14 @@ python-versions = "*"
 astropy = "*"
 
 [[package]]
+name = "certifi"
+version = "2020.12.5"
+description = "Python package for providing Mozilla's CA Bundle."
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "cffi"
 version = "1.14.5"
 description = "Foreign Function Interface for Python calling C code."
@@ -281,6 +289,14 @@ python-versions = "*"
 
 [package.dependencies]
 pycparser = "*"
+
+[[package]]
+name = "chardet"
+version = "4.0.0"
+description = "Universal encoding detector for Python 2 and 3"
+category = "main"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [[package]]
 name = "cloudpickle"
@@ -404,7 +420,7 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 name = "deprecation"
 version = "2.1.0"
 description = "A library to handle automated deprecations"
-category = "main"
+category = "dev"
 optional = false
 python-versions = "*"
 
@@ -509,11 +525,11 @@ lxml = ["lxml"]
 
 [[package]]
 name = "idna"
-version = "3.1"
+version = "2.10"
 description = "Internationalized Domain Names in Applications (IDNA)"
 category = "main"
 optional = false
-python-versions = ">=3.4"
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 
 [[package]]
 name = "importlib-metadata"
@@ -772,7 +788,7 @@ python-versions = ">=3.6"
 name = "json5"
 version = "0.9.5"
 description = "A Python implementation of the JSON5 data format."
-category = "main"
+category = "dev"
 optional = false
 python-versions = "*"
 
@@ -833,7 +849,7 @@ traitlets = "*"
 name = "jupyter-packaging"
 version = "0.9.2"
 description = "Jupyter Packaging Utilities."
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.6"
 
@@ -846,10 +862,26 @@ tomlkit = "*"
 test = ["build", "coverage", "pytest", "pytest-cov", "pytest-mock"]
 
 [[package]]
+name = "jupyter-resource-usage"
+version = "0.5.1"
+description = "Simple Jupyter extension to show how much resources (RAM) your notebook is using"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+notebook = ">=5.6.0"
+prometheus-client = "*"
+psutil = ">=5.6.0"
+
+[package.extras]
+dev = ["autopep8", "black", "pytest", "flake8", "pytest-cov (>=2.6.1)", "mock"]
+
+[[package]]
 name = "jupyter-server"
 version = "1.6.4"
 description = "The backend—i.e. core services, APIs, and REST endpoints—to Jupyter web applications."
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.6"
 
@@ -878,7 +910,7 @@ test = ["coverage", "pytest", "pytest-cov", "pytest-mock", "requests", "pytest-t
 name = "jupyterlab"
 version = "3.0.14"
 description = "The JupyterLab server extension."
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.6"
 
@@ -912,7 +944,7 @@ pygments = ">=2.4.1,<3"
 name = "jupyterlab-server"
 version = "2.4.0"
 description = "JupyterLab Server"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.6"
 
@@ -927,6 +959,30 @@ requests = "*"
 
 [package.extras]
 test = ["codecov", "ipykernel", "pytest (>=5.3.2)", "pytest-cov", "jupyter-server", "pytest-console-scripts", "strict-rfc3339", "wheel"]
+
+[[package]]
+name = "jupyterlab-system-monitor"
+version = "0.8.0"
+description = "JupyterLab extension to display system information"
+category = "dev"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+jupyter-resource-usage = ">=0.5,<1.0"
+jupyterlab = ">=3.0,<4.0"
+jupyterlab-topbar = ">=0.6,<1.0"
+
+[[package]]
+name = "jupyterlab-topbar"
+version = "0.6.1"
+description = "JupyterLab extension to expose the top bar space"
+category = "dev"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+jupyterlab = ">=3.0,<4.0"
 
 [[package]]
 name = "jupyterlab-widgets"
@@ -1049,7 +1105,7 @@ python-versions = "*"
 name = "nbclassic"
 version = "0.2.7"
 description = "Jupyter Notebook as a Jupyter Server Extension."
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.6"
 
@@ -1574,14 +1630,20 @@ test = ["pytest-astropy", "pytest-cov"]
 
 [[package]]
 name = "requests"
-version = "2.15.1"
+version = "2.25.1"
 description = "Python HTTP for Humans."
 category = "main"
 optional = false
-python-versions = "*"
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
+
+[package.dependencies]
+certifi = ">=2017.4.17"
+chardet = ">=3.0.2,<5"
+idna = ">=2.5,<3"
+urllib3 = ">=1.21.1,<1.27"
 
 [package.extras]
-security = ["cryptography (>=1.3.4)", "idna (>=2.0.0)", "pyOpenSSL (>=0.14)"]
+security = ["pyOpenSSL (>=0.14)", "cryptography (>=1.3.4)"]
 socks = ["PySocks (>=1.5.6,!=1.5.7)", "win-inet-pton"]
 
 [[package]]
@@ -1599,7 +1661,7 @@ six = ">=1.12.0"
 
 [[package]]
 name = "s3transfer"
-version = "0.4.1"
+version = "0.4.2"
 description = "An Amazon S3 Transfer Manager"
 category = "main"
 optional = false
@@ -1687,7 +1749,7 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*"
 name = "sniffio"
 version = "1.2.0"
 description = "Sniff out which async library your code is running under"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.5"
 
@@ -1769,7 +1831,7 @@ python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
 name = "tomlkit"
 version = "0.7.0"
 description = "Style preserving TOML library"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
@@ -2038,7 +2100,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=1.2.3)", "pytest-flake8", "pyt
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7.1"
-content-hash = "5f12644281989dfc9592cc4a875b35cfa4727c3f4353c751e087d103447f10f6"
+content-hash = "5ec1bc4cfde2c15bafcedeb741c661dec1c90cd63e357683b7c2e21cd22d897f"
 
 [metadata.files]
 anyio = [
@@ -2125,12 +2187,12 @@ bokeh = [
     {file = "bokeh-2.3.1.tar.gz", hash = "sha256:2f2fb8bab8ca8fa039f48b1f0bed56d3a847c75694ece1d206ffab645ff5beec"},
 ]
 boto3 = [
-    {file = "boto3-1.17.55-py2.py3-none-any.whl", hash = "sha256:5910c868c2cf0d30b6c9caed1d38a2b2c2c83e9713eadae0f43de4f42bfe863f"},
-    {file = "boto3-1.17.55.tar.gz", hash = "sha256:d0d1e8ca76a8e1b74f87a8324f97001d60bd8bbe6cca35a8e9e7b9abe5aa9ddb"},
+    {file = "boto3-1.17.56-py2.py3-none-any.whl", hash = "sha256:ccbc640b6c7b27626f87fbd6d73872ec697290065e8f473b6a3def472dd9253f"},
+    {file = "boto3-1.17.56.tar.gz", hash = "sha256:9caec835fdf9c3336068a28004bb6a6ffab14a75d2466dfe6e279946f409fe8f"},
 ]
 botocore = [
-    {file = "botocore-1.20.55-py2.py3-none-any.whl", hash = "sha256:94a62f7f848b37757c3419193727e183bccdf5cb74167df30bafee5d8d649b7a"},
-    {file = "botocore-1.20.55.tar.gz", hash = "sha256:5632c129e6c1c1a15e273fd3ec6f4431490e99ec61b6cff833538f456202e833"},
+    {file = "botocore-1.20.56-py2.py3-none-any.whl", hash = "sha256:367a7eaee80fdf7718f50461432ac2c4bd73363835a1ad011f99fdc592ba775d"},
+    {file = "botocore-1.20.56.tar.gz", hash = "sha256:134a7b1d21030b6323b6094226d0cc898a8f2a2b5d27e1e5c0a0071372eab68d"},
 ]
 bqplot = [
     {file = "bqplot-0.12.26-py2.py3-none-any.whl", hash = "sha256:7c486ebfabd393ea40a4b5fe2a15a8bfe3aeab8938ddbbdd0c8ad7e3995d88b9"},
@@ -2166,6 +2228,10 @@ cdshealpix = [
     {file = "cdshealpix-0.6.0-cp39-cp39-manylinux2014_x86_64.whl", hash = "sha256:e4ab253a166679d881dc49f175ce84ab068d53773500794a8ea606a204d8664b"},
     {file = "cdshealpix-0.6.0-cp39-none-win_amd64.whl", hash = "sha256:ac17de51a1c597460b9877cc99711635e3f3fc6bf9e59ef1bd0d6587c3211ad5"},
     {file = "cdshealpix-0.6.0.tar.gz", hash = "sha256:d20edac69499b4037c910b8eeafdebb03385a22850422433341070a797d28667"},
+]
+certifi = [
+    {file = "certifi-2020.12.5-py2.py3-none-any.whl", hash = "sha256:719a74fb9e33b9bd44cc7f3a8d94bc35e4049deebe19ba7d8e108280cfd59830"},
+    {file = "certifi-2020.12.5.tar.gz", hash = "sha256:1a4995114262bffbc2413b159f2a1a480c969de6e6eb13ee966d470af86af59c"},
 ]
 cffi = [
     {file = "cffi-1.14.5-cp27-cp27m-macosx_10_9_x86_64.whl", hash = "sha256:bb89f306e5da99f4d922728ddcd6f7fcebb3241fc40edebcb7284d7514741991"},
@@ -2205,6 +2271,10 @@ cffi = [
     {file = "cffi-1.14.5-cp39-cp39-win32.whl", hash = "sha256:afb29c1ba2e5a3736f1c301d9d0abe3ec8b86957d04ddfa9d7a6a42b9367e396"},
     {file = "cffi-1.14.5-cp39-cp39-win_amd64.whl", hash = "sha256:f2d45f97ab6bb54753eab54fffe75aaf3de4ff2341c9daee1987ee1837636f1d"},
     {file = "cffi-1.14.5.tar.gz", hash = "sha256:fd78e5fee591709f32ef6edb9a015b4aa1a5022598e36227500c8f4e02328d9c"},
+]
+chardet = [
+    {file = "chardet-4.0.0-py2.py3-none-any.whl", hash = "sha256:f864054d66fd9118f2e67044ac8981a54775ec5b67aed0441892edb553d21da5"},
+    {file = "chardet-4.0.0.tar.gz", hash = "sha256:0d6f53a15db4120f2b08c94f11e7d93d2c911ee118b6b30a04ec3ee8310179fa"},
 ]
 cloudpickle = [
     {file = "cloudpickle-1.6.0-py3-none-any.whl", hash = "sha256:3a32d0eb0bc6f4d0c57fbc4f3e3780f7a81e6fee0fa935072884d58ae8e1cc7c"},
@@ -2285,8 +2355,8 @@ html5lib = [
     {file = "html5lib-1.1.tar.gz", hash = "sha256:b2e5b40261e20f354d198eae92afc10d750afb487ed5e50f9c4eaf07c184146f"},
 ]
 idna = [
-    {file = "idna-3.1-py3-none-any.whl", hash = "sha256:5205d03e7bcbb919cc9c19885f9920d622ca52448306f2377daede5cf3faac16"},
-    {file = "idna-3.1.tar.gz", hash = "sha256:c5b02147e01ea9920e6b0a3f1f7bb833612d507592c837a6c49552768f4054e1"},
+    {file = "idna-2.10-py2.py3-none-any.whl", hash = "sha256:b97d804b1e9b523befed77c48dacec60e6dcb0b5391d57af6a65a312a90648c0"},
+    {file = "idna-2.10.tar.gz", hash = "sha256:b307872f855b18632ce0c21c5e45be78c0ea7ae4c15c828c20788b26921eb3f6"},
 ]
 importlib-metadata = [
     {file = "importlib_metadata-4.0.1-py3-none-any.whl", hash = "sha256:d7eb1dea6d6a6086f8be21784cc9e3bcfa55872b52309bc5fad53a8ea444465d"},
@@ -2379,6 +2449,10 @@ jupyter-packaging = [
     {file = "jupyter_packaging-0.9.2-py2.py3-none-any.whl", hash = "sha256:7d2cff62d0b0cf5267f5cd9edb4bd04591f68aa919bf026e7787f0424c0e7c55"},
     {file = "jupyter_packaging-0.9.2.tar.gz", hash = "sha256:780082b43506eccb3fb39ed9306300b637245e622a9644701c60d89992468822"},
 ]
+jupyter-resource-usage = [
+    {file = "jupyter-resource-usage-0.5.1.tar.gz", hash = "sha256:7ade39a081bbc9104bf7d6a54d68e90b021d7e53c1b0e218d1457ee7a8f1134a"},
+    {file = "jupyter_resource_usage-0.5.1-py2.py3-none-any.whl", hash = "sha256:000089350dbe88b4a465e7ea1a047db4f10f4bd5947aa85234d9a1c05a40e8c3"},
+]
 jupyter-server = [
     {file = "jupyter_server-1.6.4-py3-none-any.whl", hash = "sha256:942b9a092f79b3663f78c8003a411e6672f0ca8cfc64a59657060a0e5a02a0cb"},
     {file = "jupyter_server-1.6.4.tar.gz", hash = "sha256:21c20986047563aba2997cb10ba9441a162ec1d65b5aece9d5fa625602bb2b40"},
@@ -2394,6 +2468,14 @@ jupyterlab-pygments = [
 jupyterlab-server = [
     {file = "jupyterlab_server-2.4.0-py3-none-any.whl", hash = "sha256:94e606edb7b60e3fc54b8b4de14cded1483959361df9023e50092b6f8ede9cf6"},
     {file = "jupyterlab_server-2.4.0.tar.gz", hash = "sha256:2a7f0b125a59a7cc543f62e5f9dea50b44b3459b3f679db7e3dbe0f8616f90bc"},
+]
+jupyterlab-system-monitor = [
+    {file = "jupyterlab-system-monitor-0.8.0.tar.gz", hash = "sha256:f8d03d3ee26c84300c85e570f1a9d5f69bdcfa85e9a298f5716b67e36d0d94df"},
+    {file = "jupyterlab_system_monitor-0.8.0-py3-none-any.whl", hash = "sha256:2e26c2df5272237eba326ecd1eedb8203df19087fd1d651212cfd4ffeac3b122"},
+]
+jupyterlab-topbar = [
+    {file = "jupyterlab-topbar-0.6.1.tar.gz", hash = "sha256:f1f9144fd09c29b8921f378662f26c65a460967d9c48eeea8018cea49626fb5f"},
+    {file = "jupyterlab_topbar-0.6.1-py3-none-any.whl", hash = "sha256:6863a055d94b40d42b01e7e6771bc3622677c4621d95849a8a2c15ff33f9835a"},
 ]
 jupyterlab-widgets = [
     {file = "jupyterlab_widgets-1.0.0-py3-none-any.whl", hash = "sha256:caeaf3e6103180e654e7d8d2b81b7d645e59e432487c1d35a41d6d3ee56b3fef"},
@@ -2996,15 +3078,15 @@ radio-beam = [
     {file = "radio_beam-0.3.3-py3-none-any.whl", hash = "sha256:66c13f9488fb1ea1fe1beaa7c99a5c4ea81de340543b42825fe241be9ebda75b"},
 ]
 requests = [
-    {file = "requests-2.15.1-py2.py3-none-any.whl", hash = "sha256:ff753b2196cd18b1bbeddc9dcd5c864056599f7a7d9a4fb5677e723efa2b7fb9"},
-    {file = "requests-2.15.1.tar.gz", hash = "sha256:e5659b9315a0610505e050bb7190bf6fa2ccee1ac295f2b760ef9d8a03ebbb2e"},
+    {file = "requests-2.25.1-py2.py3-none-any.whl", hash = "sha256:c210084e36a42ae6b9219e00e48287def368a26d03a048ddad7bfee44f75871e"},
+    {file = "requests-2.25.1.tar.gz", hash = "sha256:27973dd4a904a4f13b263a19c866c13b92a39ed1c964655f025f3f8d3d75b804"},
 ]
 s3fs = [
     {file = "s3fs-0.2.2.tar.gz", hash = "sha256:dcd32e77efc4838474317fcef31a72891c51043c7807fca59c035003876f7bd0"},
 ]
 s3transfer = [
-    {file = "s3transfer-0.4.1-py2.py3-none-any.whl", hash = "sha256:b5130849df909773254099d085790456665f8d7e0032bbef6e3407f28adb1ad9"},
-    {file = "s3transfer-0.4.1.tar.gz", hash = "sha256:81b7b3516739b0cfbecaa9077a1baf783e7a790c0e49261fcc6ceda468765efa"},
+    {file = "s3transfer-0.4.2-py2.py3-none-any.whl", hash = "sha256:9b3752887a2880690ce628bc263d6d13a3864083aeacff4890c1c9839a5eb0bc"},
+    {file = "s3transfer-0.4.2.tar.gz", hash = "sha256:cb022f4b16551edebbb31a377d3f09600dbada7363d8c5db7976e7f47732e1b2"},
 ]
 scikit-learn = [
     {file = "scikit-learn-0.24.1.tar.gz", hash = "sha256:a0334a1802e64d656022c3bfab56a73fbd6bf4b1298343f3688af2151810bbdf"},

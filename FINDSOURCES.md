@@ -1,4 +1,4 @@
-# find\_sources.py
+# find\_sources
 
 This script allows you to quickly query data from the RACS and VAST Pilot surveys on provided coordinates, either through the command line or using a csv list.
 
@@ -22,7 +22,7 @@ If this variable is not set you can define the path to this data using the follo
 --base-folder /path/to/my-pilot-data/
 ```
 
-If you are running `find_sources.py` on your own machine we recommend first using the `--find-fields` flag, downloading the relevant fields and then re-running the script as normal.
+If you are running `find_sources` on your own machine we recommend first using the `--find-fields` flag, downloading the relevant fields and then re-running the script as normal.
 
 ## Running on Nimbus
 You can access running the script on the vast-data instance by selecting the terminal in your Jupyter Hub session.
@@ -47,7 +47,7 @@ All output is placed in an output directory of which the name can be set with th
 
 Can be run on any Stokes parameter, but only one at a time.
 ```
-usage: find_sources.py [-h] [--coords COORDS] [--source-names SOURCE_NAMES] [--ncpu NCPU] [--epochs EPOCHS]
+usage: find_sources [-h] [--coords COORDS] [--source-names SOURCE_NAMES] [--ncpu NCPU] [--epochs EPOCHS]
                        [--imsize IMSIZE] [--maxsep MAXSEP] [--out-folder OUT_FOLDER]
                        [--crossmatch-radius CROSSMATCH_RADIUS] [--use-tiles] [--islands] [--base-folder BASE_FOLDER]
                        [--stokes {I,Q,U,V}] [--quiet] [--forced-fits]
@@ -168,15 +168,15 @@ Note the space between the coodinates and the quotation marks.
 
 E.g.
 ```
-find_sources.py --coords "22:37:5.6000 +34:24:31.90"
+find_sources --coords "22:37:5.6000 +34:24:31.90"
 ```
 ```
-find_sources.py --coords "339.2733333 34.4088611"
+find_sources --coords "339.2733333 34.4088611"
 ```
 
 It's recommended to provide a source name using the option `--source-names`, e.g.
 ```
-find_sources.py --coords "22:37:5.6000 +34:24:31.90" --source-names "SN 2014C"
+find_sources --coords "22:37:5.6000 +34:24:31.90" --source-names "SN 2014C"
 ```
 
 
@@ -189,16 +189,16 @@ Note there is no space between the commas.
 
 E.g. 
 ```
-find_sources.py --coords "22:37:5.6000 +34:24:31.90,22:37:5.6000 -34:24:31.90,13:37:5.6000 -84:24:31.90"
+find_sources --coords "22:37:5.6000 +34:24:31.90,22:37:5.6000 -34:24:31.90,13:37:5.6000 -84:24:31.90"
 ```
 ```
-find_sources.py --coords "339.2733333 34.4088611,154.2733333 -34.4088611,20.2733333 -54.4088611"
+find_sources --coords "339.2733333 34.4088611,154.2733333 -34.4088611,20.2733333 -54.4088611"
 ```
 
 Source names can still be defined using the option `--source-names` with the same comma notation e.g.
 
 ```
-find_sources.py --coords "22:37:5.6000 +34:24:31.90,22:37:5.6000 -34:24:31.90,13:37:5.6000 -84:24:31.90" --source-names "SN 2014C,SN 2012C,SN2019B"
+find_sources --coords "22:37:5.6000 +34:24:31.90,22:37:5.6000 -34:24:31.90,13:37:5.6000 -84:24:31.90" --source-names "SN 2014C,SN 2012C,SN2019B"
 ```
 
 ### Input CSV file
@@ -206,7 +206,7 @@ To crossmatch many coordinates it's recommended to use a csv. Instead of enterin
 
 E.g. 
 ```
-find_sources.py --coords my_coords.csv
+find_sources --coords my_coords.csv
 ```
 
 The columns `ra` and `dec` are required and can be in either of the formats shown in the command line options. `name` is also accepted and is recommended. E.g.
@@ -233,19 +233,19 @@ The following files are or can be produced (for tiles the `combined` will be rep
 Search for a match to one source and create a FITS postage stamp of 5 arcminutes across. Will place the output in `example_source`.
 
 ```
-find_sources.py "22:37:5.6000 +34:24:31.90" --imsize 5.0 --source-names "SN 2014C" --out-folder example_source
+find_sources "22:37:5.6000 +34:24:31.90" --imsize 5.0 --source-names "SN 2014C" --out-folder example_source
 ```
 
 To include a png output with selavy overlay:
 
 ```
-find_sources.py "22:37:5.6000 +34:24:31.90" --imsize 5.0 --source-names "SN 2014C" --out-folder example_source --create-png --png-selavy-overlay
+find_sources "22:37:5.6000 +34:24:31.90" --imsize 5.0 --source-names "SN 2014C" --out-folder example_source --create-png --png-selavy-overlay
 ```
 Now search in Stokes V to a different directory and also include a kvis annotation file and an extra coodinate:
 ```
-find_sources.py "22:37:5.6000 +34:24:31.90,22:37:5.6000 +44:24:31.90" --imsize 5.0 --source-names "SN 2014C,SN 2019I" --out-folder example_source_stokesv_ --create-png --png-selavy-overlay --stokes="V" --ann
+find_sources "22:37:5.6000 +34:24:31.90,22:37:5.6000 +44:24:31.90" --imsize 5.0 --source-names "SN 2014C,SN 2019I" --out-folder example_source_stokesv_ --create-png --png-selavy-overlay --stokes="V" --ann
 ```
 Search through a csv of coordinates, make pngs, use zscale with a contrast of 0.2, create annotation and region files.:
 ```
-find_sources.py my_coords.csv --imsize 5.0  --out-folder example_source --create-png --png-selavy-overlay --png-use-zscale --png-zscale-contrast 0.2 --ann --reg
+find_sources my_coords.csv --imsize 5.0  --out-folder example_source --create-png --png-selavy-overlay --png-use-zscale --png-zscale-contrast 0.2 --ann --reg
 ```

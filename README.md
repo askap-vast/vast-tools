@@ -43,10 +43,10 @@ These can be overridden by specifying a `base_folder` when initialising the `Que
 ## Current Scripts
 As part of the installation the following scripts are made available in your path:
 
-* **pilot\_fields\_info.py** - A script to get basic information of VAST Pilot survey fields.
+* **pilot\_fields\_info** - A script to get basic information of VAST Pilot survey fields.
     - See [PILOTFIELDSINFO.md](PILOTFIELDSINFO.md) for full instructions.
-* **find\_sources.py** - A tool to swiftly search VAST Pilot data at chosen coordinates (also supports RACS if available).
+* **find\_sources** - A tool to swiftly search VAST Pilot data at chosen coordinates (also supports RACS if available).
     - See [FINDSOURCES.md](FINDSOURCES.md) for full instructions and options.
-* **build\_lightcurves.py** - A script to allow easy creation of source lightcurves on output of `find_sources.py`.
+* **build\_lightcurves** - A script to allow easy creation of source lightcurves on output of `find_sources.py`.
     - As of v2.0 `find_sources.py` can also output lightcurves. This script can be useful if you'd like to regenerate them using different settings.
     - See [BUILDLIGHTCURVES.md](BUILDLIGHTCURVES.md) for full instructions.
