@@ -23,17 +23,19 @@ multiprocessing-logging = "^0.3.1"
 numexpr = "^2.7.1"
 numpy = "^1.19.2"
 pandas = "^1.1.4"
-pyarrow = "^2.0.0"
+pyarrow = "^3.0.0"
 radio-beam = "^0.3.2"
 scipy = "^1.4.1"
 tables = "^3.6.1"
 tabulate = "^0.8.7"
-vaex = "^3.0.0"
+vaex-astro = "^0.8.0"
+vaex-core = "^4.1.0"
 
 [tool.poetry.dev-dependencies]
 ipdb = "^0.13.6"
 jupyterlab = "^3.0.0"
 jupyterlab-system-monitor = "^0.8.0"
+vaex-jupyter = "^0.6.0"
 
 [tool.poetry.scripts]
 build_lightcurves = "vasttools.bin.build_lightcurves:main"

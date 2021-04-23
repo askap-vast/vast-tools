@@ -25,6 +25,9 @@ cd vast-tools
 poetry install
 ```
 
+Included in the development dependancies is `jupyterlab` such that vast-tools can be easily tested in a notebook environment.
+Also included is `[jupyterlab-system-monitor](https://github.com/jtpio/jupyterlab-system-monitor)` which allows for the memory and cpu usage to be monitored in the Jupyter Lab environment.
+
 ## Notebook Usage
 
 As of version v2.0 the module has been made 'notebook friendly' and can be used interactively. See the `notebook-examples` directory in this repository for examples on how to use the module in a notebook environment. Note that for large queries it is better to use the `find_sources.py` script as pre version v2.0.
