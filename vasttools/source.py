@@ -390,7 +390,7 @@ class Source:
                 'image',
                 'rms',
             ]
-            
+
             if self.pipeline:
                 cols[0] = 'field'
 
