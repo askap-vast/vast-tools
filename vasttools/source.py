@@ -355,17 +355,30 @@ class Source:
         '''
 
         if simple:
-            cols = [
-                'name',
-                'ra_deg_cont',
-                'dec_deg_cont',
-                'component_id',
-                'flux_peak',
-                'flux_peak_err',
-                'flux_int',
-                'flux_int_err',
-                'rms_image',
-            ]
+            if self.pipeline:
+                cols = [
+                    'source',
+                    'ra',
+                    'dec',
+                    'component_id',
+                    'flux_peak',
+                    'flux_peak_err',
+                    'flux_int',
+                    'flux_int_err',
+                    'rms',
+                ]
+            else:
+                cols = [
+                    'name',
+                    'ra_deg_cont',
+                    'dec_deg_cont',
+                    'component_id',
+                    'flux_peak',
+                    'flux_peak_err',
+                    'flux_int',
+                    'flux_int_err',
+                    'rms_image',
+                ]
 
             measurements_to_write = self.measurements[cols]
 
@@ -377,6 +390,9 @@ class Source:
                 'image',
                 'rms',
             ]
+
+            if self.pipeline:
+                cols[0] = 'field'
 
             measurements_to_write = self.measurements.drop(
                 labels=cols, axis=1
