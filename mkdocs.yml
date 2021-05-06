@@ -1,0 +1,125 @@
+site_name: VAST Tools
+site_description: >-
+  Python module to interact with ASKAP VAST data.
+site_author: VAST Development Team
+copyright: Copyright &copy; 2020 - 2025 Vast Development Team, University of Sydney - all right reserved
+
+repo_url: https://github.com/askap-vast/vast-tools
+repo_name: askap-vast/vast-tools
+edit_uri: ""
+dev_addr: localhost:8008
+
+docs_dir: docs
+site_dir: docs_build
+
+theme:
+  name: material
+  favicon: img/favicon.png
+  logo: img/vast-logo.png
+  features:
+    - navigation.instant
+    - navigation.tabs
+    - navigation.sections
+  custom_dir: docs/theme
+  palette:
+    # Light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      accent: indigo
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to dark mode
+
+    # Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      accent: blue
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to light mode
+
+# Extensions
+extra_css:
+  - theme/css/extra.css
+extra_javascript:
+  - theme/js/extra.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+markdown_extensions:
+  - admonition
+  - attr_list
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - pymdownx.tabbed
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+  - toc:
+      toc_depth: 4
+      permalink: true
+  - codehilite
+  - lightgallery
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: getting_started/installation.md
+  # - Components & Features:
+  - Scripts:
+    - build_lightcurves: scripts/build_lightcurves.md
+    - find_sources: scripts/find_sources.md
+    - pilot_fields_info: scripts/pilot_fields_info.md
+  - Example Notebooks:
+    - Catalogue Crossmatch: notebook-examples/catalogue-crossmatching-example.ipynb
+    - VAST Pipeline: notebook-examples/vast-pipeline-example.ipynb
+  # - Contributing & Developing:
+  # - Reference:
+
+plugins:
+  - search
+  - git-revision-date-localized:
+      fallback_to_build_date: true
+      enable_creation_date: true
+  # - gen-files:
+      # scripts:
+      # - docs/gen_credits.py
+      # - docs/gen_doc_stubs.py
+  - minify:
+      minify_html: true
+      minify_js: true
+      htmlmin_opts:
+        remove_comments: true
+      js_files:
+        - theme/js/extra.js
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          rendering:
+            show_source: true
+          setup_commands:
+            - "import os"
+      watch:
+        - vasttools
+  - mknotebooks
+  # - mkdocs-jupyter
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/askap-vast/vast-tools
+      name: vast-pipeline source on GitHub
+    - icon: fontawesome/brands/slack
+      link: https://askap-vast.slack.com/
+    - icon: fontawesome/solid/paper-plane
+      link: mailto:transients@mailman.sydney.edu.au
+      name: Email ASKAP VAST
+    - icon: fontawesome/solid/globe
+      link: https://vast-survey.org
+
