@@ -199,6 +199,7 @@ def build_catalog(coords, source_names):
             sys.exit()
         try:
             catalog = pd.read_csv(user_file, comment="#")
+            print(catalog)
             catalog.dropna(how="all", inplace=True)
             logger.debug(catalog)
             catalog.columns = map(str.lower, catalog.columns)
@@ -337,8 +338,7 @@ def simbad_search(objects, logger=None):
     if logger is None:
         logger = logging.getLogger()
 
-    Simbad.add_votable_fields('ra(d)', 'dec(d)')
-    Simbad.add_votable_fields('typed_id')
+    Simbad.add_votable_fields('ra(d)', 'dec(d)','typed_id')
 
     try:
         result_table = Simbad.query_objects(objects)
