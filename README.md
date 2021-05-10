@@ -26,7 +26,8 @@ poetry install
 ```
 
 Included in the development dependancies is `jupyterlab` such that vast-tools can be easily tested in a notebook environment.
-Also included is `[jupyterlab-system-monitor](https://github.com/jtpio/jupyterlab-system-monitor)` which allows for the memory and cpu usage to be monitored in the Jupyter Lab environment.
+Also included is `[jupyterlab-system-monitor](https://github.com/jtpio/jupyterlab-system-monitor)` which allows for the memory and cpu usage to be monitored in the Jupyter Lab environment, along with `[jupyterlab-execute-time](https://github.com/deshaw/jupyterlab-execute-time)` which allows for cell timings to be displayed.
+Please refer to the documentation in the linked repositories for configuration of these add-ons.
 
 ## Notebook Usage
 
