@@ -9,7 +9,6 @@ python-versions = ">=3.6.2"
 [package.dependencies]
 idna = ">=2.8"
 sniffio = ">=1.1"
-typing-extensions = {version = "*", markers = "python_version < \"3.8\""}
 
 [package.extras]
 curio = ["curio (>=1.4)"]
@@ -316,7 +315,7 @@ six = "*"
 
 [[package]]
 name = "dask"
-version = "2021.4.0"
+version = "2021.4.1"
 description = "Parallel PyData with Task Scheduling"
 category = "main"
 optional = false
@@ -333,10 +332,10 @@ toolz = ">=0.8.2"
 
 [package.extras]
 array = ["numpy (>=1.16)"]
-complete = ["bokeh (>=1.0.0,!=2.0.0)", "distributed (>=2021.03.0)", "numpy (>=1.16)", "pandas (>=0.25.0)"]
+complete = ["bokeh (>=1.0.0,!=2.0.0)", "distributed (>=2021.04.1)", "numpy (>=1.16)", "pandas (>=0.25.0)"]
 dataframe = ["numpy (>=1.16)", "pandas (>=0.25.0)"]
 diagnostics = ["bokeh (>=1.0.0,!=2.0.0)"]
-distributed = ["distributed (>=2021.03.0)"]
+distributed = ["distributed (>=2021.04.1)"]
 test = ["pytest", "pytest-rerunfailures", "pytest-xdist"]
 
 [[package]]
@@ -437,6 +436,20 @@ optional = false
 python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
 
 [[package]]
+name = "h5py"
+version = "3.2.1"
+description = "Read and write HDF5 files from Python"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+numpy = [
+    {version = ">=1.17.5", markers = "python_version == \"3.8\""},
+    {version = ">=1.19.3", markers = "python_version >= \"3.9\""},
+]
+
+[[package]]
 name = "html5lib"
 version = "1.1"
 description = "HTML parser based on the WHATWG HTML specification"
@@ -471,7 +484,6 @@ optional = false
 python-versions = ">=3.6"
 
 [package.dependencies]
-typing-extensions = {version = ">=3.6.4", markers = "python_version < \"3.8\""}
 zipp = ">=0.5"
 
 [package.extras]
@@ -728,7 +740,6 @@ python-versions = "*"
 
 [package.dependencies]
 attrs = ">=17.4.0"
-importlib-metadata = {version = "*", markers = "python_version < \"3.8\""}
 pyrsistent = ">=0.14.0"
 six = ">=1.11.0"
 
@@ -851,6 +862,17 @@ tornado = ">=6.1.0"
 [package.extras]
 docs = ["jsx-lexer", "recommonmark", "sphinx", "sphinx-rtd-theme", "sphinx-copybutton"]
 test = ["pytest (>=6.0)", "pytest-cov", "pytest-console-scripts", "pytest-check-links", "jupyterlab-server[test] (>=2.0,<3.0)", "requests", "wheel", "virtualenv", "nose-exclude"]
+
+[[package]]
+name = "jupyterlab-execute-time"
+version = "2.0.2"
+description = "Display cell timings in Jupyter Lab"
+category = "dev"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+jupyterlab = ">=3.0.0rc13,<4"
 
 [[package]]
 name = "jupyterlab-pygments"
@@ -1798,6 +1820,18 @@ tabulate = ">=0.8.3"
 all = ["gcsfs (>=0.6.2)", "s3fs"]
 
 [[package]]
+name = "vaex-hdf5"
+version = "0.7.0"
+description = "hdf5 file support for vaex"
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+h5py = ">=2.9"
+vaex-core = ">=4.0.0,<5"
+
+[[package]]
 name = "vaex-jupyter"
 version = "0.6.0"
 description = "Jupyter notebook and Jupyter lab support for vaex"
@@ -1889,8 +1923,8 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=1.2.3)", "pytest-flake8", "pyt
 
 [metadata]
 lock-version = "1.1"
-python-versions = "^3.7.1"
-content-hash = "761bf2590cb1de193f9ba7b559ebff9dff379288800a6e88243504d0ee1093f9"
+python-versions = "^3.8.0"
+content-hash = "e94a843eccd3526e8871fecb441253bbfc83526dc40fe793da7ef8bd06f95437"
 
 [metadata.files]
 anyio = [
@@ -2077,8 +2111,8 @@ cycler = [
     {file = "cycler-0.10.0.tar.gz", hash = "sha256:cd7b2d1018258d7247a71425e9f26463dfb444d411c39569972f4ce586b0c9d8"},
 ]
 dask = [
-    {file = "dask-2021.4.0-py3-none-any.whl", hash = "sha256:2370e4d7da35ee49e2211aef8ab63832455f25588149ca8b41d2c984c747e7cc"},
-    {file = "dask-2021.4.0.tar.gz", hash = "sha256:4f7e52ddedbffdf1cfd5525f4f901689e45f8769e059e7b7ecb332f8496f7f34"},
+    {file = "dask-2021.4.1-py3-none-any.whl", hash = "sha256:344c342d699466c3f742019b7a33caf2472b751f38370b200ede7d2f354aa1e4"},
+    {file = "dask-2021.4.1.tar.gz", hash = "sha256:195e4eeb154222ea7a1c368119b5f321ee4ec9d78531471fe0145a527f744aa8"},
 ]
 decorator = [
     {file = "decorator-4.4.2-py2.py3-none-any.whl", hash = "sha256:41fa54c2a0cc4ba648be4fd43cff00aedf5b9465c9bf18d64325bc225f08f760"},
@@ -2106,6 +2140,18 @@ fsspec = [
 ]
 future = [
     {file = "future-0.18.2.tar.gz", hash = "sha256:b1bead90b70cf6ec3f0710ae53a525360fa360d306a86583adc6bf83a4db537d"},
+]
+h5py = [
+    {file = "h5py-3.2.1-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:6766104ed13ff40b3b7bfd49f13fced5274103ee9af53667e7a97c5236b14741"},
+    {file = "h5py-3.2.1-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:4160cb0d35a83c6fb9f1cad65e826dfaeb044e001549ea78003573fb6bee4042"},
+    {file = "h5py-3.2.1-cp37-cp37m-win_amd64.whl", hash = "sha256:fdabe99139a9c5e1a416b7ed38c89505f8501b376d54496e1bb737cb33df61cf"},
+    {file = "h5py-3.2.1-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:d8467fa56356ad2efad2b5986326e71d4d74505de6f6c7bb46dbba09b37459ac"},
+    {file = "h5py-3.2.1-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:a6632ac11167bbad1a8fc5c82508b97ab8c12bdfe4b659254b6f7f63d3c76744"},
+    {file = "h5py-3.2.1-cp38-cp38-win_amd64.whl", hash = "sha256:90ee8a00aca5c4e0bbd821c1f6118cb9a814c15dcfdb03572c615a4431166480"},
+    {file = "h5py-3.2.1-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:25294f2690c4813475f566663a21ef1c1b11ef892b26d46454bf0a59e507d5aa"},
+    {file = "h5py-3.2.1-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:d791b710d3e54c4d2c32cb881b183db5674ceb03bf6a0c1f3fb3cf50d8997e0a"},
+    {file = "h5py-3.2.1-cp39-cp39-win_amd64.whl", hash = "sha256:7c5b5f18c96fb63399280a724734fd91e1781c6b60e385e439ad8e654a294ba4"},
+    {file = "h5py-3.2.1.tar.gz", hash = "sha256:89474be911bfcdb34cbf0d98b8ec48b578c27a89fdb1ae4ee7513f1ef8d9249e"},
 ]
 html5lib = [
     {file = "html5lib-1.1-py2.py3-none-any.whl", hash = "sha256:0d78f8fde1c230e99fe37986a60526d7049ed4bf8a9fadbad5f00e22e58e041d"},
@@ -2213,6 +2259,10 @@ jupyter-server = [
 jupyterlab = [
     {file = "jupyterlab-3.0.14-py3-none-any.whl", hash = "sha256:223ad786032119f495edc894a81925b6cc327a184f150adbc4e5ef94965d4921"},
     {file = "jupyterlab-3.0.14.tar.gz", hash = "sha256:713a84991dfcca8c0bc260911f1bd54ac25a386a86285713b9555a60f795059b"},
+]
+jupyterlab-execute-time = [
+    {file = "jupyterlab_execute_time-2.0.2-py3-none-any.whl", hash = "sha256:287612290d83df546f64e524afba8ce60a42bf1bbe4013f48e922cbc5261f36a"},
+    {file = "jupyterlab_execute_time-2.0.2.tar.gz", hash = "sha256:12a2c9d5755d9eb2bc0fd5ac78a6f2346f609840eb4ac37a423a14bec1f16d0b"},
 ]
 jupyterlab-pygments = [
     {file = "jupyterlab_pygments-0.1.2-py2.py3-none-any.whl", hash = "sha256:abfb880fd1561987efaefcb2d2ac75145d2a5d0139b1876d5be806e32f630008"},
@@ -3024,6 +3074,10 @@ vaex-core = [
     {file = "vaex_core-4.1.0-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:8442040cfdf02c3471f97d355f031745cc38c7c77dbcfa85c17ead4d70e7027f"},
     {file = "vaex_core-4.1.0-cp39-cp39-manylinux2010_x86_64.whl", hash = "sha256:7a12508395bf1fd3ac953e22e8f6d5eab78b354f6eb30db3537fc9d8e1c4d64f"},
     {file = "vaex_core-4.1.0-cp39-cp39-win_amd64.whl", hash = "sha256:f77333d163f2a02b311b722ae46610f8059ed2bddcc8901c2218383e23755f66"},
+]
+vaex-hdf5 = [
+    {file = "vaex-hdf5-0.7.0.tar.gz", hash = "sha256:73f898f9bc3fa5c61a67fb31a85be296bbd37d157cdf2a1d48d22f0ccad024c6"},
+    {file = "vaex_hdf5-0.7.0-py3-none-any.whl", hash = "sha256:1b7c93f8da507189f73e1d1c2eec346163b88a7aaa4e62595cc58e95fc8ba640"},
 ]
 vaex-jupyter = [
     {file = "vaex-jupyter-0.6.0.tar.gz", hash = "sha256:6046d3983d001e1979b174b4d1e8adf97e3cd14e503aafc630b87c6c2e997d6a"},

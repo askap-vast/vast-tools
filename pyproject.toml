@@ -5,10 +5,10 @@ description = "Python module to interact with ASKAP VAST data."
 license = "MIT"
 homepage = "https://github.com/askap-vast/vasttools/"
 authors = ["Dougal Dobie <ddob1600@uni.sydney.edu.au>"]
-include = ["vasttools/data", "example_notebooks", "README.md"]
+include = ["vasttools/data", "example_notebooks"]
 
 [tool.poetry.dependencies]
-python = "^3.7.1"
+python = "^3.8.0"
 astroml = "^0.4.1"
 astropy = "^4.2"
 astroquery = "^0.4.1"
@@ -30,10 +30,12 @@ tables = "^3.6.1"
 tabulate = "^0.8.7"
 vaex-astro = "^0.8.0"
 vaex-core = "^4.1.0"
+vaex-hdf5 = "^0.7.0"
 
 [tool.poetry.dev-dependencies]
 ipdb = "^0.13.6"
 jupyterlab = "^3.0.0"
+jupyterlab-execute-time = "^2.0.2"
 jupyterlab-system-monitor = "^0.8.0"
 vaex-jupyter = "^0.6.0"
 
