@@ -346,13 +346,14 @@ def simbad_search(objects, logger=None):
 
         c = SkyCoord(ra, dec, unit=(u.deg, u.deg))
 
-        names = [i.decode("utf-8") for i in result_table['MAIN_ID']]
+        names = result_table['MAIN_ID'].tolist()
 
         return c, names
 
     except Exception as e:
         logger.debug(
-            "Error in performing the SIMBAD object search!", exc_info=True
+            "Error in performing the SIMBAD object search!\nError: %s",
+            e, exc_info=True
         )
         return None, None
 
