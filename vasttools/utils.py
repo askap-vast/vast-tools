@@ -338,7 +338,7 @@ def simbad_search(objects, logger=None):
     if logger is None:
         logger = logging.getLogger()
 
-    Simbad.add_votable_fields('ra(d)', 'dec(d)','typed_id')
+    Simbad.add_votable_fields('ra(d)', 'dec(d)', 'typed_id')
 
     try:
         result_table = Simbad.query_objects(objects)
