@@ -542,6 +542,10 @@ class Source:
             label = "Forced " + label
             flux_col = "f_" + flux_col
 
+        if self.stokes != "I":
+            label = "Absolute " + label
+            measurements[flux_col] = measurements[flux_col].abs()
+
         ax.set_ylabel(label)
 
         self.logger.debug("Plotting upper limit")
@@ -636,16 +640,17 @@ class Source:
                 label=label)
 
         if yaxis_start == "0":
+            max_det = detections.loc[:, [flux_col, err_value_col]].sum(axis=1)
             if use_forced_for_limits or self.pipeline:
                 max_y = np.nanmax(
-                    detections[flux_col].tolist() +
+                    max_det.tolist() +
                     upper_lims[value_col].tolist()
                 )
             elif use_forced_for_all:
-                max_y = np.nanmax(detections[flux_col].tolist())
+                max_y = np.nanmax(max_det.tolist())
             else:
                 max_y = np.nanmax(
-                    detections[flux_col].tolist() +
+                    max_det.tolist() +
                     (sigma_thresh * upper_lims[err_value_col]).tolist()
                 )
             ax.set_ylim(

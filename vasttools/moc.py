@@ -80,7 +80,7 @@ class VASTMOCS(object):
 
         if epoch not in RELEASED_EPOCHS:
             raise Exception(
-                "EPOCH {} not recongised".format(epoch)
+                "EPOCH {} not recognised".format(epoch)
             )
 
         epoch_str = RELEASED_EPOCHS[epoch]
@@ -142,13 +142,13 @@ class VASTMOCS(object):
 
         if itype not in types:
             raise Exception(
-                "Image type not recongised. Valid entries are"
+                "Image type not recognised. Valid entries are"
                 " 'COMBINED' or 'TILE'."
             )
 
         if field not in FIELD_CENTRES.field.values:
             raise Exception(
-                "Field {} not recongised".format(field)
+                "Field {} not recognised".format(field)
             )
 
         moc_path = os.path.join(

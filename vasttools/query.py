@@ -78,6 +78,8 @@ class Query:
         The sky coordinates to be queried.
     source_names : list
         The names of the sources (coordinates) being queried.
+    simbad_names : list
+        The names of the sources queried, as resolved by Simbad.
     ncpu : int
         The number of cpus available.
     planets : bool
@@ -185,13 +187,20 @@ class Query:
 
         install_mp_handler(logger=self.logger)
 
-        self.coords = coords
         self.source_names = np.array(source_names)
+        self.simbad_names = None
+
+        if coords is None:
+            self.coords = coords
+        elif coords.isscalar:
+            self.coords = SkyCoord([coords.ra], [coords.dec])
+        else:
+            self.coords = coords
 
         if self.coords is None:
             len_coords = 0
         else:
-            len_coords = 1 if self.coords.isscalar else self.coords.shape[0]
+            len_coords = self.coords.shape[0]
 
         if ncpu > HOST_NCPU:
             raise ValueError(
@@ -237,19 +246,27 @@ class Query:
 
         if self.coords is None:
             if len(source_names) != 0:
-                pre_simbad = len(source_names)
-                self.coords, self.source_names = simbad_search(
+                num_sources = len(source_names)
+                self.coords, self.simbad_names = simbad_search(
                     source_names, logger=self.logger
                 )
+                num_simbad = len(list(filter(None, self.simbad_names)))
                 if self.coords is not None:
-                    simbad_msg = "SIMBAD search found {}/{} source(s)".format(
-                        len(self.source_names),
-                        pre_simbad
+                    simbad_msg = "SIMBAD search found {}/{} source(s):".format(
+                        num_simbad,
+                        num_sources
                     )
                     self.logger.info(simbad_msg)
-                    self.logger.info('Found:')
-                    for i in self.source_names:
-                        self.logger.info(i)
+                    names = zip(self.simbad_names, self.source_names)
+                    for simbad_name, query_name in names:
+                        if simbad_name:
+                            self.logger.info(
+                                '{}: {}'.format(query_name, simbad_name)
+                            )
+                        else:
+                            self.logger.info(
+                                '{}: No match.'.format(query_name)
+                            )
                     if self.logger is None:
                         warnings.warn(simbad_msg)
                 else:
@@ -1016,6 +1033,7 @@ class Query:
         4. Run selavy matching and upper limit fetching.
         5. Package up results into vasttools.source.Source objects.
         '''
+        self.logger.debug('Running find_sources...')
 
         if self.fields_found is False:
             self.find_fields()
@@ -1475,6 +1493,7 @@ class Query:
         :rtype: `pandas.core.frame.DataFrame`
         '''
         selavy_file = str(group.name)
+
         if selavy_file is None:
             return
 
@@ -1483,6 +1502,18 @@ class Query:
         selavy_df = pd.read_fwf(
             selavy_file, skiprows=[1, ]
         )
+        if self.settings['stokes'] != "I":
+            head, tail = os.path.split(selavy_file)
+            nselavy_file = os.path.join(head, 'n{}'.format(tail))
+            nselavy_df = pd.read_fwf(
+                nselavy_file, skiprows=[1, ]
+            )
+
+            nselavy_df[["flux_peak", "flux_int"]] *= -1.0
+
+            selavy_df = selavy_df.append(
+                nselavy_df, ignore_index=True, sort=False
+            )
 
         selavy_coords = SkyCoord(
             selavy_df.ra_deg_cont,
@@ -2072,6 +2103,10 @@ class Query:
             catalog['dec'] = self.coords.dec.deg
             catalog['skycoord'] = self.coords
             catalog['stokes'] = self.settings['stokes']
+
+        if self.simbad_names is not None:
+            self.simbad_names = self.simbad_names[~mask]
+            catalog['simbad_name'] = self.simbad_names
 
         return catalog
 
