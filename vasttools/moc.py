@@ -143,7 +143,7 @@ class VASTMOCS(object):
         if itype not in types:
             raise Exception(
                 "Image type not recognised. Valid entries are"
-                " 'COMBINED' or 'TILE'."
+                " 'COMBINED' or 'TILES'."
             )
 
         if field not in FIELD_CENTRES.field.values:
