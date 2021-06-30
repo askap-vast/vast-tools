@@ -25,6 +25,8 @@ from vasttools.survey import get_askap_observing_location
 from astropy.time import Time
 from astropy.coordinates import solar_system_ephemeris
 from astropy.coordinates import get_body, get_moon
+from mocpy import MOC
+import os
 
 
 def get_logger(debug, quiet, logfile=None):
@@ -523,3 +525,98 @@ def pipeline_get_variable_metrics(df):
         d.pop(f'{col}_sq')
 
     return pd.Series(d)
+
+
+def skymap2moc(filename, cutoff):
+    '''
+    Creates a MOC of the credible region of a given skymap
+
+    :param filename: Path to the skymap file
+    :type filename: str
+    :param cutoff: Credible level cutoff
+    :type cutoff: float
+
+    :returns: MOC
+    :rtype: mocpy.moc.moc.MOC
+    '''
+
+    if not 0.0 <= cutoff <= 1.0:
+        raise Exception("Credible level cutoff must be between 0 and 1")
+
+    if not os.path.isfile(filename):
+        raise Exception("{} does not exist".format(filename))
+
+    hpx = hp.read_map(filename, verbose=True, nest=True)
+    nside = hp.get_nside(hpx)
+    level = np.log2(nside)
+
+    i = np.flipud(np.argsort(hpx))
+    sorted_credible_levels = np.cumsum(hpx[i])
+    credible_levels = np.empty_like(sorted_credible_levels)
+    credible_levels[i] = sorted_credible_levels
+
+    idx = np.where(credible_levels < cutoff)[0]
+    levels = np.ones(len(idx))*level
+
+    moc = mocpy.MOC.from_healpix_cells(idx, depth=levels)
+
+    return moc
+
+
+def find_in_moc(moc, df, pipe=True):
+    '''
+    Find the sources that are contained within a MOC
+
+    :param moc: MOC of interest
+    :type moc: mocpy.moc.moc.MOC
+    :param df: Dataframe of sources
+    :type df: pandas.core.frame.DataFrame
+    :returns: Index of all sources contained within the MOC
+    :rtype: numpy.ndarray
+    '''
+
+    if pipe:
+        ra_col = 'wavg_ra'
+        dec_col = 'wavg_dec'
+    else:
+        ra_col = 'ra'
+        dec_col = 'dec'
+
+    ra = Angle(df[ra_col], unit='deg')
+    dec = Angle(df[dec_col], unit='deg')
+
+    return np.where(moc.contains(ra, dec))[0]
+
+
+def add_credible_levels(filename, df, pipe=True):
+    '''
+    Calculate the minimum credible region containing each source and add to DF
+
+    :param filename: Path to the skymap file
+    :type filename: str
+    :param df: Dataframe of sources
+    :type df: pandas.core.frame.DataFrame
+    '''
+    if not os.path.isfile(filename):
+        raise Exception("{} does not exist".format(filename))
+
+    if pipe:
+        ra_col = 'wavg_ra'
+        dec_col = 'wavg_dec'
+    else:
+        ra_col = 'ra'
+        dec_col = 'dec'
+
+    hpx = hp.read_map(filename, verbose=True)
+    nside = hp.get_nside(hpx)
+
+    i = np.flipud(np.argsort(hpx))
+    sorted_credible_levels = np.cumsum(hpx[i])
+    credible_levels = np.empty_like(sorted_credible_levels)
+    credible_levels[i] = sorted_credible_levels
+    theta = 0.5*np.pi - np.deg2rad(df[dec_col])
+    phi = np.deg2rad(df[ra_col])
+
+    ipix = hp.ang2pix(nside, theta, phi)
+
+    df.loc[:, 'credible_level'] = credible_levels[ipix]
