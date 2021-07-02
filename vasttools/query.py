@@ -72,54 +72,32 @@ class Query:
     query including the catalogue of target sources, the Stokes parameter,
     crossmatch radius and output parameters.
 
-    Attributes
-    ----------
-    coords : astropy.coordinates.sky_coordinate.SkyCoord
-        The sky coordinates to be queried.
-    source_names : list
-        The names of the sources (coordinates) being queried.
-    simbad_names : list
-        The names of the sources queried, as resolved by Simbad.
-    ncpu : int
-        The number of cpus available.
-    planets : bool
-        Set to 'True' when planets are to be queried.
-    settings : dict
-        Dictionary that contains the various settings of the query.
-    base_folder : str
-        The base folder of the VAST data.
-    fields_found : bool
-        Set to 'True' once 'find_fields' has been run on the query.
-    racs : bool
-        Set to 'True' if RACS (Epoch 00) is included in the query.
-    query_df : pandas.core.frame.DataFrame
-        The dataframe that is constructed to perform the query.
-    sources_df : pandas.core.frame.DataFrame
-        The dataframe that contains the found sources when 'find_sources'
-        is run.
-    results : pandas.core.frame.Series
-        Series that contains each result in the form of a
-        vasttools.source.Source object, with the source name
-        as the index.
-
-    Methods
-    -------
-    find_fields()
-        Finds whether the queried sources are in the VAST Pilot survey
-        and if so what field they are in.
-
-    write_find_fields()
-        Writes the results of find_fields to a csv file.
-
-    find_sources()
-        Takes the results from find_fields and searches for crossmatches
-        to the queried sources in the selavy catalogues. It can also perform
-        rms upper limit measuring and forced fits if requested in the query
-        settings. Returns a Series object containing the found sources.
-
-    save_search_around_results(self, sort_output=False)
-        Writes the results of the query if the search_around_sky option
-        has been used.
+    Attributes:
+        coords (astropy.coordinates.sky_coordinate.SkyCoord):
+            The sky coordinates to be queried.
+        source_names : list
+            The names of the sources (coordinates) being queried.
+        ncpu : int
+            The number of cpus available.
+        planets : bool
+            Set to 'True' when planets are to be queried.
+        settings : dict
+            Dictionary that contains the various settings of the query.
+        base_folder : str
+            The base folder of the VAST data.
+        fields_found : bool
+            Set to 'True' once 'find_fields' has been run on the query.
+        racs : bool
+            Set to 'True' if RACS (Epoch 00) is included in the query.
+        query_df : pandas.core.frame.DataFrame
+            The dataframe that is constructed to perform the query.
+        sources_df : pandas.core.frame.DataFrame
+            The dataframe that contains the found sources when 'find_sources'
+            is run.
+        results : pandas.core.frame.Series
+            Series that contains each result in the form of a
+            vasttools.source.Source object, with the source name
+            as the index.
     '''
 
     def __init__(

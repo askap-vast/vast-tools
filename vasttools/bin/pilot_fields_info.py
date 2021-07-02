@@ -2,28 +2,26 @@
 
 # Example command:
 
-# ./build_lightcurves.py outputfolder
-
-from vasttools.query import FieldQuery
-from vasttools.utils import get_logger
-
+# ./build_lightcurves outputfolder
 import argparse
 import os
 import pandas as pd
 import datetime
 import sys
+from typing import List
+from vasttools.query import FieldQuery
+from vasttools.utils import get_logger
 
 runstart = datetime.datetime.now()
 
 
-def parse_args():
-    '''
-    Parse arguments
+def parse_args() -> argparse.Namespace:
+    """
+    Parse the arguments.
 
-    :returns: Argument namespace
-    :rtype: `argparse.Namespace`
-    '''
-
+    Returns:
+        The argument namespace.
+    """
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
@@ -85,7 +83,15 @@ def parse_args():
     return args
 
 
-def read_fields(fields_file):
+def read_fields(fields_file: str) -> List[str]:
+    """Reads the field names from the input file.
+
+    Args:
+        fields_file: The path of the input file containing the field names.
+
+    Returns:
+        List of field names to query.
+    """
     fields = pd.read_csv(fields_file, comment='#')
     try:
         fields = fields.field_name.to_list()
@@ -95,7 +101,12 @@ def read_fields(fields_file):
     return fields
 
 
-def main():
+def main() -> None:
+    """The main function.
+
+    Returns:
+        None
+    """
     args = parse_args()
     os.nice(args.nice)
 
