@@ -1498,6 +1498,13 @@ class PipeAnalysis(PipeRun):
 
         Returns:
             Bokeh or matplotlib figure.
+
+        Raises:
+            Exception: The two epoch metrics must be loaded before using this
+                function.
+            Exception: 'plot_type' is not recognised.
+            Exception: `plot_style` is not recognised.
+            Exception: Pair with entered ID does not exist.
         """
         if not self._loaded_two_epoch_metrics:
             raise Exception(
@@ -1509,13 +1516,13 @@ class PipeAnalysis(PipeRun):
 
         if plot_type not in ['bokeh', 'matplotlib']:
             raise Exception(
-                "'plot_type' value is not recongised!"
+                "'plot_type' value is not recognised!"
                 " Must be either 'bokeh' or 'matplotlib'."
             )
 
         if plot_style not in ['a', 'b']:
             raise Exception(
-                "'plot_style' value is not recongised!"
+                "'plot_style' value is not recognised!"
                 " Must be either 'a' for Mooley or 'b' for Radcliffe."
             )
 
@@ -1585,6 +1592,10 @@ class PipeAnalysis(PipeRun):
 
         Returns:
             Tuple containing two dataframes of the candidate sources and pairs.
+
+        Raises:
+            Exception: The two epoch metrics must be loaded before using this
+                function.
         """
         if not self._loaded_two_epoch_metrics:
             raise Exception(
@@ -2123,6 +2134,9 @@ class PipeAnalysis(PipeRun):
             Tuple containing the eta cutoff value, the v cutoff value,
             dataframe of candidates, candidates plot and, if selected, the
             diagnostic plot.
+
+        Raise:
+            Exception: Entered `plot_type` is not a valid plot type.
         """
         plot_types = ['bokeh', 'matplotlib']
 
@@ -2202,6 +2216,13 @@ class Pipeline(object):
         Args:
             project_dir: The directory of the pipeline results. Only required
                 when the system variable is not defined, defaults to 'None'.
+
+        Returns:
+            None.
+
+        Raises:
+            Exception: The `PIPELINE_WORKING_DIR` could not be determined.
+            Exception: Pipeline run directory is not found.
         """
         super(Pipeline, self).__init__()
 
@@ -2306,6 +2327,9 @@ class Pipeline(object):
 
         Returns:
             PipeAnalysis object.
+    
+        Raises:
+            ValueError: Entered pipeline run does not exist.
         """
 
         run_dir = os.path.join(

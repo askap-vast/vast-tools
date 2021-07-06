@@ -60,6 +60,9 @@ class VASTMOCS(object):
 
         Returns:
             MOC of the requested epoch.
+
+        Raises:
+            Exception: Entered epoch is not recognised.
         """
 
         if epoch not in RELEASED_EPOCHS:
@@ -89,6 +92,9 @@ class VASTMOCS(object):
 
         Returns:
             The field MOC.
+
+        Raises:
+            Exception: VAST Pilot field is not valid (1 - 6).
         """
         if isinstance(field, int):
             field = str(field)
@@ -117,6 +123,11 @@ class VASTMOCS(object):
 
         Returns:
             Tile MOC.
+
+        Raises:
+            Exception: Entered image type is not recognised
+                ('COMBINED' or 'TILES').
+            Exception: Entered field is not found.
         """
 
         types = ["COMBINED", "TILES"]

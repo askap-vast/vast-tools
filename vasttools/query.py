@@ -158,6 +158,20 @@ class Query:
 
         Returns:
             None
+
+        Raises:
+            ValueError: If the number of CPUs requested exceeds the total
+                available.
+            Exception: No coordinates or source names have been provided.
+            Exception: Forced fits and search around coordinates options have
+                both been selected.
+            Exception: Number of source names provided does not match the
+                number of coordinates.
+            ValueError: Planet provided is not a valid planet.
+            Exception: Base folder could not be determined.
+            Exception: Base folder cannot be found.
+            ValueError: Base folder cannot be found.
+            ValueError: Problems found in query settings.
         """
         self.logger = logging.getLogger('vasttools.find_sources.Query')
 
@@ -382,6 +396,10 @@ class Query:
             Dataframe containing the cutout data of all measurements in
             the query. Cutout data specifically is the image data, header,
             wcs, and selavy sources present in the cutout.
+
+        Raises:
+            Exception: Function cannot be run when 'search_around_coordinates'
+                mode has been selected.
         """
         # first get cutout data and selavy sources per image
         # group by image to do this
@@ -511,6 +529,10 @@ class Query:
 
         Returns:
             None.
+
+        Raises:
+            Exception: Function cannot be run when 'search_around_coordinates'
+                option has been selected.
         """
 
         if self.settings['search_around']:
@@ -648,7 +670,7 @@ class Query:
         lc_min_points: int = 2,
         lc_min_detections: int = 1,
         lc_mjd: bool = False,
-        lc_start_date = Optional[pd.Timestamp] = None,
+        lc_start_date: Optional[pd.Timestamp] = None,
         lc_grid: bool = False,
         lc_yaxis_start: str = "auto",
         lc_peak_flux: bool = True,
@@ -1659,6 +1681,9 @@ class Query:
 
         Returns:
             None.
+
+        Raises:
+            Exception: No sources are found within the requested footprint.
         """
         self.logger.info(
             "Matching queried sources to VAST Pilot fields..."
@@ -2112,6 +2137,10 @@ class Query:
 
         Returns:
             Valid stokes parameter.
+
+        Raises:
+            ValueError: Entered Stokes parameter is not valid.
+            ValueError: Stokes V is not supported with RACS.
         """
 
         valid = ["I", "Q", "U", "V"]
@@ -2328,9 +2357,8 @@ class FieldQuery:
             all_psf: bool = False,
             save: bool = False,
             _pilot_info: Optional[pd.DataFrame] = None
-        ) -> None:
-        """
-        Running the field query.
+    ) -> None:
+        """Running the field query.
 
         Args:
             largest_psf: If true the largest psf is calculated
