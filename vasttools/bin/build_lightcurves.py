@@ -138,7 +138,8 @@ def load_sources(folder: str) -> List[Source]:
 
 
 def source_from_measurements_file(
-    measurement_file: str, outdir: str, sort :bool=False) -> Source:
+    measurement_file: str, outdir: str, sort: bool = False
+) -> Source:
     """Creates a vasttools.source.Source object from a `measurements.csv`
     file produced from `find_sources`.
 

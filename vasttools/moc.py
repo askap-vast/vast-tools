@@ -51,7 +51,7 @@ class VASTMOCS(object):
 
         return stmoc
 
-    def load_pilot_epoch_moc(self, epoch: str='1') -> MOC:
+    def load_pilot_epoch_moc(self, epoch: str = '1') -> MOC:
         """
         Load MOC corresponding to one epoch of the pilot survey.
 
@@ -107,7 +107,7 @@ class VASTMOCS(object):
 
         return moc
 
-    def load_pilot_tile_moc(self, field: str, itype: str='COMBINED') -> MOC:
+    def load_pilot_tile_moc(self, field: str, itype: str = 'COMBINED') -> MOC:
         """
         Load MOCs corresponding to pilot tile field.
 
@@ -145,7 +145,8 @@ class VASTMOCS(object):
         return moc
 
     def query_vizier_vast_pilot(
-        self, table_id: str, max_rows: int=10000) -> Table:
+        self, table_id: str, max_rows: int = 10000
+    ) -> Table:
         """
         Query the Vizier service for sources within Pilot footprint.
 

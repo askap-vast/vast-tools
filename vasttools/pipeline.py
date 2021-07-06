@@ -252,8 +252,8 @@ class PipeRun(object):
         return sources_skycoord
 
     def get_source(
-        self, id: int, field: Optional[str] = None, stokes: str='I',
-        outdir: str='.',
+        self, id: int, field: Optional[str] = None, stokes: str = 'I',
+        outdir: str = '.',
         user_measurements: Optional[Union[
             pd.DataFrame, vaex.dataframe.DataFrame]
         ] = None, user_sources: Optional[pd.DataFrame] = None
@@ -2092,9 +2092,9 @@ class PipeAnalysis(PipeRun):
         use_int_flux: bool = False, plot_type: str = 'bokeh',
         diagnostic: bool = False
     ) -> Union[
-            Tuple[float, float, pd.DataFrame, plt.figure, plt.figure],
-            Tuple[float, float, pd.DataFrame, gridplot, plt.figure]
-        ]:
+        Tuple[float, float, pd.DataFrame, plt.figure, plt.figure],
+        Tuple[float, float, pd.DataFrame, gridplot, plt.figure]
+    ]:
         """
         Run the eta, v analysis on the pipeline run, with optional
         inputs to use a query or filtered dataframe (see Rowlinson
@@ -2263,7 +2263,8 @@ class Pipeline(object):
 
     def load_runs(
         self, run_names: List[str], name: Optional[str] = None,
-        n_workers: int = cpu_count() - 1) -> PipeAnalysis:
+        n_workers: int = cpu_count() - 1
+    ) -> PipeAnalysis:
         """
         Wrapper to load multiple runs in one command.
 
