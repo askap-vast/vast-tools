@@ -435,7 +435,7 @@ def main():
         source_names = catalog.name.to_list()
     elif args.source_names != "":
         catalog = pd.DataFrame(
-            [args.source_names.split(",")],
+            args.source_names.split(","),
             columns=['name']
         )
         sky_coords = None
@@ -473,7 +473,11 @@ def main():
 
     # else if find sources or else find surrounding sources?
     else:
-        query.find_sources()
+        try:
+            query.find_sources()
+        except Exception as e:
+            logger.error(e)
+            sys.exit()
 
         if args.search_around_coordinates:
             logger.info(
