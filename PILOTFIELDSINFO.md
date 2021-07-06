@@ -1,4 +1,4 @@
-# pilot\_fields\_info.py
+# pilot\_fields\_info
 
 This script allows you to obtain basic information on fields in the VAST Pilot Survey.
 
@@ -19,7 +19,7 @@ There are two methods in which to define the fields you wish to query:
 
 1. Command line: enter your field(s) as so:
 ```
-pilot_fields_info.py VAST_0532-50A VAST_1212+00A VAST_2257-06A
+pilot_fields_info VAST_0532-50A VAST_1212+00A VAST_2257-06A
 ```
 
 2. Or use an input csv file, which must have the column `field_name`:
@@ -29,7 +29,7 @@ ra,dec,name,sbid,field_name
 348.945,-59.0544444444444,ESO 148-IG02,9673,VAST_2256-56A
 ```
 ```
-pilot_fields_info.py my_fields.csv
+pilot_fields_info my_fields.csv
 ```
 
 If you wish to save the output then using the `--save` flag will write the results for each field to their own individual file in the current working directory.
@@ -41,7 +41,7 @@ See the section below for details on the other options available when running.
 Most options should be self explanatory. The lightcurve plots and csv files are saved in the same directory as the input
 
 ```
-usage: pilot_fields_info.py [-h] [--psf] [--largest-psf] [--common-psf] [--all-psf] [--save] [--quiet]
+usage: pilot_fields_info [-h] [--psf] [--largest-psf] [--common-psf] [--all-psf] [--save] [--quiet]
                             [--debug] [--nice NICE]
                             fields [fields ...]
 
@@ -65,7 +65,7 @@ optional arguments:
 ## Example
 
 ```
-❯ pilot_fields_info.py VAST_0532-50A VAST_1212+00A
+❯ pilot_fields_info VAST_0532-50A VAST_1212+00A
 [2020-02-27 16:00:18] - INFO - Will find information for the following fields:
 [2020-02-27 16:00:18] - INFO - VAST_0532-50A
 [2020-02-27 16:00:18] - INFO - VAST_1212+00A

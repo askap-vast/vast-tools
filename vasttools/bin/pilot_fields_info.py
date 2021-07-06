@@ -95,7 +95,7 @@ def read_fields(fields_file):
     return fields
 
 
-if __name__ == '__main__':
+def main():
     args = parse_args()
     os.nice(args.nice)
 
@@ -159,3 +159,7 @@ if __name__ == '__main__':
     logger.info(
         "Processing took {:.1f} minutes.".format(
             runtime.seconds / 60.))
+
+
+if __name__ == '__main__':
+    main()

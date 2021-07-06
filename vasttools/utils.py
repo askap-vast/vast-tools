@@ -349,13 +349,15 @@ def simbad_search(objects, logger=None):
         dec = result_table['DEC_d']
 
         c = SkyCoord(ra, dec, unit=(u.deg, u.deg))
-        simbad_names = np.array(result_table['MAIN_ID'])
+
+        simbad_names = result_table['MAIN_ID'].tolist()
 
         return c, simbad_names
 
     except Exception as e:
         logger.debug(
-            "Error in performing the SIMBAD object search!", exc_info=True
+            "Error in performing the SIMBAD object search!\nError: %s",
+            e, exc_info=True
         )
         return None, None
 

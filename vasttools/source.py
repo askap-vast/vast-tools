@@ -1322,7 +1322,7 @@ class Source:
 
         :param columns: Number of columns to use for the grid plot,
             defaults to 4
-        :type columns: float, optional
+        :type columns: int, optional
         :param percentile: The valye passed to the percentile
             normalization function, defaults to 99.9.
         :type percentile: float, optional
@@ -1367,7 +1367,7 @@ class Source:
             self.get_cutout_data(size)
 
         num_plots = self.measurements.shape[0]
-        nrows = np.ceil(num_plots / columns)
+        nrows = int(np.ceil(num_plots / columns))
 
         fig = plt.figure(figsize=figsize)
 

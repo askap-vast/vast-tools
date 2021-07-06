@@ -167,7 +167,7 @@ def source_from_measurements_file(measurement_file, outdir, sort=False):
     return thesource
 
 
-if __name__ == '__main__':
+def main():
     args = parse_args()
     os.nice(args.nice)
 
@@ -201,3 +201,7 @@ if __name__ == '__main__':
     logger.info(
         "Processing took {:.1f} minutes.".format(
             runtime.seconds / 60.))
+
+
+if __name__ == '__main__':
+    main()
