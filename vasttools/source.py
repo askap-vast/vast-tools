@@ -304,7 +304,7 @@ class Source:
     def plot_lightcurve(
         self,
         sigma_thresh: int = 5,
-        figsize: Tuple[int, int] = (8,4),
+        figsize: Tuple[int, int] = (8, 4),
         min_points: int = 2,
         min_detections: int = 0,
         mjd: bool = False,
@@ -794,7 +794,7 @@ class Source:
         force: bool = False,
     ) -> plt.Figure:
         """
-        Wrapper for _make_png to make nicer interactive function.
+        Wrapper for make_png to make nicer interactive function.
         No access to save.
 
         Args:
@@ -822,7 +822,7 @@ class Source:
             Figure object.
         """
 
-        fig = self._make_png(
+        fig = self.make_png(
             epoch,
             selavy=selavy,
             percentile=percentile,
@@ -859,7 +859,7 @@ class Source:
         plot_dpi: int = 150
     ) -> None:
         """
-        Wrapper for _make_png to make nicer interactive function.
+        Wrapper for make_png to make nicer interactive function.
         Always save.
 
         Args:
@@ -889,7 +889,7 @@ class Source:
         Returns:
             None
         """
-        fig = self._make_png(
+        fig = self.make_png(
             epoch,
             selavy=selavy,
             percentile=percentile,
@@ -1127,8 +1127,8 @@ class Source:
             cutout_data: Pass external cutout_data to be used
                 instead of fetching the data, defaults to None.
             calc_script_norms: When passing cutout data this parameter
-                can be set to True to pass this cutout data to the analyse norms
-                function, defaults to False.
+                can be set to True to pass this cutout data to the analyse
+                norms function, defaults to False.
             plot_dpi: Specify the DPI of saved figures, defaults to 150
 
         Returns:
@@ -1155,7 +1155,7 @@ class Source:
             )
 
         self.measurements['epoch'].apply(
-            self._make_png,
+            self.make_png,
             args=(
                 selavy,
                 percentile,
@@ -1590,7 +1590,7 @@ class Source:
         else:
             return fig
 
-    def _make_png(
+    def make_png(
         self,
         epoch: str,
         selavy: bool = True,
@@ -2224,7 +2224,7 @@ class Source:
         self,
         radius: Angle = Angle(20. * u.arcsec),
         filter_out_unreleased: bool = False,
-        show_all: bool =False
+        show_all: bool = False
     ) -> Union[None, Table]:
         """
         Searches CASDA for object coordinates and returns matches.

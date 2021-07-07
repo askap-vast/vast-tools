@@ -3,7 +3,9 @@
 A script to generate lightcurve plots from the outputs of 'find_sources'.
 
 Example:
-   `build_lightcurves outputfolder`
+    ```terminal
+    build_lightcurves outputfolder
+    ```
 
 Attributes:
     runstart (datetime.datetime): The running start time of the script.

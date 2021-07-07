@@ -1,8 +1,17 @@
 #!/usr/bin/env python
+"""
+A script to query the VAST Pilot Survey observations.
 
-# Example command:
+Includes options to show PSF sizes and saving the outputs to file.
 
-# ./build_lightcurves outputfolder
+Example:
+    ```terminal
+    pilot_fields_info VAST_0532-50A VAST_1212+00A VAST_2257-06A
+    ```
+
+Attributes:
+    runstart (datetime.datetime): The running start time of the script.
+"""
 import argparse
 import os
 import pandas as pd
