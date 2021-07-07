@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+"""
+This script is used to generated the code reference pages for mkdocstrings.
+"""
 
 from pathlib import Path
 import mkdocs_gen_files
@@ -7,11 +10,7 @@ import mkdocs_gen_files
 # only allow certain directory trees from vast_pipeline.
 exclude_dirs = ['data']
 
-# Problem files because of Django and mkdocs
-# See https://github.com/mkdocstrings/mkdocstrings/issues/141
-# __init__ is there just to avoid building these.
-# TODO: Fix Django pages for mkdocs.
-problem_files = ['__init__.py',]
+problem_files = ['__init__.py']
 
 for path in Path("vasttools").glob("**/*.py"):
 

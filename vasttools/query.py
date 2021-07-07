@@ -2390,7 +2390,6 @@ class FieldQuery:
         Returns:
             None
         """
-
         if not self.valid:
             self.logger.error("Field doesn't exist.")
             return
