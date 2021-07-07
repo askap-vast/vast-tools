@@ -4,7 +4,6 @@ Attributes:
     HOST_NCPU (int): The number of CPU found on the host using 'cpu_count()'.
 
 """
-
 import numexpr
 import os
 import warnings
@@ -72,23 +71,23 @@ class PipeRun(object):
 
     Attributes:
         name (str): The pipeline run name.
-        images (pd.DataFrame): Dataframe containing all the information on
-            the images of the pipeline run.
-        skyregions (pd.DataFrame): Dataframe containing all the information on
-            the skyregions of the pipeline run.
-        sources (pd.DataFrame): Dataframe containing all the information on
-            the sources of the pipeline run.
-        sources_skycoord (SkyCoord): A SkyCoord object of the default sources
-            attribute.
-        associations (pd.DataFrame): Associations dataframe from the pipeline
-            run loaded from 'associations.parquet'.
-        measurements (Union[pd.DataFrame, vaex.dataframe.DataFrame]): Dataframe
-            containing all the information on the measurements of the pipeline
-            run.
+        images (pandas.core.frame.DataFrame): Dataframe containing all the
+            information on the images of the pipeline run.
+        skyregions (pandas.core.frame.DataFrame): Dataframe containing all the
+            information on the skyregions of the pipeline run.
+        sources (pandas.core.frame.DataFrame): Dataframe containing all the
+            information on the sources of the pipeline run.
+        sources_skycoord (astroy.coordinates.SkyCoord): A SkyCoord object of
+            the default sources attribute.
+        associations (pandas.core.frame.DataFrame): Associations dataframe
+            from the pipeline run loaded from 'associations.parquet'.
+        measurements (Union[pd.DataFrame, vaex.dataframe.DataFrame]):
+            Dataframe containing all the information on the measurements of
+            the pipeline run.
         measurement_pairs_file (List[str]): List containing the locations of
             the measurement_pairs.parquet (or.arrow) file(s).
-        relations (pd.DataFrame): Dataframe containing all the information on
-            the relations of the pipeline run.
+        relations (pandas.core.frame.DataFrame): Dataframe containing all the
+            information on the relations of the pipeline run.
         n_workers (int): Number of workers (cpus) available.
     """
     def __init__(
@@ -110,18 +109,20 @@ class PipeRun(object):
         Args:
             name: The name of the pipeline run.
             images: Images dataframe from the pipeline run loaded from
-                'images.parquet'.
-            skyregions: Images dataframe from the pipeline run loaded from
-                skyregions.parquet.
+                'images.parquet'. A `pandas.core.frame.DataFrame` instance.
+            skyregions: Skyregions dataframe from the pipeline run loaded from
+                skyregions.parquet. A `pandas.core.frame.DataFrame` instance.
             relations: Relations dataframe from the pipeline run loaded from
-                relations.parquet.
+                relations.parquet. A `pandas.core.frame.DataFrame` instance.
             sources: Sources dataframe from the pipeline run loaded from
-                sources.parquet.
+                sources.parquet. A `pandas.core.frame.DataFrame` instance.
             associations: Associations dataframe from the pipeline run loaded
-                from 'associations.parquet'.
+                from 'associations.parquet'. A `pandas.core.frame.DataFrame`
+                instance.
             measurements: Measurements dataframe from the pipeline run
                 loaded from measurements.parquet and the forced measurements
-                parquet files.
+                parquet files.  A `pandas.core.frame.DataFrame` or
+                `vaex.dataframe.DataFrame` instance.
             measurement_pairs_file: The location of the two epoch pairs file
                 from the pipeline. It is a list of locations due to the fact
                 that two pipeline runs could be combined.
@@ -223,10 +224,13 @@ class PipeRun(object):
         return self
 
     def get_sources_skycoord(
-        self, user_sources: Optional[pd.DataFrame] = None,
-        ra_col: str = 'wavg_ra', dec_col: str = 'wavg_dec',
-        ra_unit: astropy.units = u.degree, dec_unit: astropy.units = u.degree
-    ) -> astropy.coordinates.SkyCoord:
+        self,
+        user_sources: Optional[pd.DataFrame] = None,
+        ra_col: str = 'wavg_ra',
+        dec_col: str = 'wavg_dec',
+        ra_unit: u.Unit = u.degree,
+        dec_unit: u.Unit = u.degree
+    ) -> astropy.coordinates.sky_coordinate.SkyCoord:
         """
         A convenience function to generate a SkyCoord object from the
         sources dataframe. Also has support for custom source lists.
@@ -242,7 +246,8 @@ class PipeRun(object):
                 Must be an astropy.unit value.
 
         Returns:
-            Skycoord object of the sources.
+            Skycoord object of the sources. A
+            `astropy.coordinates.sky_coordinate.SkyCoord` instance.
         """
         if user_sources is None:
             the_sources = self.sources
@@ -257,11 +262,15 @@ class PipeRun(object):
         return sources_skycoord
 
     def get_source(
-        self, id: int, field: Optional[str] = None, stokes: str = 'I',
+        self,
+        id: int,
+        field: Optional[str] = None,
+        stokes: str = 'I',
         outdir: str = '.',
         user_measurements: Optional[Union[
             pd.DataFrame, vaex.dataframe.DataFrame]
-        ] = None, user_sources: Optional[pd.DataFrame] = None
+        ] = None,
+        user_sources: Optional[pd.DataFrame] = None
     ) -> Source:
         """
         Fetches an individual source and returns a
@@ -556,7 +565,7 @@ class PipeRun(object):
 
         Returns:
             DataFrame with list of planet positions. It will be empty if no
-            planets are found.
+            planets are found. A `pandas.core.frame.DataFrame` instance.
         """
 
         from vasttools.survey import ALLOWED_PLANETS
@@ -801,24 +810,24 @@ class PipeAnalysis(PipeRun):
     Attributes:
         name (str):
             The pipeline run name.
-        images (pd.DataFrame):
+        images (pandas.core.frame.DataFrame):
             Dataframe containing all the information on the images
             of the pipeline run.
-        skyregions (pd.DataFrame):
+        skyregions (pandas.core.frame.DataFrame):
             Dataframe containing all the information on the skyregions
             of the pipeline run.
-        sources (pd.DataFrame):
+        sources (pandas.core.frame.DataFrame):
             Dataframe containing all the information on the sources
             of the pipeline run.
-        sources_skycoord (astropy.coordinates.SkyCoord):
+        sources_skycoord (astropy.coordinates.sky_coordinate.SkyCoord):
             A SkyCoord object of the default sources attribute.
-        measurements (pd.DataFrame):
+        measurements (pandas.core.frame.DataFrame):
             Dataframe containing all the information on the measurements
             of the pipeline run.
         measurement_pairs_file (List[str]):
             List containing the locations of the measurement_pairs.parquet (or
             .arrow) file(s).
-        relations (pd.DataFrame):
+        relations (pandas.core.frame.DataFrame):
             Dataframe containing all the information on the relations
             of the pipeline run.
         n_workers (int):
@@ -843,18 +852,24 @@ class PipeAnalysis(PipeRun):
         Args:
             name: The name of the pipeline run.
             images: Images dataframe from the pipeline run
-                loaded from images.parquet.
-            skyregions: Images dataframe from the pipeline run
-                loaded from skyregions.parquet.
+                loaded from images.parquet. A `pandas.core.frame.DataFrame`
+                instance.
+            skyregions: Sky regions dataframe from the pipeline run
+                loaded from skyregions.parquet. A `pandas.core.frame.DataFrame`
+                instance.
             relations: Relations dataframe from the pipeline run
-                loaded from relations.parquet.
+                loaded from relations.parquet. A `pandas.core.frame.DataFrame`
+                instance.
             sources: Sources dataframe from the pipeline run
-                loaded from sources.parquet.
+                loaded from sources.parquet. A `pandas.core.frame.DataFrame`
+                instance.
             associations: Associations dataframe from the pipeline run loaded
-                from 'associations.parquet'.
+                from 'associations.parquet'. A `pandas.core.frame.DataFrame`
+                instance.
             measurements: Measurements dataframe from the pipeline run
                 loaded from measurements.parquet and the forced measurements
-                parquet files.
+                parquet files.  A `pandas.core.frame.DataFrame` or
+                `vaex.dataframe.DataFrame` instance.
             measurement_pairs_file: The location of the two epoch pairs file
                 from the pipeline. It is a list of locations due to the fact
                 that two pipeline runs could be combined.
@@ -880,12 +895,13 @@ class PipeAnalysis(PipeRun):
 
         Args:
             measurements_df: Dataframe of measurements with default pipeline
-                columns.
+                columns. A `pandas.core.frame.DataFrame` instance.
             min_vs: Minimum value of the Vs two epoch parameter to use
                 when appending the two epoch metrics maximum.
 
         Returns:
-            The regenerated sources_df.
+            The regenerated sources_df.  A `pandas.core.frame.DataFrame`
+            instance.
         """
 
         if not self._vaex_meas:
@@ -1140,8 +1156,13 @@ class PipeAnalysis(PipeRun):
         return sources_df
 
     def _get_epoch_pair_plotting_df(
-        self, df_filter: pd.DataFrame, epoch_pair_id: int, vs_label: str,
-        m_label: str, vs_min: float, m_min: float
+        self,
+        df_filter: pd.DataFrame,
+        epoch_pair_id: int,
+        vs_label: str,
+        m_label: str,
+        vs_min: float,
+        m_min: float
     ) -> Tuple[pd.DataFrame, int, int, float]:
         """
         Generates some standard parameters used by both two epoch plotting
@@ -1149,7 +1170,8 @@ class PipeAnalysis(PipeRun):
 
         Args:
             df_filter: Dataframe of measurement pairs with metric
-                information (pre-filtered).
+                information (pre-filtered). A `pandas.core.frame.DataFrame`
+                instance.
             epoch_pair_id: The epoch pair to plot.
             vs_label: The name of the vs column to use (vs_int or vs_peak).
             m_label: The name of the m column to use (m_int or m_peak).
@@ -1221,7 +1243,8 @@ class PipeAnalysis(PipeRun):
 
         Args:
             epoch_pair_id: The epoch pair to plot.
-            df: Dataframe of measurement pairs with metric information.
+            df: Dataframe of measurement pairs with metric information. A
+                `pandas.core.frame.DataFrame` instance.
             vs_min: The minimum Vs metric value to be considered a candidate,
                 defaults to 4.3.
             m_min: The minimum m metric absolute value to be considered a
@@ -1372,7 +1395,8 @@ class PipeAnalysis(PipeRun):
 
         Args:
             epoch_pair_id: The epoch pair to plot.
-            df: Dataframe of measurement pairs with metric information.
+            df: Dataframe of measurement pairs with metric information. A
+                `pandas.core.frame.DataFrame` instance.
             vs_min: The minimum Vs metric value to be considered a candidate,
                 defaults to 4.3.
             m_min: The minimum m metric absolute value to be considered a
@@ -1667,7 +1691,8 @@ class PipeAnalysis(PipeRun):
         within the 'run_eta_v_analysis' method.
 
         Args:
-            df: DataFrame containing the sources from the pipeline run.
+            df: DataFrame containing the sources from the pipeline run. A
+                `pandas.core.frame.DataFrame` instance.
             use_int_flux: Use integrated fluxes for the analysis instead of
                 peak fluxes, defaults to 'False'.
 
@@ -1751,7 +1776,8 @@ class PipeAnalysis(PipeRun):
         https://ui.adsabs.harvard.edu/abs/2019A%26C....27..111R/abstract).
 
         Args:
-            df: Dataframe containing the sources from the Pipeline run.
+            df: Dataframe containing the sources from the Pipeline run. A
+                `pandas.core.frame.DataFrame` instance.
             eta_cutoff: The log10 eta_cutoff from the analysis.
             v_cutoff: The log10 v_cutoff from the analysis.
             use_int_flux: Use integrated fluxes for the analysis instead of
@@ -1845,9 +1871,15 @@ class PipeAnalysis(PipeRun):
         return fig
 
     def _plot_eta_v_matplotlib(
-        self, df: pd.DataFrame, eta_fit_mean: float, eta_fit_sigma: float,
-        v_fit_mean: float, v_fit_sigma: float, eta_cutoff: float,
-        v_cutoff: float, use_int_flux: bool = False
+        self,
+        df: pd.DataFrame,
+        eta_fit_mean: float,
+        eta_fit_sigma: float,
+        v_fit_mean: float,
+        v_fit_sigma: float,
+        eta_cutoff: float,
+        v_cutoff: float,
+        use_int_flux: bool = False
     ) -> plt.figure:
         """
         Adapted from code written by Antonia Rowlinson.
@@ -1858,6 +1890,7 @@ class PipeAnalysis(PipeRun):
 
         Args:
             df: Dataframe containing the sources from the pipeline run.
+                A `pandas.core.frame.DataFrame` instance.
             eta_fit_mean: The mean of the eta fitted Gaussian.
             eta_fit_sigma: The sigma of the eta fitted Gaussian.
             v_fit_mean: The mean of the v fitted Gaussian.
@@ -1962,9 +1995,15 @@ class PipeAnalysis(PipeRun):
         return fig
 
     def _plot_eta_v_bokeh(
-        self, df: pd.DataFrame, eta_fit_mean: float, eta_fit_sigma: float,
-        v_fit_mean: float, v_fit_sigma: float, eta_cutoff: float,
-        v_cutoff: float, use_int_flux: bool = False
+        self,
+        df: pd.DataFrame,
+        eta_fit_mean: float,
+        eta_fit_sigma: float,
+        v_fit_mean: float,
+        v_fit_sigma: float,
+        eta_cutoff: float,
+        v_cutoff: float,
+        use_int_flux: bool = False
     ) -> gridplot:
         """
         Adapted from code written by Andrew O'Brien.
@@ -1974,7 +2013,8 @@ class PipeAnalysis(PipeRun):
         Returns a bokeh version.
 
         Args:
-            df: Dataframe containing the sources from the pipeline run.
+            df: Dataframe containing the sources from the pipeline run. A
+                `pandas.core.frame.DataFrame` instance.
             eta_fit_mean: The mean of the eta fitted Gaussian.
             eta_fit_sigma: The sigma of the eta fitted Gaussian.
             v_fit_mean: The mean of the v fitted Gaussian.

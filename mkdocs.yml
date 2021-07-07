@@ -90,6 +90,8 @@ nav:
         - pipeline.py: reference/pipeline.md
         - query.py: reference/query.md
         - source.py: reference/source.md
+        - survey.py: reference/survey.md
+        - utils.py: reference/utils.md
 
 plugins:
   - search

@@ -156,7 +156,9 @@ class VASTMOCS(object):
         return moc
 
     def query_vizier_vast_pilot(
-        self, table_id: str, max_rows: int = 10000
+        self,
+        table_id: str,
+        max_rows: int = 10000
     ) -> Table:
         """
         Query the Vizier service for sources within Pilot footprint.

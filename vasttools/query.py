@@ -1849,10 +1849,10 @@ class Query:
     ]:
         """
         This function does the actual field matching for each queried
-        coordinate, which is a 'row' here in the fuction.
+        coordinate, which is a 'row' here in the function.
 
         Args:
-            row: The row from the query_df, i.e. the coodinates to match
+            row: The row from the query_df, i.e. the coordinates to match
                 to a field.
             fields_coords: SkyCoord object representing the beam
                 centres of the VAST or RACS survey.
@@ -2187,7 +2187,11 @@ class EpochInfo:
     """
 
     def __init__(
-        self, pilot_epoch: str, base_folder: str, stokes: str, tiles: bool
+        self,
+        pilot_epoch: str,
+        base_folder: str,
+        stokes: str,
+        tiles: bool
     ) -> None:
         """
         Constructor Method

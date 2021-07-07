@@ -1626,7 +1626,7 @@ class Source:
                 function when zscale is selected, defaults to 0.2.
             outfile: Name to give the file, if None then the name is
                 automatically generated, defaults to None.
-             no_islands: Disable island lables on the png, defaults to
+            no_islands: Disable island lables on the png, defaults to
                 `False`.
             label: Figure title (usually the name of the source of
                 interest), defaults to "Source".
@@ -1641,8 +1641,8 @@ class Source:
             save: If `True` the plot is saved rather than the figure being
                 returned, defaults to `False`.
             size: Size of the cutout, defaults to None.
-            force: Whether to force the re-fetching
-                of the cutout data, defaults to `False`.
+            force: Whether to force the re-fetching of the cutout data,
+                defaults to `False`.
             disable_autoscaling: Turn off the consistent normalization and
                 calculate the normalizations separately for each epoch,
                 defaults to `False`.

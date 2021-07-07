@@ -11,7 +11,7 @@ exclude_dirs = ['data']
 # See https://github.com/mkdocstrings/mkdocstrings/issues/141
 # __init__ is there just to avoid building these.
 # TODO: Fix Django pages for mkdocs.
-problem_files = ['__init__.py', 'survey.py', 'utils.py']
+problem_files = ['__init__.py',]
 
 for path in Path("vasttools").glob("**/*.py"):
 
