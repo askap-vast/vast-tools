@@ -1,9 +1,21 @@
 #!/usr/bin/env python
+"""
+A script find sources in the VAST Pilot Survey.
 
-# Example command:
+Includes options to provide light curves, cutouts and overlay files for
+viewers such as kvis and DS9.
 
-# ./find_sources "16:16:00.22 +22:16:04.83" --create-png --imsize 5.0
-# --png-zscale-contrast 0.1 --png-selavy-overlay --use-combined
+Example:
+   ```
+    ./find_sources "16:16:00.22 +22:16:04.83" --create-png --imsize 5.0
+    --png-zscale-contrast 0.1 --png-selavy-overlay --use-combined`
+    ```
+
+Attributes:
+    runstart (datetime.datetime): The running start time of the script.
+"""
+
+
 from astropy import units as u
 from astropy.coordinates import Angle
 from vasttools.survey import Fields, Image

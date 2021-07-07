@@ -107,16 +107,26 @@ class Query:
     """
 
     def __init__(
-        self, coords: Optional[SkyCoord] = None,
-        source_names: Optional[List[str]] = None, epochs: str = "all",
-        stokes: str = "I", crossmatch_radius: float = 5.0,
-        max_sep: float = 1.0, use_tiles: bool = False,
-        use_islands: bool = False, base_folder: Optional[str] = None,
-        matches_only: bool = False, no_rms: bool = False,
+        self,
+        coords: Optional[SkyCoord] = None,
+        source_names: Optional[List[str]] = None,
+        epochs: str = "all",
+        stokes: str = "I",
+        crossmatch_radius: float = 5.0,
+        max_sep: float = 1.0,
+        use_tiles: bool = False,
+        use_islands: bool = False,
+        base_folder: Optional[str] = None,
+        matches_only: bool = False,
+        no_rms: bool = False,
         search_around_coordinates: bool = False,
-        output_dir: str = ".", planets: Optional[List[str]] = None,
-        ncpu: int = 2, sort_output: bool = False, forced_fits: bool = False,
-        forced_cluster_threshold: float = 1.5, forced_allow_nan: bool = False
+        output_dir: str = ".",
+        planets: Optional[List[str]] = None,
+        ncpu: int = 2,
+        sort_output: bool = False,
+        forced_fits: bool = False,
+        forced_cluster_threshold: float = 1.5,
+        forced_allow_nan: bool = False
     ) -> None:
         """
         Constructor method.
@@ -124,8 +134,8 @@ class Query:
         Args:
             coords: List of coordinates to query, defaults to None.
             source_names: List of source names, defaults to None.
-            param epochs: Comma-separated list of epochs to query.
-                All available epochs can be queried by passsing "all".
+            epochs: Comma-separated list of epochs to query.
+                All available epochs can be queried by passing "all".
                 Defaults to "all".
             stokes: Stokes parameter to query.
             crossmatch_radius: Crossmatch radius in arcsec, defaults to 5.0.
@@ -528,7 +538,7 @@ class Query:
             plot_dpi: Specify the DPI of saved figures, defaults to 150.
 
         Returns:
-            None.
+            None
 
         Raises:
             Exception: Function cannot be run when 'search_around_coordinates'
@@ -741,7 +751,7 @@ class Query:
             plot_dpi: Specify the DPI of saved figures, defaults to 150.
 
         Returns:
-            None.
+            None
         """
 
         source, cutout_data = i
@@ -809,7 +819,7 @@ class Query:
         Prints a summary log.
 
         Returns:
-            None.
+            None
         """
         self.logger.info("-------------------------")
         self.logger.info("Summary:")
@@ -913,8 +923,8 @@ class Query:
 
     def _get_cutout(
         self, row: pd.Series, image: Image,
-        size=: Angle = Angle(5. * u.arcmin)
-    ) -> Tuple[pd.DataFrame, WCS, fits.header, pd.DataFrame, Beam]:
+        size: Angle = Angle(5. * u.arcmin)
+    ) -> Tuple[pd.DataFrame, WCS, fits.Header, pd.DataFrame, Beam]:
         """
         Create cutout centered on a source location
 
@@ -981,7 +991,7 @@ class Query:
         5. Package up results into vasttools.source.Source objects.
 
         Returns:
-            None.
+            None
         """
         self.logger.debug('Running find_sources...')
 
@@ -1150,7 +1160,7 @@ class Query:
             sort_output: Whether to sort the output, defaults to `False`.
 
         Returns:
-            None.
+            None
         """
         meta = {}
         # also have the sort output setting as a function
@@ -1187,7 +1197,7 @@ class Query:
             sort_output: Whether to sort the output.
 
         Returns:
-            None.
+            None
         """
         source_name = group['name'].iloc[0].replace(
             " ", "_"
@@ -1641,10 +1651,10 @@ class Query:
 
         Args:
             outname: Name of file to write output to, defaults to None, which
-            will name the file 'find_fields_results.csv'.
+                will name the file 'find_fields_results.csv'.
 
         Returns:
-            None.
+            None
         """
         if self.fields_found is False:
             self.find_fields()
@@ -1680,7 +1690,7 @@ class Query:
         Planet fields are also found here if any are selected.
 
         Returns:
-            None.
+            None
 
         Raises:
             Exception: No sources are found within the requested footprint.
@@ -2189,7 +2199,7 @@ class EpochInfo:
             tiles: Use the individual tiles instead of combined mosaics.
 
         Returns:
-            None.
+            None
         """
         self.logger = logging.getLogger('vasttools.find_sources.EpochInfo')
 
@@ -2301,7 +2311,7 @@ class FieldQuery:
             field: Name of requested field.
 
         Returns:
-            None.
+            None
         """
         self.logger = logging.getLogger('vasttools.query.FieldQuery')
 
@@ -2331,7 +2341,7 @@ class FieldQuery:
         del epoch_01
         return result
 
-    def _get_beams(self) -> Dict[str: Beams]:
+    def _get_beams(self) -> Dict[str, Beams]:
         """
         Processes all the beams of a field per epoch and initialises
         radio_beam.Beams objects.
@@ -2374,7 +2384,7 @@ class FieldQuery:
                 then the dataframe is built. Defaults to None.
 
         Returns:
-            None.
+            None
         """
 
         if not self.valid:

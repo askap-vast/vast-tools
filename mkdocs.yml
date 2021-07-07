@@ -88,6 +88,8 @@ nav:
           - pilot_fields_info.py: reference/bin/pilot_fields_info.md
         - moc.py: reference/moc.md
         - pipeline.py: reference/pipeline.md
+        - query.py: reference/query.md
+        - source.py: reference/source.md
 
 plugins:
   - search

@@ -92,11 +92,16 @@ class PipeRun(object):
         n_workers (int): Number of workers (cpus) available.
     """
     def __init__(
-        self, name: str, images: pd.DataFrame, skyregions: pd.DataFrame,
-        relations: pd.DataFrame, sources: pd.DataFrame,
+        self,
+        name: str,
+        images: pd.DataFrame,
+        skyregions: pd.DataFrame,
+        relations: pd.DataFrame,
+        sources: pd.DataFrame,
         associations: pd.DataFrame,
         measurements: Union[pd.DataFrame, vaex.dataframe.DataFrame],
-        measurement_pairs_file: List[str], vaex_meas: bool = False,
+        measurement_pairs_file: List[str],
+        vaex_meas: bool = False,
         n_workers: int = cpu_count() - 1
     ) -> None:
         """
@@ -389,7 +394,7 @@ class PipeRun(object):
         lists all the possible epoch pairs.
 
         Returns:
-            None.
+            None
         """
         image_ids = self.images.sort_values(by='datetime').index.tolist()
 
@@ -820,11 +825,16 @@ class PipeAnalysis(PipeRun):
             Number of workers (cpus) available.
     """
     def __init__(
-        self, name: str, images: pd.DataFrame, skyregions: pd.DataFrame,
-        relations: pd.DataFrame, sources: pd.DataFrame,
+        self,
+        name: str,
+        images: pd.DataFrame,
+        skyregions: pd.DataFrame,
+        relations: pd.DataFrame,
+        sources: pd.DataFrame,
         associations: pd.DataFrame,
         measurements: Union[pd.DataFrame, vaex.dataframe.DataFrame],
-        measurement_pairs_file: str, vaex_meas: bool = False,
+        measurement_pairs_file: str,
+        vaex_meas: bool = False,
         n_workers: int = cpu_count() - 1
     ) -> None:
         """
@@ -833,13 +843,13 @@ class PipeAnalysis(PipeRun):
         Args:
             name: The name of the pipeline run.
             images: Images dataframe from the pipeline run
-               loaded from images.parquet.
+                loaded from images.parquet.
             skyregions: Images dataframe from the pipeline run
-               loaded from skyregions.parquet.
+                loaded from skyregions.parquet.
             relations: Relations dataframe from the pipeline run
-               loaded from relations.parquet.
+                loaded from relations.parquet.
             sources: Sources dataframe from the pipeline run
-               loaded from sources.parquet.
+                loaded from sources.parquet.
             associations: Associations dataframe from the pipeline run loaded
                 from 'associations.parquet'.
             measurements: Measurements dataframe from the pipeline run
@@ -854,7 +864,7 @@ class PipeAnalysis(PipeRun):
             n_workers: Number of workers (cpus) available.
 
         Returns:
-            None.
+            None
         """
         super().__init__(
             name, images, skyregions, relations, sources, associations,
@@ -2218,7 +2228,7 @@ class Pipeline(object):
                 when the system variable is not defined, defaults to 'None'.
 
         Returns:
-            None.
+            None
 
         Raises:
             Exception: The `PIPELINE_WORKING_DIR` could not be determined.
@@ -2327,7 +2337,7 @@ class Pipeline(object):
 
         Returns:
             PipeAnalysis object.
-    
+
         Raises:
             ValueError: Entered pipeline run does not exist.
         """
