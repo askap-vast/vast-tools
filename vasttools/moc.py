@@ -37,10 +37,10 @@ class VASTMOCS(object):
 
     def load_pilot_stmoc(self) -> STMOC:
         """
-        Load spacetime MOC
+        Load space and time MOC of all VAST Pilot observations.
 
         Returns:
-            STMOC of the VAST Pilot survey.
+            STMOC of the VAST Pilot survey. A `mocpy.STMOC` object.
         """
 
         stmoc_path = os.path.join(
@@ -56,10 +56,11 @@ class VASTMOCS(object):
         Load MOC corresponding to one epoch of the pilot survey.
 
         Args:
-            epoch: Epoch to load.
+            epoch: Epoch to load as a string with no zero padding.
+                E.g. '3x'.
 
         Returns:
-            MOC of the requested epoch.
+            MOC of the requested epoch. A `mocpy.MOC` object.
 
         Raises:
             Exception: Entered epoch is not recognised.
@@ -87,11 +88,13 @@ class VASTMOCS(object):
         Load MOCs corresponding to the VAST Pilot 'field', which is a
         collection of tiles.
 
+        Enter as a string ranging from fields 1 – 6.
+
         Args:
             field: Name of the VAST Pilot field requested.
 
         Returns:
-            The field MOC.
+            The field MOC. A `mocpy.MOC` object.
 
         Raises:
             Exception: VAST Pilot field is not valid (1 - 6).
@@ -115,14 +118,14 @@ class VASTMOCS(object):
 
     def load_pilot_tile_moc(self, field: str, itype: str = 'COMBINED') -> MOC:
         """
-        Load MOCs corresponding to pilot tile field.
+        Load the MOC corresponding to the requested pilot tile field.
 
         Args:
-            field: The name of field requested.
+            field: The name of field requested. For example, 'VAST_0012-06A'.
             itype: Image type (COMBINED or TILES), defaults to 'COMBINED'.
 
         Returns:
-            Tile MOC.
+            Tile MOC. A `mocpy.MOC` object.
 
         Raises:
             Exception: Entered image type is not recognised

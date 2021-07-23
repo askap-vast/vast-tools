@@ -72,13 +72,15 @@ nav:
     - Introduction: getting_started/introduction.md
     - Installation: getting_started/installation.md
     - Configuration and Data Access: getting_started/configuration.md
-  # - Components & Features:
+  - Components & Features:
+    - MOCs: components/mocs.md
   - Scripts:
     - build_lightcurves: scripts/build_lightcurves.md
     - find_sources: scripts/find_sources.md
     - pilot_fields_info: scripts/pilot_fields_info.md
   - Example Notebooks:
     - Catalogue Crossmatch: notebook-examples/catalogue-crossmatching-example.ipynb
+    - Using VAST MOCs: notebook-examples/using-vast-mocs-example.ipynb
     - VAST Pipeline: notebook-examples/vast-pipeline-example.ipynb
   # - Contributing & Developing:
   - Reference:
