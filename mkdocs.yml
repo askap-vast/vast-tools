@@ -71,9 +71,10 @@ nav:
   - Getting Started:
     - Introduction: getting_started/introduction.md
     - Installation: getting_started/installation.md
-    - Configuration and Data Access: getting_started/configuration.md
+    - Configuration & Data Access: getting_started/configuration.md
   - Components & Features:
     - MOCs: components/mocs.md
+    - Pipeline: components/pipeline.md
   - Scripts:
     - build_lightcurves: scripts/build_lightcurves.md
     - find_sources: scripts/find_sources.md
@@ -124,18 +125,12 @@ plugins:
       watch:
         - vasttools
   - mknotebooks
-  # - mkdocs-jupyter
 
 extra:
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/askap-vast/vast-tools
       name: vast-pipeline source on GitHub
-    - icon: fontawesome/brands/slack
-      link: https://askap-vast.slack.com/
-    - icon: fontawesome/solid/paper-plane
-      link: mailto:transients@mailman.sydney.edu.au
-      name: Email ASKAP VAST
     - icon: fontawesome/solid/globe
       link: https://vast-survey.org
 

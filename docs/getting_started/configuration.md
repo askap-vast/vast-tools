@@ -1,4 +1,4 @@
-# Configuration and Data Access
+# Configuration & Data Access
 
 This page details the configuration options after installation.
 
@@ -47,7 +47,8 @@ VAST_PILOT_DATA/
 
 #### Minimum Data Requirement
 
-The source catalogues are the minimum data required to perform the basic queries.
+The 'find fields' option of requires requires no external data. 
+Beyond this, the source catalogues are the minimum data required to perform other queries where source matching is requested.
 Images (including noise and background images) are used for postage stamps and for measuring upper limits or performing forced extractions.
 Hence, while source matching queries can be performed without the image, the functionality mentioned won't function without them.
 

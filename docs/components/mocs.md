@@ -23,7 +23,7 @@ The MOCs available to load are in VAST Tools are:
     The entire VAST Pilot survey contained in a MOC that contains Space and Time information - a STMOC.
     See [this document](https://www.ivoa.net/documents/stmoc/20190515/NOTE-stmoc-1.0-20190515.pdf){:target="_blank"} for information on STMOCs.
     
-## Using the VASTMOCS Class
+## Using the MOC Component
 
 !!!info "Info: MOCs Example Notebook"
     A notebook example of using the MOCs component can be found in the example notebooks section [here](../../notebook-examples/using-vast-mocs-example/).
@@ -35,13 +35,14 @@ The MOCs available to load are in VAST Tools are:
       * [Pilot Survey Phase II Planning](https://github.com/askap-vast/vast-project/wiki/Pilot-Survey-Phase-II-Planning){:target="_blank"}.
       * [Pilot Survey Status & Data](https://github.com/askap-vast/vast-project/wiki/Pilot-Survey-Status-&-Data){:target="_blank"}.
 
-The MOC component is known as `VASTMOCS` in VAST Tools can a `VASTMOCS` object can be initialised with:
+The MOC component is known as `VASTMOCS` in VAST Tools a `VASTMOCS` instance can be initialised with:
 
-```python
-from vasttools.moc import VASTMOCS
+!!!example
+    ```python
+    from vasttools.moc import VASTMOCS
 
-vast_moc = VASTMOCS()
-```
+    vast_moc = VASTMOCS()
+    ```
 
 No arguments are required as all the MOCs can be loaded from this object.
 
@@ -56,7 +57,7 @@ The following methods are available with the `VASTMOCS` class.
 
 :fontawesome-regular-file-alt: [Code reference](../../reference/moc/#vasttools.moc.VASTMOCS.load_pilot_tile_moc).
 
-This loads the MOC of a single tile, returning a `mocpy.MOC` object.
+This loads the MOC of a single tile, returning a `mocpy.MOC` instance.
 
 !!!example
     Loading the MOC for field VAST_0012-06A.
@@ -68,7 +69,7 @@ This loads the MOC of a single tile, returning a `mocpy.MOC` object.
 
 :fontawesome-regular-file-alt: [Code reference](../../reference/moc/#vasttools.moc.VASTMOCS.load_pilot_field_moc).
 
-This loads the MOC of a VAST pilot survey field, returning a `mocpy.MOC` object.
+This loads the MOC of a VAST pilot survey field, returning a `mocpy.MOC` instance.
 
 !!!example
     Loading the MOC for field 1:
@@ -80,7 +81,7 @@ This loads the MOC of a VAST pilot survey field, returning a `mocpy.MOC` object.
 
 :fontawesome-regular-file-alt: [Code reference](../../reference/moc/#vasttools.moc.VASTMOCS.load_pilot_epoch_moc).
 
-This loads the MOC of a VAST pilot survey epoch, returning a `mocpy.MOC` object.
+This loads the MOC of a VAST pilot survey epoch, returning a `mocpy.MOC` instance.
 Enter as string with no zero padding on the epoch.
 
 !!!example
@@ -93,7 +94,7 @@ Enter as string with no zero padding on the epoch.
 
 :fontawesome-regular-file-alt: [Code reference](../../reference/moc/#vasttools.moc.VASTMOCS.load_pilot_stmoc).
 
-This loads the STMOC of all the VAST pilot observations, returning a `mocpy.MOC` object.
+This loads the STMOC of all the VAST pilot observations, returning a `mocpy.MOC` instance.
 
 !!!example
     Loading the STMOC:
@@ -105,7 +106,7 @@ This loads the STMOC of all the VAST pilot observations, returning a `mocpy.MOC`
 
 :fontawesome-regular-file-alt: [Code reference](../../reference/moc/#vasttools.moc.VASTMOCS.query_vizier_vast_pilot).
 
-This searches the provided Vizier table for sources that are in the VAST pilot survey epoch 1 footprint, returning a `astropy.table.Table` object.
+This searches the provided Vizier table for sources that are in the VAST pilot survey epoch 1 footprint, returning a `astropy.table.Table` instance.
 
 !!!example
     To search for matches in the SUMSS catalogue (Vizier id: `VIII/81B`) the command would be:

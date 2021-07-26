@@ -70,25 +70,25 @@ class PipeRun(object):
     Class that represents a Pipeline run.
 
     Attributes:
-        name (str): The pipeline run name.
+        associations (pandas.core.frame.DataFrame): Associations dataframe
+            from the pipeline run loaded from 'associations.parquet'.
         images (pandas.core.frame.DataFrame): Dataframe containing all the
             information on the images of the pipeline run.
+        measurements (Union[pd.DataFrame, vaex.dataframe.DataFrame]):
+            Dataframe containing all the information on the measurements of
+            the pipeline run.
+        measurement_pairs_file (List[str]): List containing the locations of
+            the measurement_pairs.parquet (or.arrow) file(s).
+        name (str): The pipeline run name.
+        n_workers (int): Number of workers (cpus) available.
+        relations (pandas.core.frame.DataFrame): Dataframe containing all the
+            information on the relations of the pipeline run.
         skyregions (pandas.core.frame.DataFrame): Dataframe containing all the
             information on the skyregions of the pipeline run.
         sources (pandas.core.frame.DataFrame): Dataframe containing all the
             information on the sources of the pipeline run.
         sources_skycoord (astroy.coordinates.SkyCoord): A SkyCoord object of
             the default sources attribute.
-        associations (pandas.core.frame.DataFrame): Associations dataframe
-            from the pipeline run loaded from 'associations.parquet'.
-        measurements (Union[pd.DataFrame, vaex.dataframe.DataFrame]):
-            Dataframe containing all the information on the measurements of
-            the pipeline run.
-        measurement_pairs_file (List[str]): List containing the locations of
-            the measurement_pairs.parquet (or.arrow) file(s).
-        relations (pandas.core.frame.DataFrame): Dataframe containing all the
-            information on the relations of the pipeline run.
-        n_workers (int): Number of workers (cpus) available.
     """
     def __init__(
         self,
@@ -399,8 +399,12 @@ class PipeRun(object):
         Loads the two epoch metrics dataframe, usually stored as either
         'measurement_pairs.parquet' or 'measurement_pairs.arrow'.
 
-        Adds an epoch 'key' to the dataframe. Also creates a 'pairs_df' that
-        lists all the possible epoch pairs.
+        The two epoch metrics dataframe is stored as an attribute to the
+        PipeRun object as self.measurement_pairs_df. An epoch 'key' is also
+        added to the dataframe.
+
+        Also creates a 'pairs_df' that lists all the possible epoch pairs.
+        This is stored as the attribute self.pairs_df.
 
         Returns:
             None
@@ -561,7 +565,7 @@ class PipeRun(object):
         Checks the pipeline run for any planets in the field.
 
         All planets are checked: Mercury, Venus, Mars, Jupiter,
-        Saturn, Uranus, Neptune, Pluto as re the Sun and Moon.
+        Saturn, Uranus, Neptune, Pluto in addition to the Sun and Moon.
 
         Returns:
             DataFrame with list of planet positions. It will be empty if no
@@ -808,10 +812,23 @@ class PipeAnalysis(PipeRun):
     Inherits from class `PipeRun`.
 
     Attributes:
-        name (str):
-            The pipeline run name.
+        associations (pandas.core.frame.DataFrame): Associations dataframe
+            from the pipeline run loaded from 'associations.parquet'.
         images (pandas.core.frame.DataFrame):
             Dataframe containing all the information on the images
+            of the pipeline run.
+        measurements (pandas.core.frame.DataFrame):
+            Dataframe containing all the information on the measurements
+            of the pipeline run.
+        measurement_pairs_file (List[str]):
+            List containing the locations of the measurement_pairs.parquet (or
+            .arrow) file(s).
+        name (str):
+            The pipeline run name.
+        n_workers (int):
+            Number of workers (cpus) available.
+        relations (pandas.core.frame.DataFrame):
+            Dataframe containing all the information on the relations
             of the pipeline run.
         skyregions (pandas.core.frame.DataFrame):
             Dataframe containing all the information on the skyregions
@@ -821,17 +838,6 @@ class PipeAnalysis(PipeRun):
             of the pipeline run.
         sources_skycoord (astropy.coordinates.sky_coordinate.SkyCoord):
             A SkyCoord object of the default sources attribute.
-        measurements (pandas.core.frame.DataFrame):
-            Dataframe containing all the information on the measurements
-            of the pipeline run.
-        measurement_pairs_file (List[str]):
-            List containing the locations of the measurement_pairs.parquet (or
-            .arrow) file(s).
-        relations (pandas.core.frame.DataFrame):
-            Dataframe containing all the information on the relations
-            of the pipeline run.
-        n_workers (int):
-            Number of workers (cpus) available.
     """
     def __init__(
         self,
@@ -1766,7 +1772,8 @@ class PipeAnalysis(PipeRun):
         return binsx
 
     def eta_v_diagnostic_plot(
-        self, df: pd.DataFrame, eta_cutoff: float, v_cutoff: float,
+        self, eta_cutoff: float, v_cutoff: float,
+        df: Optional[pd.DataFrame] = None,
         use_int_flux: bool = False
     ) -> plt.figure:
         """
@@ -1776,10 +1783,11 @@ class PipeAnalysis(PipeRun):
         https://ui.adsabs.harvard.edu/abs/2019A%26C....27..111R/abstract).
 
         Args:
-            df: Dataframe containing the sources from the Pipeline run. A
-                `pandas.core.frame.DataFrame` instance.
             eta_cutoff: The log10 eta_cutoff from the analysis.
             v_cutoff: The log10 v_cutoff from the analysis.
+            df: Dataframe containing the sources from the Pipeline run. If
+                not provided then the `self.sources` dataframe will be used.
+                A `pandas.core.frame.DataFrame` instance.
             use_int_flux: Use integrated fluxes for the analysis instead of
                 peak fluxes, defaults to 'False'.
 
@@ -1787,6 +1795,9 @@ class PipeAnalysis(PipeRun):
             matplotlib figure containing the plot.
         """
         plt.close()  # close any previous ones
+
+        if df is None:
+            df = self.sources
 
         if use_int_flux:
             eta_label = 'eta_int'
