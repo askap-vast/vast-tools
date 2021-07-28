@@ -149,8 +149,12 @@ class Query:
                 structure, defaults to 'None'.
             matches_only: Only produce data products for sources with a
                 selavy match, defaults to `False`.
-            no_rms: Estimate the background RMS around each source,
+            no_rms: When set to `True` the estimate of the background RMS
+                around each source, will not be performed,
                 defaults to `False`.
+            search_around_coordinates: When set to `True`, all matches to a
+                searched coordinate are returned, instead of only the closest
+                match.
             output_dir: Output directory to place all results in,
                 defaults to ".".
             planets: List of planets to search for, defaults to None.

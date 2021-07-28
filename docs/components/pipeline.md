@@ -10,11 +10,15 @@ There are ready made functions to:
   * Recalculate the `sources` data after filters have been applied.
   * Create a MOC of the pipeline run.
 
+!!!warning "Warning: Data Access"
+    It is assumed that the machine that is running VAST Tools has access to the pipeline output and the images that were used in the pipeline.
+    Refer to the [Configuration & Data Access](../../getting_started/configuration/) page for more information.
 
 ## Using the Pipeline Component
 
 !!!info "Info: VAST Pipeline Example Notebook"
     An example notebook of using the Pipeline component can be found in the example notebooks section [here](../../notebook-examples/vast-pipeline-example/).
+    Using the pipeline results to crossmatch to external catalogues is also demonstrated in the [catalogue crossmatch example notebook](../../notebook-examples/catalogue-crossmatching-example/).
 
 The first step is to initialise a `Pipeline` instance from `vasttools.pipeline`:
 
@@ -238,7 +242,8 @@ Returns a `astropy.coordines.SkyCoord` instance.
 
 By default the raw two-epoch metrics produced by the pipeline are not loaded.
 This method loads the two-epoch metrics, stored by the pipeline in `measurement_pairs.parquet` (or `measurement_pairs.arrow`) and saves them as an attribute to the `PipeAnalysis` object: `PipeAnalysis.measurement_pairs_df`.
-The method also creates a second dataframe that lists all the possible epoch pairs. This is stored as the attribute `PipeAnalysis.pairs_df`.
+The method also creates a second dataframe that lists all the possible epoch pairs, i.e., all the unique pairs of images that make up the measurement pairs.
+This is stored as the attribute `PipeAnalysis.pairs_df`.
 
 !!!warning "Warning: vaex"
     For large runs where a `measurement_pairs.arrow` file has been produced by the pipeline, `vaex` will be used to load the `measurement_pairs` dataframe.
@@ -263,7 +268,8 @@ The method also creates a second dataframe that lists all the possible epoch pai
 :fontawesome-regular-file-alt: [Code reference](../../reference/pipeline/#vasttools.pipeline.PipeAnalysis.recalc_sources_df).
 
 This method recalculates the `sources` dataframe using the provided `measurements` dataframe.
-It is useful for cases where measurements are filtered out of the original measurements dataframe and hence the `source` dataframe becomes out of sync.
+In particular, all the columns that are averages, counts or the variability metrics are recalculated.
+It is useful for cases where measurements are filtered out of the original measurements dataframe, or have fluxes changed, and hence the `source` dataframe becomes out of sync.
 Returns a pandas dataframe.
 
 !!!example
@@ -301,8 +307,9 @@ Returns a `matplotlib.pyplot.figure` instance.
 
 :fontawesome-regular-file-alt: [Code reference](../../reference/pipeline/#vasttools.pipeline.PipeAnalysis.plot_two_epoch_pairs).
 
-Produce a two-epoch metric plot of the requested pair ID. 
+Produce a two-epoch metric plot of the `m` and `vs` values of the requested pair ID (i.e. the pair of images).
 The pair ID can be found in the `pairs_df` attribute after [`load_two_epoch_metrics()`](#load_two_epoch_metrics) has been used.
+There are options to change the `m_min` and `vs_min` thresholds and to switch to using integrated flux instead of the peak flux (default).
 The plots can be returned as a `matplotlib.pyplot.figure` instance or a `bokeh.plotting.figure` instance.
 Also available are two styles, style `a` follows the plot style found in [Mooley et al., 2016](https://ui.adsabs.harvard.edu/abs/2016ApJ...818..105M/abstract) 
 where as style `b` follows the style found in [Radcliffe et al., 2019](https://ui.adsabs.harvard.edu/abs/2019MNRAS.490.4024R/abstract).
@@ -329,6 +336,8 @@ where as style `b` follows the style found in [Radcliffe et al., 2019](https://u
 
 Method to perform the η-V transient search method as described in [Rowlinson et al., 2019](https://ui.adsabs.harvard.edu/abs/2019A%26C....27..111R/abstract), to the sigma level provided for each metric.
 It uses the η and V metrics defined in the `sources` dataframe.
+The distributions of η and V in the `sources` dataframe are fitted with a Gaussian, which is then used to calculate the requested sigma value for each parameter.
+Any sources that have η and V values above the calculated thresholds are considered as variable candidates.
 
 The method returns a tuple containing:
   
@@ -383,7 +392,7 @@ The candidates plot can either be a `matplotlib.pyplot.figure` or `bokeh.layouts
 
 :fontawesome-regular-file-alt: [Code reference](../../reference/pipeline/#vasttools.pipeline.PipeAnalysis.run_two_epoch_analysis).
 
-Method to perform the two epoch analysis as detailed in [Mooley et al., 2016](https://ui.adsabs.harvard.edu/abs/2016ApJ...818..105M/abstract) to the provided `m` and `v` threshold values.
+Method to perform the two epoch analysis as detailed in [Mooley et al., 2016](https://ui.adsabs.harvard.edu/abs/2016ApJ...818..105M/abstract) to the provided `m` and `vs` threshold values.
 The entire `measurement_pairs_df` is analysed for any pair that exceed the two provided thresholds.
 
 The method returns a tuple containing two dataframes: the candidate sources and pairs. 

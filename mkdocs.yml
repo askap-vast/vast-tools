@@ -75,12 +75,15 @@ nav:
   - Components & Features:
     - MOCs: components/mocs.md
     - Pipeline: components/pipeline.md
+    - Query: components/query.md
   - Scripts:
     - build_lightcurves: scripts/build_lightcurves.md
     - find_sources: scripts/find_sources.md
     - pilot_fields_info: scripts/pilot_fields_info.md
   - Example Notebooks:
     - Catalogue Crossmatch: notebook-examples/catalogue-crossmatching-example.ipynb
+    - Planet Searching: notebook-examples/planet-hunting-example.ipynb
+    - Query Source Search: notebook-examples/source-search-example.ipynb
     - Using VAST MOCs: notebook-examples/using-vast-mocs-example.ipynb
     - VAST Pipeline: notebook-examples/vast-pipeline-example.ipynb
   # - Contributing & Developing:

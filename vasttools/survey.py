@@ -102,6 +102,7 @@ ALLOWED_PLANETS = [
     'saturn',
     'uranus',
     'neptune',
+    'pluto',
     'sun',
     'moon'
 ]

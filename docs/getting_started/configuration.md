@@ -45,6 +45,10 @@ VAST_PILOT_DATA/
 |-- |   |-- STOKESV_IMAGES/  
 ```
 
+!!! note "Note: RACS Data"
+    VAST Tools has support for Epoch 0, which was an early version of the [`Rapid ASKAP Continuum Survey (RACS)`](https://research.csiro.au/racs/){:target="_blank"}, that did not contain flux corrections and other improvements.
+    As of 2021 it is recommended to use official RACS data products.
+
 #### Minimum Data Requirement
 
 The 'find fields' option of requires requires no external data. 
