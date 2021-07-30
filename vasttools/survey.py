@@ -94,6 +94,7 @@ FIELD_CENTRES = pd.read_csv(
     )
 )
 
+# TODO: Not sure this belongs in survey.
 ALLOWED_PLANETS = [
     'mercury',
     'venus',

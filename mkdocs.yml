@@ -76,6 +76,7 @@ nav:
     - MOCs: components/mocs.md
     - Pipeline: components/pipeline.md
     - Query: components/query.md
+    - Source: components/source.md
   - Scripts:
     - build_lightcurves: scripts/build_lightcurves.md
     - find_sources: scripts/find_sources.md

@@ -583,8 +583,8 @@ class Source:
         Function to fetch the cutout data for that source
         required for producing all the media output.
 
-        If size is not provided then the default size in _get_cutout
-        will be used (5 arcmin).
+        If size is not provided then the default size of 5 arcmin will be
+        used.
 
         Args:
             size: The angular size of the cutouts, defaults to None.
