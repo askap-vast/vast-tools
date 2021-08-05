@@ -55,6 +55,15 @@ Provides a list of all the images that have been processed in the pipeline.
     ```python
     pipe.list_images()
     ```
+    Output:
+    ```terminal
+     ['VAST_2118+00A_EPOCH01_I_fits',
+     'VAST_2118-06A_EPOCH01_I_fits',
+     'VAST_2118-06A_EPOCH02_I_fits',
+     'VAST_2118-06A_EPOCH03x_I_fits',
+     'VAST_2118-06A_EPOCH05x_I_fits',
+     'VAST_2118-06A_EPOCH06x_I_fits']
+    ```
 
 #### list_piperuns
 
@@ -69,6 +78,12 @@ Provides a list of all the pipeline runs that have been set up in the pipeline.
 !!!example
     ```python
     pipe.list_piperuns()
+    ```
+    Output:
+    ```terminal
+    ['S190814bv',
+     'VAST_0127-73A',
+     'VAST_2118-06A_UI']
     ```
 
 #### load_run
@@ -117,6 +132,16 @@ This means that to access any of the pieces of pipeline run data, for example `s
     ```python
     my_pipe_run.sources
     ```
+    Output:
+    
+    |   id |   wavg_ra |   wavg_dec |   avg_compactness |   min_snr |   max_snr |   wavg_uncertainty_ew |   wavg_uncertainty_ns |   avg_flux_int |   avg_flux_peak |   max_flux_peak |   max_flux_int |   min_flux_peak |   min_flux_int |   min_flux_peak_isl_ratio |   min_flux_int_isl_ratio |    v_int |    v_peak |   eta_int |   eta_peak | new   |   new_high_sigma |   n_neighbour_dist |   vs_abs_significant_max_peak |   m_abs_significant_max_peak |   vs_abs_significant_max_int |   m_abs_significant_max_int |   n_measurements |   n_selavy |   n_forced |   n_siblings |   n_relations |
+    |-----:|----------:|-----------:|------------------:|----------:|----------:|----------------------:|----------------------:|---------------:|----------------:|----------------:|---------------:|----------------:|---------------:|--------------------------:|-------------------------:|---------:|----------:|----------:|-----------:|:------|-----------------:|-------------------:|------------------------------:|-----------------------------:|-----------------------------:|----------------------------:|-----------------:|-----------:|-----------:|-------------:|--------------:|
+    |    1 |   321.973 |   0.699851 |          1.19165  |   50.0035 |   50.0035 |           0.000282565 |           0.000282565 |        17.161  |         14.401  |          14.401 |         17.161 |          14.401 |         17.161 |                         1 |                        1 | 0        | 0         |    0      |    0       | False |                0 |          0.0797685 |                       0       |                     0        |                       0      |                    0        |                1 |          1 |          0 |            0 |             0 |
+    |    2 |   323.714 |  -2.60374  |          0.984136 |   35.6238 |   50.4427 |           0.000115396 |           0.000115396 |        14.8353 |         15.056  |          16.293 |         18.188 |          14.278 |         10.097 |                         1 |                        1 | 0.220432 | 0.0483071 |   34.0201 |    4.77011 | False |                0 |          0.0671826 |                       4.37252 |                     0.131824 |                       9.7928 |                    0.572105 |                6 |          6 |          0 |            0 |             0 |
+    |    3 |   322.062 |  -3.65218  |          1.10679  |   28.9505 |   51.573  |           0.00011714  |           0.00011714  |        11.2827 |         10.2657 |          14.492 |         17.725 |           7.602 |          8.53  |                         1 |                        1 | 0.318601 | 0.320678  |   44.727  |  144.446   | False |                0 |          0.0483475 |                      18.271   |                     0.623699 |                      12.2216 |                    0.700438 |                6 |          6 |          0 |            0 |             0 |
+    |    4 |   316.332 |  -2.60898  |          1.11456  |   52.4078 |   64.4311 |           0.000114767 |           0.000114767 |        15.6558 |         14.0617 |          14.497 |         19.35  |          13.364 |         12.002 |                         1 |                        1 | 0.166578 | 0.0334684 |   35.3403 |    3.70799 | False |                0 |          0.0724847 |                       0       |                     0        |                      10.9505 |                    0.468742 |                6 |          6 |          0 |            0 |             0 |
+    |    5 |   323.796 |   1.83018  |          1.0673   |   40.236  |   40.236  |           0.000284353 |           0.000284353 |        15.288  |         14.324  |          14.324 |         15.288 |          14.324 |         15.288 |                         1 |                        1 | 0        | 0         |    0      |    0       | False |                0 |          0.0485506 |                       0       |                     0        |                       0      |                    0        |                1 |          1 |          0 |            0 |             0 |
+    |    ... |   ... |   ...  |         ...   |   ...  |   ...  |           ... |           ... |        ... |         ...  |          ... |         ... |          ... |         ... |                         ... |                        ... | ...        | ...         |    ...      |    ...       | ... |                ... |          ... |                     ...       |                   ...        |                     ...      |                    ...      |              ... |        ... |        ... |          ... |           ... |
 
 !!!info "Info: VAST Pipeline Outputs"
     Refer to [this page](https://vast-survey.org/vast-pipeline/outputs/outputs/){:target="_blank"} in the VAST Pipeline documentation for details on the Pipeline outputs.
@@ -154,6 +179,19 @@ The following methods are available to the `PipeAnalysis` instance.
 Checks to see if any of the planets, including Pluto, the Sun and the Moon, are observable at any time in the pipeline run.
 A pandas dataframe will be returned containing the positions of found objects. 
 An empty dataframe will be returned if no objects are in the pipeline run.
+
+The columns of the returned dataframe are:
+
+  * `DATEOBS` The date of the observation (image) being checked.
+  * `centre-ra` The right ascension coordinate of the image centre in degrees.
+  * `centre-dec` The declination coordinate of the image centre in degrees.
+  * `planet` The name of the planet.
+  * `ra` The right ascension coordinate of the planet location in degrees.
+  * `dec` The declination coordinate of the planet location in degrees.
+  * `sep` The on-sky separation between the planet location and the image centre in degrees.
+
+!!! warning "Warning: Long Run Time"
+    Beware that for large pipeline runs the check could take a while to complete.
 
 !!!example
     ```python
@@ -318,6 +356,14 @@ where as style `b` follows the style found in [Radcliffe et al., 2019](https://u
     This method has the ability to pass a query string. 
     See the tip in [`run_eta_v_analysis`](#run_eta_v_analysis) for details.
 
+!!! warning "Warning: Bokeh Output"
+    Remember that the `output_notebook` must be initialised in order to view any bokeh output in a Jupyter Notebook environment.
+    ```python
+    from bokeh.io import output_notebook
+
+    output_notebook()
+    ```
+
 !!!example
     Plot the two epoch pairs for pair with ID 14.
     ```python
@@ -377,7 +423,7 @@ The candidates plot can either be a `matplotlib.pyplot.figure` or `bokeh.layouts
     ```python
     eta_thresh, v_thresh, eta_v_candidates, plot = my_run.run_eta_v_analysis(1.0, 1.0, query=my_query_string)
     ```
-    Check the [`Code Reference`](../../reference/pipeline/) section of this documentation for full details on arguments.
+    Check the [`Code Reference`](../../reference/pipeline/) section of this documentation for full details of the arguments.
 
 !!!example
     Run the η-V process using threshold sigma values of 1.0 for each metric.

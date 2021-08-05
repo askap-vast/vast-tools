@@ -5,7 +5,7 @@ MOCs of the VAST pilot survey are packaged into VAST Tools and are available to 
 
 !!!info "Info: mocpy"
     All MOCs are loaded as `mocpy` objects. 
-    Refer to the documentation of `mocpy` [here](https://cds-astro.github.io/mocpy/){:target="_blank"} to learn more about what can be achieved with the package.
+    Refer to the documentation of `mocpy` [here](https://cds-astro.github.io/mocpy/){:target="_blank"} to learn more about what can be achieved with the package, including how to plot a MOC onto a sky map.
 
 The MOCs available to load are in VAST Tools are:
 

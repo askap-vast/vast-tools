@@ -25,7 +25,7 @@ In full, the `Query` component as the ability to:
   * attempt to construct a lightcurve for the source,
   * create postage stamps for sources, with overlays and save as fits or png files,
   * search stokes V data,
-  * search for planets including Pluto, the Sun and the Moon.
+  * search for planets and the Sun and Moon.
 
 !!!warning "Warning: Data Access"
     It is assumed that the machine that is running VAST Tools has access to the VAST Pilot Survey release output.
@@ -203,6 +203,12 @@ Set to `True` to not make background `rms` measurements for each requested posit
 **`forced_fits`**
 When set to `True` a forced fit will be produced at each queried location in each requested epoch where possible.
 
+!!! warning "Warning: Forced Fits Runtime"
+    Be patient with the execution of a `Query` when using the `forced_fits` option as it can take a little while to complete.
+
+!!! info "Info: Forced Fits Results"
+    See the [Forced Fits Results](#forced-fits-results) section for details on how the results of the forced fitting are added to the source result.
+
 **`forced_cluster_threshold`**
 Passed to the `cluster_threshold` parameter in [`forced_phot`](https://github.com/askap-vast/forced_phot){:target="_blank"}.
 
@@ -322,6 +328,26 @@ To access a specific source of the results, the source name is used as a key as 
     ```
 
 Please now refer to the [Source page](source.md) of this documentation to learn more about `vasttools.source.Source` objects, which details how to produce lightcurves, postage stamps and more.
+
+#### Forced Fits Results
+
+If forced fits has been used in the query these results will be placed in the `measurements` attribute of the `Source` object (refer to [here](source.md#sourcemeasurements) for more details).
+The following columns will be added:
+
+  * `f_island_id` An id to the forced extraction island given by [`forced_phot`](https://github.com/askap-vast/forced_phot){:target="_blank"}.
+  * `f_component_id` An id to the forced extraction component given by `forced_phot`.
+  * `f_ra_deg_cont` The right ascension coordinate of the extraction in degrees.
+  * `f_dec_deg_cont` The declination coordinate of the extraction in degrees.
+  * `f_flux_peak` The measured peak flux of the extraction in mJy/beam.
+  * `f_flux_peak_err` The error of the measured peak flux.
+  * `f_flux_int` The measured integrated flux of the extraction in mJy.
+    Note this should be equal to the peak flux.
+  * `f_flux_int_err` The error of the integrated flux.
+  * `f_chi_squared_fit` The $\chi^{2}$ value of the fit.
+  * `f_rms_image` The rms at the measured position as calculated by `forced_phot` in mJy.
+  * `f_maj_axis` The major axis of the Gaussian used in arcsec.
+  * `f_min_axis` The minor axis of the Gaussian used in arcsec.
+  * `f_pos_ang` The position angle of the Gaussian used in degrees.
 
 ## `find_sources` script
 

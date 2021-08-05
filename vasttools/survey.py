@@ -103,7 +103,6 @@ ALLOWED_PLANETS = [
     'saturn',
     'uranus',
     'neptune',
-    'pluto',
     'sun',
     'moon'
 ]
@@ -167,9 +166,6 @@ class Fields:
         direction (astropy.coordinates.sky_coordinate.SkyCoord):
             SkyCoord object representing the centres of each beam that
             make up each field in the epoch.
-        field_cat (pandas.core.frame.DataFrame):
-            A dataframe containing the nearest beam for the sources
-            queried (created through the 'find' method)
     """
 
     def __init__(self, epoch: str) -> None:
@@ -197,82 +193,90 @@ class Fields:
             Angle(self.fields["DEC_DMS"], unit=u.deg)
         )
 
-    def find(
-        self,
-        src_coord: SkyCoord,
-        max_sep: float,
-        catalog: pd.DataFrame
-    ) -> Tuple[pd.DataFrame, np.ndarray]:
-        """
-        Find which field each source in the catalogue is in.
+    # TODO: The below methods are no longer used in the code base.
+    #       So these should probably be removed.
 
-        Args:
-            src_coord: Coordinates of sources to find fields for.
-            max_sep: Maximum allowable separation between source
-                and beam centre in degrees.
-            catalog: Catalogue of sources to find fields for.
+    # ATTRIBUTE DOCSTRING:
+    # field_cat (pandas.core.frame.DataFrame):
+    #     A dataframe containing the nearest beam for the sources
+    #     queried (created through the 'find' method)
 
-        Returns:
-            An updated catalogue with nearest field data for each
-            source, and a boolean array corresponding to whether the source
-            is within max_sep.
-        """
-        self.logger.debug(src_coord)
-        self.logger.debug(catalog[np.isnan(src_coord.ra)])
-        nearest_beams, seps, _d3d = src_coord.match_to_catalog_sky(
-            self.direction)
-        self.logger.debug(seps.deg)
-        self.logger.debug(
-            "Nearest beams: {}".format(self.fields["BEAM"][nearest_beams]))
-        within_beam = seps.deg < max_sep
-        catalog["sbid"] = self.fields["SBID"].iloc[nearest_beams].values
-        nearest_fields = self.fields["FIELD_NAME"].iloc[nearest_beams]
-        self.logger.debug(nearest_fields)
-        catalog["field_name"] = nearest_fields.values
-        catalog["original_index"] = catalog.index.values
-        obs_dates = self.fields["DATEOBS"].iloc[nearest_beams]
-        date_end = self.fields["DATEEND"].iloc[nearest_beams]
-        catalog["obs_date"] = obs_dates.values
-        catalog["date_end"] = date_end.values
-        beams = self.fields["BEAM"][nearest_beams]
-        catalog["beam"] = beams.values
-        new_catalog = catalog[within_beam].reset_index(drop=True)
-        self.logger.info(
-            "Field match found for {}/{} sources.".format(
-                len(new_catalog.index), len(nearest_beams)))
-
-        if len(new_catalog.index) - len(nearest_beams) != 0:
-            self.logger.warning(
-                "No field matches found for sources with index (or name):")
-            for i in range(0, len(catalog.index)):
-                if i not in new_catalog["original_index"]:
-                    if "name" in catalog.columns:
-                        self.logger.warning(catalog["name"].iloc[i])
-                    else:
-                        self.logger.warning("{:03d}".format(i + 1))
-        else:
-            self.logger.info("All sources found!")
-
-        self.field_cat = new_catalog
-
-        return new_catalog, within_beam
-
-    def write_fields_cat(self, outfile: str) -> None:
-        """
-        Write the source-fields catalogue to file.
-
-        Args:
-            outfile: Name of the file to write to.
-
-        Returns:
-            None
-        """
-        self.field_cat.drop(
-            ["original_index"],
-            axis=1).to_csv(
-            outfile,
-            index=False)
-        self.logger.info("Written field catalogue to {}.".format(outfile))
+    # def find(
+    #     self,
+    #     src_coord: SkyCoord,
+    #     max_sep: float,
+    #     catalog: pd.DataFrame
+    # ) -> Tuple[pd.DataFrame, np.ndarray]:
+    #     """
+    #     Find which field each source in the catalogue is in.
+    #
+    #     Args:
+    #         src_coord: Coordinates of sources to find fields for.
+    #         max_sep: Maximum allowable separation between source
+    #             and beam centre in degrees.
+    #         catalog: Catalogue of sources to find fields for.
+    #
+    #     Returns:
+    #         An updated catalogue with nearest field data for each
+    #         source, and a boolean array corresponding to whether the source
+    #         is within max_sep.
+    #     """
+    #     self.logger.debug(src_coord)
+    #     self.logger.debug(catalog[np.isnan(src_coord.ra)])
+    #     nearest_beams, seps, _d3d = src_coord.match_to_catalog_sky(
+    #         self.direction)
+    #     self.logger.debug(seps.deg)
+    #     self.logger.debug(
+    #         "Nearest beams: {}".format(self.fields["BEAM"][nearest_beams]))
+    #     within_beam = seps.deg < max_sep
+    #     catalog["sbid"] = self.fields["SBID"].iloc[nearest_beams].values
+    #     nearest_fields = self.fields["FIELD_NAME"].iloc[nearest_beams]
+    #     self.logger.debug(nearest_fields)
+    #     catalog["field_name"] = nearest_fields.values
+    #     catalog["original_index"] = catalog.index.values
+    #     obs_dates = self.fields["DATEOBS"].iloc[nearest_beams]
+    #     date_end = self.fields["DATEEND"].iloc[nearest_beams]
+    #     catalog["obs_date"] = obs_dates.values
+    #     catalog["date_end"] = date_end.values
+    #     beams = self.fields["BEAM"][nearest_beams]
+    #     catalog["beam"] = beams.values
+    #     new_catalog = catalog[within_beam].reset_index(drop=True)
+    #     self.logger.info(
+    #         "Field match found for {}/{} sources.".format(
+    #             len(new_catalog.index), len(nearest_beams)))
+    #
+    #     if len(new_catalog.index) - len(nearest_beams) != 0:
+    #         self.logger.warning(
+    #             "No field matches found for sources with index (or name):")
+    #         for i in range(0, len(catalog.index)):
+    #             if i not in new_catalog["original_index"]:
+    #                 if "name" in catalog.columns:
+    #                     self.logger.warning(catalog["name"].iloc[i])
+    #                 else:
+    #                     self.logger.warning("{:03d}".format(i + 1))
+    #     else:
+    #         self.logger.info("All sources found!")
+    #
+    #     self.field_cat = new_catalog
+    #
+    #     return new_catalog, within_beam
+    #
+    # def write_fields_cat(self, outfile: str) -> None:
+    #     """
+    #     Write the source-fields catalogue to file.
+    #
+    #     Args:
+    #         outfile: Name of the file to write to.
+    #
+    #     Returns:
+    #         None
+    #     """
+    #     self.field_cat.drop(
+    #         ["original_index"],
+    #         axis=1).to_csv(
+    #         outfile,
+    #         index=False)
+    #     self.logger.info("Written field catalogue to {}.".format(outfile))
 
 
 class Image:
@@ -288,8 +292,10 @@ class Image:
         header (astropy.io.fits.Header): The header of the image
         wcs (astropy.wcs.WCS): The WCS object generated from the header.
         data (numpy.ndarry): Array of the image data.
-        beam (radio_beam.Beam): Radio beam object representing the beam of
-            the image.
+        beam (radio_beam.Beam): radio_beam.Beam object representing the beam
+            of the image. Refer to the
+            [radio_beam](https://radio-beam.readthedocs.io/en/latest/)
+            documentation for more information.
         rmspath (str): The path to the rms file on the system.
         rms_header (astropy.io.fits.Header): The header of the RMS image
         rmsname (str): The name of the RMS image.
