@@ -701,7 +701,9 @@ class PipeRun(object):
         measurements['field'] = field
         measurements['epoch'] = source_epochs
         measurements['stokes'] = stokes
-        measurements['skycoord'] = source_coord
+        measurements['skycoord'] = [
+            source_coord for i in range(num_measurements)
+        ]
         measurements['detection'] = measurements['forced'] == False
         source_fields = [field for i in range(num_measurements)]
         source_stokes = stokes
