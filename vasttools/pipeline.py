@@ -950,7 +950,6 @@ class PipeRun(object):
         planets_df['planet'] = planets_df['planet'].str.capitalize()
 
         meta = {
-            'id': 'i',
             'DATEOBS': 'datetime64[ns]',
             'centre-ra': 'f',
             'centre-dec': 'f',
