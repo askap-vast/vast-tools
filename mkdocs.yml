@@ -78,18 +78,26 @@ nav:
     - Query: components/query.md
     - Source: components/source.md
     - Survey: components/survey.md
-  - Scripts:
-    - build_lightcurves: scripts/build_lightcurves.md
-    - find_sources: scripts/find_sources.md
-    - pilot_fields_info: scripts/pilot_fields_info.md
+    - Scripts:
+      - build_lightcurves: scripts/build_lightcurves.md
+      - find_sources: scripts/find_sources.md
+      - pilot_fields_info: scripts/pilot_fields_info.md
   - Example Notebooks:
+    - Overview: notebook-examples/notebooks-overview.md
     - Catalogue Crossmatch: notebook-examples/catalogue-crossmatching-example.ipynb
     - Planet Searching: notebook-examples/planet-hunting-example.ipynb
     - Query Source Search: notebook-examples/source-search-example.ipynb
     - Using VAST MOCs: notebook-examples/using-vast-mocs-example.ipynb
-    - VAST Pipeline: notebook-examples/vast-pipeline-example.ipynb
-  # - Contributing & Developing:
+    - VAST Pipeline Exploration: notebook-examples/vast-pipeline-example.ipynb
+  - Contributing & Developing:
+    - Developing VAST Tools: contributing/develop.md
+    - GitHub Platform: contributing/github.md
+    - Documentation: contributing/docsdev.md
+  - Help and Acknowledgements: help_and_acknowledgements.md
   - Reference:
+    - Changelog: CHANGELOG.md
+    - Code of Conduct: CODE_OF_CONDUCT.md
+    - License: LICENSE.md
     - Code Reference:
       - vast_tools:
         - bin:
