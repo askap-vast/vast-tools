@@ -954,6 +954,10 @@ class PipeRun(object):
         )
         planets_df['planet'] = planets_df['planet'].str.capitalize()
 
+        # reset index as there might be doubles but keep the id column as this
+        # signifies the image id.
+        planets_df = planets_df.reset_index()
+
         meta = {
             'image_id': 'i',
             'DATEOBS': 'datetime64[ns]',
