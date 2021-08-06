@@ -340,27 +340,26 @@ def simbad_search(objects, logger=None):
 
     Simbad.add_votable_fields('ra(d)', 'dec(d)', 'typed_id')
 
-    try:
-        result_table = Simbad.query_objects(objects)
-        if result_table is None:
-            return None, None
-
-        ra = result_table['RA_d']
-        dec = result_table['DEC_d']
-
-        c = SkyCoord(ra, dec, unit=(u.deg, u.deg))
-
-        simbad_names = result_table['MAIN_ID'].to_numpy()
-        print('Ok')
-        return c, simbad_names
-
-    except Exception as e:
-        logger.debug(
-            "Error in performing the SIMBAD object search!\nError: %s",
-            e, exc_info=True
-        )
-        print('Failed')
+    # try:
+    result_table = Simbad.query_objects(objects)
+    if result_table is None:
         return None, None
+
+    ra = result_table['RA_d']
+    dec = result_table['DEC_d']
+
+    c = SkyCoord(ra, dec, unit=(u.deg, u.deg))
+
+    simbad_names = result_table['MAIN_ID'].tolist()
+
+    return c, simbad_names
+
+    # except Exception as e:
+    #     logger.debug(
+    #         "Error in performing the SIMBAD object search!\nError: %s",
+    #         e, exc_info=True
+    #     )
+    #     return None, None
 
 
 def match_planet_to_field(group):
