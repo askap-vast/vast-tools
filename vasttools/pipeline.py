@@ -948,7 +948,10 @@ class PipeRun(object):
             'duration', axis=1
         )
         planets_df['planet'] = planets_df['planet'].str.capitalize()
+
+        # reset index as there might be doubles
         planets_df = planets_df.reset_index(drop=True)
+
         meta = {
             'DATEOBS': 'datetime64[ns]',
             'centre-ra': 'f',
@@ -959,7 +962,6 @@ class PipeRun(object):
             'sep': 'f'
         }
 
-        print(planets_df)
         result = (
             dd.from_pandas(planets_df, self.n_workers)
             .groupby('planet')

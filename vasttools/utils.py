@@ -402,8 +402,6 @@ def match_planet_to_field(group):
         group['sep'] < 4.0
     ]
 
-    print(group)
-
     return group
 
 
