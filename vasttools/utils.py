@@ -350,7 +350,7 @@ def simbad_search(objects, logger=None):
 
         c = SkyCoord(ra, dec, unit=(u.deg, u.deg))
 
-        simbad_names = result_table['MAIN_ID'].tolist()
+        simbad_names = result_table['MAIN_ID'].to_numpy()
 
         return c, simbad_names
 
