@@ -351,7 +351,7 @@ def simbad_search(objects, logger=None):
         c = SkyCoord(ra, dec, unit=(u.deg, u.deg))
 
         simbad_names = result_table['MAIN_ID'].to_numpy()
-
+        print('Ok')
         return c, simbad_names
 
     except Exception as e:
@@ -359,6 +359,7 @@ def simbad_search(objects, logger=None):
             "Error in performing the SIMBAD object search!\nError: %s",
             e, exc_info=True
         )
+        print('Failed')
         return None, None
 
 
