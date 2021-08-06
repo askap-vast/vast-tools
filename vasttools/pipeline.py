@@ -959,6 +959,7 @@ class PipeRun(object):
             'sep': 'f'
         }
 
+        print(planets_df)
         result = (
             dd.from_pandas(planets_df, self.n_workers)
             .groupby('planet')
