@@ -902,7 +902,7 @@ class PipeRun(object):
         '''
 
         from vasttools.survey import ALLOWED_PLANETS
-        ap = ALLOWED_PLANETS
+        ap = ALLOWED_PLANETS.copy()
 
         planets_df = self.images.loc[:, [
             'datetime',
