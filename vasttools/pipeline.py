@@ -956,7 +956,7 @@ class PipeRun(object):
 
         # reset index as there might be doubles but keep the id column as this
         # signifies the image id.
-        planets_df = planets_df.reset_index()
+        planets_df = planets_df.reset_index(drop=True)
 
         meta = {
             'image_id': 'i',
