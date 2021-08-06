@@ -1145,6 +1145,7 @@ class Query:
             ).compute(num_workers=self.ncpu, scheduler='processes')
         )
 
+        print(results)
         if not results.empty:
             results.index = results.index.droplevel()
 
