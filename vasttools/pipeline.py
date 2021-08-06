@@ -914,7 +914,7 @@ class PipeRun(object):
             .reset_index()
             .rename(
                 columns={
-                    'index': 'image_id',
+                    'id': 'image_id',
                     'datetime': 'DATEOBS',
                     'centre_ra': 'centre-ra',
                     'centre_dec': 'centre-dec'
