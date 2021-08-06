@@ -948,7 +948,7 @@ class PipeRun(object):
             'duration', axis=1
         )
         planets_df['planet'] = planets_df['planet'].str.capitalize()
-        planets_df.reset_index(drop=True)
+        planets_df = planets_df.reset_index(drop=True)
         meta = {
             'DATEOBS': 'datetime64[ns]',
             'centre-ra': 'f',
