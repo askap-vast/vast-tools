@@ -1145,7 +1145,7 @@ class Query:
             .apply(
                 self._get_components,
                 meta=meta,
-            ).compute(num_workers=self.ncpu, scheduler='single-threaded')
+            ).compute(num_workers=self.ncpu, scheduler='processes')
         )
 
         if not results.empty:
