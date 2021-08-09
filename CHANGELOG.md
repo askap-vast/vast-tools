@@ -40,7 +40,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [v2.0.0-rc.5](https://github.com/askap-vast/vast-tools/releases/v2.0.0-rc.5) (2020-10-20)
 
-The release candidate 5 of v2.0.0. Was release before changelog was in place.
+The release candidate 5 of v2.0.0. This was the release before the changelog was implemented.
 
 #### List of PRs
 
