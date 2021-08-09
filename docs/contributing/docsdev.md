@@ -170,6 +170,20 @@ docs/theme
 
 `MathJax` is enabled as described in the [`mkdocs-material` documentation](https://squidfunk.github.io/mkdocs-material/reference/mathjax/){:target="_blank"}.
 
+### mknotebooks
+
+[`mknotebooks`](https://github.com/greenape/mknotebooks){:target="_blank"} allows for Jupyter Notebooks to be incorporated into the documentation.
+No options other than the defaults are used, however, overflow is enabled on the `output_wrapper` div class through below entry in `extra.css`.
+This allows for pandas dataframes x-scrolling.
+
+!!! example "extra.css"
+    ```css
+    /* Add overflow to mknotebooks dataframes */
+    .output_wrapper {
+      overflow: auto;
+    }
+    ```
+
 ### Python Docstrings and Source Code
 
 Python docstrings and source code are rendered using the [`mkdocstrings`](https://mkdocstrings.github.io){:target="_blank"} plugin.

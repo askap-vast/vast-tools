@@ -190,9 +190,6 @@ The columns of the returned dataframe are:
   * `dec` The declination coordinate of the planet location in degrees.
   * `sep` The on-sky separation between the planet location and the image centre in degrees.
 
-!!! warning "Warning: Long Run Time"
-    Beware that for large pipeline runs the check could take a while to complete.
-
 !!!example
     ```python
     planets = my_pipe_run.check_for_planets()
@@ -310,6 +307,9 @@ In particular, all the columns that are averages, counts or the variability metr
 It is useful for cases where measurements are filtered out of the original measurements dataframe, or have fluxes changed, and hence the `source` dataframe becomes out of sync.
 Returns a pandas dataframe.
 
+!!! warning "Warning: Long Run Time"
+    Beware that for large pipeline runs the recalculation take a while to complete.
+
 !!!example
     ```python
     new_sources_df = my_pipe_run.recalc_sources_df(my_filtered_measurements)
@@ -424,6 +424,9 @@ The candidates plot can either be a `matplotlib.pyplot.figure` or `bokeh.layouts
     eta_thresh, v_thresh, eta_v_candidates, plot = my_run.run_eta_v_analysis(1.0, 1.0, query=my_query_string)
     ```
     Check the [`Code Reference`](../../reference/pipeline/) section of this documentation for full details of the arguments.
+
+!!! warning "Warning: Bokeh Slow Down"
+    A bokeh plot with thousands of datapoints from large pipeline runs may cause the notebook to suffer from slowdown.
 
 !!!example
     Run the η-V process using threshold sigma values of 1.0 for each metric.
