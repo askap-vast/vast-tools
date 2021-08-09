@@ -238,11 +238,12 @@ class Query:
             )
 
         if self.coords is not None and len(self.source_names) == 0:
-            self.source_names = [
+            source_names = [
                 'source_' + i.to_string(
                     'hmsdms', sep="", precision=1
                 ).replace(" ", "") for i in self.coords
             ]
+            self.source_names = np.array(source_names)
 
         if self.coords is None:
             if len(source_names) != 0:
