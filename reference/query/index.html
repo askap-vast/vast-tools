@@ -1,0 +1,987 @@
+<!doctype html><html lang=en class=no-js> <head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="Python module to interact with ASKAP VAST data."><meta name=author content="VAST Development Team"><link rel=icon href=../../img/favicon.png><meta name=generator content="mkdocs-1.1.2, mkdocs-material-7.1.4"><title>query.py - VAST Tools</title><link rel=stylesheet href=../../assets/stylesheets/main.bde7dde4.min.css><link rel=stylesheet href=../../assets/stylesheets/palette.ef6f36e2.min.css><link rel=stylesheet href=../../css/lightgallery.min.css><script src=../../js/lightgallery.min.js></script><link rel=preconnect href=https://fonts.gstatic.com crossorigin><link rel=stylesheet href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback"><style>:root{--md-text-font-family:"Roboto";--md-code-font-family:"Roboto Mono"}</style><link rel=stylesheet href=../../assets/_mkdocstrings.css><link rel=stylesheet href=../../theme/css/extra.css><link rel=stylesheet href=../../css/ansi-colours.css><link rel=stylesheet href=../../css/jupyter-cells.css><link rel=stylesheet href=../../css/pandas-dataframe.css><meta property=og:type content=website><meta property=og:title content="VAST Tools - query.py"><meta property=og:description content="Python module to interact with ASKAP VAST data."><meta property=og:url content=None></head> <body dir=ltr data-md-color-scheme=default data-md-color-primary data-md-color-accent=indigo> <script>function __prefix(e){return new URL("../..",location).pathname+"."+e}function __get(e,t=localStorage){return JSON.parse(t.getItem(__prefix(e)))}</script> <script>var palette=__get("__palette");if(null!==palette&&"object"==typeof palette.color)for(var key in palette.color)document.body.setAttribute("data-md-color-"+key,palette.color[key])</script> <input class=md-toggle data-md-toggle=drawer type=checkbox id=__drawer autocomplete=off> <input class=md-toggle data-md-toggle=search type=checkbox id=__search autocomplete=off> <label class=md-overlay for=__drawer></label> <div data-md-component=skip> <a href=#vasttools.query class=md-skip> Skip to content </a> </div> <div data-md-component=announce> <aside class=md-announce> <div class="md-announce__inner md-grid md-typeset"> <style>
+      .md-announce a,
+      .md-announce a:focus,
+      .md-announce a:hover{color:currentColor}.md-announce
+      strong{white-space:nowrap}.md-announce}
+  </style> <a href=/changelog/ ><strong>New in version 2.0.0</strong>: Documentation, and much, much more 🙌. Check the <strong>release notes!</strong></a> </div> </aside> </div> <header class=md-header data-md-component=header> <nav class="md-header__inner md-grid" aria-label=Header> <a href=../.. title="VAST Tools" class="md-header__button md-logo" aria-label="VAST Tools" data-md-component=logo> <img src=../../img/vast-logo.png alt=logo> </a> <label class="md-header__button md-icon" for=__drawer> <svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg> </label> <div class=md-header__title data-md-component=header-title> <div class=md-header__ellipsis> <div class=md-header__topic> <span class=md-ellipsis> VAST Tools </span> </div> <div class=md-header__topic data-md-component=header-topic> <span class=md-ellipsis> query.py </span> </div> </div> </div> <form class=md-header__option data-md-component=palette> <input class=md-option data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme=default data-md-color-primary data-md-color-accent=indigo type=radio name=__palette id=__palette_1> <label class="md-header__button md-icon" title="Switch to dark mode" for=__palette_2 hidden> <svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M7 10a2 2 0 0 1 2 2 2 2 0 0 1-2 2 2 2 0 0 1-2-2 2 2 0 0 1 2-2m10-3a5 5 0 0 1 5 5 5 5 0 0 1-5 5H7a5 5 0 0 1-5-5 5 5 0 0 1 5-5h10M7 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3h10a3 3 0 0 0 3-3 3 3 0 0 0-3-3H7z"/></svg> </label> <input class=md-option data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme=slate data-md-color-primary data-md-color-accent=blue type=radio name=__palette id=__palette_2> <label class="md-header__button md-icon" title="Switch to light mode" for=__palette_1 hidden> <svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M17 7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h10a5 5 0 0 0 5-5 5 5 0 0 0-5-5m0 8a3 3 0 0 1-3-3 3 3 0 0 1 3-3 3 3 0 0 1 3 3 3 3 0 0 1-3 3z"/></svg> </label> </form> <label class="md-header__button md-icon" for=__search> <svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg> </label> <div class=md-search data-md-component=search role=dialog> <label class=md-search__overlay for=__search></label> <div class=md-search__inner role=search> <form class=md-search__form name=search> <input type=text class=md-search__input name=query aria-label=Search placeholder=Search autocapitalize=off autocorrect=off autocomplete=off spellcheck=false data-md-component=search-query data-md-state=active required> <label class="md-search__icon md-icon" for=__search> <svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg> <svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg> </label> <button type=reset class="md-search__icon md-icon" aria-label=Clear tabindex=-1> <svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg> </button> </form> <div class=md-search__output> <div class=md-search__scrollwrap data-md-scrollfix> <div class=md-search-result data-md-component=search-result> <div class=md-search-result__meta> Initializing search </div> <ol class=md-search-result__list></ol> </div> </div> </div> </div> </div> <div class=md-header__source> <a href=https://github.com/askap-vast/vast-tools title="Go to repository" class=md-source data-md-component=source> <div class="md-source__icon md-icon"> <svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 448 512"><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg> </div> <div class=md-source__repository> askap-vast/vast-tools </div> </a> </div> </nav> </header> <div class=md-container data-md-component=container> <nav class=md-tabs aria-label=Tabs data-md-component=tabs> <div class="md-tabs__inner md-grid"> <ul class=md-tabs__list> <li class=md-tabs__item> <a href=../.. class=md-tabs__link> Home </a> </li> <li class=md-tabs__item> <a href=../../getting_started/introduction/ class=md-tabs__link> Getting Started </a> </li> <li class=md-tabs__item> <a href=../../components/mocs/ class=md-tabs__link> Components & Features </a> </li> <li class=md-tabs__item> <a href=../../notebook-examples/notebooks-overview/ class=md-tabs__link> Example Notebooks </a> </li> <li class=md-tabs__item> <a href=../../contributing/develop/ class=md-tabs__link> Contributing & Developing </a> </li> <li class=md-tabs__item> <a href=../../help_and_acknowledgements/ class=md-tabs__link> Help and Acknowledgements </a> </li> <li class=md-tabs__item> <a href=../../CHANGELOG/ class="md-tabs__link md-tabs__link--active"> Reference </a> </li> </ul> </div> </nav> <main class=md-main data-md-component=main> <div class="md-main__inner md-grid"> <div class="md-sidebar md-sidebar--primary" data-md-component=sidebar data-md-type=navigation> <div class=md-sidebar__scrollwrap> <div class=md-sidebar__inner> <nav class="md-nav md-nav--primary md-nav--lifted" aria-label=Navigation data-md-level=0> <label class=md-nav__title for=__drawer> <a href=../.. title="VAST Tools" class="md-nav__button md-logo" aria-label="VAST Tools" data-md-component=logo> <img src=../../img/vast-logo.png alt=logo> </a> VAST Tools </label> <div class=md-nav__source> <a href=https://github.com/askap-vast/vast-tools title="Go to repository" class=md-source data-md-component=source> <div class="md-source__icon md-icon"> <svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 448 512"><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg> </div> <div class=md-source__repository> askap-vast/vast-tools </div> </a> </div> <ul class=md-nav__list data-md-scrollfix> <li class=md-nav__item> <a href=../.. class=md-nav__link> Home </a> </li> <li class="md-nav__item md-nav__item--nested"> <input class="md-nav__toggle md-toggle" data-md-toggle=__nav_2 type=checkbox id=__nav_2> <label class=md-nav__link for=__nav_2> Getting Started <span class="md-nav__icon md-icon"></span> </label> <nav class=md-nav aria-label="Getting Started" data-md-level=1> <label class=md-nav__title for=__nav_2> <span class="md-nav__icon md-icon"></span> Getting Started </label> <ul class=md-nav__list data-md-scrollfix> <li class=md-nav__item> <a href=../../getting_started/introduction/ class=md-nav__link> Introduction </a> </li> <li class=md-nav__item> <a href=../../getting_started/installation/ class=md-nav__link> Installation </a> </li> <li class=md-nav__item> <a href=../../getting_started/configuration/ class=md-nav__link> Configuration & Data Access </a> </li> </ul> </nav> </li> <li class="md-nav__item md-nav__item--nested"> <input class="md-nav__toggle md-toggle" data-md-toggle=__nav_3 type=checkbox id=__nav_3> <label class=md-nav__link for=__nav_3> Components & Features <span class="md-nav__icon md-icon"></span> </label> <nav class=md-nav aria-label="Components & Features" data-md-level=1> <label class=md-nav__title for=__nav_3> <span class="md-nav__icon md-icon"></span> Components & Features </label> <ul class=md-nav__list data-md-scrollfix> <li class=md-nav__item> <a href=../../components/mocs/ class=md-nav__link> MOCs </a> </li> <li class=md-nav__item> <a href=../../components/pipeline/ class=md-nav__link> Pipeline </a> </li> <li class=md-nav__item> <a href=../../components/query/ class=md-nav__link> Query </a> </li> <li class=md-nav__item> <a href=../../components/source/ class=md-nav__link> Source </a> </li> <li class=md-nav__item> <a href=../../components/survey/ class=md-nav__link> Survey </a> </li> <li class="md-nav__item md-nav__item--section md-nav__item--nested"> <input class="md-nav__toggle md-toggle" data-md-toggle=__nav_3_6 type=checkbox id=__nav_3_6> <label class=md-nav__link for=__nav_3_6> Scripts <span class="md-nav__icon md-icon"></span> </label> <nav class=md-nav aria-label=Scripts data-md-level=2> <label class=md-nav__title for=__nav_3_6> <span class="md-nav__icon md-icon"></span> Scripts </label> <ul class=md-nav__list data-md-scrollfix> <li class=md-nav__item> <a href=../../scripts/build_lightcurves/ class=md-nav__link> build_lightcurves </a> </li> <li class=md-nav__item> <a href=../../scripts/find_sources/ class=md-nav__link> find_sources </a> </li> <li class=md-nav__item> <a href=../../scripts/pilot_fields_info/ class=md-nav__link> pilot_fields_info </a> </li> </ul> </nav> </li> </ul> </nav> </li> <li class="md-nav__item md-nav__item--nested"> <input class="md-nav__toggle md-toggle" data-md-toggle=__nav_4 type=checkbox id=__nav_4> <label class=md-nav__link for=__nav_4> Example Notebooks <span class="md-nav__icon md-icon"></span> </label> <nav class=md-nav aria-label="Example Notebooks" data-md-level=1> <label class=md-nav__title for=__nav_4> <span class="md-nav__icon md-icon"></span> Example Notebooks </label> <ul class=md-nav__list data-md-scrollfix> <li class=md-nav__item> <a href=../../notebook-examples/notebooks-overview/ class=md-nav__link> Overview </a> </li> <li class=md-nav__item> <a href=../../notebook-examples/catalogue-crossmatching-example/ class=md-nav__link> Catalogue Crossmatch </a> </li> <li class=md-nav__item> <a href=../../notebook-examples/planet-hunting-example/ class=md-nav__link> Planet Searching </a> </li> <li class=md-nav__item> <a href=../../notebook-examples/source-search-example/ class=md-nav__link> Query Source Search </a> </li> <li class=md-nav__item> <a href=../../notebook-examples/using-vast-mocs-example/ class=md-nav__link> Using VAST MOCs </a> </li> <li class=md-nav__item> <a href=../../notebook-examples/vast-pipeline-example/ class=md-nav__link> VAST Pipeline Exploration </a> </li> </ul> </nav> </li> <li class="md-nav__item md-nav__item--nested"> <input class="md-nav__toggle md-toggle" data-md-toggle=__nav_5 type=checkbox id=__nav_5> <label class=md-nav__link for=__nav_5> Contributing & Developing <span class="md-nav__icon md-icon"></span> </label> <nav class=md-nav aria-label="Contributing & Developing" data-md-level=1> <label class=md-nav__title for=__nav_5> <span class="md-nav__icon md-icon"></span> Contributing & Developing </label> <ul class=md-nav__list data-md-scrollfix> <li class=md-nav__item> <a href=../../contributing/develop/ class=md-nav__link> Developing VAST Tools </a> </li> <li class=md-nav__item> <a href=../../contributing/github/ class=md-nav__link> GitHub Platform </a> </li> <li class=md-nav__item> <a href=../../contributing/docsdev/ class=md-nav__link> Documentation </a> </li> </ul> </nav> </li> <li class=md-nav__item> <a href=../../help_and_acknowledgements/ class=md-nav__link> Help and Acknowledgements </a> </li> <li class="md-nav__item md-nav__item--active md-nav__item--nested"> <input class="md-nav__toggle md-toggle" data-md-toggle=__nav_7 type=checkbox id=__nav_7 checked> <label class=md-nav__link for=__nav_7> Reference <span class="md-nav__icon md-icon"></span> </label> <nav class=md-nav aria-label=Reference data-md-level=1> <label class=md-nav__title for=__nav_7> <span class="md-nav__icon md-icon"></span> Reference </label> <ul class=md-nav__list data-md-scrollfix> <li class=md-nav__item> <a href=../../CHANGELOG/ class=md-nav__link> Changelog </a> </li> <li class=md-nav__item> <a href=../../CODE_OF_CONDUCT/ class=md-nav__link> Code of Conduct </a> </li> <li class=md-nav__item> <a href=../../LICENSE/ class=md-nav__link> License </a> </li> <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested"> <input class="md-nav__toggle md-toggle" data-md-toggle=__nav_7_4 type=checkbox id=__nav_7_4 checked> <label class=md-nav__link for=__nav_7_4> Code Reference <span class="md-nav__icon md-icon"></span> </label> <nav class=md-nav aria-label="Code Reference" data-md-level=2> <label class=md-nav__title for=__nav_7_4> <span class="md-nav__icon md-icon"></span> Code Reference </label> <ul class=md-nav__list data-md-scrollfix> <li class="md-nav__item md-nav__item--active md-nav__item--nested"> <input class="md-nav__toggle md-toggle" data-md-toggle=__nav_7_4_1 type=checkbox id=__nav_7_4_1 checked> <label class=md-nav__link for=__nav_7_4_1> vast_tools <span class="md-nav__icon md-icon"></span> </label> <nav class=md-nav aria-label=vast_tools data-md-level=3> <label class=md-nav__title for=__nav_7_4_1> <span class="md-nav__icon md-icon"></span> vast_tools </label> <ul class=md-nav__list data-md-scrollfix> <li class="md-nav__item md-nav__item--nested"> <input class="md-nav__toggle md-toggle" data-md-toggle=__nav_7_4_1_1 type=checkbox id=__nav_7_4_1_1> <label class=md-nav__link for=__nav_7_4_1_1> bin <span class="md-nav__icon md-icon"></span> </label> <nav class=md-nav aria-label=bin data-md-level=4> <label class=md-nav__title for=__nav_7_4_1_1> <span class="md-nav__icon md-icon"></span> bin </label> <ul class=md-nav__list data-md-scrollfix> <li class=md-nav__item> <a href=../bin/build_lightcurves/ class=md-nav__link> build_lightcurves.py </a> </li> <li class=md-nav__item> <a href=../bin/find_sources/ class=md-nav__link> find_sources.py </a> </li> <li class=md-nav__item> <a href=../bin/pilot_fields_info/ class=md-nav__link> pilot_fields_info.py </a> </li> </ul> </nav> </li> <li class=md-nav__item> <a href=../moc/ class=md-nav__link> moc.py </a> </li> <li class=md-nav__item> <a href=../pipeline/ class=md-nav__link> pipeline.py </a> </li> <li class="md-nav__item md-nav__item--active"> <input class="md-nav__toggle md-toggle" data-md-toggle=toc type=checkbox id=__toc> <label class="md-nav__link md-nav__link--active" for=__toc> query.py <span class="md-nav__icon md-icon"></span> </label> <a href=./ class="md-nav__link md-nav__link--active"> query.py </a> <nav class="md-nav md-nav--secondary" aria-label="Table of contents"> <label class=md-nav__title for=__toc> <span class="md-nav__icon md-icon"></span> Table of contents </label> <ul class=md-nav__list data-md-component=toc data-md-scrollfix> <li class=md-nav__item> <a href=#vasttools.query class=md-nav__link> vasttools.query </a> </li> <li class=md-nav__item> <a href=#vasttools.query.EpochInfo class=md-nav__link> EpochInfo </a> <nav class=md-nav aria-label=EpochInfo> <ul class=md-nav__list> <li class=md-nav__item> <a href=#vasttools.query.EpochInfo.__init__ class=md-nav__link> __init__() </a> </li> </ul> </nav> </li> <li class=md-nav__item> <a href=#vasttools.query.FieldQuery class=md-nav__link> FieldQuery </a> <nav class=md-nav aria-label=FieldQuery> <ul class=md-nav__list> <li class=md-nav__item> <a href=#vasttools.query.FieldQuery.__init__ class=md-nav__link> __init__() </a> </li> <li class=md-nav__item> <a href=#vasttools.query.FieldQuery.run_query class=md-nav__link> run_query() </a> </li> </ul> </nav> </li> <li class=md-nav__item> <a href=#vasttools.query.Query class=md-nav__link> Query </a> <nav class=md-nav aria-label=Query> <ul class=md-nav__list> <li class=md-nav__item> <a href=#vasttools.query.Query.__init__ class=md-nav__link> __init__() </a> </li> <li class=md-nav__item> <a href=#vasttools.query.Query.find_fields class=md-nav__link> find_fields() </a> </li> <li class=md-nav__item> <a href=#vasttools.query.Query.find_sources class=md-nav__link> find_sources() </a> </li> <li class=md-nav__item> <a href=#vasttools.query.Query.save_search_around_results class=md-nav__link> save_search_around_results() </a> </li> <li class=md-nav__item> <a href=#vasttools.query.Query.write_find_fields class=md-nav__link> write_find_fields() </a> </li> </ul> </nav> </li> </ul> </nav> </li> <li class=md-nav__item> <a href=../source/ class=md-nav__link> source.py </a> </li> <li class=md-nav__item> <a href=../survey/ class=md-nav__link> survey.py </a> </li> <li class=md-nav__item> <a href=../utils/ class=md-nav__link> utils.py </a> </li> </ul> </nav> </li> </ul> </nav> </li> </ul> </nav> </li> </ul> </nav> </div> </div> </div> <div class="md-sidebar md-sidebar--secondary" data-md-component=sidebar data-md-type=toc> <div class=md-sidebar__scrollwrap> <div class=md-sidebar__inner> <nav class="md-nav md-nav--secondary" aria-label="Table of contents"> <label class=md-nav__title for=__toc> <span class="md-nav__icon md-icon"></span> Table of contents </label> <ul class=md-nav__list data-md-component=toc data-md-scrollfix> <li class=md-nav__item> <a href=#vasttools.query class=md-nav__link> vasttools.query </a> </li> <li class=md-nav__item> <a href=#vasttools.query.EpochInfo class=md-nav__link> EpochInfo </a> <nav class=md-nav aria-label=EpochInfo> <ul class=md-nav__list> <li class=md-nav__item> <a href=#vasttools.query.EpochInfo.__init__ class=md-nav__link> __init__() </a> </li> </ul> </nav> </li> <li class=md-nav__item> <a href=#vasttools.query.FieldQuery class=md-nav__link> FieldQuery </a> <nav class=md-nav aria-label=FieldQuery> <ul class=md-nav__list> <li class=md-nav__item> <a href=#vasttools.query.FieldQuery.__init__ class=md-nav__link> __init__() </a> </li> <li class=md-nav__item> <a href=#vasttools.query.FieldQuery.run_query class=md-nav__link> run_query() </a> </li> </ul> </nav> </li> <li class=md-nav__item> <a href=#vasttools.query.Query class=md-nav__link> Query </a> <nav class=md-nav aria-label=Query> <ul class=md-nav__list> <li class=md-nav__item> <a href=#vasttools.query.Query.__init__ class=md-nav__link> __init__() </a> </li> <li class=md-nav__item> <a href=#vasttools.query.Query.find_fields class=md-nav__link> find_fields() </a> </li> <li class=md-nav__item> <a href=#vasttools.query.Query.find_sources class=md-nav__link> find_sources() </a> </li> <li class=md-nav__item> <a href=#vasttools.query.Query.save_search_around_results class=md-nav__link> save_search_around_results() </a> </li> <li class=md-nav__item> <a href=#vasttools.query.Query.write_find_fields class=md-nav__link> write_find_fields() </a> </li> </ul> </nav> </li> </ul> </nav> </div> </div> </div> <div class=md-content data-md-component=content> <article class="md-content__inner md-typeset"> <h1>query.py</h1> <div class="doc doc-object doc-module"> <a id=vasttools.query></a> <div class="doc doc-contents first"> <p>Class to perform queries on the VAST observational data.</p> <p><strong>Attributes:</strong></p> <table> <thead> <tr> <th>Name</th> <th>Type</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code>HOST_NCPU</code></td> <td><code>int</code></td> <td><p>The number of CPU found on the host using 'cpu_count()'.</p></td> </tr> </tbody> </table> <div class="doc doc-children"> <div class="doc doc-object doc-class"> <h2 id=vasttools.query.EpochInfo class="doc doc-heading"> <code>EpochInfo</code> <a href=#vasttools.query.EpochInfo class=headerlink title="Permanent link">&para;</a></h2> <div class="doc doc-contents "> <p>This is a class representation of various information about a particular epoch query including the relevant folders, whether to only find fields, the survey and epoch.</p> <p><strong>Attributes:</strong></p> <table> <thead> <tr> <th>Name</th> <th>Type</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code>use_tiles</code></td> <td><code>bool</code></td> <td><p>Use tiles or combined images.</p></td> </tr> <tr> <td><code>pilot_epoch</code></td> <td><code>str</code></td> <td><p>Epoch to query.</p></td> </tr> <tr> <td><code>stokes_param</code></td> <td><code>str</code></td> <td><p>Stokes parameter of interest.</p></td> </tr> <tr> <td><code>survey</code></td> <td><code>str</code></td> <td><p>Distinguish between RACS and the VAST Pilot.</p></td> </tr> <tr> <td><code>epoch_str</code></td> <td><code>str</code></td> <td><p>String representation of the requested epoch.</p></td> </tr> <tr> <td><code>survey_folder</code></td> <td><code>str</code></td> <td><p>Path to folder containing data from the epoch of interest.</p></td> </tr> <tr> <td><code>IMAGE_FOLDER</code></td> <td><code>str</code></td> <td><p>Path to image data.</p></td> </tr> <tr> <td><code>SELAVY_FOLDER</code></td> <td><code>str</code></td> <td><p>Path to selavy catalogues.</p></td> </tr> <tr> <td><code>RMS_FOLDER</code></td> <td><code>str</code></td> <td><p>Path to noise maps.</p></td> </tr> </tbody> </table> <div class="doc doc-children"> <div class="doc doc-object doc-method"> <h3 id=vasttools.query.EpochInfo.__init__ class="doc doc-heading"> <code class="highlight language-python"><span class=fm>__init__</span><span class=p>(</span><span class=bp>self</span><span class=p>,</span> <span class=n>pilot_epoch</span><span class=p>,</span> <span class=n>base_folder</span><span class=p>,</span> <span class=n>stokes</span><span class=p>,</span> <span class=n>tiles</span><span class=p>)</span></code> <span class="doc doc-properties"> <small class="doc doc-property doc-property-special"><code>special</code></small> </span> <a href=#vasttools.query.EpochInfo.__init__ class=headerlink title="Permanent link">&para;</a></h3> <div class="doc doc-contents "> <p>Constructor Method</p> <p><strong>Parameters:</strong></p> <table> <thead> <tr> <th>Name</th> <th>Type</th> <th>Description</th> <th>Default</th> </tr> </thead> <tbody> <tr> <td><code>pilot_epoch</code></td> <td><code>str</code></td> <td><p>Pilot epoch (0 for RACS).</p></td> <td><em>required</em></td> </tr> <tr> <td><code>base_folder</code></td> <td><code>str</code></td> <td><p>Path to base folder in default directory structure.</p></td> <td><em>required</em></td> </tr> <tr> <td><code>stokes</code></td> <td><code>str</code></td> <td><p>Stokes parameter (I, Q, U or V).</p></td> <td><em>required</em></td> </tr> <tr> <td><code>tiles</code></td> <td><code>bool</code></td> <td><p>Use the individual tiles instead of combined mosaics.</p></td> <td><em>required</em></td> </tr> </tbody> </table> <p><strong>Returns:</strong></p> <table> <thead> <tr> <th>Type</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code>None</code></td> <td><p>None</p></td> </tr> </tbody> </table> <details class=quote> <summary>Source code in <code>vasttools/query.py</code></summary> <div class=highlight><pre><span></span><code><span class=k>def</span> <span class=fm>__init__</span><span class=p>(</span>
+    <span class=bp>self</span><span class=p>,</span>
+    <span class=n>pilot_epoch</span><span class=p>:</span> <span class=nb>str</span><span class=p>,</span>
+    <span class=n>base_folder</span><span class=p>:</span> <span class=nb>str</span><span class=p>,</span>
+    <span class=n>stokes</span><span class=p>:</span> <span class=nb>str</span><span class=p>,</span>
+    <span class=n>tiles</span><span class=p>:</span> <span class=nb>bool</span>
+<span class=p>)</span> <span class=o>-&gt;</span> <span class=kc>None</span><span class=p>:</span>
+    <span class=sd>&quot;&quot;&quot;</span>
+<span class=sd>    Constructor Method</span>
+
+<span class=sd>    Args:</span>
+<span class=sd>        pilot_epoch: Pilot epoch (0 for RACS).</span>
+<span class=sd>        base_folder: Path to base folder in default directory structure.</span>
+<span class=sd>        stokes: Stokes parameter (I, Q, U or V).</span>
+<span class=sd>        tiles: Use the individual tiles instead of combined mosaics.</span>
+
+<span class=sd>    Returns:</span>
+<span class=sd>        None</span>
+<span class=sd>    &quot;&quot;&quot;</span>
+    <span class=bp>self</span><span class=o>.</span><span class=n>logger</span> <span class=o>=</span> <span class=n>logging</span><span class=o>.</span><span class=n>getLogger</span><span class=p>(</span><span class=s1>&#39;vasttools.find_sources.EpochInfo&#39;</span><span class=p>)</span>
+
+    <span class=n>BASE_FOLDER</span> <span class=o>=</span> <span class=n>base_folder</span>
+
+    <span class=bp>self</span><span class=o>.</span><span class=n>use_tiles</span> <span class=o>=</span> <span class=n>tiles</span>
+    <span class=bp>self</span><span class=o>.</span><span class=n>pilot_epoch</span> <span class=o>=</span> <span class=n>pilot_epoch</span>
+    <span class=bp>self</span><span class=o>.</span><span class=n>stokes_param</span> <span class=o>=</span> <span class=n>stokes</span>
+
+    <span class=k>if</span> <span class=n>pilot_epoch</span> <span class=o>==</span> <span class=s2>&quot;0&quot;</span><span class=p>:</span>
+        <span class=n>survey</span> <span class=o>=</span> <span class=s2>&quot;racs&quot;</span>
+    <span class=k>else</span><span class=p>:</span>
+        <span class=n>survey</span> <span class=o>=</span> <span class=s2>&quot;vast_pilot&quot;</span>
+    <span class=n>epoch_str</span> <span class=o>=</span> <span class=s2>&quot;EPOCH</span><span class=si>{}</span><span class=s2>&quot;</span><span class=o>.</span><span class=n>format</span><span class=p>(</span><span class=n>RELEASED_EPOCHS</span><span class=p>[</span><span class=n>pilot_epoch</span><span class=p>])</span>
+    <span class=n>survey_folder</span> <span class=o>=</span> <span class=n>os</span><span class=o>.</span><span class=n>path</span><span class=o>.</span><span class=n>join</span><span class=p>(</span>
+        <span class=n>base_folder</span><span class=p>,</span> <span class=s2>&quot;</span><span class=si>{}</span><span class=s2>&quot;</span><span class=o>.</span><span class=n>format</span><span class=p>(</span><span class=n>epoch_str</span><span class=p>)</span>
+    <span class=p>)</span>
+
+    <span class=bp>self</span><span class=o>.</span><span class=n>survey</span> <span class=o>=</span> <span class=n>survey</span>
+    <span class=bp>self</span><span class=o>.</span><span class=n>epoch_str</span> <span class=o>=</span> <span class=n>epoch_str</span>
+    <span class=bp>self</span><span class=o>.</span><span class=n>survey_folder</span> <span class=o>=</span> <span class=n>survey_folder</span>
+
+    <span class=k>if</span> <span class=bp>self</span><span class=o>.</span><span class=n>use_tiles</span><span class=p>:</span>
+        <span class=n>image_dir</span> <span class=o>=</span> <span class=s2>&quot;TILES&quot;</span>
+        <span class=n>stokes_dir</span> <span class=o>=</span> <span class=s2>&quot;STOKES</span><span class=si>{}</span><span class=s2>_IMAGES&quot;</span><span class=o>.</span><span class=n>format</span><span class=p>(</span><span class=bp>self</span><span class=o>.</span><span class=n>stokes_param</span><span class=p>)</span>
+    <span class=k>else</span><span class=p>:</span>
+        <span class=n>image_dir</span> <span class=o>=</span> <span class=s2>&quot;COMBINED&quot;</span>
+        <span class=n>stokes_dir</span> <span class=o>=</span> <span class=s2>&quot;STOKES</span><span class=si>{}</span><span class=s2>_IMAGES&quot;</span><span class=o>.</span><span class=n>format</span><span class=p>(</span><span class=bp>self</span><span class=o>.</span><span class=n>stokes_param</span><span class=p>)</span>
+
+    <span class=n>IMAGE_FOLDER</span> <span class=o>=</span> <span class=n>os</span><span class=o>.</span><span class=n>path</span><span class=o>.</span><span class=n>join</span><span class=p>(</span>
+        <span class=n>BASE_FOLDER</span><span class=p>,</span>
+        <span class=n>survey_folder</span><span class=p>,</span>
+        <span class=n>image_dir</span><span class=p>,</span>
+        <span class=n>stokes_dir</span><span class=p>)</span>
+
+    <span class=k>if</span> <span class=ow>not</span> <span class=n>os</span><span class=o>.</span><span class=n>path</span><span class=o>.</span><span class=n>isdir</span><span class=p>(</span><span class=n>IMAGE_FOLDER</span><span class=p>):</span>
+        <span class=c1># if not CROSSMATCH_ONLY:</span>
+        <span class=bp>self</span><span class=o>.</span><span class=n>logger</span><span class=o>.</span><span class=n>warning</span><span class=p>(</span>
+            <span class=s2>&quot;</span><span class=si>{}</span><span class=s2> does not exist. &quot;</span>
+            <span class=s2>&quot;Can only do crossmatching.&quot;</span><span class=o>.</span><span class=n>format</span><span class=p>(</span><span class=n>IMAGE_FOLDER</span><span class=p>)</span>
+        <span class=p>)</span>
+
+    <span class=k>if</span> <span class=bp>self</span><span class=o>.</span><span class=n>use_tiles</span><span class=p>:</span>
+        <span class=bp>self</span><span class=o>.</span><span class=n>logger</span><span class=o>.</span><span class=n>warning</span><span class=p>(</span>
+            <span class=s2>&quot;Background noise estimates are not supported for tiles.&quot;</span><span class=p>)</span>
+        <span class=bp>self</span><span class=o>.</span><span class=n>logger</span><span class=o>.</span><span class=n>warning</span><span class=p>(</span>
+            <span class=s2>&quot;Estimating background from mosaics instead.&quot;</span><span class=p>)</span>
+    <span class=n>image_dir</span> <span class=o>=</span> <span class=s2>&quot;COMBINED&quot;</span>
+    <span class=n>rms_dir</span> <span class=o>=</span> <span class=s2>&quot;STOKES</span><span class=si>{}</span><span class=s2>_RMSMAPS&quot;</span><span class=o>.</span><span class=n>format</span><span class=p>(</span><span class=bp>self</span><span class=o>.</span><span class=n>stokes_param</span><span class=p>)</span>
+
+    <span class=n>RMS_FOLDER</span> <span class=o>=</span> <span class=n>os</span><span class=o>.</span><span class=n>path</span><span class=o>.</span><span class=n>join</span><span class=p>(</span>
+        <span class=n>BASE_FOLDER</span><span class=p>,</span>
+        <span class=n>survey_folder</span><span class=p>,</span>
+        <span class=n>image_dir</span><span class=p>,</span>
+        <span class=n>rms_dir</span><span class=p>)</span>
+
+    <span class=k>if</span> <span class=ow>not</span> <span class=n>os</span><span class=o>.</span><span class=n>path</span><span class=o>.</span><span class=n>isdir</span><span class=p>(</span><span class=n>RMS_FOLDER</span><span class=p>):</span>
+        <span class=c1># if not CROSSMATCH_ONLY:</span>
+        <span class=bp>self</span><span class=o>.</span><span class=n>logger</span><span class=o>.</span><span class=n>critical</span><span class=p>((</span>
+            <span class=s2>&quot;</span><span class=si>{}</span><span class=s2> does not exist. &quot;</span>
+            <span class=s2>&quot;Switching to crossmatch only.&quot;</span>
+        <span class=p>)</span><span class=o>.</span><span class=n>format</span><span class=p>(</span><span class=n>RMS_FOLDER</span><span class=p>))</span>
+
+    <span class=n>image_dir</span> <span class=o>=</span> <span class=s2>&quot;COMBINED&quot;</span>
+    <span class=n>selavy_dir</span> <span class=o>=</span> <span class=s2>&quot;STOKES</span><span class=si>{}</span><span class=s2>_SELAVY&quot;</span><span class=o>.</span><span class=n>format</span><span class=p>(</span><span class=bp>self</span><span class=o>.</span><span class=n>stokes_param</span><span class=p>)</span>
+
+    <span class=n>SELAVY_FOLDER</span> <span class=o>=</span> <span class=n>os</span><span class=o>.</span><span class=n>path</span><span class=o>.</span><span class=n>join</span><span class=p>(</span>
+        <span class=n>BASE_FOLDER</span><span class=p>,</span>
+        <span class=n>survey_folder</span><span class=p>,</span>
+        <span class=n>image_dir</span><span class=p>,</span>
+        <span class=n>selavy_dir</span>
+    <span class=p>)</span>
+
+    <span class=k>if</span> <span class=ow>not</span> <span class=n>os</span><span class=o>.</span><span class=n>path</span><span class=o>.</span><span class=n>isdir</span><span class=p>(</span><span class=n>SELAVY_FOLDER</span><span class=p>):</span>
+        <span class=c1># if not FIND_FIELDS and not CROSSMATCH_ONLY:</span>
+        <span class=bp>self</span><span class=o>.</span><span class=n>logger</span><span class=o>.</span><span class=n>critical</span><span class=p>((</span>
+            <span class=s2>&quot;</span><span class=si>{}</span><span class=s2> does not exist. &quot;</span>
+            <span class=s2>&quot;Only finding fields&quot;</span>
+        <span class=p>)</span><span class=o>.</span><span class=n>format</span><span class=p>(</span><span class=n>SELAVY_FOLDER</span><span class=p>))</span>
+
+    <span class=c1># self.FIND_FIELDS = FIND_FIELDS</span>
+    <span class=c1># self.CROSSMATCH_ONLY = CROSSMATCH_ONLY</span>
+    <span class=bp>self</span><span class=o>.</span><span class=n>IMAGE_FOLDER</span> <span class=o>=</span> <span class=n>IMAGE_FOLDER</span>
+    <span class=bp>self</span><span class=o>.</span><span class=n>SELAVY_FOLDER</span> <span class=o>=</span> <span class=n>SELAVY_FOLDER</span>
+    <span class=bp>self</span><span class=o>.</span><span class=n>RMS_FOLDER</span> <span class=o>=</span> <span class=n>RMS_FOLDER</span>
+</code></pre></div> </details> </div> </div> </div> </div> </div> <div class="doc doc-object doc-class"> <h2 id=vasttools.query.FieldQuery class="doc doc-heading"> <code>FieldQuery</code> <a href=#vasttools.query.FieldQuery class=headerlink title="Permanent link">&para;</a></h2> <div class="doc doc-contents "> <p>This is a class representation of a query of the VAST Pilot survey fields, returning basic information such as observation dates and psf information.</p> <p><strong>Attributes:</strong></p> <table> <thead> <tr> <th>Name</th> <th>Type</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code>field</code></td> <td><code>str</code></td> <td><p>Name of requested field.</p></td> </tr> <tr> <td><code>valid</code></td> <td><code>bool</code></td> <td><p>Confirm the requested field exists.</p></td> </tr> <tr> <td><code>pilot_info</code></td> <td><code>pandas.core.frame.DataFrame</code></td> <td><p>Dataframe describing the pilot survey.</p></td> </tr> <tr> <td><code>field_info</code></td> <td><code>pandas.core.frame.DataFrame</code></td> <td><p>Dataframe describing properties of the field.</p></td> </tr> <tr> <td><code>epochs</code></td> <td><code>pandas.core.frame.DataFrame</code></td> <td><p>Dataframe containing epochs this field was observed in.</p></td> </tr> </tbody> </table> <div class="doc doc-children"> <div class="doc doc-object doc-method"> <h3 id=vasttools.query.FieldQuery.__init__ class="doc doc-heading"> <code class="highlight language-python"><span class=fm>__init__</span><span class=p>(</span><span class=bp>self</span><span class=p>,</span> <span class=n>field</span><span class=p>)</span></code> <span class="doc doc-properties"> <small class="doc doc-property doc-property-special"><code>special</code></small> </span> <a href=#vasttools.query.FieldQuery.__init__ class=headerlink title="Permanent link">&para;</a></h3> <div class="doc doc-contents "> <p>Constructor method</p> <p><strong>Parameters:</strong></p> <table> <thead> <tr> <th>Name</th> <th>Type</th> <th>Description</th> <th>Default</th> </tr> </thead> <tbody> <tr> <td><code>field</code></td> <td><code>str</code></td> <td><p>Name of requested field.</p></td> <td><em>required</em></td> </tr> </tbody> </table> <p><strong>Returns:</strong></p> <table> <thead> <tr> <th>Type</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code>None</code></td> <td><p>None</p></td> </tr> </tbody> </table> <details class=quote> <summary>Source code in <code>vasttools/query.py</code></summary> <div class=highlight><pre><span></span><code><span class=k>def</span> <span class=fm>__init__</span><span class=p>(</span><span class=bp>self</span><span class=p>,</span> <span class=n>field</span><span class=p>:</span> <span class=nb>str</span><span class=p>)</span> <span class=o>-&gt;</span> <span class=kc>None</span><span class=p>:</span>
+    <span class=sd>&quot;&quot;&quot;Constructor method</span>
+
+<span class=sd>    Args:</span>
+<span class=sd>        field: Name of requested field.</span>
+
+<span class=sd>    Returns:</span>
+<span class=sd>        None</span>
+<span class=sd>    &quot;&quot;&quot;</span>
+    <span class=bp>self</span><span class=o>.</span><span class=n>logger</span> <span class=o>=</span> <span class=n>logging</span><span class=o>.</span><span class=n>getLogger</span><span class=p>(</span><span class=s1>&#39;vasttools.query.FieldQuery&#39;</span><span class=p>)</span>
+
+    <span class=bp>self</span><span class=o>.</span><span class=n>field</span> <span class=o>=</span> <span class=n>field</span>
+    <span class=bp>self</span><span class=o>.</span><span class=n>valid</span> <span class=o>=</span> <span class=bp>self</span><span class=o>.</span><span class=n>_check_field</span><span class=p>()</span>
+</code></pre></div> </details> </div> </div> <div class="doc doc-object doc-method"> <h3 id=vasttools.query.FieldQuery.run_query class="doc doc-heading"> <code class="highlight language-python"><span class=n>run_query</span><span class=p>(</span><span class=bp>self</span><span class=p>,</span> <span class=n>psf</span><span class=o>=</span><span class=kc>False</span><span class=p>,</span> <span class=n>largest_psf</span><span class=o>=</span><span class=kc>False</span><span class=p>,</span> <span class=n>common_psf</span><span class=o>=</span><span class=kc>False</span><span class=p>,</span> <span class=n>all_psf</span><span class=o>=</span><span class=kc>False</span><span class=p>,</span> <span class=n>save</span><span class=o>=</span><span class=kc>False</span><span class=p>,</span> <span class=n>_pilot_info</span><span class=o>=</span><span class=kc>None</span><span class=p>)</span></code> <a href=#vasttools.query.FieldQuery.run_query class=headerlink title="Permanent link">&para;</a></h3> <div class="doc doc-contents "> <p>Running the field query.</p> <p><strong>Parameters:</strong></p> <table> <thead> <tr> <th>Name</th> <th>Type</th> <th>Description</th> <th>Default</th> </tr> </thead> <tbody> <tr> <td><code>largest_psf</code></td> <td><code>bool</code></td> <td><p>If true the largest psf is calculated of the field per epoch. Defaults to False.</p></td> <td><code>False</code></td> </tr> <tr> <td><code>common_psf</code></td> <td><code>bool</code></td> <td><p>If true the common psf is calculated of the field per epoch. Defaults to False.</p></td> <td><code>False</code></td> </tr> <tr> <td><code>all_psf</code></td> <td><code>bool</code></td> <td><p>If true the common psf is calculated of the field per epoch and all the beam information of the field is shown. Defaults to False.</p></td> <td><code>False</code></td> </tr> <tr> <td><code>save</code></td> <td><code>bool</code></td> <td><p>Save the output tables to a csv file. Defaults to False.</p></td> <td><code>False</code></td> </tr> <tr> <td><code>_pilot_info</code></td> <td><code>Optional[pandas.core.frame.DataFrame]</code></td> <td><p>Allows for the pilot info to be provided rather than the function building it locally. If not provided then the dataframe is built. Defaults to None.</p></td> <td><code>None</code></td> </tr> </tbody> </table> <p><strong>Returns:</strong></p> <table> <thead> <tr> <th>Type</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code>None</code></td> <td><p>None</p></td> </tr> </tbody> </table> <details class=quote> <summary>Source code in <code>vasttools/query.py</code></summary> <div class=highlight><pre><span></span><code><span class=k>def</span> <span class=nf>run_query</span><span class=p>(</span>
+        <span class=bp>self</span><span class=p>,</span>
+        <span class=n>psf</span><span class=p>:</span> <span class=nb>bool</span> <span class=o>=</span> <span class=kc>False</span><span class=p>,</span>
+        <span class=n>largest_psf</span><span class=p>:</span> <span class=nb>bool</span> <span class=o>=</span> <span class=kc>False</span><span class=p>,</span>
+        <span class=n>common_psf</span><span class=p>:</span> <span class=nb>bool</span> <span class=o>=</span> <span class=kc>False</span><span class=p>,</span>
+        <span class=n>all_psf</span><span class=p>:</span> <span class=nb>bool</span> <span class=o>=</span> <span class=kc>False</span><span class=p>,</span>
+        <span class=n>save</span><span class=p>:</span> <span class=nb>bool</span> <span class=o>=</span> <span class=kc>False</span><span class=p>,</span>
+        <span class=n>_pilot_info</span><span class=p>:</span> <span class=n>Optional</span><span class=p>[</span><span class=n>pd</span><span class=o>.</span><span class=n>DataFrame</span><span class=p>]</span> <span class=o>=</span> <span class=kc>None</span>
+<span class=p>)</span> <span class=o>-&gt;</span> <span class=kc>None</span><span class=p>:</span>
+    <span class=sd>&quot;&quot;&quot;Running the field query.</span>
+
+<span class=sd>    Args:</span>
+<span class=sd>        largest_psf: If true the largest psf is calculated</span>
+<span class=sd>            of the field per epoch. Defaults to False.</span>
+<span class=sd>        common_psf: If true the common psf is calculated</span>
+<span class=sd>            of the field per epoch. Defaults to False.</span>
+<span class=sd>        all_psf: If true the common psf is calculated of the field</span>
+<span class=sd>            per epoch and all the beam information of</span>
+<span class=sd>            the field is shown. Defaults to False.</span>
+<span class=sd>        save: Save the output tables to a csv file. Defaults to False.</span>
+<span class=sd>        _pilot_info: Allows for the pilot info to be provided</span>
+<span class=sd>            rather than the function building it locally. If not provided</span>
+<span class=sd>            then the dataframe is built. Defaults to None.</span>
+
+<span class=sd>    Returns:</span>
+<span class=sd>        None</span>
+<span class=sd>    &quot;&quot;&quot;</span>
+    <span class=k>if</span> <span class=ow>not</span> <span class=bp>self</span><span class=o>.</span><span class=n>valid</span><span class=p>:</span>
+        <span class=bp>self</span><span class=o>.</span><span class=n>logger</span><span class=o>.</span><span class=n>error</span><span class=p>(</span><span class=s2>&quot;Field doesn&#39;t exist.&quot;</span><span class=p>)</span>
+        <span class=k>return</span>
+
+    <span class=k>if</span> <span class=n>_pilot_info</span> <span class=ow>is</span> <span class=ow>not</span> <span class=kc>None</span><span class=p>:</span>
+        <span class=bp>self</span><span class=o>.</span><span class=n>pilot_info</span> <span class=o>=</span> <span class=n>_pilot_info</span>
+    <span class=k>else</span><span class=p>:</span>
+        <span class=bp>self</span><span class=o>.</span><span class=n>logger</span><span class=o>.</span><span class=n>debug</span><span class=p>(</span><span class=s2>&quot;Building pilot info file.&quot;</span><span class=p>)</span>
+        <span class=k>for</span> <span class=n>i</span><span class=p>,</span> <span class=n>val</span> <span class=ow>in</span> <span class=nb>enumerate</span><span class=p>(</span><span class=nb>sorted</span><span class=p>(</span><span class=n>RELEASED_EPOCHS</span><span class=p>)):</span>
+            <span class=k>if</span> <span class=n>i</span> <span class=o>==</span> <span class=mi>0</span><span class=p>:</span>
+                <span class=bp>self</span><span class=o>.</span><span class=n>pilot_info</span> <span class=o>=</span> <span class=n>pd</span><span class=o>.</span><span class=n>read_csv</span><span class=p>(</span>
+                    <span class=n>FIELD_FILES</span><span class=p>[</span><span class=n>val</span><span class=p>],</span> <span class=n>comment</span><span class=o>=</span><span class=s1>&#39;#&#39;</span>
+                <span class=p>)</span>
+                <span class=bp>self</span><span class=o>.</span><span class=n>pilot_info</span><span class=p>[</span><span class=s2>&quot;EPOCH&quot;</span><span class=p>]</span> <span class=o>=</span> <span class=n>RELEASED_EPOCHS</span><span class=p>[</span><span class=n>val</span><span class=p>]</span>
+            <span class=k>else</span><span class=p>:</span>
+                <span class=n>to_append</span> <span class=o>=</span> <span class=n>pd</span><span class=o>.</span><span class=n>read_csv</span><span class=p>(</span>
+                    <span class=n>FIELD_FILES</span><span class=p>[</span><span class=n>val</span><span class=p>],</span> <span class=n>comment</span><span class=o>=</span><span class=s1>&#39;#&#39;</span>
+                <span class=p>)</span>
+                <span class=n>to_append</span><span class=p>[</span><span class=s2>&quot;EPOCH&quot;</span><span class=p>]</span> <span class=o>=</span> <span class=n>RELEASED_EPOCHS</span><span class=p>[</span><span class=n>val</span><span class=p>]</span>
+                <span class=bp>self</span><span class=o>.</span><span class=n>pilot_info</span> <span class=o>=</span> <span class=bp>self</span><span class=o>.</span><span class=n>pilot_info</span><span class=o>.</span><span class=n>append</span><span class=p>(</span>
+                    <span class=n>to_append</span><span class=p>,</span> <span class=n>sort</span><span class=o>=</span><span class=kc>False</span>
+                <span class=p>)</span>
+
+    <span class=bp>self</span><span class=o>.</span><span class=n>field_info</span> <span class=o>=</span> <span class=bp>self</span><span class=o>.</span><span class=n>pilot_info</span><span class=p>[</span>
+        <span class=bp>self</span><span class=o>.</span><span class=n>pilot_info</span><span class=o>.</span><span class=n>FIELD_NAME</span> <span class=o>==</span> <span class=bp>self</span><span class=o>.</span><span class=n>field</span>
+    <span class=p>]</span>
+
+    <span class=bp>self</span><span class=o>.</span><span class=n>field_info</span><span class=o>.</span><span class=n>reset_index</span><span class=p>(</span><span class=n>drop</span><span class=o>=</span><span class=kc>True</span><span class=p>,</span> <span class=n>inplace</span><span class=o>=</span><span class=kc>True</span><span class=p>)</span>
+
+    <span class=bp>self</span><span class=o>.</span><span class=n>field_info</span> <span class=o>=</span> <span class=bp>self</span><span class=o>.</span><span class=n>field_info</span><span class=o>.</span><span class=n>filter</span><span class=p>([</span>
+        <span class=s2>&quot;EPOCH&quot;</span><span class=p>,</span>
+        <span class=s2>&quot;FIELD_NAME&quot;</span><span class=p>,</span>
+        <span class=s2>&quot;SBID&quot;</span><span class=p>,</span>
+        <span class=s2>&quot;BEAM&quot;</span><span class=p>,</span>
+        <span class=s2>&quot;RA_HMS&quot;</span><span class=p>,</span>
+        <span class=s2>&quot;DEC_DMS&quot;</span><span class=p>,</span>
+        <span class=s2>&quot;DATEOBS&quot;</span><span class=p>,</span>
+        <span class=s2>&quot;DATEEND&quot;</span><span class=p>,</span>
+        <span class=s2>&quot;BMAJ&quot;</span><span class=p>,</span>
+        <span class=s2>&quot;BMIN&quot;</span><span class=p>,</span>
+        <span class=s2>&quot;BPA&quot;</span>
+    <span class=p>])</span>
+
+    <span class=bp>self</span><span class=o>.</span><span class=n>field_info</span><span class=o>.</span><span class=n>sort_values</span><span class=p>(</span><span class=n>by</span><span class=o>=</span><span class=p>[</span><span class=s2>&quot;EPOCH&quot;</span><span class=p>,</span> <span class=s2>&quot;BEAM&quot;</span><span class=p>],</span> <span class=n>inplace</span><span class=o>=</span><span class=kc>True</span><span class=p>)</span>
+
+    <span class=bp>self</span><span class=o>.</span><span class=n>epochs</span> <span class=o>=</span> <span class=bp>self</span><span class=o>.</span><span class=n>field_info</span><span class=o>.</span><span class=n>EPOCH</span><span class=o>.</span><span class=n>unique</span><span class=p>()</span>
+
+    <span class=k>if</span> <span class=n>psf</span> <span class=ow>or</span> <span class=n>largest_psf</span> <span class=ow>or</span> <span class=n>common_psf</span> <span class=ow>or</span> <span class=n>all_psf</span><span class=p>:</span>
+        <span class=bp>self</span><span class=o>.</span><span class=n>logger</span><span class=o>.</span><span class=n>info</span><span class=p>(</span><span class=s2>&quot;Getting psf information.&quot;</span><span class=p>)</span>
+        <span class=n>epoch_beams</span> <span class=o>=</span> <span class=bp>self</span><span class=o>.</span><span class=n>_get_beams</span><span class=p>()</span>
+
+    <span class=k>if</span> <span class=n>all_psf</span><span class=p>:</span>
+        <span class=n>common_beams</span> <span class=o>=</span> <span class=p>{}</span>
+        <span class=bp>self</span><span class=o>.</span><span class=n>logger</span><span class=o>.</span><span class=n>info</span><span class=p>(</span><span class=s2>&quot;Calculating common psfs...&quot;</span><span class=p>)</span>
+        <span class=k>for</span> <span class=n>i</span> <span class=ow>in</span> <span class=nb>sorted</span><span class=p>(</span><span class=n>epoch_beams</span><span class=p>):</span>
+            <span class=n>common_beams</span><span class=p>[</span><span class=n>i</span><span class=p>]</span> <span class=o>=</span> <span class=n>epoch_beams</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=o>.</span><span class=n>common_beam</span><span class=p>()</span>
+
+        <span class=bp>self</span><span class=o>.</span><span class=n>logger</span><span class=o>.</span><span class=n>info</span><span class=p>(</span><span class=s2>&quot;</span><span class=si>{}</span><span class=s2> information:&quot;</span><span class=o>.</span><span class=n>format</span><span class=p>(</span><span class=bp>self</span><span class=o>.</span><span class=n>field</span><span class=p>))</span>
+
+        <span class=nb>print</span><span class=p>(</span><span class=n>tabulate</span><span class=p>(</span>
+            <span class=bp>self</span><span class=o>.</span><span class=n>field_info</span><span class=p>,</span>
+            <span class=n>headers</span><span class=o>=</span><span class=bp>self</span><span class=o>.</span><span class=n>field_info</span><span class=o>.</span><span class=n>columns</span><span class=p>,</span>
+            <span class=n>showindex</span><span class=o>=</span><span class=kc>False</span>
+        <span class=p>))</span>
+
+        <span class=n>table</span> <span class=o>=</span> <span class=p>[]</span>
+
+        <span class=k>for</span> <span class=n>i</span> <span class=ow>in</span> <span class=nb>sorted</span><span class=p>(</span><span class=n>epoch_beams</span><span class=p>):</span>
+            <span class=n>table</span><span class=o>.</span><span class=n>append</span><span class=p>([</span>
+                <span class=bp>self</span><span class=o>.</span><span class=n>field</span><span class=p>,</span>
+                <span class=n>i</span><span class=p>,</span>
+                <span class=n>common_beams</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=o>.</span><span class=n>major</span><span class=o>.</span><span class=n>to</span><span class=p>(</span><span class=n>u</span><span class=o>.</span><span class=n>arcsec</span><span class=p>)</span><span class=o>.</span><span class=n>value</span><span class=p>,</span>
+                <span class=n>common_beams</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=o>.</span><span class=n>minor</span><span class=o>.</span><span class=n>to</span><span class=p>(</span><span class=n>u</span><span class=o>.</span><span class=n>arcsec</span><span class=p>)</span><span class=o>.</span><span class=n>value</span><span class=p>,</span>
+                <span class=n>common_beams</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=o>.</span><span class=n>pa</span><span class=o>.</span><span class=n>to</span><span class=p>(</span><span class=n>u</span><span class=o>.</span><span class=n>deg</span><span class=p>)</span><span class=o>.</span><span class=n>value</span>
+            <span class=p>])</span>
+
+        <span class=bp>self</span><span class=o>.</span><span class=n>logger</span><span class=o>.</span><span class=n>info</span><span class=p>(</span><span class=s2>&quot;Common psf for </span><span class=si>{}</span><span class=s2>&quot;</span><span class=o>.</span><span class=n>format</span><span class=p>(</span><span class=bp>self</span><span class=o>.</span><span class=n>field</span><span class=p>))</span>
+
+        <span class=nb>print</span><span class=p>(</span><span class=n>tabulate</span><span class=p>(</span><span class=n>table</span><span class=p>,</span> <span class=n>headers</span><span class=o>=</span><span class=p>[</span>
+            <span class=s2>&quot;FIELD&quot;</span><span class=p>,</span>
+            <span class=s2>&quot;EPOCH&quot;</span><span class=p>,</span>
+            <span class=s2>&quot;BMAJ (arcsec)&quot;</span><span class=p>,</span>
+            <span class=s2>&quot;BMIN (arcsec)&quot;</span><span class=p>,</span>
+            <span class=s2>&quot;BPA (degree)&quot;</span>
+        <span class=p>]))</span>
+
+        <span class=k>if</span> <span class=n>save</span><span class=p>:</span>
+            <span class=n>common_df</span> <span class=o>=</span> <span class=n>pd</span><span class=o>.</span><span class=n>DataFrame</span><span class=p>(</span><span class=n>table</span><span class=p>,</span> <span class=n>columns</span><span class=o>=</span><span class=p>[</span>
+                <span class=s2>&quot;FIELD&quot;</span><span class=p>,</span>
+                <span class=s2>&quot;EPOCH&quot;</span><span class=p>,</span>
+                <span class=s2>&quot;BMAJ (arcsec)&quot;</span><span class=p>,</span>
+                <span class=s2>&quot;BMIN (arcsec)&quot;</span><span class=p>,</span>
+                <span class=s2>&quot;BPA (degree)&quot;</span>
+            <span class=p>])</span>
+            <span class=n>savename</span> <span class=o>=</span> <span class=s2>&quot;</span><span class=si>{}</span><span class=s2>_field_info_common_psf.csv&quot;</span><span class=o>.</span><span class=n>format</span><span class=p>(</span><span class=bp>self</span><span class=o>.</span><span class=n>field</span><span class=p>)</span>
+            <span class=n>common_df</span><span class=o>.</span><span class=n>to_csv</span><span class=p>(</span><span class=n>savename</span><span class=p>,</span> <span class=n>index</span><span class=o>=</span><span class=kc>False</span><span class=p>)</span>
+            <span class=bp>self</span><span class=o>.</span><span class=n>logger</span><span class=o>.</span><span class=n>info</span><span class=p>(</span><span class=s2>&quot;Saved common psf output to </span><span class=si>{}</span><span class=s2>.&quot;</span><span class=o>.</span><span class=n>format</span><span class=p>(</span>
+                <span class=n>savename</span>
+            <span class=p>))</span>
+
+    <span class=k>else</span><span class=p>:</span>
+        <span class=bp>self</span><span class=o>.</span><span class=n>field_info</span> <span class=o>=</span> <span class=bp>self</span><span class=o>.</span><span class=n>field_info</span><span class=o>.</span><span class=n>filter</span><span class=p>([</span>
+            <span class=s2>&quot;EPOCH&quot;</span><span class=p>,</span>
+            <span class=s2>&quot;FIELD_NAME&quot;</span><span class=p>,</span>
+            <span class=s2>&quot;SBID&quot;</span><span class=p>,</span>
+            <span class=s2>&quot;RA_HMS&quot;</span><span class=p>,</span>
+            <span class=s2>&quot;DEC_DMS&quot;</span><span class=p>,</span>
+            <span class=s2>&quot;DATEOBS&quot;</span><span class=p>,</span>
+            <span class=s2>&quot;DATEEND&quot;</span><span class=p>,</span>
+        <span class=p>])</span>
+
+        <span class=bp>self</span><span class=o>.</span><span class=n>field_info</span><span class=o>.</span><span class=n>rename</span><span class=p>(</span><span class=n>columns</span><span class=o>=</span><span class=p>{</span>
+            <span class=s2>&quot;RA_HMS&quot;</span><span class=p>:</span> <span class=s2>&quot;RA_HMS (Beam 0)&quot;</span><span class=p>,</span>
+            <span class=s2>&quot;DEC_DMS&quot;</span><span class=p>:</span> <span class=s2>&quot;DEC_DMS (Beam 0)&quot;</span><span class=p>,</span>
+        <span class=p>},</span> <span class=n>inplace</span><span class=o>=</span><span class=kc>True</span><span class=p>)</span>
+
+        <span class=bp>self</span><span class=o>.</span><span class=n>field_info</span><span class=o>.</span><span class=n>drop_duplicates</span><span class=p>(</span><span class=s2>&quot;EPOCH&quot;</span><span class=p>,</span> <span class=n>inplace</span><span class=o>=</span><span class=kc>True</span><span class=p>)</span>
+        <span class=k>if</span> <span class=n>psf</span><span class=p>:</span>
+            <span class=n>beams_zero</span> <span class=o>=</span> <span class=p>[]</span>
+            <span class=k>for</span> <span class=n>i</span> <span class=ow>in</span> <span class=nb>sorted</span><span class=p>(</span><span class=n>epoch_beams</span><span class=p>):</span>
+                <span class=n>beams_zero</span><span class=o>.</span><span class=n>append</span><span class=p>(</span><span class=n>epoch_beams</span><span class=p>[</span><span class=n>i</span><span class=p>][</span><span class=mi>0</span><span class=p>])</span>
+
+            <span class=bp>self</span><span class=o>.</span><span class=n>field_info</span><span class=p>[</span><span class=s2>&quot;BMAJ (arcsec)&quot;</span><span class=p>]</span> <span class=o>=</span> <span class=p>[</span>
+                <span class=n>b</span><span class=o>.</span><span class=n>major</span><span class=o>.</span><span class=n>value</span> <span class=k>for</span> <span class=n>b</span> <span class=ow>in</span> <span class=n>beams_zero</span>
+            <span class=p>]</span>
+            <span class=bp>self</span><span class=o>.</span><span class=n>field_info</span><span class=p>[</span><span class=s2>&quot;BMIN (arcsec)&quot;</span><span class=p>]</span> <span class=o>=</span> <span class=p>[</span>
+                <span class=n>b</span><span class=o>.</span><span class=n>minor</span><span class=o>.</span><span class=n>value</span> <span class=k>for</span> <span class=n>b</span> <span class=ow>in</span> <span class=n>beams_zero</span>
+            <span class=p>]</span>
+            <span class=bp>self</span><span class=o>.</span><span class=n>field_info</span><span class=p>[</span><span class=s2>&quot;BPA (deg)&quot;</span><span class=p>]</span> <span class=o>=</span> <span class=p>[</span>
+                <span class=n>b</span><span class=o>.</span><span class=n>pa</span><span class=o>.</span><span class=n>value</span> <span class=k>for</span> <span class=n>b</span> <span class=ow>in</span> <span class=n>beams_zero</span>
+            <span class=p>]</span>
+        <span class=k>if</span> <span class=n>largest_psf</span><span class=p>:</span>
+            <span class=n>largest_beams</span> <span class=o>=</span> <span class=p>[]</span>
+            <span class=k>for</span> <span class=n>i</span> <span class=ow>in</span> <span class=nb>sorted</span><span class=p>(</span><span class=n>epoch_beams</span><span class=p>):</span>
+                <span class=n>largest_beams</span><span class=o>.</span><span class=n>append</span><span class=p>(</span><span class=n>epoch_beams</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=o>.</span><span class=n>largest_beam</span><span class=p>())</span>
+
+            <span class=bp>self</span><span class=o>.</span><span class=n>field_info</span><span class=p>[</span><span class=s2>&quot;L_BMAJ (arcsec)&quot;</span><span class=p>]</span> <span class=o>=</span> <span class=p>[</span>
+                <span class=n>b</span><span class=o>.</span><span class=n>major</span><span class=o>.</span><span class=n>value</span> <span class=k>for</span> <span class=n>b</span> <span class=ow>in</span> <span class=n>largest_beams</span>
+            <span class=p>]</span>
+            <span class=bp>self</span><span class=o>.</span><span class=n>field_info</span><span class=p>[</span><span class=s2>&quot;L_BMIN (arcsec)&quot;</span><span class=p>]</span> <span class=o>=</span> <span class=p>[</span>
+                <span class=n>b</span><span class=o>.</span><span class=n>minor</span><span class=o>.</span><span class=n>value</span> <span class=k>for</span> <span class=n>b</span> <span class=ow>in</span> <span class=n>largest_beams</span>
+            <span class=p>]</span>
+            <span class=bp>self</span><span class=o>.</span><span class=n>field_info</span><span class=p>[</span><span class=s2>&quot;L_BPA (deg)&quot;</span><span class=p>]</span> <span class=o>=</span> <span class=p>[</span>
+                <span class=n>b</span><span class=o>.</span><span class=n>pa</span><span class=o>.</span><span class=n>value</span> <span class=k>for</span> <span class=n>b</span> <span class=ow>in</span> <span class=n>largest_beams</span>
+            <span class=p>]</span>
+
+        <span class=k>elif</span> <span class=n>common_psf</span><span class=p>:</span>
+            <span class=n>common_beams</span> <span class=o>=</span> <span class=p>[]</span>
+            <span class=bp>self</span><span class=o>.</span><span class=n>logger</span><span class=o>.</span><span class=n>info</span><span class=p>(</span><span class=s2>&quot;Calculating common psfs...&quot;</span><span class=p>)</span>
+            <span class=k>for</span> <span class=n>i</span> <span class=ow>in</span> <span class=nb>sorted</span><span class=p>(</span><span class=n>epoch_beams</span><span class=p>):</span>
+                <span class=n>common_beams</span><span class=o>.</span><span class=n>append</span><span class=p>(</span><span class=n>epoch_beams</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=o>.</span><span class=n>common_beam</span><span class=p>())</span>
+
+            <span class=bp>self</span><span class=o>.</span><span class=n>field_info</span><span class=p>[</span><span class=s2>&quot;C_BMAJ (arcsec)&quot;</span><span class=p>]</span> <span class=o>=</span> <span class=p>[</span>
+                <span class=n>b</span><span class=o>.</span><span class=n>major</span><span class=o>.</span><span class=n>to</span><span class=p>(</span><span class=n>u</span><span class=o>.</span><span class=n>arcsec</span><span class=p>)</span><span class=o>.</span><span class=n>value</span> <span class=k>for</span> <span class=n>b</span> <span class=ow>in</span> <span class=n>common_beams</span>
+            <span class=p>]</span>
+            <span class=bp>self</span><span class=o>.</span><span class=n>field_info</span><span class=p>[</span><span class=s2>&quot;C_BMIN (arcsec)&quot;</span><span class=p>]</span> <span class=o>=</span> <span class=p>[</span>
+                <span class=n>b</span><span class=o>.</span><span class=n>minor</span><span class=o>.</span><span class=n>to</span><span class=p>(</span><span class=n>u</span><span class=o>.</span><span class=n>arcsec</span><span class=p>)</span><span class=o>.</span><span class=n>value</span> <span class=k>for</span> <span class=n>b</span> <span class=ow>in</span> <span class=n>common_beams</span>
+            <span class=p>]</span>
+            <span class=bp>self</span><span class=o>.</span><span class=n>field_info</span><span class=p>[</span><span class=s2>&quot;C_BPA (deg)&quot;</span><span class=p>]</span> <span class=o>=</span> <span class=p>[</span>
+                <span class=n>b</span><span class=o>.</span><span class=n>pa</span><span class=o>.</span><span class=n>to</span><span class=p>(</span><span class=n>u</span><span class=o>.</span><span class=n>deg</span><span class=p>)</span><span class=o>.</span><span class=n>value</span> <span class=k>for</span> <span class=n>b</span> <span class=ow>in</span> <span class=n>common_beams</span>
+            <span class=p>]</span>
+
+        <span class=bp>self</span><span class=o>.</span><span class=n>logger</span><span class=o>.</span><span class=n>info</span><span class=p>(</span><span class=s2>&quot;</span><span class=si>{}</span><span class=s2> information:&quot;</span><span class=o>.</span><span class=n>format</span><span class=p>(</span><span class=bp>self</span><span class=o>.</span><span class=n>field</span><span class=p>))</span>
+
+        <span class=nb>print</span><span class=p>(</span><span class=n>tabulate</span><span class=p>(</span>
+            <span class=bp>self</span><span class=o>.</span><span class=n>field_info</span><span class=p>,</span>
+            <span class=n>headers</span><span class=o>=</span><span class=bp>self</span><span class=o>.</span><span class=n>field_info</span><span class=o>.</span><span class=n>columns</span><span class=p>,</span>
+            <span class=n>showindex</span><span class=o>=</span><span class=kc>False</span>
+        <span class=p>))</span>
+
+    <span class=k>if</span> <span class=n>save</span><span class=p>:</span>
+        <span class=n>savename</span> <span class=o>=</span> <span class=s2>&quot;</span><span class=si>{}</span><span class=s2>_field_info.csv&quot;</span><span class=o>.</span><span class=n>format</span><span class=p>(</span><span class=bp>self</span><span class=o>.</span><span class=n>field</span><span class=p>)</span>
+        <span class=bp>self</span><span class=o>.</span><span class=n>field_info</span><span class=o>.</span><span class=n>to_csv</span><span class=p>(</span><span class=n>savename</span><span class=p>,</span> <span class=n>index</span><span class=o>=</span><span class=kc>False</span><span class=p>)</span>
+        <span class=bp>self</span><span class=o>.</span><span class=n>logger</span><span class=o>.</span><span class=n>info</span><span class=p>(</span><span class=s2>&quot;Saved output to </span><span class=si>{}</span><span class=s2>.&quot;</span><span class=o>.</span><span class=n>format</span><span class=p>(</span><span class=n>savename</span><span class=p>))</span>
+</code></pre></div> </details> </div> </div> </div> </div> </div> <div class="doc doc-object doc-class"> <h2 id=vasttools.query.Query class="doc doc-heading"> <code>Query</code> <a href=#vasttools.query.Query class=headerlink title="Permanent link">&para;</a></h2> <div class="doc doc-contents "> <p>This is a class representation of various information about a particular query including the catalogue of target sources, the Stokes parameter, crossmatch radius and output parameters.</p> <p><strong>Attributes:</strong></p> <table> <thead> <tr> <th>Name</th> <th>Type</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code>coords</code></td> <td><code>astropy.coordinates.sky_coordinate.SkyCoord</code></td> <td><p>The sky coordinates to be queried.</p></td> </tr> <tr> <td><code>source_names</code></td> <td><code>List[str]</code></td> <td><p>The names of the sources (coordinates) being queried.</p></td> </tr> <tr> <td><code>ncpu</code></td> <td><code>int</code></td> <td><p>The number of cpus available.</p></td> </tr> <tr> <td><code>planets</code></td> <td><code>bool</code></td> <td><p>Set to 'True' when planets are to be queried.</p></td> </tr> <tr> <td><code>settings</code></td> <td><code>Dict</code></td> <td><p>Dictionary that contains the various settings of the query. TODO: This dictionary typing needs better defining.</p></td> </tr> <tr> <td><code>base_folder</code></td> <td><code>str</code></td> <td><p>The base folder of the VAST data.</p></td> </tr> <tr> <td><code>fields_found</code></td> <td><code>bool</code></td> <td><p>Set to 'True' once 'find_fields' has been run on the query.</p></td> </tr> <tr> <td><code>racs</code></td> <td><code>bool</code></td> <td><p>Set to 'True' if RACS (Epoch 00) is included in the query.</p></td> </tr> <tr> <td><code>query_df</code></td> <td><code>pandas.core.frame.DataFrame</code></td> <td><p>The dataframe that is constructed to perform the query.</p></td> </tr> <tr> <td><code>sources_df</code></td> <td><code>pandas.core.frame.DataFrame</code></td> <td><p>The dataframe that contains the found sources when 'find_sources' is run.</p></td> </tr> <tr> <td><code>results</code></td> <td><code>pandas.core.frame.Series</code></td> <td><p>Series that contains each result in the form of a vasttools.source.Source object, with the source name as the index.</p></td> </tr> </tbody> </table> <div class="doc doc-children"> <div class="doc doc-object doc-method"> <h3 id=vasttools.query.Query.__init__ class="doc doc-heading"> <code class="highlight language-python"><span class=fm>__init__</span><span class=p>(</span><span class=bp>self</span><span class=p>,</span> <span class=n>coords</span><span class=o>=</span><span class=kc>None</span><span class=p>,</span> <span class=n>source_names</span><span class=o>=</span><span class=kc>None</span><span class=p>,</span> <span class=n>epochs</span><span class=o>=</span><span class=s1>&#39;all&#39;</span><span class=p>,</span> <span class=n>stokes</span><span class=o>=</span><span class=s1>&#39;I&#39;</span><span class=p>,</span> <span class=n>crossmatch_radius</span><span class=o>=</span><span class=mf>5.0</span><span class=p>,</span> <span class=n>max_sep</span><span class=o>=</span><span class=mf>1.0</span><span class=p>,</span> <span class=n>use_tiles</span><span class=o>=</span><span class=kc>False</span><span class=p>,</span> <span class=n>use_islands</span><span class=o>=</span><span class=kc>False</span><span class=p>,</span> <span class=n>base_folder</span><span class=o>=</span><span class=kc>None</span><span class=p>,</span> <span class=n>matches_only</span><span class=o>=</span><span class=kc>False</span><span class=p>,</span> <span class=n>no_rms</span><span class=o>=</span><span class=kc>False</span><span class=p>,</span> <span class=n>search_around_coordinates</span><span class=o>=</span><span class=kc>False</span><span class=p>,</span> <span class=n>output_dir</span><span class=o>=</span><span class=s1>&#39;.&#39;</span><span class=p>,</span> <span class=n>planets</span><span class=o>=</span><span class=kc>None</span><span class=p>,</span> <span class=n>ncpu</span><span class=o>=</span><span class=mi>2</span><span class=p>,</span> <span class=n>sort_output</span><span class=o>=</span><span class=kc>False</span><span class=p>,</span> <span class=n>forced_fits</span><span class=o>=</span><span class=kc>False</span><span class=p>,</span> <span class=n>forced_cluster_threshold</span><span class=o>=</span><span class=mf>1.5</span><span class=p>,</span> <span class=n>forced_allow_nan</span><span class=o>=</span><span class=kc>False</span><span class=p>)</span></code> <span class="doc doc-properties"> <small class="doc doc-property doc-property-special"><code>special</code></small> </span> <a href=#vasttools.query.Query.__init__ class=headerlink title="Permanent link">&para;</a></h3> <div class="doc doc-contents "> <p>Constructor method.</p> <p><strong>Parameters:</strong></p> <table> <thead> <tr> <th>Name</th> <th>Type</th> <th>Description</th> <th>Default</th> </tr> </thead> <tbody> <tr> <td><code>coords</code></td> <td><code>Optional[astropy.coordinates.sky_coordinate.SkyCoord]</code></td> <td><p>List of coordinates to query, defaults to None.</p></td> <td><code>None</code></td> </tr> <tr> <td><code>source_names</code></td> <td><code>Optional[List[str]]</code></td> <td><p>List of source names, defaults to None.</p></td> <td><code>None</code></td> </tr> <tr> <td><code>epochs</code></td> <td><code>str</code></td> <td><p>Comma-separated list of epochs to query. All available epochs can be queried by passing "all". Defaults to "all".</p></td> <td><code>&#39;all&#39;</code></td> </tr> <tr> <td><code>stokes</code></td> <td><code>str</code></td> <td><p>Stokes parameter to query.</p></td> <td><code>&#39;I&#39;</code></td> </tr> <tr> <td><code>crossmatch_radius</code></td> <td><code>float</code></td> <td><p>Crossmatch radius in arcsec, defaults to 5.0.</p></td> <td><code>5.0</code></td> </tr> <tr> <td><code>max_sep</code></td> <td><code>float</code></td> <td><p>Maximum separation of source from beam centre in degrees, defaults to 1.0.</p></td> <td><code>1.0</code></td> </tr> <tr> <td><code>use_tiles</code></td> <td><code>bool</code></td> <td><p>Query tiles rather than combined mosaics, defaults to <code>False</code>.</p></td> <td><code>False</code></td> </tr> <tr> <td><code>use_islands</code></td> <td><code>bool</code></td> <td><p>Use selavy islands rather than components, defaults to <code>False</code>.</p></td> <td><code>False</code></td> </tr> <tr> <td><code>base_folder</code></td> <td><code>Optional[str]</code></td> <td><p>Path to base folder if using default directory structure, defaults to 'None'.</p></td> <td><code>None</code></td> </tr> <tr> <td><code>matches_only</code></td> <td><code>bool</code></td> <td><p>Only produce data products for sources with a selavy match, defaults to <code>False</code>.</p></td> <td><code>False</code></td> </tr> <tr> <td><code>no_rms</code></td> <td><code>bool</code></td> <td><p>When set to <code>True</code> the estimate of the background RMS around each source, will not be performed, defaults to <code>False</code>.</p></td> <td><code>False</code></td> </tr> <tr> <td><code>search_around_coordinates</code></td> <td><code>bool</code></td> <td><p>When set to <code>True</code>, all matches to a searched coordinate are returned, instead of only the closest match.</p></td> <td><code>False</code></td> </tr> <tr> <td><code>output_dir</code></td> <td><code>str</code></td> <td><p>Output directory to place all results in, defaults to ".".</p></td> <td><code>&#39;.&#39;</code></td> </tr> <tr> <td><code>planets</code></td> <td><code>Optional[List[str]]</code></td> <td><p>List of planets to search for, defaults to None.</p></td> <td><code>None</code></td> </tr> <tr> <td><code>ncpu</code></td> <td><code>int</code></td> <td><p>Number of CPUs to use, defaults to 2.</p></td> <td><code>2</code></td> </tr> <tr> <td><code>sort_output</code></td> <td><code>bool</code></td> <td><p>Sorts the output into individual source directories, defaults to <code>False</code>.</p></td> <td><code>False</code></td> </tr> <tr> <td><code>forced_fits</code></td> <td><code>bool</code></td> <td><p>Turns on the option to perform forced fits on the locations queried, defaults to <code>False</code>.</p></td> <td><code>False</code></td> </tr> <tr> <td><code>forced_cluster_threshold</code></td> <td><code>float</code></td> <td><p>The cluster_threshold value passed to the forced photometry. Beam width distance limit for which a cluster is formed for extraction, defaults to 3.0.</p></td> <td><code>1.5</code></td> </tr> <tr> <td><code>forced_allow_nan</code></td> <td><code>bool</code></td> <td><p><code>allow_nan</code> value passed to the forced photometry. If False then any cluster containing a NaN is ignored. Defaults to False.</p></td> <td><code>False</code></td> </tr> </tbody> </table> <p><strong>Returns:</strong></p> <table> <thead> <tr> <th>Type</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code>None</code></td> <td><p>None</p></td> </tr> </tbody> </table> <p><strong>Exceptions:</strong></p> <table> <thead> <tr> <th>Type</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code>ValueError</code></td> <td><p>If the number of CPUs requested exceeds the total available.</p></td> </tr> <tr> <td><code>Exception</code></td> <td><p>No coordinates or source names have been provided.</p></td> </tr> <tr> <td><code>Exception</code></td> <td><p>Forced fits and search around coordinates options have both been selected.</p></td> </tr> <tr> <td><code>Exception</code></td> <td><p>Number of source names provided does not match the number of coordinates.</p></td> </tr> <tr> <td><code>ValueError</code></td> <td><p>Planet provided is not a valid planet.</p></td> </tr> <tr> <td><code>Exception</code></td> <td><p>Base folder could not be determined.</p></td> </tr> <tr> <td><code>Exception</code></td> <td><p>Base folder cannot be found.</p></td> </tr> <tr> <td><code>ValueError</code></td> <td><p>Base folder cannot be found.</p></td> </tr> <tr> <td><code>ValueError</code></td> <td><p>Problems found in query settings.</p></td> </tr> </tbody> </table> <details class=quote> <summary>Source code in <code>vasttools/query.py</code></summary> <div class=highlight><pre><span></span><code><span class=k>def</span> <span class=fm>__init__</span><span class=p>(</span>
+    <span class=bp>self</span><span class=p>,</span>
+    <span class=n>coords</span><span class=p>:</span> <span class=n>Optional</span><span class=p>[</span><span class=n>SkyCoord</span><span class=p>]</span> <span class=o>=</span> <span class=kc>None</span><span class=p>,</span>
+    <span class=n>source_names</span><span class=p>:</span> <span class=n>Optional</span><span class=p>[</span><span class=n>List</span><span class=p>[</span><span class=nb>str</span><span class=p>]]</span> <span class=o>=</span> <span class=kc>None</span><span class=p>,</span>
+    <span class=n>epochs</span><span class=p>:</span> <span class=nb>str</span> <span class=o>=</span> <span class=s2>&quot;all&quot;</span><span class=p>,</span>
+    <span class=n>stokes</span><span class=p>:</span> <span class=nb>str</span> <span class=o>=</span> <span class=s2>&quot;I&quot;</span><span class=p>,</span>
+    <span class=n>crossmatch_radius</span><span class=p>:</span> <span class=nb>float</span> <span class=o>=</span> <span class=mf>5.0</span><span class=p>,</span>
+    <span class=n>max_sep</span><span class=p>:</span> <span class=nb>float</span> <span class=o>=</span> <span class=mf>1.0</span><span class=p>,</span>
+    <span class=n>use_tiles</span><span class=p>:</span> <span class=nb>bool</span> <span class=o>=</span> <span class=kc>False</span><span class=p>,</span>
+    <span class=n>use_islands</span><span class=p>:</span> <span class=nb>bool</span> <span class=o>=</span> <span class=kc>False</span><span class=p>,</span>
+    <span class=n>base_folder</span><span class=p>:</span> <span class=n>Optional</span><span class=p>[</span><span class=nb>str</span><span class=p>]</span> <span class=o>=</span> <span class=kc>None</span><span class=p>,</span>
+    <span class=n>matches_only</span><span class=p>:</span> <span class=nb>bool</span> <span class=o>=</span> <span class=kc>False</span><span class=p>,</span>
+    <span class=n>no_rms</span><span class=p>:</span> <span class=nb>bool</span> <span class=o>=</span> <span class=kc>False</span><span class=p>,</span>
+    <span class=n>search_around_coordinates</span><span class=p>:</span> <span class=nb>bool</span> <span class=o>=</span> <span class=kc>False</span><span class=p>,</span>
+    <span class=n>output_dir</span><span class=p>:</span> <span class=nb>str</span> <span class=o>=</span> <span class=s2>&quot;.&quot;</span><span class=p>,</span>
+    <span class=n>planets</span><span class=p>:</span> <span class=n>Optional</span><span class=p>[</span><span class=n>List</span><span class=p>[</span><span class=nb>str</span><span class=p>]]</span> <span class=o>=</span> <span class=kc>None</span><span class=p>,</span>
+    <span class=n>ncpu</span><span class=p>:</span> <span class=nb>int</span> <span class=o>=</span> <span class=mi>2</span><span class=p>,</span>
+    <span class=n>sort_output</span><span class=p>:</span> <span class=nb>bool</span> <span class=o>=</span> <span class=kc>False</span><span class=p>,</span>
+    <span class=n>forced_fits</span><span class=p>:</span> <span class=nb>bool</span> <span class=o>=</span> <span class=kc>False</span><span class=p>,</span>
+    <span class=n>forced_cluster_threshold</span><span class=p>:</span> <span class=nb>float</span> <span class=o>=</span> <span class=mf>1.5</span><span class=p>,</span>
+    <span class=n>forced_allow_nan</span><span class=p>:</span> <span class=nb>bool</span> <span class=o>=</span> <span class=kc>False</span>
+<span class=p>)</span> <span class=o>-&gt;</span> <span class=kc>None</span><span class=p>:</span>
+    <span class=sd>&quot;&quot;&quot;</span>
+<span class=sd>    Constructor method.</span>
+
+<span class=sd>    Args:</span>
+<span class=sd>        coords: List of coordinates to query, defaults to None.</span>
+<span class=sd>        source_names: List of source names, defaults to None.</span>
+<span class=sd>        epochs: Comma-separated list of epochs to query.</span>
+<span class=sd>            All available epochs can be queried by passing &quot;all&quot;.</span>
+<span class=sd>            Defaults to &quot;all&quot;.</span>
+<span class=sd>        stokes: Stokes parameter to query.</span>
+<span class=sd>        crossmatch_radius: Crossmatch radius in arcsec, defaults to 5.0.</span>
+<span class=sd>        max_sep: Maximum separation of source from beam centre</span>
+<span class=sd>            in degrees, defaults to 1.0.</span>
+<span class=sd>        use_tiles: Query tiles rather than combined mosaics,</span>
+<span class=sd>            defaults to `False`.</span>
+<span class=sd>        use_islands: Use selavy islands rather than components,</span>
+<span class=sd>            defaults to `False`.</span>
+<span class=sd>        base_folder: Path to base folder if using default directory</span>
+<span class=sd>            structure, defaults to &#39;None&#39;.</span>
+<span class=sd>        matches_only: Only produce data products for sources with a</span>
+<span class=sd>            selavy match, defaults to `False`.</span>
+<span class=sd>        no_rms: When set to `True` the estimate of the background RMS</span>
+<span class=sd>            around each source, will not be performed,</span>
+<span class=sd>            defaults to `False`.</span>
+<span class=sd>        search_around_coordinates: When set to `True`, all matches to a</span>
+<span class=sd>            searched coordinate are returned, instead of only the closest</span>
+<span class=sd>            match.</span>
+<span class=sd>        output_dir: Output directory to place all results in,</span>
+<span class=sd>            defaults to &quot;.&quot;.</span>
+<span class=sd>        planets: List of planets to search for, defaults to None.</span>
+<span class=sd>        ncpu: Number of CPUs to use, defaults to 2.</span>
+<span class=sd>        sort_output: Sorts the output into individual source</span>
+<span class=sd>            directories, defaults to `False`.</span>
+<span class=sd>        forced_fits: Turns on the option to perform forced fits</span>
+<span class=sd>            on the locations queried, defaults to `False`.</span>
+<span class=sd>        forced_cluster_threshold: The cluster_threshold value passed to</span>
+<span class=sd>            the forced photometry. Beam width distance limit for which a</span>
+<span class=sd>            cluster is formed for extraction, defaults to 3.0.</span>
+<span class=sd>        forced_allow_nan: `allow_nan` value passed to the</span>
+<span class=sd>            forced photometry. If False then any cluster containing a</span>
+<span class=sd>            NaN is ignored. Defaults to False.</span>
+
+<span class=sd>    Returns:</span>
+<span class=sd>        None</span>
+
+<span class=sd>    Raises:</span>
+<span class=sd>        ValueError: If the number of CPUs requested exceeds the total</span>
+<span class=sd>            available.</span>
+<span class=sd>        Exception: No coordinates or source names have been provided.</span>
+<span class=sd>        Exception: Forced fits and search around coordinates options have</span>
+<span class=sd>            both been selected.</span>
+<span class=sd>        Exception: Number of source names provided does not match the</span>
+<span class=sd>            number of coordinates.</span>
+<span class=sd>        ValueError: Planet provided is not a valid planet.</span>
+<span class=sd>        Exception: Base folder could not be determined.</span>
+<span class=sd>        Exception: Base folder cannot be found.</span>
+<span class=sd>        ValueError: Base folder cannot be found.</span>
+<span class=sd>        ValueError: Problems found in query settings.</span>
+<span class=sd>    &quot;&quot;&quot;</span>
+    <span class=bp>self</span><span class=o>.</span><span class=n>logger</span> <span class=o>=</span> <span class=n>logging</span><span class=o>.</span><span class=n>getLogger</span><span class=p>(</span><span class=s1>&#39;vasttools.find_sources.Query&#39;</span><span class=p>)</span>
+
+    <span class=n>install_mp_handler</span><span class=p>(</span><span class=n>logger</span><span class=o>=</span><span class=bp>self</span><span class=o>.</span><span class=n>logger</span><span class=p>)</span>
+
+    <span class=k>if</span> <span class=n>source_names</span> <span class=ow>is</span> <span class=kc>None</span><span class=p>:</span>
+        <span class=n>source_names</span> <span class=o>=</span> <span class=p>[]</span>
+
+    <span class=bp>self</span><span class=o>.</span><span class=n>source_names</span> <span class=o>=</span> <span class=n>np</span><span class=o>.</span><span class=n>array</span><span class=p>(</span><span class=n>source_names</span><span class=p>)</span>
+    <span class=bp>self</span><span class=o>.</span><span class=n>simbad_names</span> <span class=o>=</span> <span class=kc>None</span>
+
+    <span class=k>if</span> <span class=n>coords</span> <span class=ow>is</span> <span class=kc>None</span><span class=p>:</span>
+        <span class=bp>self</span><span class=o>.</span><span class=n>coords</span> <span class=o>=</span> <span class=n>coords</span>
+    <span class=k>elif</span> <span class=n>coords</span><span class=o>.</span><span class=n>isscalar</span><span class=p>:</span>
+        <span class=bp>self</span><span class=o>.</span><span class=n>coords</span> <span class=o>=</span> <span class=n>SkyCoord</span><span class=p>([</span><span class=n>coords</span><span class=o>.</span><span class=n>ra</span><span class=p>],</span> <span class=p>[</span><span class=n>coords</span><span class=o>.</span><span class=n>dec</span><span class=p>])</span>
+    <span class=k>else</span><span class=p>:</span>
+        <span class=bp>self</span><span class=o>.</span><span class=n>coords</span> <span class=o>=</span> <span class=n>coords</span>
+
+    <span class=k>if</span> <span class=bp>self</span><span class=o>.</span><span class=n>coords</span> <span class=ow>is</span> <span class=kc>None</span><span class=p>:</span>
+        <span class=n>len_coords</span> <span class=o>=</span> <span class=mi>0</span>
+    <span class=k>else</span><span class=p>:</span>
+        <span class=n>len_coords</span> <span class=o>=</span> <span class=bp>self</span><span class=o>.</span><span class=n>coords</span><span class=o>.</span><span class=n>shape</span><span class=p>[</span><span class=mi>0</span><span class=p>]</span>
+
+    <span class=k>if</span> <span class=n>ncpu</span> <span class=o>&gt;</span> <span class=n>HOST_NCPU</span><span class=p>:</span>
+        <span class=k>raise</span> <span class=ne>ValueError</span><span class=p>(</span>
+            <span class=s2>&quot;Number of CPUs requested (</span><span class=si>{}</span><span class=s2>) &quot;</span>
+            <span class=s2>&quot;exceeds number available (</span><span class=si>{}</span><span class=s2>)&quot;</span><span class=o>.</span><span class=n>format</span><span class=p>(</span>
+                <span class=n>ncpu</span><span class=p>,</span>
+                <span class=n>HOST_NCPU</span>
+            <span class=p>)</span>
+        <span class=p>)</span>
+    <span class=bp>self</span><span class=o>.</span><span class=n>ncpu</span> <span class=o>=</span> <span class=n>ncpu</span>
+
+    <span class=k>if</span> <span class=n>coords</span> <span class=ow>is</span> <span class=kc>None</span> <span class=ow>and</span> <span class=nb>len</span><span class=p>(</span><span class=n>source_names</span><span class=p>)</span> <span class=o>==</span> <span class=mi>0</span> <span class=ow>and</span> <span class=nb>len</span><span class=p>(</span><span class=n>planets</span><span class=p>)</span> <span class=o>==</span> <span class=mi>0</span><span class=p>:</span>
+        <span class=k>raise</span> <span class=ne>Exception</span><span class=p>(</span>
+            <span class=s2>&quot;No coordinates or source names have been provided!&quot;</span>
+            <span class=s2>&quot; Check inputs and try again!&quot;</span>
+        <span class=p>)</span>
+
+    <span class=k>if</span> <span class=n>forced_fits</span> <span class=ow>and</span> <span class=n>search_around_coordinates</span><span class=p>:</span>
+        <span class=k>raise</span> <span class=ne>Exception</span><span class=p>(</span>
+            <span class=s2>&quot;Forced fits and search around coordinates mode cannot be&quot;</span>
+            <span class=s2>&quot; used together! Check inputs and try again.&quot;</span>
+        <span class=p>)</span>
+
+    <span class=k>if</span> <span class=p>(</span>
+        <span class=bp>self</span><span class=o>.</span><span class=n>coords</span> <span class=ow>is</span> <span class=ow>not</span> <span class=kc>None</span> <span class=ow>and</span>
+        <span class=nb>len</span><span class=p>(</span><span class=bp>self</span><span class=o>.</span><span class=n>source_names</span><span class=p>)</span> <span class=o>&gt;</span> <span class=mi>0</span> <span class=ow>and</span>
+        <span class=nb>len</span><span class=p>(</span><span class=bp>self</span><span class=o>.</span><span class=n>source_names</span><span class=p>)</span> <span class=o>!=</span> <span class=n>len_coords</span>
+    <span class=p>):</span>
+        <span class=k>raise</span> <span class=ne>Exception</span><span class=p>(</span>
+            <span class=s2>&quot;The number of entered source names (</span><span class=si>{}</span><span class=s2>) does not match the&quot;</span>
+            <span class=s2>&quot; number of coordinates (</span><span class=si>{}</span><span class=s2>)!&quot;</span><span class=o>.</span><span class=n>format</span><span class=p>(</span>
+                <span class=nb>len</span><span class=p>(</span><span class=bp>self</span><span class=o>.</span><span class=n>source_names</span><span class=p>),</span>
+                <span class=n>len_coords</span>
+            <span class=p>)</span>
+        <span class=p>)</span>
+
+    <span class=k>if</span> <span class=bp>self</span><span class=o>.</span><span class=n>coords</span> <span class=ow>is</span> <span class=ow>not</span> <span class=kc>None</span> <span class=ow>and</span> <span class=nb>len</span><span class=p>(</span><span class=bp>self</span><span class=o>.</span><span class=n>source_names</span><span class=p>)</span> <span class=o>==</span> <span class=mi>0</span><span class=p>:</span>
+        <span class=bp>self</span><span class=o>.</span><span class=n>source_names</span> <span class=o>=</span> <span class=p>[</span>
+            <span class=s1>&#39;source_&#39;</span> <span class=o>+</span> <span class=n>i</span><span class=o>.</span><span class=n>to_string</span><span class=p>(</span>
+                <span class=s1>&#39;hmsdms&#39;</span><span class=p>,</span> <span class=n>sep</span><span class=o>=</span><span class=s2>&quot;&quot;</span><span class=p>,</span> <span class=n>precision</span><span class=o>=</span><span class=mi>1</span>
+            <span class=p>)</span><span class=o>.</span><span class=n>replace</span><span class=p>(</span><span class=s2>&quot; &quot;</span><span class=p>,</span> <span class=s2>&quot;&quot;</span><span class=p>)</span> <span class=k>for</span> <span class=n>i</span> <span class=ow>in</span> <span class=bp>self</span><span class=o>.</span><span class=n>coords</span>
+        <span class=p>]</span>
+
+    <span class=k>if</span> <span class=bp>self</span><span class=o>.</span><span class=n>coords</span> <span class=ow>is</span> <span class=kc>None</span><span class=p>:</span>
+        <span class=k>if</span> <span class=nb>len</span><span class=p>(</span><span class=n>source_names</span><span class=p>)</span> <span class=o>!=</span> <span class=mi>0</span><span class=p>:</span>
+            <span class=n>num_sources</span> <span class=o>=</span> <span class=nb>len</span><span class=p>(</span><span class=n>source_names</span><span class=p>)</span>
+            <span class=bp>self</span><span class=o>.</span><span class=n>coords</span><span class=p>,</span> <span class=bp>self</span><span class=o>.</span><span class=n>simbad_names</span> <span class=o>=</span> <span class=n>simbad_search</span><span class=p>(</span>
+                <span class=n>source_names</span><span class=p>,</span> <span class=n>logger</span><span class=o>=</span><span class=bp>self</span><span class=o>.</span><span class=n>logger</span>
+            <span class=p>)</span>
+            <span class=n>num_simbad</span> <span class=o>=</span> <span class=nb>len</span><span class=p>(</span><span class=nb>list</span><span class=p>(</span><span class=nb>filter</span><span class=p>(</span><span class=kc>None</span><span class=p>,</span> <span class=bp>self</span><span class=o>.</span><span class=n>simbad_names</span><span class=p>)))</span>
+            <span class=k>if</span> <span class=bp>self</span><span class=o>.</span><span class=n>coords</span> <span class=ow>is</span> <span class=ow>not</span> <span class=kc>None</span><span class=p>:</span>
+                <span class=n>simbad_msg</span> <span class=o>=</span> <span class=s2>&quot;SIMBAD search found </span><span class=si>{}</span><span class=s2>/</span><span class=si>{}</span><span class=s2> source(s):&quot;</span><span class=o>.</span><span class=n>format</span><span class=p>(</span>
+                    <span class=n>num_simbad</span><span class=p>,</span>
+                    <span class=n>num_sources</span>
+                <span class=p>)</span>
+                <span class=bp>self</span><span class=o>.</span><span class=n>logger</span><span class=o>.</span><span class=n>info</span><span class=p>(</span><span class=n>simbad_msg</span><span class=p>)</span>
+                <span class=n>names</span> <span class=o>=</span> <span class=nb>zip</span><span class=p>(</span><span class=bp>self</span><span class=o>.</span><span class=n>simbad_names</span><span class=p>,</span> <span class=bp>self</span><span class=o>.</span><span class=n>source_names</span><span class=p>)</span>
+                <span class=k>for</span> <span class=n>simbad_name</span><span class=p>,</span> <span class=n>query_name</span> <span class=ow>in</span> <span class=n>names</span><span class=p>:</span>
+                    <span class=k>if</span> <span class=n>simbad_name</span><span class=p>:</span>
+                        <span class=bp>self</span><span class=o>.</span><span class=n>logger</span><span class=o>.</span><span class=n>info</span><span class=p>(</span>
+                            <span class=s1>&#39;</span><span class=si>{}</span><span class=s1>: </span><span class=si>{}</span><span class=s1>&#39;</span><span class=o>.</span><span class=n>format</span><span class=p>(</span><span class=n>query_name</span><span class=p>,</span> <span class=n>simbad_name</span><span class=p>)</span>
+                        <span class=p>)</span>
+                    <span class=k>else</span><span class=p>:</span>
+                        <span class=bp>self</span><span class=o>.</span><span class=n>logger</span><span class=o>.</span><span class=n>info</span><span class=p>(</span>
+                            <span class=s1>&#39;</span><span class=si>{}</span><span class=s1>: No match.&#39;</span><span class=o>.</span><span class=n>format</span><span class=p>(</span><span class=n>query_name</span><span class=p>)</span>
+                        <span class=p>)</span>
+                <span class=k>if</span> <span class=bp>self</span><span class=o>.</span><span class=n>logger</span> <span class=ow>is</span> <span class=kc>None</span><span class=p>:</span>
+                    <span class=n>warnings</span><span class=o>.</span><span class=n>warn</span><span class=p>(</span><span class=n>simbad_msg</span><span class=p>)</span>
+            <span class=k>else</span><span class=p>:</span>
+                <span class=bp>self</span><span class=o>.</span><span class=n>logger</span><span class=o>.</span><span class=n>error</span><span class=p>(</span>
+                    <span class=s2>&quot;SIMBAD search failed!&quot;</span>
+                <span class=p>)</span>
+                <span class=k>raise</span> <span class=ne>ValueError</span><span class=p>(</span>
+                    <span class=s2>&quot;SIMBAD search failed!&quot;</span>
+                <span class=p>)</span>
+
+    <span class=k>if</span> <span class=n>planets</span> <span class=ow>is</span> <span class=ow>not</span> <span class=kc>None</span><span class=p>:</span>
+        <span class=n>valid_planets</span> <span class=o>=</span> <span class=nb>sum</span><span class=p>([</span><span class=n>i</span> <span class=ow>in</span> <span class=n>ALLOWED_PLANETS</span> <span class=k>for</span> <span class=n>i</span> <span class=ow>in</span> <span class=n>planets</span><span class=p>])</span>
+
+        <span class=k>if</span> <span class=n>valid_planets</span> <span class=o>!=</span> <span class=nb>len</span><span class=p>(</span><span class=n>planets</span><span class=p>):</span>
+            <span class=bp>self</span><span class=o>.</span><span class=n>logger</span><span class=o>.</span><span class=n>error</span><span class=p>(</span>
+                <span class=s2>&quot;Invalid planet object provided!&quot;</span>
+            <span class=p>)</span>
+            <span class=k>raise</span> <span class=ne>ValueError</span><span class=p>(</span>
+                <span class=s2>&quot;Invalid planet object provided!&quot;</span>
+            <span class=p>)</span>
+
+    <span class=bp>self</span><span class=o>.</span><span class=n>planets</span> <span class=o>=</span> <span class=n>planets</span>
+
+    <span class=bp>self</span><span class=o>.</span><span class=n>settings</span> <span class=o>=</span> <span class=p>{}</span>
+
+    <span class=k>if</span> <span class=n>base_folder</span> <span class=ow>is</span> <span class=kc>None</span><span class=p>:</span>
+        <span class=n>the_base_folder</span> <span class=o>=</span> <span class=n>os</span><span class=o>.</span><span class=n>getenv</span><span class=p>(</span><span class=s1>&#39;VAST_DATA_DIR&#39;</span><span class=p>)</span>
+        <span class=k>if</span> <span class=n>the_base_folder</span> <span class=ow>is</span> <span class=kc>None</span><span class=p>:</span>
+            <span class=k>raise</span> <span class=ne>Exception</span><span class=p>(</span>
+                <span class=s2>&quot;The base folder directory could not be determined!&quot;</span>
+                <span class=s2>&quot; Either the system environment &#39;VAST_DATA_DIR&#39; must be&quot;</span>
+                <span class=s2>&quot; defined or the &#39;base_folder&#39; argument defined when&quot;</span>
+                <span class=s2>&quot; initialising the query.&quot;</span>
+            <span class=p>)</span>
+    <span class=k>else</span><span class=p>:</span>
+        <span class=n>the_base_folder</span> <span class=o>=</span> <span class=n>os</span><span class=o>.</span><span class=n>path</span><span class=o>.</span><span class=n>abspath</span><span class=p>(</span><span class=nb>str</span><span class=p>(</span><span class=n>base_folder</span><span class=p>))</span>
+
+    <span class=k>if</span> <span class=ow>not</span> <span class=n>os</span><span class=o>.</span><span class=n>path</span><span class=o>.</span><span class=n>isdir</span><span class=p>(</span><span class=n>the_base_folder</span><span class=p>):</span>
+        <span class=k>raise</span> <span class=ne>Exception</span><span class=p>(</span>
+            <span class=s2>&quot;Base folder </span><span class=si>{}</span><span class=s2> not found!&quot;</span><span class=o>.</span><span class=n>format</span><span class=p>(</span>
+                <span class=n>the_base_folder</span>
+            <span class=p>)</span>
+        <span class=p>)</span>
+
+    <span class=bp>self</span><span class=o>.</span><span class=n>base_folder</span> <span class=o>=</span> <span class=n>the_base_folder</span>
+
+    <span class=bp>self</span><span class=o>.</span><span class=n>settings</span><span class=p>[</span><span class=s1>&#39;epochs&#39;</span><span class=p>]</span> <span class=o>=</span> <span class=bp>self</span><span class=o>.</span><span class=n>_get_epochs</span><span class=p>(</span><span class=n>epochs</span><span class=p>)</span>
+    <span class=bp>self</span><span class=o>.</span><span class=n>settings</span><span class=p>[</span><span class=s1>&#39;stokes&#39;</span><span class=p>]</span> <span class=o>=</span> <span class=bp>self</span><span class=o>.</span><span class=n>_get_stokes</span><span class=p>(</span><span class=n>stokes</span><span class=p>)</span>
+
+    <span class=bp>self</span><span class=o>.</span><span class=n>settings</span><span class=p>[</span><span class=s1>&#39;crossmatch_radius&#39;</span><span class=p>]</span> <span class=o>=</span> <span class=n>Angle</span><span class=p>(</span>
+        <span class=n>crossmatch_radius</span><span class=p>,</span> <span class=n>unit</span><span class=o>=</span><span class=n>u</span><span class=o>.</span><span class=n>arcsec</span>
+    <span class=p>)</span>
+    <span class=bp>self</span><span class=o>.</span><span class=n>settings</span><span class=p>[</span><span class=s1>&#39;max_sep&#39;</span><span class=p>]</span> <span class=o>=</span> <span class=n>max_sep</span>
+
+    <span class=bp>self</span><span class=o>.</span><span class=n>settings</span><span class=p>[</span><span class=s1>&#39;islands&#39;</span><span class=p>]</span> <span class=o>=</span> <span class=n>use_islands</span>
+    <span class=bp>self</span><span class=o>.</span><span class=n>settings</span><span class=p>[</span><span class=s1>&#39;tiles&#39;</span><span class=p>]</span> <span class=o>=</span> <span class=n>use_tiles</span>
+    <span class=bp>self</span><span class=o>.</span><span class=n>settings</span><span class=p>[</span><span class=s1>&#39;no_rms&#39;</span><span class=p>]</span> <span class=o>=</span> <span class=n>no_rms</span>
+    <span class=bp>self</span><span class=o>.</span><span class=n>settings</span><span class=p>[</span><span class=s1>&#39;matches_only&#39;</span><span class=p>]</span> <span class=o>=</span> <span class=n>matches_only</span>
+    <span class=bp>self</span><span class=o>.</span><span class=n>settings</span><span class=p>[</span><span class=s1>&#39;search_around&#39;</span><span class=p>]</span> <span class=o>=</span> <span class=n>search_around_coordinates</span>
+    <span class=bp>self</span><span class=o>.</span><span class=n>settings</span><span class=p>[</span><span class=s1>&#39;sort_output&#39;</span><span class=p>]</span> <span class=o>=</span> <span class=n>sort_output</span>
+    <span class=bp>self</span><span class=o>.</span><span class=n>settings</span><span class=p>[</span><span class=s1>&#39;forced_fits&#39;</span><span class=p>]</span> <span class=o>=</span> <span class=n>forced_fits</span>
+    <span class=bp>self</span><span class=o>.</span><span class=n>settings</span><span class=p>[</span>
+        <span class=s1>&#39;forced_cluster_threshold&#39;</span>
+    <span class=p>]</span> <span class=o>=</span> <span class=n>forced_cluster_threshold</span>
+    <span class=bp>self</span><span class=o>.</span><span class=n>settings</span><span class=p>[</span><span class=s1>&#39;forced_allow_nan&#39;</span><span class=p>]</span> <span class=o>=</span> <span class=n>forced_allow_nan</span>
+
+    <span class=bp>self</span><span class=o>.</span><span class=n>settings</span><span class=p>[</span><span class=s1>&#39;output_dir&#39;</span><span class=p>]</span> <span class=o>=</span> <span class=n>output_dir</span>
+
+    <span class=c1># Going to need this so load it now</span>
+    <span class=bp>self</span><span class=o>.</span><span class=n>_epoch_fields</span> <span class=o>=</span> <span class=n>get_fields_per_epoch_info</span><span class=p>()</span>
+
+    <span class=k>if</span> <span class=ow>not</span> <span class=n>os</span><span class=o>.</span><span class=n>path</span><span class=o>.</span><span class=n>isdir</span><span class=p>(</span><span class=bp>self</span><span class=o>.</span><span class=n>base_folder</span><span class=p>):</span>
+        <span class=bp>self</span><span class=o>.</span><span class=n>logger</span><span class=o>.</span><span class=n>critical</span><span class=p>(</span>
+            <span class=s2>&quot;The base directory </span><span class=si>{}</span><span class=s2> does not exist!&quot;</span><span class=o>.</span><span class=n>format</span><span class=p>(</span>
+                <span class=bp>self</span><span class=o>.</span><span class=n>base_folder</span>
+            <span class=p>)</span>
+        <span class=p>)</span>
+        <span class=k>raise</span> <span class=ne>ValueError</span><span class=p>(</span><span class=s2>&quot;The base directory </span><span class=si>{}</span><span class=s2> does not exist!&quot;</span><span class=o>.</span><span class=n>format</span><span class=p>(</span>
+            <span class=bp>self</span><span class=o>.</span><span class=n>base_folder</span>
+        <span class=p>))</span>
+
+    <span class=n>settings_ok</span> <span class=o>=</span> <span class=bp>self</span><span class=o>.</span><span class=n>_validate_settings</span><span class=p>()</span>
+
+    <span class=k>if</span> <span class=ow>not</span> <span class=n>settings_ok</span><span class=p>:</span>
+        <span class=bp>self</span><span class=o>.</span><span class=n>logger</span><span class=o>.</span><span class=n>critical</span><span class=p>(</span><span class=s2>&quot;Problems found in query settings!&quot;</span><span class=p>)</span>
+        <span class=bp>self</span><span class=o>.</span><span class=n>logger</span><span class=o>.</span><span class=n>critical</span><span class=p>(</span><span class=s2>&quot;Please address and try again.&quot;</span><span class=p>)</span>
+        <span class=k>raise</span> <span class=ne>ValueError</span><span class=p>((</span>
+            <span class=s2>&quot;Problems found in query settings!&quot;</span>
+            <span class=s2>&quot;</span><span class=se>\n</span><span class=s2>Please address and try again.&quot;</span>
+        <span class=p>))</span>
+
+    <span class=k>if</span> <span class=bp>self</span><span class=o>.</span><span class=n>coords</span> <span class=ow>is</span> <span class=ow>not</span> <span class=kc>None</span><span class=p>:</span>
+        <span class=bp>self</span><span class=o>.</span><span class=n>query_df</span> <span class=o>=</span> <span class=bp>self</span><span class=o>.</span><span class=n>_build_catalog</span><span class=p>()</span>
+    <span class=k>else</span><span class=p>:</span>
+        <span class=bp>self</span><span class=o>.</span><span class=n>query_df</span> <span class=o>=</span> <span class=kc>None</span>
+
+    <span class=bp>self</span><span class=o>.</span><span class=n>fields_found</span> <span class=o>=</span> <span class=kc>False</span>
+</code></pre></div> </details> </div> </div> <div class="doc doc-object doc-method"> <h3 id=vasttools.query.Query.find_fields class="doc doc-heading"> <code class="highlight language-python"><span class=n>find_fields</span><span class=p>(</span><span class=bp>self</span><span class=p>)</span></code> <a href=#vasttools.query.Query.find_fields class=headerlink title="Permanent link">&para;</a></h3> <div class="doc doc-contents "> <p>Find the corresponding field for each source.</p> <p>Planet fields are also found here if any are selected.</p> <p><strong>Returns:</strong></p> <table> <thead> <tr> <th>Type</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code>None</code></td> <td><p>None</p></td> </tr> </tbody> </table> <p><strong>Exceptions:</strong></p> <table> <thead> <tr> <th>Type</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code>Exception</code></td> <td><p>No sources are found within the requested footprint.</p></td> </tr> </tbody> </table> <details class=quote> <summary>Source code in <code>vasttools/query.py</code></summary> <div class=highlight><pre><span></span><code><span class=k>def</span> <span class=nf>find_fields</span><span class=p>(</span><span class=bp>self</span><span class=p>)</span> <span class=o>-&gt;</span> <span class=kc>None</span><span class=p>:</span>
+    <span class=sd>&quot;&quot;&quot;</span>
+<span class=sd>    Find the corresponding field for each source.</span>
+
+<span class=sd>    Planet fields are also found here if any are selected.</span>
+
+<span class=sd>    Returns:</span>
+<span class=sd>        None</span>
+
+<span class=sd>    Raises:</span>
+<span class=sd>        Exception: No sources are found within the requested footprint.</span>
+<span class=sd>    &quot;&quot;&quot;</span>
+    <span class=bp>self</span><span class=o>.</span><span class=n>logger</span><span class=o>.</span><span class=n>info</span><span class=p>(</span>
+        <span class=s2>&quot;Matching queried sources to VAST Pilot fields...&quot;</span>
+    <span class=p>)</span>
+
+    <span class=k>if</span> <span class=bp>self</span><span class=o>.</span><span class=n>racs</span><span class=p>:</span>
+        <span class=n>base_epoch</span> <span class=o>=</span> <span class=s1>&#39;0&#39;</span>
+        <span class=n>base_fc</span> <span class=o>=</span> <span class=s1>&#39;RACS&#39;</span>
+    <span class=k>else</span><span class=p>:</span>
+        <span class=n>base_epoch</span> <span class=o>=</span> <span class=s1>&#39;1&#39;</span>
+        <span class=n>base_fc</span> <span class=o>=</span> <span class=s1>&#39;VAST&#39;</span>
+
+    <span class=n>fields</span> <span class=o>=</span> <span class=n>Fields</span><span class=p>(</span><span class=n>base_epoch</span><span class=p>)</span>
+    <span class=n>field_centres</span> <span class=o>=</span> <span class=n>FIELD_CENTRES</span><span class=o>.</span><span class=n>loc</span><span class=p>[</span>
+        <span class=n>FIELD_CENTRES</span><span class=p>[</span><span class=s1>&#39;field&#39;</span><span class=p>]</span><span class=o>.</span><span class=n>str</span><span class=o>.</span><span class=n>contains</span><span class=p>(</span><span class=n>base_fc</span><span class=p>)</span>
+    <span class=p>]</span><span class=o>.</span><span class=n>reset_index</span><span class=p>()</span>
+
+    <span class=n>field_centres_sc</span> <span class=o>=</span> <span class=n>SkyCoord</span><span class=p>(</span>
+        <span class=n>field_centres</span><span class=p>[</span><span class=s2>&quot;centre-ra&quot;</span><span class=p>],</span>
+        <span class=n>field_centres</span><span class=p>[</span><span class=s2>&quot;centre-dec&quot;</span><span class=p>],</span>
+        <span class=n>unit</span><span class=o>=</span><span class=p>(</span><span class=n>u</span><span class=o>.</span><span class=n>deg</span><span class=p>,</span> <span class=n>u</span><span class=o>.</span><span class=n>deg</span><span class=p>)</span>
+    <span class=p>)</span>
+
+    <span class=c1># if RACS is being use we convert all the names to &#39;VAST&#39;</span>
+    <span class=c1># to match the VAST field names, makes matching easier.</span>
+    <span class=k>if</span> <span class=bp>self</span><span class=o>.</span><span class=n>racs</span><span class=p>:</span>
+        <span class=n>field_centres</span><span class=p>[</span><span class=s1>&#39;field&#39;</span><span class=p>]</span> <span class=o>=</span> <span class=p>[</span>
+            <span class=n>f</span><span class=o>.</span><span class=n>replace</span><span class=p>(</span><span class=s2>&quot;RACS&quot;</span><span class=p>,</span> <span class=s2>&quot;VAST&quot;</span><span class=p>)</span> <span class=k>for</span> <span class=n>f</span> <span class=ow>in</span> <span class=n>field_centres</span><span class=o>.</span><span class=n>field</span>
+        <span class=p>]</span>
+
+    <span class=n>field_centre_names</span> <span class=o>=</span> <span class=n>field_centres</span><span class=o>.</span><span class=n>field</span>
+
+    <span class=k>if</span> <span class=bp>self</span><span class=o>.</span><span class=n>query_df</span> <span class=ow>is</span> <span class=ow>not</span> <span class=kc>None</span><span class=p>:</span>
+        <span class=bp>self</span><span class=o>.</span><span class=n>fields_df</span> <span class=o>=</span> <span class=bp>self</span><span class=o>.</span><span class=n>query_df</span><span class=o>.</span><span class=n>copy</span><span class=p>()</span>
+
+        <span class=n>meta</span> <span class=o>=</span> <span class=p>{</span>
+            <span class=mi>0</span><span class=p>:</span> <span class=s1>&#39;O&#39;</span><span class=p>,</span>
+            <span class=mi>1</span><span class=p>:</span> <span class=s1>&#39;U&#39;</span><span class=p>,</span>
+            <span class=mi>2</span><span class=p>:</span> <span class=s1>&#39;O&#39;</span><span class=p>,</span>
+            <span class=mi>3</span><span class=p>:</span> <span class=s1>&#39;O&#39;</span><span class=p>,</span>
+            <span class=mi>4</span><span class=p>:</span> <span class=s1>&#39;O&#39;</span><span class=p>,</span>
+            <span class=mi>5</span><span class=p>:</span> <span class=s1>&#39;O&#39;</span><span class=p>,</span>
+        <span class=p>}</span>
+
+        <span class=bp>self</span><span class=o>.</span><span class=n>fields_df</span><span class=p>[[</span>
+            <span class=s1>&#39;fields&#39;</span><span class=p>,</span>
+            <span class=s1>&#39;primary_field&#39;</span><span class=p>,</span>
+            <span class=s1>&#39;epochs&#39;</span><span class=p>,</span>
+            <span class=s1>&#39;field_per_epoch&#39;</span><span class=p>,</span>
+            <span class=s1>&#39;sbids&#39;</span><span class=p>,</span>
+            <span class=s1>&#39;dates&#39;</span>
+        <span class=p>]]</span> <span class=o>=</span> <span class=p>(</span>
+            <span class=n>dd</span><span class=o>.</span><span class=n>from_pandas</span><span class=p>(</span><span class=bp>self</span><span class=o>.</span><span class=n>fields_df</span><span class=p>,</span> <span class=bp>self</span><span class=o>.</span><span class=n>ncpu</span><span class=p>)</span>
+            <span class=o>.</span><span class=n>apply</span><span class=p>(</span>
+                <span class=bp>self</span><span class=o>.</span><span class=n>_field_matching</span><span class=p>,</span>
+                <span class=n>args</span><span class=o>=</span><span class=p>(</span>
+                    <span class=n>fields</span><span class=o>.</span><span class=n>direction</span><span class=p>,</span>
+                    <span class=n>fields</span><span class=o>.</span><span class=n>fields</span><span class=o>.</span><span class=n>FIELD_NAME</span><span class=p>,</span>
+                    <span class=n>field_centres_sc</span><span class=p>,</span>
+                    <span class=n>field_centre_names</span>
+                <span class=p>),</span>
+                <span class=n>meta</span><span class=o>=</span><span class=n>meta</span><span class=p>,</span>
+                <span class=n>axis</span><span class=o>=</span><span class=mi>1</span><span class=p>,</span>
+                <span class=n>result_type</span><span class=o>=</span><span class=s1>&#39;expand&#39;</span>
+            <span class=p>)</span><span class=o>.</span><span class=n>compute</span><span class=p>(</span><span class=n>num_workers</span><span class=o>=</span><span class=bp>self</span><span class=o>.</span><span class=n>ncpu</span><span class=p>,</span> <span class=n>scheduler</span><span class=o>=</span><span class=s1>&#39;processes&#39;</span><span class=p>)</span>
+        <span class=p>)</span>
+
+        <span class=bp>self</span><span class=o>.</span><span class=n>fields_df</span> <span class=o>=</span> <span class=bp>self</span><span class=o>.</span><span class=n>fields_df</span><span class=o>.</span><span class=n>dropna</span><span class=p>()</span>
+        <span class=k>if</span> <span class=bp>self</span><span class=o>.</span><span class=n>fields_df</span><span class=o>.</span><span class=n>empty</span><span class=p>:</span>
+            <span class=k>raise</span> <span class=ne>Exception</span><span class=p>(</span>
+                <span class=s2>&quot;No requested sources are within the requested footprint!&quot;</span><span class=p>)</span>
+
+        <span class=bp>self</span><span class=o>.</span><span class=n>fields_df</span> <span class=o>=</span> <span class=bp>self</span><span class=o>.</span><span class=n>fields_df</span><span class=o>.</span><span class=n>explode</span><span class=p>(</span>
+            <span class=s1>&#39;field_per_epoch&#39;</span>
+        <span class=p>)</span><span class=o>.</span><span class=n>reset_index</span><span class=p>(</span><span class=n>drop</span><span class=o>=</span><span class=kc>True</span><span class=p>)</span>
+
+        <span class=bp>self</span><span class=o>.</span><span class=n>fields_df</span><span class=p>[</span>
+            <span class=p>[</span><span class=s1>&#39;epoch&#39;</span><span class=p>,</span> <span class=s1>&#39;field&#39;</span><span class=p>,</span> <span class=s1>&#39;sbid&#39;</span><span class=p>,</span> <span class=s1>&#39;dateobs&#39;</span><span class=p>]</span>
+        <span class=p>]</span> <span class=o>=</span> <span class=n>pd</span><span class=o>.</span><span class=n>DataFrame</span><span class=p>(</span>
+            <span class=bp>self</span><span class=o>.</span><span class=n>fields_df</span><span class=p>[</span><span class=s1>&#39;field_per_epoch&#39;</span><span class=p>]</span><span class=o>.</span><span class=n>tolist</span><span class=p>(),</span>
+            <span class=n>index</span><span class=o>=</span><span class=bp>self</span><span class=o>.</span><span class=n>fields_df</span><span class=o>.</span><span class=n>index</span>
+        <span class=p>)</span>
+
+        <span class=n>to_drop</span> <span class=o>=</span> <span class=p>[</span>
+            <span class=s1>&#39;field_per_epoch&#39;</span><span class=p>,</span>
+            <span class=s1>&#39;epochs&#39;</span><span class=p>,</span>
+            <span class=s1>&#39;sbids&#39;</span><span class=p>,</span>
+            <span class=s1>&#39;dates&#39;</span>
+        <span class=p>]</span>
+
+        <span class=bp>self</span><span class=o>.</span><span class=n>fields_df</span> <span class=o>=</span> <span class=bp>self</span><span class=o>.</span><span class=n>fields_df</span><span class=o>.</span><span class=n>drop</span><span class=p>(</span>
+            <span class=n>labels</span><span class=o>=</span><span class=n>to_drop</span><span class=p>,</span> <span class=n>axis</span><span class=o>=</span><span class=mi>1</span>
+        <span class=p>)</span><span class=o>.</span><span class=n>sort_values</span><span class=p>(</span>
+            <span class=n>by</span><span class=o>=</span><span class=p>[</span><span class=s1>&#39;name&#39;</span><span class=p>,</span> <span class=s1>&#39;dateobs&#39;</span><span class=p>]</span>
+        <span class=p>)</span><span class=o>.</span><span class=n>reset_index</span><span class=p>(</span><span class=n>drop</span><span class=o>=</span><span class=kc>True</span><span class=p>)</span>
+
+        <span class=bp>self</span><span class=o>.</span><span class=n>fields_df</span><span class=p>[</span><span class=s1>&#39;planet&#39;</span><span class=p>]</span> <span class=o>=</span> <span class=kc>False</span>
+    <span class=k>else</span><span class=p>:</span>
+        <span class=bp>self</span><span class=o>.</span><span class=n>fields_df</span> <span class=o>=</span> <span class=kc>None</span>
+
+    <span class=c1># Handle Planets</span>
+    <span class=k>if</span> <span class=bp>self</span><span class=o>.</span><span class=n>planets</span> <span class=ow>is</span> <span class=ow>not</span> <span class=kc>None</span><span class=p>:</span>
+        <span class=n>planet_fields</span> <span class=o>=</span> <span class=bp>self</span><span class=o>.</span><span class=n>_search_planets</span><span class=p>()</span>
+
+        <span class=k>if</span> <span class=bp>self</span><span class=o>.</span><span class=n>fields_df</span> <span class=ow>is</span> <span class=kc>None</span><span class=p>:</span>
+            <span class=bp>self</span><span class=o>.</span><span class=n>fields_df</span> <span class=o>=</span> <span class=n>planet_fields</span>
+        <span class=k>else</span><span class=p>:</span>
+            <span class=bp>self</span><span class=o>.</span><span class=n>fields_df</span> <span class=o>=</span> <span class=bp>self</span><span class=o>.</span><span class=n>fields_df</span><span class=o>.</span><span class=n>append</span><span class=p>(</span>
+                <span class=n>planet_fields</span>
+            <span class=p>)</span><span class=o>.</span><span class=n>reset_index</span><span class=p>(</span><span class=n>drop</span><span class=o>=</span><span class=kc>True</span><span class=p>)</span>
+
+    <span class=bp>self</span><span class=o>.</span><span class=n>logger</span><span class=o>.</span><span class=n>debug</span><span class=p>(</span><span class=bp>self</span><span class=o>.</span><span class=n>fields_df</span><span class=p>)</span>
+
+    <span class=k>if</span> <span class=bp>self</span><span class=o>.</span><span class=n>query_df</span> <span class=ow>is</span> <span class=kc>None</span><span class=p>:</span>
+        <span class=n>prev_num</span> <span class=o>=</span> <span class=mi>0</span>
+    <span class=k>else</span><span class=p>:</span>
+        <span class=n>prev_num</span> <span class=o>=</span> <span class=bp>self</span><span class=o>.</span><span class=n>query_df</span><span class=o>.</span><span class=n>shape</span><span class=p>[</span><span class=mi>0</span><span class=p>]</span>
+
+    <span class=k>if</span> <span class=bp>self</span><span class=o>.</span><span class=n>planets</span> <span class=ow>is</span> <span class=ow>not</span> <span class=kc>None</span><span class=p>:</span>
+        <span class=n>prev_num</span> <span class=o>+=</span> <span class=nb>len</span><span class=p>(</span><span class=bp>self</span><span class=o>.</span><span class=n>planets</span><span class=p>)</span>
+
+    <span class=bp>self</span><span class=o>.</span><span class=n>num_sources_searched</span> <span class=o>=</span> <span class=bp>self</span><span class=o>.</span><span class=n>fields_df</span><span class=o>.</span><span class=n>name</span><span class=o>.</span><span class=n>unique</span><span class=p>()</span><span class=o>.</span><span class=n>shape</span><span class=p>[</span><span class=mi>0</span><span class=p>]</span>
+
+    <span class=k>if</span> <span class=bp>self</span><span class=o>.</span><span class=n>racs</span><span class=p>:</span>
+        <span class=bp>self</span><span class=o>.</span><span class=n>logger</span><span class=o>.</span><span class=n>info</span><span class=p>(</span>
+            <span class=s2>&quot;</span><span class=si>%i</span><span class=s2>/</span><span class=si>%i</span><span class=s2> sources in RACS &amp; VAST Pilot footprint.&quot;</span><span class=p>,</span>
+            <span class=bp>self</span><span class=o>.</span><span class=n>num_sources_searched</span><span class=p>,</span>
+            <span class=n>prev_num</span>
+        <span class=p>)</span>
+    <span class=k>else</span><span class=p>:</span>
+        <span class=bp>self</span><span class=o>.</span><span class=n>logger</span><span class=o>.</span><span class=n>info</span><span class=p>(</span>
+            <span class=s2>&quot;</span><span class=si>%i</span><span class=s2>/</span><span class=si>%i</span><span class=s2> sources in VAST Pilot footprint.&quot;</span><span class=p>,</span>
+            <span class=bp>self</span><span class=o>.</span><span class=n>num_sources_searched</span><span class=p>,</span>
+            <span class=n>prev_num</span>
+        <span class=p>)</span>
+
+    <span class=bp>self</span><span class=o>.</span><span class=n>fields_df</span><span class=p>[</span><span class=s1>&#39;dateobs&#39;</span><span class=p>]</span> <span class=o>=</span> <span class=n>pd</span><span class=o>.</span><span class=n>to_datetime</span><span class=p>(</span>
+        <span class=bp>self</span><span class=o>.</span><span class=n>fields_df</span><span class=p>[</span><span class=s1>&#39;dateobs&#39;</span><span class=p>]</span>
+    <span class=p>)</span>
+
+    <span class=bp>self</span><span class=o>.</span><span class=n>logger</span><span class=o>.</span><span class=n>info</span><span class=p>(</span><span class=s2>&quot;Done.&quot;</span><span class=p>)</span>
+    <span class=bp>self</span><span class=o>.</span><span class=n>fields_found</span> <span class=o>=</span> <span class=kc>True</span>
+</code></pre></div> </details> </div> </div> <div class="doc doc-object doc-method"> <h3 id=vasttools.query.Query.find_sources class="doc doc-heading"> <code class="highlight language-python"><span class=n>find_sources</span><span class=p>(</span><span class=bp>self</span><span class=p>)</span></code> <a href=#vasttools.query.Query.find_sources class=headerlink title="Permanent link">&para;</a></h3> <div class="doc doc-contents "> <p>Run source search. Results are stored in attributes.</p> <p>Steps: 1. Run find_fields if not already run. 2. Add the file paths to each measurement point. 3. Obtain forced fits if requested. 4. Run selavy matching and upper limit fetching. 5. Package up results into vasttools.source.Source objects.</p> <p><strong>Returns:</strong></p> <table> <thead> <tr> <th>Type</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code>None</code></td> <td><p>None</p></td> </tr> </tbody> </table> <details class=quote> <summary>Source code in <code>vasttools/query.py</code></summary> <div class=highlight><pre><span></span><code><span class=k>def</span> <span class=nf>find_sources</span><span class=p>(</span><span class=bp>self</span><span class=p>)</span> <span class=o>-&gt;</span> <span class=kc>None</span><span class=p>:</span>
+    <span class=sd>&quot;&quot;&quot;</span>
+<span class=sd>    Run source search. Results are stored in attributes.</span>
+
+<span class=sd>    Steps:</span>
+<span class=sd>    1. Run find_fields if not already run.</span>
+<span class=sd>    2. Add the file paths to each measurement point.</span>
+<span class=sd>    3. Obtain forced fits if requested.</span>
+<span class=sd>    4. Run selavy matching and upper limit fetching.</span>
+<span class=sd>    5. Package up results into vasttools.source.Source objects.</span>
+
+<span class=sd>    Returns:</span>
+<span class=sd>        None</span>
+<span class=sd>    &quot;&quot;&quot;</span>
+    <span class=bp>self</span><span class=o>.</span><span class=n>logger</span><span class=o>.</span><span class=n>debug</span><span class=p>(</span><span class=s1>&#39;Running find_sources...&#39;</span><span class=p>)</span>
+
+    <span class=k>if</span> <span class=bp>self</span><span class=o>.</span><span class=n>fields_found</span> <span class=ow>is</span> <span class=kc>False</span><span class=p>:</span>
+        <span class=bp>self</span><span class=o>.</span><span class=n>find_fields</span><span class=p>()</span>
+
+    <span class=bp>self</span><span class=o>.</span><span class=n>logger</span><span class=o>.</span><span class=n>info</span><span class=p>(</span><span class=s2>&quot;Finding sources in PILOT data...&quot;</span><span class=p>)</span>
+
+    <span class=bp>self</span><span class=o>.</span><span class=n>sources_df</span> <span class=o>=</span> <span class=bp>self</span><span class=o>.</span><span class=n>fields_df</span><span class=o>.</span><span class=n>sort_values</span><span class=p>(</span>
+        <span class=n>by</span><span class=o>=</span><span class=p>[</span><span class=s1>&#39;name&#39;</span><span class=p>,</span> <span class=s1>&#39;dateobs&#39;</span><span class=p>]</span>
+    <span class=p>)</span><span class=o>.</span><span class=n>reset_index</span><span class=p>(</span><span class=n>drop</span><span class=o>=</span><span class=kc>True</span><span class=p>)</span>
+
+    <span class=bp>self</span><span class=o>.</span><span class=n>sources_df</span><span class=p>[</span>
+        <span class=p>[</span><span class=s1>&#39;selavy&#39;</span><span class=p>,</span> <span class=s1>&#39;image&#39;</span><span class=p>,</span> <span class=s1>&#39;rms&#39;</span><span class=p>]</span>
+    <span class=p>]</span> <span class=o>=</span> <span class=bp>self</span><span class=o>.</span><span class=n>sources_df</span><span class=p>[[</span><span class=s1>&#39;epoch&#39;</span><span class=p>,</span> <span class=s1>&#39;field&#39;</span><span class=p>,</span> <span class=s1>&#39;sbid&#39;</span><span class=p>]]</span><span class=o>.</span><span class=n>apply</span><span class=p>(</span>
+        <span class=bp>self</span><span class=o>.</span><span class=n>_add_files</span><span class=p>,</span>
+        <span class=n>axis</span><span class=o>=</span><span class=mi>1</span><span class=p>,</span>
+        <span class=n>result_type</span><span class=o>=</span><span class=s1>&#39;expand&#39;</span>
+    <span class=p>)</span>
+
+    <span class=k>if</span> <span class=bp>self</span><span class=o>.</span><span class=n>settings</span><span class=p>[</span><span class=s1>&#39;forced_fits&#39;</span><span class=p>]:</span>
+        <span class=bp>self</span><span class=o>.</span><span class=n>logger</span><span class=o>.</span><span class=n>info</span><span class=p>(</span><span class=s2>&quot;Obtaining forced fits...&quot;</span><span class=p>)</span>
+        <span class=n>meta</span> <span class=o>=</span> <span class=p>{</span>
+            <span class=s1>&#39;f_island_id&#39;</span><span class=p>:</span> <span class=s1>&#39;U&#39;</span><span class=p>,</span>
+            <span class=s1>&#39;f_component_id&#39;</span><span class=p>:</span> <span class=s1>&#39;U&#39;</span><span class=p>,</span>
+            <span class=s1>&#39;f_ra_deg_cont&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+            <span class=s1>&#39;f_dec_deg_cont&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+            <span class=s1>&#39;f_flux_peak&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+            <span class=s1>&#39;f_flux_peak_err&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+            <span class=s1>&#39;f_flux_int&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+            <span class=s1>&#39;f_flux_int_err&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+            <span class=s1>&#39;f_chi_squared_fit&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+            <span class=s1>&#39;f_rms_image&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+            <span class=s1>&#39;f_maj_axis&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+            <span class=s1>&#39;f_min_axis&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+            <span class=s1>&#39;f_pos_ang&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+        <span class=p>}</span>
+
+        <span class=n>f_results</span> <span class=o>=</span> <span class=p>(</span>
+            <span class=n>dd</span><span class=o>.</span><span class=n>from_pandas</span><span class=p>(</span><span class=bp>self</span><span class=o>.</span><span class=n>sources_df</span><span class=p>,</span> <span class=bp>self</span><span class=o>.</span><span class=n>ncpu</span><span class=p>)</span>
+            <span class=o>.</span><span class=n>groupby</span><span class=p>(</span><span class=s1>&#39;image&#39;</span><span class=p>)</span>
+            <span class=o>.</span><span class=n>apply</span><span class=p>(</span>
+                <span class=bp>self</span><span class=o>.</span><span class=n>_get_forced_fits</span><span class=p>,</span>
+                <span class=n>cluster_threshold</span><span class=o>=</span><span class=p>(</span>
+                    <span class=bp>self</span><span class=o>.</span><span class=n>settings</span><span class=p>[</span><span class=s1>&#39;forced_cluster_threshold&#39;</span><span class=p>]</span>
+                <span class=p>),</span>
+                <span class=n>allow_nan</span><span class=o>=</span><span class=bp>self</span><span class=o>.</span><span class=n>settings</span><span class=p>[</span><span class=s1>&#39;forced_allow_nan&#39;</span><span class=p>],</span>
+                <span class=n>meta</span><span class=o>=</span><span class=n>meta</span><span class=p>,</span>
+            <span class=p>)</span><span class=o>.</span><span class=n>compute</span><span class=p>(</span><span class=n>num_workers</span><span class=o>=</span><span class=bp>self</span><span class=o>.</span><span class=n>ncpu</span><span class=p>,</span> <span class=n>scheduler</span><span class=o>=</span><span class=s1>&#39;processes&#39;</span><span class=p>)</span>
+        <span class=p>)</span>
+
+        <span class=k>if</span> <span class=ow>not</span> <span class=n>f_results</span><span class=o>.</span><span class=n>empty</span><span class=p>:</span>
+            <span class=n>f_results</span><span class=o>.</span><span class=n>index</span> <span class=o>=</span> <span class=n>f_results</span><span class=o>.</span><span class=n>index</span><span class=o>.</span><span class=n>droplevel</span><span class=p>()</span>
+        <span class=k>else</span><span class=p>:</span>
+            <span class=bp>self</span><span class=o>.</span><span class=n>settings</span><span class=p>[</span><span class=s1>&#39;forced_fits&#39;</span><span class=p>]</span> <span class=o>=</span> <span class=kc>False</span>
+
+        <span class=bp>self</span><span class=o>.</span><span class=n>logger</span><span class=o>.</span><span class=n>info</span><span class=p>(</span><span class=s2>&quot;Done.&quot;</span><span class=p>)</span>
+
+    <span class=n>meta</span> <span class=o>=</span> <span class=p>{</span>
+        <span class=s1>&#39;#&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;island_id&#39;</span><span class=p>:</span> <span class=s1>&#39;U&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;component_id&#39;</span><span class=p>:</span> <span class=s1>&#39;U&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;component_name&#39;</span><span class=p>:</span> <span class=s1>&#39;U&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;ra_hms_cont&#39;</span><span class=p>:</span> <span class=s1>&#39;U&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;dec_dms_cont&#39;</span><span class=p>:</span> <span class=s1>&#39;U&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;ra_deg_cont&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;dec_deg_cont&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;ra_err&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;dec_err&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;freq&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;flux_peak&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;flux_peak_err&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;flux_int&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;flux_int_err&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;maj_axis&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;min_axis&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;pos_ang&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;maj_axis_err&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;min_axis_err&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;pos_ang_err&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;maj_axis_deconv&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;min_axis_deconv&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;pos_ang_deconv&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;maj_axis_deconv_err&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;min_axis_deconv_err&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;pos_ang_deconv_err&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;chi_squared_fit&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;rms_fit_gauss&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;spectral_index&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;spectral_curvature&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;spectral_index_err&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;spectral_curvature_err&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;rms_image&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;has_siblings&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;fit_is_estimate&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;spectral_index_from_TT&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;flag_c4&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;comment&#39;</span><span class=p>:</span> <span class=s1>&#39;f&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;detection&#39;</span><span class=p>:</span> <span class=s1>&#39;?&#39;</span><span class=p>,</span>
+    <span class=p>}</span>
+
+    <span class=k>if</span> <span class=bp>self</span><span class=o>.</span><span class=n>settings</span><span class=p>[</span><span class=s1>&#39;search_around&#39;</span><span class=p>]:</span>
+        <span class=n>meta</span><span class=p>[</span><span class=s1>&#39;index&#39;</span><span class=p>]</span> <span class=o>=</span> <span class=s1>&#39;i&#39;</span>
+
+    <span class=n>results</span> <span class=o>=</span> <span class=p>(</span>
+        <span class=n>dd</span><span class=o>.</span><span class=n>from_pandas</span><span class=p>(</span><span class=bp>self</span><span class=o>.</span><span class=n>sources_df</span><span class=p>,</span> <span class=bp>self</span><span class=o>.</span><span class=n>ncpu</span><span class=p>)</span>
+        <span class=o>.</span><span class=n>groupby</span><span class=p>(</span><span class=s1>&#39;selavy&#39;</span><span class=p>)</span>
+        <span class=o>.</span><span class=n>apply</span><span class=p>(</span>
+            <span class=bp>self</span><span class=o>.</span><span class=n>_get_components</span><span class=p>,</span>
+            <span class=n>meta</span><span class=o>=</span><span class=n>meta</span><span class=p>,</span>
+        <span class=p>)</span><span class=o>.</span><span class=n>compute</span><span class=p>(</span><span class=n>num_workers</span><span class=o>=</span><span class=bp>self</span><span class=o>.</span><span class=n>ncpu</span><span class=p>,</span> <span class=n>scheduler</span><span class=o>=</span><span class=s1>&#39;processes&#39;</span><span class=p>)</span>
+    <span class=p>)</span>
+
+    <span class=k>if</span> <span class=ow>not</span> <span class=n>results</span><span class=o>.</span><span class=n>empty</span><span class=p>:</span>
+        <span class=n>results</span><span class=o>.</span><span class=n>index</span> <span class=o>=</span> <span class=n>results</span><span class=o>.</span><span class=n>index</span><span class=o>.</span><span class=n>droplevel</span><span class=p>()</span>
+
+    <span class=k>if</span> <span class=bp>self</span><span class=o>.</span><span class=n>settings</span><span class=p>[</span><span class=s1>&#39;search_around&#39;</span><span class=p>]:</span>
+        <span class=n>results</span> <span class=o>=</span> <span class=n>results</span><span class=o>.</span><span class=n>set_index</span><span class=p>(</span><span class=s1>&#39;index&#39;</span><span class=p>)</span>
+
+    <span class=k>if</span> <span class=bp>self</span><span class=o>.</span><span class=n>settings</span><span class=p>[</span><span class=s1>&#39;forced_fits&#39;</span><span class=p>]:</span>
+        <span class=n>results</span> <span class=o>=</span> <span class=n>results</span><span class=o>.</span><span class=n>merge</span><span class=p>(</span>
+            <span class=n>f_results</span><span class=p>,</span> <span class=n>left_index</span><span class=o>=</span><span class=kc>True</span><span class=p>,</span> <span class=n>right_index</span><span class=o>=</span><span class=kc>True</span>
+        <span class=p>)</span>
+
+        <span class=k>del</span> <span class=n>f_results</span>
+
+    <span class=k>if</span> <span class=bp>self</span><span class=o>.</span><span class=n>settings</span><span class=p>[</span><span class=s1>&#39;search_around&#39;</span><span class=p>]:</span>
+        <span class=n>how</span> <span class=o>=</span> <span class=s1>&#39;inner&#39;</span>
+    <span class=k>else</span><span class=p>:</span>
+        <span class=n>how</span> <span class=o>=</span> <span class=s1>&#39;left&#39;</span>
+
+    <span class=bp>self</span><span class=o>.</span><span class=n>crossmatch_results</span> <span class=o>=</span> <span class=bp>self</span><span class=o>.</span><span class=n>sources_df</span><span class=o>.</span><span class=n>merge</span><span class=p>(</span>
+        <span class=n>results</span><span class=p>,</span> <span class=n>how</span><span class=o>=</span><span class=n>how</span><span class=p>,</span> <span class=n>left_index</span><span class=o>=</span><span class=kc>True</span><span class=p>,</span> <span class=n>right_index</span><span class=o>=</span><span class=kc>True</span>
+    <span class=p>)</span>
+
+    <span class=n>meta</span> <span class=o>=</span> <span class=p>{</span><span class=s1>&#39;name&#39;</span><span class=p>:</span> <span class=s1>&#39;O&#39;</span><span class=p>}</span>
+
+    <span class=bp>self</span><span class=o>.</span><span class=n>num_sources_detected</span> <span class=o>=</span> <span class=p>(</span>
+        <span class=bp>self</span><span class=o>.</span><span class=n>crossmatch_results</span><span class=o>.</span><span class=n>groupby</span><span class=p>(</span><span class=s1>&#39;name&#39;</span><span class=p>)</span><span class=o>.</span><span class=n>agg</span><span class=p>({</span>
+            <span class=s1>&#39;detection&#39;</span><span class=p>:</span> <span class=nb>any</span>
+        <span class=p>})</span><span class=o>.</span><span class=n>sum</span><span class=p>()</span>
+    <span class=p>)</span>
+
+    <span class=k>if</span> <span class=bp>self</span><span class=o>.</span><span class=n>settings</span><span class=p>[</span><span class=s1>&#39;search_around&#39;</span><span class=p>]:</span>
+        <span class=bp>self</span><span class=o>.</span><span class=n>results</span> <span class=o>=</span> <span class=bp>self</span><span class=o>.</span><span class=n>crossmatch_results</span><span class=o>.</span><span class=n>rename</span><span class=p>(</span>
+            <span class=n>columns</span><span class=o>=</span><span class=p>{</span><span class=s1>&#39;#&#39;</span><span class=p>:</span> <span class=s1>&#39;distance&#39;</span><span class=p>}</span>
+        <span class=p>)</span>
+    <span class=k>else</span><span class=p>:</span>
+        <span class=bp>self</span><span class=o>.</span><span class=n>results</span> <span class=o>=</span> <span class=p>(</span>
+            <span class=n>dd</span><span class=o>.</span><span class=n>from_pandas</span><span class=p>(</span><span class=bp>self</span><span class=o>.</span><span class=n>crossmatch_results</span><span class=p>,</span> <span class=bp>self</span><span class=o>.</span><span class=n>ncpu</span><span class=p>)</span>
+            <span class=o>.</span><span class=n>groupby</span><span class=p>(</span><span class=s1>&#39;name&#39;</span><span class=p>)</span>
+            <span class=o>.</span><span class=n>apply</span><span class=p>(</span>
+                <span class=bp>self</span><span class=o>.</span><span class=n>_init_sources</span><span class=p>,</span>
+                <span class=n>meta</span><span class=o>=</span><span class=n>meta</span><span class=p>,</span>
+            <span class=p>)</span><span class=o>.</span><span class=n>compute</span><span class=p>(</span><span class=n>num_workers</span><span class=o>=</span><span class=bp>self</span><span class=o>.</span><span class=n>ncpu</span><span class=p>,</span> <span class=n>scheduler</span><span class=o>=</span><span class=s1>&#39;processes&#39;</span><span class=p>)</span>
+        <span class=p>)</span>
+        <span class=bp>self</span><span class=o>.</span><span class=n>results</span> <span class=o>=</span> <span class=bp>self</span><span class=o>.</span><span class=n>results</span><span class=o>.</span><span class=n>dropna</span><span class=p>()</span>
+
+    <span class=bp>self</span><span class=o>.</span><span class=n>logger</span><span class=o>.</span><span class=n>info</span><span class=p>(</span><span class=s2>&quot;Done.&quot;</span><span class=p>)</span>
+</code></pre></div> </details> </div> </div> <div class="doc doc-object doc-method"> <h3 id=vasttools.query.Query.save_search_around_results class="doc doc-heading"> <code class="highlight language-python"><span class=n>save_search_around_results</span><span class=p>(</span><span class=bp>self</span><span class=p>,</span> <span class=n>sort_output</span><span class=o>=</span><span class=kc>False</span><span class=p>)</span></code> <a href=#vasttools.query.Query.save_search_around_results class=headerlink title="Permanent link">&para;</a></h3> <div class="doc doc-contents "> <p>Save results from cone search.</p> <p><strong>Parameters:</strong></p> <table> <thead> <tr> <th>Name</th> <th>Type</th> <th>Description</th> <th>Default</th> </tr> </thead> <tbody> <tr> <td><code>sort_output</code></td> <td><code>bool</code></td> <td><p>Whether to sort the output, defaults to <code>False</code>.</p></td> <td><code>False</code></td> </tr> </tbody> </table> <p><strong>Returns:</strong></p> <table> <thead> <tr> <th>Type</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code>None</code></td> <td><p>None</p></td> </tr> </tbody> </table> <details class=quote> <summary>Source code in <code>vasttools/query.py</code></summary> <div class=highlight><pre><span></span><code><span class=k>def</span> <span class=nf>save_search_around_results</span><span class=p>(</span><span class=bp>self</span><span class=p>,</span> <span class=n>sort_output</span><span class=p>:</span> <span class=nb>bool</span> <span class=o>=</span> <span class=kc>False</span><span class=p>)</span> <span class=o>-&gt;</span> <span class=kc>None</span><span class=p>:</span>
+    <span class=sd>&quot;&quot;&quot;</span>
+<span class=sd>    Save results from cone search.</span>
+
+<span class=sd>    Args:</span>
+<span class=sd>        sort_output: Whether to sort the output, defaults to `False`.</span>
+
+<span class=sd>    Returns:</span>
+<span class=sd>        None</span>
+<span class=sd>    &quot;&quot;&quot;</span>
+    <span class=n>meta</span> <span class=o>=</span> <span class=p>{}</span>
+    <span class=c1># also have the sort output setting as a function</span>
+    <span class=c1># input in case of interactive use.</span>
+    <span class=k>if</span> <span class=bp>self</span><span class=o>.</span><span class=n>settings</span><span class=p>[</span><span class=s1>&#39;sort_output&#39;</span><span class=p>]:</span>
+        <span class=n>sort_output</span> <span class=o>=</span> <span class=kc>True</span>
+    <span class=n>result</span> <span class=o>=</span> <span class=p>(</span>
+        <span class=n>dd</span><span class=o>.</span><span class=n>from_pandas</span><span class=p>(</span>
+            <span class=bp>self</span><span class=o>.</span><span class=n>results</span><span class=o>.</span><span class=n>drop</span><span class=p>([</span>
+                <span class=s1>&#39;fields&#39;</span><span class=p>,</span>
+                <span class=s1>&#39;stokes&#39;</span><span class=p>,</span>
+                <span class=s1>&#39;skycoord&#39;</span><span class=p>,</span>
+                <span class=s1>&#39;selavy&#39;</span><span class=p>,</span>
+                <span class=s1>&#39;image&#39;</span><span class=p>,</span>
+                <span class=s1>&#39;rms&#39;</span><span class=p>,</span>
+            <span class=p>],</span> <span class=n>axis</span><span class=o>=</span><span class=mi>1</span><span class=p>),</span> <span class=bp>self</span><span class=o>.</span><span class=n>ncpu</span><span class=p>)</span>
+        <span class=o>.</span><span class=n>groupby</span><span class=p>(</span><span class=s1>&#39;name&#39;</span><span class=p>)</span>
+        <span class=o>.</span><span class=n>apply</span><span class=p>(</span>
+            <span class=bp>self</span><span class=o>.</span><span class=n>_write_search_around_results</span><span class=p>,</span>
+            <span class=n>sort_output</span><span class=o>=</span><span class=n>sort_output</span><span class=p>,</span>
+            <span class=n>meta</span><span class=o>=</span><span class=n>meta</span><span class=p>,</span>
+        <span class=p>)</span><span class=o>.</span><span class=n>compute</span><span class=p>(</span><span class=n>num_workers</span><span class=o>=</span><span class=bp>self</span><span class=o>.</span><span class=n>ncpu</span><span class=p>,</span> <span class=n>scheduler</span><span class=o>=</span><span class=s1>&#39;processes&#39;</span><span class=p>)</span>
+    <span class=p>)</span>
+</code></pre></div> </details> </div> </div> <div class="doc doc-object doc-method"> <h3 id=vasttools.query.Query.write_find_fields class="doc doc-heading"> <code class="highlight language-python"><span class=n>write_find_fields</span><span class=p>(</span><span class=bp>self</span><span class=p>,</span> <span class=n>outname</span><span class=o>=</span><span class=kc>None</span><span class=p>)</span></code> <a href=#vasttools.query.Query.write_find_fields class=headerlink title="Permanent link">&para;</a></h3> <div class="doc doc-contents "> <p>Write the results of a field search to file.</p> <p><strong>Parameters:</strong></p> <table> <thead> <tr> <th>Name</th> <th>Type</th> <th>Description</th> <th>Default</th> </tr> </thead> <tbody> <tr> <td><code>outname</code></td> <td><code>Optional[str]</code></td> <td><p>Name of file to write output to, defaults to None, which will name the file 'find_fields_results.csv'.</p></td> <td><code>None</code></td> </tr> </tbody> </table> <p><strong>Returns:</strong></p> <table> <thead> <tr> <th>Type</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code>None</code></td> <td><p>None</p></td> </tr> </tbody> </table> <details class=quote> <summary>Source code in <code>vasttools/query.py</code></summary> <div class=highlight><pre><span></span><code><span class=k>def</span> <span class=nf>write_find_fields</span><span class=p>(</span><span class=bp>self</span><span class=p>,</span> <span class=n>outname</span><span class=p>:</span> <span class=n>Optional</span><span class=p>[</span><span class=nb>str</span><span class=p>]</span> <span class=o>=</span> <span class=kc>None</span><span class=p>)</span> <span class=o>-&gt;</span> <span class=kc>None</span><span class=p>:</span>
+    <span class=sd>&quot;&quot;&quot;</span>
+<span class=sd>    Write the results of a field search to file.</span>
+
+<span class=sd>    Args:</span>
+<span class=sd>        outname: Name of file to write output to, defaults to None, which</span>
+<span class=sd>            will name the file &#39;find_fields_results.csv&#39;.</span>
+
+<span class=sd>    Returns:</span>
+<span class=sd>        None</span>
+<span class=sd>    &quot;&quot;&quot;</span>
+    <span class=k>if</span> <span class=bp>self</span><span class=o>.</span><span class=n>fields_found</span> <span class=ow>is</span> <span class=kc>False</span><span class=p>:</span>
+        <span class=bp>self</span><span class=o>.</span><span class=n>find_fields</span><span class=p>()</span>
+
+    <span class=k>if</span> <span class=n>outname</span> <span class=ow>is</span> <span class=kc>None</span><span class=p>:</span>
+        <span class=n>name</span> <span class=o>=</span> <span class=s1>&#39;find_fields_result.csv&#39;</span>
+    <span class=k>else</span><span class=p>:</span>
+        <span class=n>name</span> <span class=o>=</span> <span class=n>outname</span> <span class=o>+</span> <span class=s1>&#39;.pkl&#39;</span>
+
+    <span class=n>outdir</span> <span class=o>=</span> <span class=bp>self</span><span class=o>.</span><span class=n>settings</span><span class=p>[</span><span class=s1>&#39;output_dir&#39;</span><span class=p>]</span>
+    <span class=k>if</span> <span class=n>outdir</span> <span class=ow>is</span> <span class=ow>not</span> <span class=kc>None</span><span class=p>:</span>
+        <span class=n>name</span> <span class=o>=</span> <span class=n>os</span><span class=o>.</span><span class=n>path</span><span class=o>.</span><span class=n>join</span><span class=p>(</span><span class=n>outdir</span><span class=p>,</span> <span class=n>name</span><span class=p>)</span>
+
+    <span class=bp>self</span><span class=o>.</span><span class=n>fields_df</span><span class=p>[[</span>
+        <span class=s1>&#39;name&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;ra&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;dec&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;field&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;epoch&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;sbid&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;dateobs&#39;</span><span class=p>,</span>
+        <span class=s1>&#39;primary_field&#39;</span>
+    <span class=p>]]</span><span class=o>.</span><span class=n>to_csv</span><span class=p>(</span><span class=n>name</span><span class=p>,</span> <span class=n>index</span><span class=o>=</span><span class=kc>False</span><span class=p>)</span>
+
+    <span class=bp>self</span><span class=o>.</span><span class=n>logger</span><span class=o>.</span><span class=n>info</span><span class=p>(</span><span class=s1>&#39;Find fields output saved as </span><span class=si>{}</span><span class=s1>.&#39;</span><span class=o>.</span><span class=n>format</span><span class=p>(</span>
+        <span class=n>name</span>
+    <span class=p>))</span>
+</code></pre></div> </details> </div> </div> </div> </div> </div> </div> </div> </div> <hr> <div class=md-source-date> <small> Last update: <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">August 9, 2021</span> <br>Created: <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">August 9, 2021</span> </small> </div> </article> </div> </div> </main> <footer class=md-footer> <nav class="md-footer__inner md-grid" aria-label=Footer> <a href=../pipeline/ class="md-footer__link md-footer__link--prev" rel=prev> <div class="md-footer__button md-icon"> <svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg> </div> <div class=md-footer__title> <div class=md-ellipsis> <span class=md-footer__direction> Previous </span> pipeline.py </div> </div> </a> <a href=../source/ class="md-footer__link md-footer__link--next" rel=next> <div class=md-footer__title> <div class=md-ellipsis> <span class=md-footer__direction> Next </span> source.py </div> </div> <div class="md-footer__button md-icon"> <svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg> </div> </a> </nav> <div class="md-footer-meta md-typeset"> <div class="md-footer-meta__inner md-grid"> <div class=md-footer-copyright> <div class=md-footer-copyright__highlight> Copyright &copy; 2020 - 2025 Vast Development Team, University of Sydney - all right reserved </div> Made with <a href=https://squidfunk.github.io/mkdocs-material/ target=_blank rel=noopener> Material for MkDocs </a> </div> <div class=md-footer-social> <a href=https://github.com/askap-vast/vast-tools target=_blank rel=noopener title="vast-pipeline source on GitHub" class=md-footer-social__link> <svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 496 512"><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg> </a> <a href=https://vast-survey.org target=_blank rel=noopener title=vast-survey.org class=md-footer-social__link> <svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 496 512"><path d="M336.5 160C322 70.7 287.8 8 248 8s-74 62.7-88.5 152h177zM152 256c0 22.2 1.2 43.5 3.3 64h185.3c2.1-20.5 3.3-41.8 3.3-64s-1.2-43.5-3.3-64H155.3c-2.1 20.5-3.3 41.8-3.3 64zm324.7-96c-28.6-67.9-86.5-120.4-158-141.6 24.4 33.8 41.2 84.7 50 141.6h108zM177.2 18.4C105.8 39.6 47.8 92.1 19.3 160h108c8.7-56.9 25.5-107.8 49.9-141.6zM487.4 192H372.7c2.1 21 3.3 42.5 3.3 64s-1.2 43-3.3 64h114.6c5.5-20.5 8.6-41.8 8.6-64s-3.1-43.5-8.5-64zM120 256c0-21.5 1.2-43 3.3-64H8.6C3.2 212.5 0 233.8 0 256s3.2 43.5 8.6 64h114.6c-2-21-3.2-42.5-3.2-64zm39.5 96c14.5 89.3 48.7 152 88.5 152s74-62.7 88.5-152h-177zm159.3 141.6c71.4-21.2 129.4-73.7 158-141.6h-108c-8.8 56.9-25.6 107.8-50 141.6zM19.3 352c28.6 67.9 86.5 120.4 158 141.6-24.4-33.8-41.2-84.7-50-141.6h-108z"/></svg> </a> </div> </div> </div> </footer> </div> <div class=md-dialog data-md-component=dialog> <div class="md-dialog__inner md-typeset"></div> </div> <script id=__config type=application/json>{"base": "../..", "features": ["navigation.instant", "navigation.tabs", "navigation.sections"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}, "search": "../../assets/javascripts/workers/search.4fa0e4ee.min.js", "version": null}</script> <script src=../../assets/javascripts/bundle.1d3bfcf1.min.js></script> <script src=../../theme/js/extra.min.js></script> <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script> <script src=https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js></script> <script>
+    var elements = document.getElementsByClassName("lightgallery");
+    for(var i=0; i<elements.length; i++) {
+       lightGallery(elements[i]);
+    }
+    </script> </body> </html>
