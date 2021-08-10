@@ -238,11 +238,12 @@ class Query:
             )
 
         if self.coords is not None and len(self.source_names) == 0:
-            self.source_names = [
+            source_names = [
                 'source_' + i.to_string(
                     'hmsdms', sep="", precision=1
                 ).replace(" ", "") for i in self.coords
             ]
+            self.source_names = np.array(source_names)
 
         if self.coords is None:
             if len(source_names) != 0:
@@ -438,7 +439,8 @@ class Query:
         )
 
         if not cutouts.empty:
-            cutouts.index = cutouts.index.droplevel()
+            if isinstance(cutouts.index, pd.MultiIndex):
+                cutouts.index = cutouts.index.droplevel()
 
         return cutouts
 
@@ -1084,7 +1086,8 @@ class Query:
             )
 
             if not f_results.empty:
-                f_results.index = f_results.index.droplevel()
+                if isinstance(f_results.index, pd.MultiIndex):
+                    f_results.index = f_results.index.droplevel()
             else:
                 self.settings['forced_fits'] = False
 
@@ -1146,7 +1149,8 @@ class Query:
         )
 
         if not results.empty:
-            results.index = results.index.droplevel()
+            if isinstance(results.index, pd.MultiIndex):
+                results.index = results.index.droplevel()
 
         if self.settings['search_around']:
             results = results.set_index('index')
@@ -1502,6 +1506,7 @@ class Query:
         selavy_df = pd.read_fwf(
             selavy_file, skiprows=[1, ]
         )
+
         if self.settings['stokes'] != "I":
             head, tail = os.path.split(selavy_file)
             nselavy_file = os.path.join(head, 'n{}'.format(tail))
