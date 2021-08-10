@@ -6,7 +6,7 @@ copyright: Copyright &copy; 2020 - 2025 Vast Development Team, University of Syd
 
 repo_url: https://github.com/askap-vast/vast-tools
 repo_name: askap-vast/vast-tools
-edit_uri: ""
+edit_uri: "tree/dev/docs/"
 dev_addr: localhost:8008
 
 docs_dir: docs

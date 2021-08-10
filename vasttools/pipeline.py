@@ -1623,7 +1623,7 @@ class PipeAnalysis(PipeRun):
         return fig
 
     def run_two_epoch_analysis(
-        self, v: float, m: float, query: Optional[str] = None,
+        self, vs: float, m: float, query: Optional[str] = None,
         df: Optional[pd.DataFrame] = None, use_int_flux: bool = False
     ) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
@@ -1631,7 +1631,7 @@ class PipeAnalysis(PipeRun):
         inputs to use a query or filtered dataframe.
 
         Args:
-            v: The minimum Vs metric value to be considered a candidate.
+            vs: The minimum Vs metric value to be considered a candidate.
             m: The minimum m metric absolute value to be considered a
                 candidate.
             query: String query to apply to the dataframe before the analysis
@@ -1680,18 +1680,19 @@ class PipeAnalysis(PipeRun):
         m_abs_label = 'm_int' if use_int_flux else 'm_peak'
 
         pairs_df[vs_label] = pairs_df[vs_label].abs()
+        pairs_df[m_abs_label] = pairs_df[m_abs_label].abs()
 
         # If vaex convert these to pandas
         if self._vaex_meas_pairs:
             candidate_pairs = pairs_df[
-                (pairs_df[vs_label] > v) & (pairs_df[m_abs_label] > m)
+                (pairs_df[vs_label] > vs) & (pairs_df[m_abs_label] > m)
             ]
 
             candidate_pairs = candidate_pairs.to_pandas_df()
 
         else:
             candidate_pairs = pairs_df.loc[
-                (pairs_df[vs_label] > v) & (pairs_df[m_abs_label] > m)
+                (pairs_df[vs_label] > vs) & (pairs_df[m_abs_label] > m)
             ]
 
         unique_sources = candidate_pairs['source_id'].unique()
@@ -2261,7 +2262,7 @@ class PipeAnalysis(PipeRun):
 
         if diagnostic:
             diag = self.eta_v_diagnostic_plot(
-                df, eta_cutoff, v_cutoff
+                eta_cutoff, v_cutoff, df, use_int_flux=use_int_flux
             )
             return eta_cutoff, v_cutoff, candidates, plot, diag
         else:
