@@ -361,7 +361,7 @@ def simbad_search(
 
         c = SkyCoord(ra, dec, unit=(u.deg, u.deg))
 
-        simbad_names = result_table['MAIN_ID'].tolist()
+        simbad_names = np.array(result_table['MAIN_ID'])
 
         return c, simbad_names
 

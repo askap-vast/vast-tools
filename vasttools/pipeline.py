@@ -367,7 +367,9 @@ class PipeRun(object):
         measurements['field'] = field
         measurements['epoch'] = source_epochs
         measurements['stokes'] = stokes
-        measurements['skycoord'] = source_coord
+        measurements['skycoord'] = [
+            source_coord for i in range(num_measurements)
+        ]
         measurements['detection'] = measurements['forced'] == False
         source_fields = [field for i in range(num_measurements)]
         source_stokes = stokes
@@ -573,19 +575,24 @@ class PipeRun(object):
         """
 
         from vasttools.survey import ALLOWED_PLANETS
-        ap = ALLOWED_PLANETS
+        ap = ALLOWED_PLANETS.copy()
 
-        planets_df = self.images.loc[:, [
-            'datetime',
-            'duration',
-            'centre_ra',
-            'centre_dec',
-        ]].rename(
-            columns={
-                'datetime': 'DATEOBS',
-                'centre_ra': 'centre-ra',
-                'centre_dec': 'centre-dec'
-            }
+        planets_df = (
+            self.images.loc[:, [
+                'datetime',
+                'duration',
+                'centre_ra',
+                'centre_dec',
+            ]]
+            .reset_index()
+            .rename(
+                columns={
+                    'id': 'image_id',
+                    'datetime': 'DATEOBS',
+                    'centre_ra': 'centre-ra',
+                    'centre_dec': 'centre-dec'
+                }
+            )
         )
 
         # Split off a sun and moon df so we can check more times
@@ -620,8 +627,12 @@ class PipeRun(object):
         )
         planets_df['planet'] = planets_df['planet'].str.capitalize()
 
+        # reset index as there might be doubles but keep the id column as this
+        # signifies the image id.
+        planets_df = planets_df.reset_index(drop=True)
+
         meta = {
-            'id': 'i',
+            'image_id': 'i',
             'DATEOBS': 'datetime64[ns]',
             'centre-ra': 'f',
             'centre-dec': 'f',
