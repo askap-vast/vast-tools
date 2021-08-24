@@ -52,9 +52,9 @@ from typing import List, Tuple, Optional, Union
 
 from radio_beam import Beam
 
+from vasttools import RELEASED_EPOCHS
 from vasttools.utils import crosshair
 from vasttools.survey import Image
-from vasttools.survey import RELEASED_EPOCHS
 from vasttools.utils import filter_selavy_components
 
 # run crosshair to set up the marker.
@@ -701,6 +701,7 @@ class Source:
                 row.field, row.epoch, self.stokes, self.base_folder,
                 path=row.image, rmspath=row.rms
             )
+            image.get_img_data()
         else:
             e = row.epoch
             if "-" in e:
@@ -710,6 +711,7 @@ class Source:
                 self.base_folder, tiles=self.tiles,
                 sbid=row.sbid
             )
+            image.get_img_data()
 
         cutout = Cutout2D(
             image.data,

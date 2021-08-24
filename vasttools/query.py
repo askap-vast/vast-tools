@@ -53,10 +53,10 @@ from tabulate import tabulate
 
 from typing import Optional, List, Tuple, Dict
 
+from vasttools import RELEASED_EPOCHS, ALLOWED_PLANETS
 from vasttools.survey import Fields, Image
 from vasttools.survey import (
-    RELEASED_EPOCHS, load_field_file,
-    load_field_centres, ALLOWED_PLANETS, get_fields_per_epoch_info
+    load_fields_file, load_field_centres, get_fields_per_epoch_info
 )
 from vasttools.source import Source
 from vasttools.utils import (
@@ -897,6 +897,8 @@ class Query:
                 tiles=self.settings['tiles']
             )
 
+            image.get_img_data()
+
             cutout_data = group.apply(
                 self._get_cutout,
                 args=(image, imsize),
@@ -1376,7 +1378,9 @@ class Query:
                 epoch,
                 stokes,
                 self.base_folder
-            ).beam
+            )
+            img_beam.get_img_data()
+            img_beam = img_beam.beam
         except Exception as e:
             return pd.DataFrame(columns=[
                 'f_island_id',
@@ -1536,6 +1540,7 @@ class Query:
                             sbid=group.iloc[0].sbid,
                             tiles=self.settings['tiles']
                         )
+                        image.get_img_data()
                         rms_values = image.measure_coord_pixel_values(
                             missing, rms=True
                         )
@@ -2343,7 +2348,7 @@ class FieldQuery:
             Bool representing if field is valid.
         """
 
-        epoch_01 = load_field_file("1")
+        epoch_01 = load_fields_file("1")
         self.logger.debug("Field name: {}".format(self.field))
         result = epoch_01['FIELD_NAME'].str.contains(
             re.escape(self.field)
@@ -2411,10 +2416,10 @@ class FieldQuery:
             self.logger.debug("Building pilot info file.")
             for i, val in enumerate(sorted(RELEASED_EPOCHS)):
                 if i == 0:
-                    self.pilot_info = load_field_file(val)
+                    self.pilot_info = load_fields_file(val)
                     self.pilot_info["EPOCH"] = RELEASED_EPOCHS[val]
                 else:
-                    to_append = load_field_file(val)
+                    to_append = load_fields_file(val)
                     to_append["EPOCH"] = RELEASED_EPOCHS[val]
                     self.pilot_info = self.pilot_info.append(
                         to_append, sort=False

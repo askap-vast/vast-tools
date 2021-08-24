@@ -747,6 +747,8 @@ class PipeRun(object):
             'field', '1', 'I', 'None',
             path=fits_img
         )
+        
+        image.get_img_data()
 
         binary = (~np.isnan(image.data)).astype(int)
         mask = self._distance_from_edge(binary)

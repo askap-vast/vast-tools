@@ -52,7 +52,7 @@ def field_moc_filename():
     return _get_values
 
 
-def test_load_pilot_stmoc(vast_tools_moc, mocker):
+def test_moc_load_pilot_stmoc(vast_tools_moc, mocker):
     filename = 'VAST_PILOT.stmoc.fits'
     mock_path = f'/path/to/{filename}'
 
@@ -69,7 +69,7 @@ def test_load_pilot_stmoc(vast_tools_moc, mocker):
     assert result == True
 
 
-def test_load_pilot_epoch_moc_str(
+def test_moc_load_pilot_epoch_moc_str(
     vast_tools_moc, epoch_moc_filename, mocker
 ):
     epoch = '5x'
@@ -89,7 +89,7 @@ def test_load_pilot_epoch_moc_str(
     assert result == -99
 
 
-def test_load_pilot_epoch_moc_fail(vast_tools_moc):
+def test_moc_load_pilot_epoch_moc_fail(vast_tools_moc):
     epoch = '99z'
 
     with pytest.raises(Exception) as excinfo:
@@ -98,7 +98,7 @@ def test_load_pilot_epoch_moc_fail(vast_tools_moc):
     assert str(excinfo.value) == f"EPOCH {epoch} not recognised"
 
 
-def test_load_pilot_field_moc_str(
+def test_moc_load_pilot_field_moc_str(
     vast_tools_moc, field_moc_filename, mocker
 ):
     field = '1'
@@ -118,7 +118,7 @@ def test_load_pilot_field_moc_str(
     assert result == -99
 
 
-def test_load_pilot_field_moc_int(
+def test_moc_load_pilot_field_moc_int(
     vast_tools_moc, field_moc_filename, mocker
 ):
     field = 1
@@ -138,14 +138,14 @@ def test_load_pilot_field_moc_int(
     assert result == -99
 
 
-def test_load_pilot_field_moc_fail(vast_tools_moc):
+def test_moc_load_pilot_field_moc_fail(vast_tools_moc):
     field = '99'
 
     with pytest.raises(ValueError) as excinfo:
-        vast_tools_moc.load_pilot_field_moc(field, )
+        vast_tools_moc.load_pilot_field_moc(field)
 
 
-def test_load_pilot_tile_moc_combined(
+def test_moc_load_pilot_tile_moc_combined(
     vast_tools_moc, tile_moc_filename, mocker
 ):
     field = 'VAST_2053+00A'
@@ -176,7 +176,7 @@ def test_load_pilot_tile_moc_combined(
     assert result == -99
 
 
-def test_load_pilot_tile_moc_tiles(
+def test_moc_load_pilot_tile_moc_tiles(
     vast_tools_moc, tile_moc_filename, mocker
 ):
     field = 'VAST_2053+00A'
@@ -207,7 +207,7 @@ def test_load_pilot_tile_moc_tiles(
     assert result == True
 
 
-def test_load_pilot_tile_moc_type_fail(vast_tools_moc):
+def test_moc_load_pilot_tile_moc_type_fail(vast_tools_moc):
     field = 'VAST_2053+00A'
     itype = 'NOTATYPE'
     with pytest.raises(Exception) as excinfo:
@@ -218,7 +218,7 @@ def test_load_pilot_tile_moc_type_fail(vast_tools_moc):
     )
 
 
-def test_load_pilot_tile_moc_field_fail(vast_tools_moc, mocker):
+def test_moc_load_pilot_tile_moc_field_fail(vast_tools_moc, mocker):
     field = 'VAST_9999+99A'
 
     # need to also mock the loading of the field_centres
@@ -235,7 +235,7 @@ def test_load_pilot_tile_moc_field_fail(vast_tools_moc, mocker):
     assert str(excinfo.value) == f"Field {field} not recognised"
 
 
-def test_query_vizier_vast_pilot(vast_tools_moc, mocker):
+def test_moc_query_vizier_vast_pilot(vast_tools_moc, mocker):
     pilot_moc_mocker = mocker.patch(
         'vasttools.moc.VASTMOCS.load_pilot_epoch_moc',
     )

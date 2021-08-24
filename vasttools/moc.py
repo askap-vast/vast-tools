@@ -13,7 +13,8 @@ from astropy.coordinates import Angle, SkyCoord
 from astropy.table import Table
 from mocpy import MOC, STMOC
 
-from vasttools.survey import RELEASED_EPOCHS, load_field_centres
+from vasttools import RELEASED_EPOCHS
+from vasttools.survey import load_field_centres
 
 
 class VASTMOCS(object):

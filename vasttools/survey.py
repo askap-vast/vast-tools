@@ -1,16 +1,4 @@
 """Functions and classes related to loading and searching of the survey data.
-
-Attributes:
-    RELEASED_EPOCHS (Dict[str, str]): Dictionary containing the released
-        epochs with the values being the 0 padded representation that the data
-        file names use.
-    FILED_FILES (Dict[str, str]): Package paths to the CSV files containing
-        the observational information of each epoch.
-    FIELD_CENTRES (pandas.core.frame.DataFrame): DataFrame loaded from a
-        packaged CSV that contains the field centres for each individual
-        pilot field.
-    ALLOWED_PLANETS (List[str]): List of accepted planet and other object
-        names.
 """
 import sys
 import os
@@ -35,43 +23,14 @@ from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
 from radio_beam import Beam
 from typing import Tuple, Optional
 
+from vasttools import RELEASED_EPOCHS
+
 warnings.filterwarnings('ignore', category=AstropyWarning, append=True)
 warnings.filterwarnings(
     'ignore',
     category=AstropyDeprecationWarning,
     append=True
 )
-
-
-RELEASED_EPOCHS = {
-    "0": "00",  # RACS, needs check that it exists, not part of VAST release
-    "1": "01",
-    "2": "02",
-    "3x": "03x",
-    "4x": "04x",
-    "5x": "05x",
-    "6x": "06x",
-    "7x": "07x",
-    "8": "08",
-    "9": "09",
-    "10x": "10x",
-    "11x": "11x",
-    "12": "12",
-}
-
-
-# TODO: Not sure this belongs in survey.
-ALLOWED_PLANETS = [
-    'mercury',
-    'venus',
-    'mars',
-    'jupiter',
-    'saturn',
-    'uranus',
-    'neptune',
-    'sun',
-    'moon'
-]
 
 
 def load_field_centres() -> pd.DataFrame:
@@ -85,13 +44,14 @@ def load_field_centres() -> pd.DataFrame:
         Dataframe containing the field centres.
     """
     with importlib.resources.path(
-        "vasttools.data.csvs", "vast_field_centres.csv") as field_centres_csv:
+        "vasttools.data.csvs", "vast_field_centres.csv"
+    ) as field_centres_csv:
         field_centres = pd.read_csv(field_centres_csv)
 
     return field_centres
 
 
-def load_field_file(epoch: str) -> pd.DataFrame:
+def load_fields_file(epoch: str) -> pd.DataFrame:
     """
     Load the csv field file of the requested epoch as a pandas dataframe.
 
@@ -104,9 +64,17 @@ def load_field_file(epoch: str) -> pd.DataFrame:
 
     Returns:
         DataFrame containing the field information of the epoch.
+
+    Raises:
+        ValueError: Raised when epoch requested is not released.
     """
-    if field not in RELEASED_EPOCHS:
-        field = field[1:]
+    if epoch not in RELEASED_EPOCHS:
+        if len(epoch) > 2 and epoch.startswith('0'):
+            epoch = epoch[1:]
+        if epoch not in RELEASED_EPOCHS:
+            raise ValueError(
+                f'Epoch {epoch} is not available or is not a valid epoch.'
+            )
 
     paths = {
         "0": importlib.resources.path('vasttools.data.csvs', 'racs_info.csv'),
@@ -150,13 +118,11 @@ def get_fields_per_epoch_info() -> pd.DataFrame:
     Returns:
         Dataframe of epoch information
     """
-    for i, e in enumerate(FIELD_FILES):
-        temp = pd.read_csv(FIELD_FILES[e], comment='#')
+    epoch_fields = pd.DataFrame()
+    for i, e in enumerate(RELEASED_EPOCHS):
+        temp = load_fields_file(e)
         temp['EPOCH'] = e
-        if i == 0:
-            epoch_fields = temp
-        else:
-            epoch_fields = epoch_fields.append(temp)
+        epoch_fields = epoch_fields.append(temp)
 
     epoch_fields = epoch_fields.drop_duplicates(
         ['FIELD_NAME', 'EPOCH']
@@ -189,8 +155,7 @@ def get_askap_observing_location() -> EarthLocation:
 
 class Fields:
     """
-    Class to represent the VAST Pilot survey fields of a given
-    epoch.
+    Class to represent the VAST Pilot survey fields of a given epoch.
 
     Attributes:
         fields (pandas.core.frame.DataFrame):
@@ -213,9 +178,8 @@ class Fields:
         """
         self.logger = logging.getLogger('vasttools.survey.Fields')
         self.logger.debug('Created Fields instance')
-        self.logger.debug(FIELD_FILES[epoch])
 
-        self.fields = pd.read_csv(FIELD_FILES[epoch], comment='#')
+        self.fields = load_fields_file(epoch)
         # Epoch 99 has some empty beam directions (processing failures)
         # Drop them and any issue rows in the future.
         self.fields.dropna(inplace=True)
@@ -225,91 +189,6 @@ class Fields:
             Angle(self.fields["RA_HMS"], unit=u.hourangle),
             Angle(self.fields["DEC_DMS"], unit=u.deg)
         )
-
-    # TODO: The below methods are no longer used in the code base.
-    #       So these should probably be removed.
-
-    # ATTRIBUTE DOCSTRING:
-    # field_cat (pandas.core.frame.DataFrame):
-    #     A dataframe containing the nearest beam for the sources
-    #     queried (created through the 'find' method)
-
-    # def find(
-    #     self,
-    #     src_coord: SkyCoord,
-    #     max_sep: float,
-    #     catalog: pd.DataFrame
-    # ) -> Tuple[pd.DataFrame, np.ndarray]:
-    #     """
-    #     Find which field each source in the catalogue is in.
-    #
-    #     Args:
-    #         src_coord: Coordinates of sources to find fields for.
-    #         max_sep: Maximum allowable separation between source
-    #             and beam centre in degrees.
-    #         catalog: Catalogue of sources to find fields for.
-    #
-    #     Returns:
-    #         An updated catalogue with nearest field data for each
-    #         source, and a boolean array corresponding to whether the source
-    #         is within max_sep.
-    #     """
-    #     self.logger.debug(src_coord)
-    #     self.logger.debug(catalog[np.isnan(src_coord.ra)])
-    #     nearest_beams, seps, _d3d = src_coord.match_to_catalog_sky(
-    #         self.direction)
-    #     self.logger.debug(seps.deg)
-    #     self.logger.debug(
-    #         "Nearest beams: {}".format(self.fields["BEAM"][nearest_beams]))
-    #     within_beam = seps.deg < max_sep
-    #     catalog["sbid"] = self.fields["SBID"].iloc[nearest_beams].values
-    #     nearest_fields = self.fields["FIELD_NAME"].iloc[nearest_beams]
-    #     self.logger.debug(nearest_fields)
-    #     catalog["field_name"] = nearest_fields.values
-    #     catalog["original_index"] = catalog.index.values
-    #     obs_dates = self.fields["DATEOBS"].iloc[nearest_beams]
-    #     date_end = self.fields["DATEEND"].iloc[nearest_beams]
-    #     catalog["obs_date"] = obs_dates.values
-    #     catalog["date_end"] = date_end.values
-    #     beams = self.fields["BEAM"][nearest_beams]
-    #     catalog["beam"] = beams.values
-    #     new_catalog = catalog[within_beam].reset_index(drop=True)
-    #     self.logger.info(
-    #         "Field match found for {}/{} sources.".format(
-    #             len(new_catalog.index), len(nearest_beams)))
-    #
-    #     if len(new_catalog.index) - len(nearest_beams) != 0:
-    #         self.logger.warning(
-    #             "No field matches found for sources with index (or name):")
-    #         for i in range(0, len(catalog.index)):
-    #             if i not in new_catalog["original_index"]:
-    #                 if "name" in catalog.columns:
-    #                     self.logger.warning(catalog["name"].iloc[i])
-    #                 else:
-    #                     self.logger.warning("{:03d}".format(i + 1))
-    #     else:
-    #         self.logger.info("All sources found!")
-    #
-    #     self.field_cat = new_catalog
-    #
-    #     return new_catalog, within_beam
-    #
-    # def write_fields_cat(self, outfile: str) -> None:
-    #     """
-    #     Write the source-fields catalogue to file.
-    #
-    #     Args:
-    #         outfile: Name of the file to write to.
-    #
-    #     Returns:
-    #         None
-    #     """
-    #     self.field_cat.drop(
-    #         ["original_index"],
-    #         axis=1).to_csv(
-    #         outfile,
-    #         index=False)
-    #     self.logger.info("Written field catalogue to {}.".format(outfile))
 
 
 class Image:
@@ -352,7 +231,8 @@ class Image:
 
         Args:
             field: Name of the field.
-            epoch: The epoch of the field requested.
+            epoch: The epoch of the field requested. Do not zero pad the epoch
+                number.
             stokes: Stokes parameter of interest.
             base_folder: Path to base folder if using
                 default directory structure.
@@ -378,34 +258,54 @@ class Image:
         self.rms_header = rms_header
         self.path = path
         self.rmspath = rmspath
+        self.tiles = tiles
+        self.base_folder = base_folder
 
         if self.path is None:
-            if tiles:
-                img_folder = os.path.join(
-                    base_folder,
-                    "EPOCH{}".format(RELEASED_EPOCHS[epoch]),
-                    "TILES",
-                    "STOKES{}_IMAGES".format(stokes.upper())
-                )
-                img_template = (
-                    'image.{}.SB{}.cont.{}.linmos.taylor.0.restored.fits'
-                )
-                self.imgname = img_template.format(stokes.lower(), sbid, field)
-            else:
-                img_folder = os.path.join(
-                    base_folder,
-                    "EPOCH{}".format(RELEASED_EPOCHS[epoch]),
-                    "COMBINED",
-                    "STOKES{}_IMAGES".format(stokes.upper())
-                )
-                self.imgname = '{}.EPOCH{}.{}.fits'.format(
-                    field, RELEASED_EPOCHS[epoch], stokes.upper()
-                )
-
-            self.imgpath = os.path.join(img_folder, self.imgname)
+            self.get_paths_and_names()
         else:
-            self.imgpath = path
+            self.imgpath = self.path
+            self.imgname = os.path.basename(self.path)
 
+        self._check_exists()
+        self._loaded_data = False
+
+    def get_paths_and_names(self) -> None:
+        """
+        Configure the file names if they have no been provided.
+
+        Returns:
+            None
+        """
+        if self.tiles:
+            img_folder = os.path.join(
+                self.base_folder,
+                "EPOCH{}".format(RELEASED_EPOCHS[self.epoch]),
+                "TILES",
+                "STOKES{}_IMAGES".format(self.stokes.upper())
+            )
+            img_template = (
+                'image.{}.SB{}.cont.{}.linmos.taylor.0.restored.fits'
+            )
+            self.imgname = img_template.format(
+                self.stokes.lower(), self.sbid, self.field
+            )
+        else:
+            img_folder = os.path.join(
+                self.base_folder,
+                "EPOCH{}".format(RELEASED_EPOCHS[self.epoch]),
+                "COMBINED",
+                "STOKES{}_IMAGES".format(self.stokes.upper())
+            )
+            self.imgname = '{}.EPOCH{}.{}.fits'.format(
+                self.field,
+                RELEASED_EPOCHS[self.epoch],
+                self.stokes.upper()
+            )
+
+        self.imgpath = os.path.join(img_folder, self.imgname)
+
+    def _check_exists(self) -> bool:
         if os.path.isfile(self.imgpath):
             self.image_fail = False
         else:
@@ -415,22 +315,30 @@ class Image:
                     self.imgpath
                 )
             )
+
+    def get_img_data(self) -> None:
+        """
+        Load the data from the image, including the beam.
+
+        Returns:
+            None
+        """
+        if self.image_fail:
             return
 
         with fits.open(self.imgpath) as hdul:
             self.header = hdul[0].header
             self.wcs = WCS(self.header, naxis=2)
+            self.data = hdul[0].data.squeeze()
 
-            try:
-                self.data = hdul[0].data[0, 0, :, :]
-            except Exception as e:
-                self.data = hdul[0].data
+        try:
+            self.beam = Beam.from_fits_header(self.header)
+        except Exception as e:
+            self.logger.error("Beam information could not be read!")
+            self.logger.error(f"Error: {e}")
+            self.beam = None
 
-            try:
-                self.beam = Beam.from_fits_header(self.header)
-            except Exception as e:
-                self.logger.error("Beam information could not be read!")
-                self.beam = None
+        self._loaded_data = True
 
     def get_rms_img(self) -> None:
         """
@@ -457,11 +365,7 @@ class Image:
         with fits.open(self.rmspath) as hdul:
             self.rms_header = hdul[0].header
             self.rms_wcs = WCS(self.rms_header, naxis=2)
-
-            try:
-                self.rms_data = hdul[0].data[0, 0, :, :]
-            except Exception as e:
-                self.rms_data = hdul[0].data
+            self.rms_data = hdul[0].data.squeeze()
 
     def measure_coord_pixel_values(
         self,
@@ -477,7 +381,6 @@ class Image:
         Returns:
             Pixel values stored in an array at the coords locations.
         """
-
         if rms is True:
             if self.rms_header is None:
                 self.get_rms_img()
@@ -486,7 +389,8 @@ class Image:
             thedata = self.rms_data
 
         else:
-
+            if not self._loaded_data:
+                self.get_img_data()
             thewcs = self.wcs
             thedata = self.data
 
@@ -498,6 +402,7 @@ class Image:
 
         # leaving this here just in case for now,
         # but sources should always be in image range
+        # if enabled it should be tested
 
         # check for pixel wrapping
         # x_valid = np.logical_or(
