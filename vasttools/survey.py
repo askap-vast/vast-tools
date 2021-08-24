@@ -16,7 +16,7 @@ import sys
 import os
 import pandas as pd
 import warnings
-import pkg_resources
+import importlib.resources
 import itertools
 import numpy as np
 import re
@@ -59,40 +59,6 @@ RELEASED_EPOCHS = {
     "12": "12",
 }
 
-FIELD_FILES = {
-    "0": pkg_resources.resource_filename(
-        __name__, "./data/csvs/racs_info.csv"),
-    "1": pkg_resources.resource_filename(
-        __name__, "./data/csvs/vast_epoch01_info.csv"),
-    "2": pkg_resources.resource_filename(
-        __name__, "./data/csvs/vast_epoch02_info.csv"),
-    "3x": pkg_resources.resource_filename(
-        __name__, "./data/csvs/vast_epoch03x_info.csv"),
-    "4x": pkg_resources.resource_filename(
-        __name__, "./data/csvs/vast_epoch04x_info.csv"),
-    "5x": pkg_resources.resource_filename(
-        __name__, "./data/csvs/vast_epoch05x_info.csv"),
-    "6x": pkg_resources.resource_filename(
-        __name__, "./data/csvs/vast_epoch06x_info.csv"),
-    "7x": pkg_resources.resource_filename(
-        __name__, "./data/csvs/vast_epoch07x_info.csv"),
-    "8": pkg_resources.resource_filename(
-        __name__, "./data/csvs/vast_epoch08_info.csv"),
-    "9": pkg_resources.resource_filename(
-        __name__, "./data/csvs/vast_epoch09_info.csv"),
-    "10x": pkg_resources.resource_filename(
-        __name__, "./data/csvs/vast_epoch10x_info.csv"),
-    "11x": pkg_resources.resource_filename(
-        __name__, "./data/csvs/vast_epoch11x_info.csv"),
-    "12": pkg_resources.resource_filename(
-        __name__, "./data/csvs/vast_epoch12_info.csv")
-}
-
-FIELD_CENTRES = pd.read_csv(
-    pkg_resources.resource_filename(
-        __name__, "./data/csvs/vast_field_centres.csv"
-    )
-)
 
 # TODO: Not sure this belongs in survey.
 ALLOWED_PLANETS = [
@@ -108,6 +74,74 @@ ALLOWED_PLANETS = [
 ]
 
 
+def load_field_centres() -> pd.DataFrame:
+    """
+    Loads the field centres csv file as a dataframe for use.
+
+    Columns present are, 'field', 'centre-ra' and 'centre-dec'.
+    The coordinates are in units of degrees.
+
+    Returns:
+        Dataframe containing the field centres.
+    """
+    with importlib.resources.path(
+        "vasttools.data.csvs", "vast_field_centres.csv") as field_centres_csv:
+        field_centres = pd.read_csv(field_centres_csv)
+
+    return field_centres
+
+
+def load_field_file(epoch: str) -> pd.DataFrame:
+    """
+    Load the csv field file of the requested epoch as a pandas dataframe.
+
+    Columns present are 'SBID', 'FIELD_NAME', 'BEAM', 'RA_HMS', 'DEC_DMS',
+    'DATEOBS', 'DATEEND', 'NINT', 'BMAJ', 'BMIN', 'BPA'
+
+    Args:
+        epoch: Epoch to load. Can be entered with or without zero padding.
+            E.g. '3x', '9' or '03x' '09'.
+
+    Returns:
+        DataFrame containing the field information of the epoch.
+    """
+    if field not in RELEASED_EPOCHS:
+        field = field[1:]
+
+    paths = {
+        "0": importlib.resources.path('vasttools.data.csvs', 'racs_info.csv'),
+        "1": importlib.resources.path(
+            'vasttools.data.csvs', 'vast_epoch01_info.csv'),
+        "2": importlib.resources.path(
+            'vasttools.data.csvs', 'vast_epoch02_info.csv'),
+        "3x": importlib.resources.path(
+            'vasttools.data.csvs', 'vast_epoch03x_info.csv'),
+        "4x": importlib.resources.path(
+            'vasttools.data.csvs', 'vast_epoch04x_info.csv'),
+        "5x": importlib.resources.path(
+            'vasttools.data.csvs', 'vast_epoch05x_info.csv'),
+        "6x": importlib.resources.path(
+            'vasttools.data.csvs', 'vast_epoch06x_info.csv'),
+        "7x": importlib.resources.path(
+            'vasttools.data.csvs', 'vast_epoch07x_info.csv'),
+        "8": importlib.resources.path(
+            'vasttools.data.csvs', 'vast_epoch08_info.csv'),
+        "9": importlib.resources.path(
+            'vasttools.data.csvs', 'vast_epoch09_info.csv'),
+        "10x": importlib.resources.path(
+            'vasttools.data.csvs', 'vast_epoch10x_info.csv'),
+        "11x": importlib.resources.path(
+            'vasttools.data.csvs', 'vast_epoch11x_info.csv'),
+        "12": importlib.resources.path(
+            'vasttools.data.csvs', 'vast_epoch12_info.csv'),
+    }
+
+    with paths[epoch] as fields_csv:
+        fields_df = pd.read_csv(fields_csv, comment='#')
+
+    return fields_df
+
+
 def get_fields_per_epoch_info() -> pd.DataFrame:
     """
     Function to create a dataframe suitable for fast
@@ -116,7 +150,6 @@ def get_fields_per_epoch_info() -> pd.DataFrame:
     Returns:
         Dataframe of epoch information
     """
-
     for i, e in enumerate(FIELD_FILES):
         temp = pd.read_csv(FIELD_FILES[e], comment='#')
         temp['EPOCH'] = e

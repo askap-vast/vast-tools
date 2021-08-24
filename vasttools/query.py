@@ -55,8 +55,8 @@ from typing import Optional, List, Tuple, Dict
 
 from vasttools.survey import Fields, Image
 from vasttools.survey import (
-    RELEASED_EPOCHS, FIELD_FILES,
-    FIELD_CENTRES, ALLOWED_PLANETS, get_fields_per_epoch_info
+    RELEASED_EPOCHS, load_field_file,
+    load_field_centres, ALLOWED_PLANETS, get_fields_per_epoch_info
 )
 from vasttools.source import Source
 from vasttools.utils import (
@@ -1716,8 +1716,9 @@ class Query:
             base_fc = 'VAST'
 
         fields = Fields(base_epoch)
-        field_centres = FIELD_CENTRES.loc[
-            FIELD_CENTRES['field'].str.contains(base_fc)
+        field_centres = load_field_centres()
+        field_centres = field_centres.loc[
+            field_centres['field'].str.contains(base_fc)
         ].reset_index()
 
         field_centres_sc = SkyCoord(
@@ -1960,11 +1961,12 @@ class Query:
             Dataframe containing fields and epoch info.
         """
         epochs = self.settings['epochs']
+        field_centres = load_field_centres()
 
         planet_epoch_fields = self._epoch_fields.loc[epochs].reset_index()
 
         planet_epoch_fields = planet_epoch_fields.merge(
-            FIELD_CENTRES, left_on='FIELD_NAME',
+            field_centres, left_on='FIELD_NAME',
             right_on='field', how='left'
         ).drop('field', axis=1).rename(
             columns={'EPOCH': 'epoch'}
@@ -2341,7 +2343,7 @@ class FieldQuery:
             Bool representing if field is valid.
         """
 
-        epoch_01 = pd.read_csv(FIELD_FILES["1"], comment='#')
+        epoch_01 = load_field_file("1")
         self.logger.debug("Field name: {}".format(self.field))
         result = epoch_01['FIELD_NAME'].str.contains(
             re.escape(self.field)
@@ -2409,14 +2411,10 @@ class FieldQuery:
             self.logger.debug("Building pilot info file.")
             for i, val in enumerate(sorted(RELEASED_EPOCHS)):
                 if i == 0:
-                    self.pilot_info = pd.read_csv(
-                        FIELD_FILES[val], comment='#'
-                    )
+                    self.pilot_info = load_field_file(val)
                     self.pilot_info["EPOCH"] = RELEASED_EPOCHS[val]
                 else:
-                    to_append = pd.read_csv(
-                        FIELD_FILES[val], comment='#'
-                    )
+                    to_append = load_field_file(val)
                     to_append["EPOCH"] = RELEASED_EPOCHS[val]
                     self.pilot_info = self.pilot_info.append(
                         to_append, sort=False

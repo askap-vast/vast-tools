@@ -46,7 +46,6 @@ from vasttools.source import Source
 from vasttools.utils import (
     match_planet_to_field,
     pipeline_get_variable_metrics,
-    pipeline_get_eta_metric,
     gen_skycoord_from_df
 )
 from vasttools.survey import Image
