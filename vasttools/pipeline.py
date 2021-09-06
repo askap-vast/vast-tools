@@ -11,8 +11,17 @@ import glob
 import gc
 import vaex
 import dask.dataframe as dd
-from typing import Dict, List, Tuple
+import scipy.ndimage as ndi
 import bokeh.colors.named as colors
+import colorcet as cc
+import numpy as np
+import pandas as pd
+import astropy
+import mocpy
+import matplotlib
+import matplotlib.pyplot as plt
+
+from typing import Dict, List, Tuple
 from bokeh.models import (
     ColumnDataSource,
     Span,
@@ -30,18 +39,18 @@ from bokeh.layouts import gridplot, Spacer
 from bokeh.palettes import Category10_3
 from bokeh.plotting import figure, from_networkx
 from bokeh.transform import linear_cmap, factor_cmap
-import colorcet as cc
-import numpy as np
-import pandas as pd
-import astropy
-import mocpy
 from scipy.stats import norm
-import scipy.ndimage as ndi
-from astropy.stats import sigma_clip, mad_std
+from astropy.stats import sigma_clip, mad_std, bayesian_blocks
 from astropy.coordinates import SkyCoord
 from astropy import units as u
 from multiprocessing import cpu_count
 from mocpy import MOC
+from datetime import timedelta
+from itertools import combinations
+from matplotlib.ticker import NullFormatter
+from matplotlib.font_manager import FontProperties
+from typing import Optional, List, Union, Tuple
+
 from vasttools.source import Source
 from vasttools.utils import (
     match_planet_to_field,
@@ -49,19 +58,15 @@ from vasttools.utils import (
     gen_skycoord_from_df
 )
 from vasttools.survey import Image
-from datetime import timedelta
-from itertools import combinations
-import matplotlib
-import matplotlib.pyplot as plt
-from matplotlib.ticker import NullFormatter
-from matplotlib.font_manager import FontProperties
-from astroML import density_estimation
-from typing import Optional, List, Union, Tuple
 
 
 HOST_NCPU = cpu_count()
 numexpr.set_num_threads(int(HOST_NCPU / 4))
 matplotlib.pyplot.switch_backend('Agg')
+
+
+class PipelineDirectoryError(Exception):
+    pass
 
 
 class PipeRun(object):
@@ -71,6 +76,8 @@ class PipeRun(object):
     Attributes:
         associations (pandas.core.frame.DataFrame): Associations dataframe
             from the pipeline run loaded from 'associations.parquet'.
+        bands (pandas.core.frame.DataFrame): The bands dataframe from the
+            pipeline run loaded from 'bands.parquet'.
         images (pandas.core.frame.DataFrame): Dataframe containing all the
             information on the images of the pipeline run.
         measurements (Union[pd.DataFrame, vaex.dataframe.DataFrame]):
@@ -97,6 +104,7 @@ class PipeRun(object):
         relations: pd.DataFrame,
         sources: pd.DataFrame,
         associations: pd.DataFrame,
+        bands: pd.DataFrame,
         measurements: Union[pd.DataFrame, vaex.dataframe.DataFrame],
         measurement_pairs_file: List[str],
         vaex_meas: bool = False,
@@ -118,6 +126,8 @@ class PipeRun(object):
             associations: Associations dataframe from the pipeline run loaded
                 from 'associations.parquet'. A `pandas.core.frame.DataFrame`
                 instance.
+            bands: The bands dataframe from the pipeline run loaded from
+                'bands.parquet'.
             measurements: Measurements dataframe from the pipeline run
                 loaded from measurements.parquet and the forced measurements
                 parquet files.  A `pandas.core.frame.DataFrame` or
@@ -141,6 +151,7 @@ class PipeRun(object):
         self.sources = sources
         self.sources_skycoord = self.get_sources_skycoord()
         self.associations = associations
+        self.bands = bands
         self.measurements = measurements
         self.measurement_pairs_file = measurement_pairs_file
         self.relations = relations
@@ -521,7 +532,7 @@ class PipeRun(object):
         self._loaded_two_epoch_metrics = True
 
     def _add_times(
-        self, row: pd.Series, duration: bool = True, every_hour: bool = False
+        self, row: pd.Series, every_hour: bool = False
     ) -> List[pd.Series]:
         """
         Adds the times required for planet searching.
@@ -532,34 +543,32 @@ class PipeRun(object):
 
         Args:
             row: The series row containing the information.
-            duration: Add the times at the beginning and end of the
-                observation, defaults to 'True'.
             every_hour: Add times to the dataframe every hour during the
                 observation, defaults to 'False'.
 
         Returns:
             List of times to be searched for planets, in the format of rows.
         """
-        if row['duration'] == 0:
+        if row['duration'] == 0.:
             return row['DATEOBS']
 
-        elif duration:
+        if every_hour:
+            hours = int(row['duration'] / 3600.)
+            times = [
+                row['DATEOBS'] + timedelta(
+                    seconds=3600. * h
+                )
+                for h in range(hours + 1)
+            ]
+            return times
+
+        else:
             return [
                 row['DATEOBS'],
                 row['DATEOBS'] + timedelta(
                     seconds=row['duration']
                 )
             ]
-
-        elif every_hour:
-            hours = int(row['duration'] / 3600.)
-            times = [
-                row['DATEOBS'] + timedelta(
-                    seconds=row['duration'] * h
-                )
-                for h in range(hours + 1)
-            ]
-            return times
 
     def check_for_planets(self) -> pd.DataFrame:
         """
@@ -572,8 +581,7 @@ class PipeRun(object):
             DataFrame with list of planet positions. It will be empty if no
             planets are found. A `pandas.core.frame.DataFrame` instance.
         """
-
-        from vasttools.survey import ALLOWED_PLANETS
+        from vasttools import ALLOWED_PLANETS
         ap = ALLOWED_PLANETS.copy()
 
         planets_df = (
@@ -609,7 +617,7 @@ class PipeRun(object):
         # check sun and moon every hour
         sun_moon_df['DATEOBS'] = sun_moon_df[['DATEOBS', 'duration']].apply(
             self._add_times,
-            args=(False, True),
+            args=(True,),
             axis=1
         )
 
@@ -669,32 +677,43 @@ class PipeRun(object):
         Returns:
             PipeAnalysis: new_PipeRun
         """
-
         source_mask = moc.contains(
             self.sources_skycoord.ra, self.sources_skycoord.dec)
+
+        print(source_mask)
 
         new_sources = self.sources.loc[source_mask].copy()
 
         if self._vaex_meas:
             new_meas = self.measurements[
-                self.measurements.source.isin(new_sources.index.values)]
+                self.measurements['source'].isin(new_sources.index.values)]
             new_meas = new_meas.extract()
         else:
             new_meas = self.measurements.loc[
-                self.measurements.source.isin(new_sources.index.values)].copy()
+                self.measurements['source'].isin(
+                    new_sources.index.values
+                )].copy()
 
         new_images = self.images.loc[
-            self.images.index.isin(new_meas.image_id.tolist())].copy()
+            self.images.index.isin(new_meas['image_id'].tolist())].copy()
 
         new_skyregions = self.skyregions[
-            self.skyregions.id.isin(new_images.skyreg_id.values)].copy()
+            self.skyregions['id'].isin(new_images['skyreg_id'].values)].copy()
 
         new_associations = self.associations[
-            self.associations.source_id.isin(new_sources.index.values).copy()
+            self.associations['source_id'].isin(
+                new_sources.index.values
+            ).copy()
+        ]
+
+        new_bands = self.bands[
+            self.bands['id'].isin(new_images['band_id'])
         ]
 
         new_relations = self.relations[
-            self.relations.from_source_id.isin(new_sources.index.values).copy()
+            self.relations['from_source_id'].isin(
+                new_sources.index.values
+            ).copy()
         ]
 
         new_PipeRun = PipeAnalysis(
@@ -704,6 +723,7 @@ class PipeRun(object):
             relations=new_relations,
             sources=new_sources,
             associations=new_associations,
+            bands=new_bands,
             measurements=new_meas,
             measurement_pairs_file=self.measurement_pairs_file,
             vaex_meas=self._vaex_meas
@@ -747,7 +767,7 @@ class PipeRun(object):
             'field', '1', 'I', 'None',
             path=fits_img
         )
-        
+
         image.get_img_data()
 
         binary = (~np.isnan(image.data)).astype(int)
@@ -788,7 +808,6 @@ class PipeRun(object):
         Returns:
             MOC object.
         """
-
         images_to_use = self.images.drop_duplicates(
             'skyreg_id'
         )['path'].values
@@ -826,6 +845,8 @@ class PipeAnalysis(PipeRun):
     Attributes:
         associations (pandas.core.frame.DataFrame): Associations dataframe
             from the pipeline run loaded from 'associations.parquet'.
+        bands (pandas.core.frame.DataFrame): The bands dataframe from the
+            pipeline run loaded from 'bands.parquet'.
         images (pandas.core.frame.DataFrame):
             Dataframe containing all the information on the images
             of the pipeline run.
@@ -859,6 +880,7 @@ class PipeAnalysis(PipeRun):
         relations: pd.DataFrame,
         sources: pd.DataFrame,
         associations: pd.DataFrame,
+        bands: pd.DataFrame,
         measurements: Union[pd.DataFrame, vaex.dataframe.DataFrame],
         measurement_pairs_file: str,
         vaex_meas: bool = False,
@@ -884,6 +906,8 @@ class PipeAnalysis(PipeRun):
             associations: Associations dataframe from the pipeline run loaded
                 from 'associations.parquet'. A `pandas.core.frame.DataFrame`
                 instance.
+            bands: The bands dataframe from the pipeline run loaded from
+                'bands.parquet'.
             measurements: Measurements dataframe from the pipeline run
                 loaded from measurements.parquet and the forced measurements
                 parquet files.  A `pandas.core.frame.DataFrame` or
@@ -901,7 +925,7 @@ class PipeAnalysis(PipeRun):
         """
         super().__init__(
             name, images, skyregions, relations, sources, associations,
-            measurements, measurement_pairs_file, vaex_meas, n_workers
+            bands, measurements, measurement_pairs_file, vaex_meas, n_workers
         )
 
     def recalc_sources_df(
@@ -1095,24 +1119,16 @@ class PipeAnalysis(PipeRun):
         sources_df_two_epochs = new_measurement_pairs.groupby(
             'source_id',
             agg={
-                'vs_max_int': vaex.agg.max('vs_int_abs'),
-                'vs_max_peak': vaex.agg.max('vs_peak_abs'),
-                'm_abs_max_int': vaex.agg.max('m_int_abs'),
-                'm_abs_max_peak': vaex.agg.max('m_peak_abs'),
+                'vs_significant_max_int': vaex.agg.max('vs_int_abs'),
+                'vs_significant_max_peak': vaex.agg.max('vs_peak_abs'),
+                'm_abs_significant_max_int': vaex.agg.max('m_int_abs'),
+                'm_abs_significant_max_peak': vaex.agg.max('m_peak_abs'),
             }
         )
 
         sources_df_two_epochs = (
             sources_df_two_epochs.to_pandas_df().set_index('source_id')
         )
-
-        # keep this here for when pipeline udpated.
-        # sources_df_two_epochs = sources_df_two_epochs.fillna(value={
-        #      "vs_significant_max_peak": 0.0,
-        #      "m_abs_significant_max_peak": 0.0,
-        #      "vs_significant_max_int": 0.0,
-        #      "m_abs_significant_max_int": 0.0,
-        #  })
 
         sources_df = sources_df.join(sources_df_two_epochs)
 
@@ -1145,15 +1161,10 @@ class PipeAnalysis(PipeRun):
 
         # Fill the NaN values.
         sources_df = sources_df.fillna(value={
-            # keep this here for when pipeline udpated.
-            # "vs_significant_max_peak": 0.0,
-            # "m_abs_significant_max_peak": 0.0,
-            # "vs_significant_max_int": 0.0,
-            # "m_abs_significant_max_int": 0.0,
-            "vs_max_int": 0.0,
-            "vs_max_peak": 0.0,
-            "m_abs_max_int": 0.0,
-            "m_abs_max_peak": 0.0,
+            "vs_significant_max_peak": 0.0,
+            "m_abs_significant_max_peak": 0.0,
+            "vs_significant_max_int": 0.0,
+            "m_abs_significant_max_int": 0.0,
             'n_relations': 0,
             'v_int': 0.,
             'v_peak': 0.
@@ -1285,7 +1296,6 @@ class PipeAnalysis(PipeRun):
                 df, epoch_pair_id, vs_label, m_label, vs_min, m_min
             )
         )
-
 
         candidate_perc = num_candidates / num_pairs * 100.
 
@@ -1590,7 +1600,7 @@ class PipeAnalysis(PipeRun):
         pair_epoch_key = self.pairs_df.loc[epoch_pair_id]['pair_epoch_key']
 
         pairs_df = (
-            self.measurement_pairs_df[
+            self.measurement_pairs_df.loc[
                 self.measurement_pairs_df.pair_epoch_key == pair_epoch_key
             ]
         )
@@ -1774,7 +1784,7 @@ class PipeAnalysis(PipeRun):
         Returns:
             Bins to apply.
         """
-        new_bins = density_estimation.bayesian_blocks(x)
+        new_bins = bayesian_blocks(x)
         binsx = [
             new_bins[a] for a in range(
                 len(new_bins) - 1
@@ -2301,10 +2311,9 @@ class Pipeline(object):
         super(Pipeline, self).__init__()
 
         if project_dir is None:
-            try:
-                pipeline_run_path = os.getenv('PIPELINE_WORKING_DIR')
-            except Exception as e:
-                raise Exception(
+            pipeline_run_path = os.getenv('PIPELINE_WORKING_DIR')
+            if pipeline_run_path is None:
+                raise PipelineDirectoryError(
                     "The pipeline run directory could not be determined!"
                     " Either the system environment 'PIPELINE_WORKING_DIR'"
                     " must be defined or the 'project_dir' argument defined"
@@ -2314,7 +2323,7 @@ class Pipeline(object):
             pipeline_run_path = os.path.abspath(str(project_dir))
 
         if not os.path.isdir(pipeline_run_path):
-            raise Exception(
+            raise PipelineDirectoryError(
                 "Pipeline run directory {} not found!".format(
                     pipeline_run_path
                 )
@@ -2412,8 +2421,8 @@ class Pipeline(object):
         )
 
         if not os.path.isdir(run_dir):
-            raise ValueError(
-                "Run '%s' does not exist!",
+            raise OSError(
+                "Run '%s' directory does not exist!",
                 run_name
             )
             return
@@ -2571,6 +2580,7 @@ class Pipeline(object):
             relations=relations,
             sources=sources,
             associations=associations,
+            bands=bands,
             measurements=measurements,
             measurement_pairs_file=measurement_pairs_file,
             vaex_meas=vaex_meas

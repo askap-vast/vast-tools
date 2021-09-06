@@ -159,6 +159,27 @@ def test_gen_skycoord_from_df(coords_df, coords_skycoord):
     assert np.all(coords_skycoord == vtu_sc)
 
 
+def test_gen_skycoord_from_df_hms(catalog_hms_string, catalog_skycoord_hms):
+    vtu_sc = vtu.gen_skycoord_from_df(
+        catalog_hms_string,
+        ra_unit=u.hourangle,
+    )
+
+    assert np.all(catalog_skycoord_hms == vtu_sc)
+
+
+def test_gen_skycoord_from_df_colnames(coords_df, coords_skycoord):
+    coords_df = coords_df.rename(columns={
+        'ra': 'theRA',
+        'dec': 'theDEC'
+    })
+    vtu_sc = vtu.gen_skycoord_from_df(
+        coords_df, ra_col='theRA', dec_col='theDEC'
+    )
+
+    assert np.all(coords_skycoord == vtu_sc)
+
+
 def test_check_file(mocker):
     mocker_isfile = mocker.patch('os.path.isfile', return_value=True)
 
