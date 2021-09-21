@@ -12,7 +12,6 @@ from astropy.wcs import WCS
 from mocpy import MOC
 from pathlib import Path
 from pytest_mock import mocker
-from random import sample
 
 from vasttools import RELEASED_EPOCHS
 import vasttools.pipeline as vtp

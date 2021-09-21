@@ -74,6 +74,10 @@ HOST_NCPU = cpu_count()
 numexpr.set_num_threads(int(HOST_NCPU / 4))
 
 
+class QueryInitError(Exception):
+    pass
+
+
 class Query:
     """
     This is a class representation of various information about a particular
@@ -176,16 +180,17 @@ class Query:
         Raises:
             ValueError: If the number of CPUs requested exceeds the total
                 available.
-            Exception: No coordinates or source names have been provided.
-            Exception: Forced fits and search around coordinates options have
-                both been selected.
-            Exception: Number of source names provided does not match the
+            QueryInitError: No coordinates or source names have been provided.
+            QueryInitError: Forced fits and search around coordinates options
+                have both been selected.
+            QueryInitError: Number of source names provided does not match the
                 number of coordinates.
             ValueError: Planet provided is not a valid planet.
-            Exception: Base folder could not be determined.
-            Exception: Base folder cannot be found.
-            ValueError: Base folder cannot be found.
-            ValueError: Problems found in query settings.
+            QueryInitError: Base folder could not be determined.
+            QueryInitError: SIMBAD search failed.
+            QueryInitError: Base folder cannot be found.
+            QueryInitError: Base folder cannot be found.
+            QueryInitError: Problems found in query settings.
         """
         self.logger = logging.getLogger('vasttools.find_sources.Query')
 
@@ -219,14 +224,14 @@ class Query:
             )
         self.ncpu = ncpu
 
-        if coords is None and len(source_names) == 0 and len(planets) == 0:
-            raise Exception(
+        if coords is None and len(source_names) == 0 and planets is None:
+            raise QueryInitError(
                 "No coordinates or source names have been provided!"
                 " Check inputs and try again!"
             )
 
         if forced_fits and search_around_coordinates:
-            raise Exception(
+            raise QueryInitError(
                 "Forced fits and search around coordinates mode cannot be"
                 " used together! Check inputs and try again."
             )
@@ -236,7 +241,7 @@ class Query:
             len(self.source_names) > 0 and
             len(self.source_names) != len_coords
         ):
-            raise Exception(
+            raise QueryInitError(
                 "The number of entered source names ({}) does not match the"
                 " number of coordinates ({})!".format(
                     len(self.source_names),
@@ -281,11 +286,12 @@ class Query:
                     self.logger.error(
                         "SIMBAD search failed!"
                     )
-                    raise ValueError(
+                    raise QueryInitError(
                         "SIMBAD search failed!"
                     )
 
         if planets is not None:
+            planets = [i.lower() for i in planets]
             valid_planets = sum([i in ALLOWED_PLANETS for i in planets])
 
             if valid_planets != len(planets):
@@ -303,7 +309,7 @@ class Query:
         if base_folder is None:
             the_base_folder = os.getenv('VAST_DATA_DIR')
             if the_base_folder is None:
-                raise Exception(
+                raise QueryInitError(
                     "The base folder directory could not be determined!"
                     " Either the system environment 'VAST_DATA_DIR' must be"
                     " defined or the 'base_folder' argument defined when"
@@ -313,7 +319,7 @@ class Query:
             the_base_folder = os.path.abspath(str(base_folder))
 
         if not os.path.isdir(the_base_folder):
-            raise Exception(
+            raise QueryInitError(
                 "Base folder {} not found!".format(
                     the_base_folder
                 )
@@ -352,24 +358,32 @@ class Query:
                     self.base_folder
                 )
             )
-            raise ValueError("The base directory {} does not exist!".format(
-                self.base_folder
-            ))
+            raise QueryInitError(
+                "The base directory {} does not exist!".format(
+                    self.base_folder
+                )
+            )
 
         settings_ok = self._validate_settings()
 
         if not settings_ok:
             self.logger.critical("Problems found in query settings!")
             self.logger.critical("Please address and try again.")
-            raise ValueError((
+            raise QueryInitError((
                 "Problems found in query settings!"
                 "\nPlease address and try again."
             ))
 
         if self.coords is not None:
             self.query_df = self._build_catalog()
+            if self.query_df.empty:
+                raise QueryInitError(
+                    'No sources remaining. None of the entered coordinates'
+                    ' are found in the VAST Pilot survey footprint!'
+                )
         else:
             self.query_df = None
+
 
         self.fields_found = False
 
@@ -382,11 +396,11 @@ class Query:
         """
 
         if self.settings['tiles'] and self.settings['stokes'].lower() != "i":
-            self.logger.critital("Only Stokes I are supported with tiles!")
+            self.logger.critical("Only Stokes I are supported with tiles!")
             return False
 
         if self.settings['tiles'] and self.settings['islands']:
-            self.logger.critital(
+            self.logger.critical(
                 "Only component catalogues are supported with tiles!"
             )
             return False
@@ -550,7 +564,6 @@ class Query:
             Exception: Function cannot be run when 'search_around_coordinates'
                 option has been selected.
         """
-
         if self.settings['search_around']:
             raise Exception(
                 'Getting source products cannot be run when'
@@ -1250,7 +1263,6 @@ class Query:
         Returns:
             Corrected epochs.
         """
-
         dup_mask = epochs.duplicated(keep=False)
         if dup_mask.any():
             epochs.loc[dup_mask] = (
@@ -1281,6 +1293,10 @@ class Query:
 
         if self.settings['matches_only']:
             if group['detection'].sum() == 0:
+                self.logger.warning(
+                    f"{m.name} has no detections and 'matches only' "
+                    "has been selected. A result source has not been created."
+                )
                 return
         if m['planet']:
             source_coord = group.skycoord
@@ -1356,7 +1372,6 @@ class Query:
         Returns:
             Dataframe containing the forced fit measurements for each source.
         """
-
         image = group.name
         if image is None:
             return
@@ -2181,130 +2196,6 @@ class Query:
             )
         else:
             return req_stokes.upper()
-
-
-class EpochInfo:
-    """
-    This is a class representation of various information about a particular
-    epoch query including the relevant folders, whether to only find fields,
-    the survey and epoch.
-
-    Attributes:
-        use_tiles (bool): Use tiles or combined images.
-        pilot_epoch (str): Epoch to query.
-        stokes_param (str): Stokes parameter of interest.
-        survey (str): Distinguish between RACS and the VAST Pilot.
-        epoch_str (str): String representation of the requested epoch.
-        survey_folder (str): Path to folder containing data from the
-            epoch of interest.
-        IMAGE_FOLDER (str): Path to image data.
-        SELAVY_FOLDER (str): Path to selavy catalogues.
-        RMS_FOLDER (str): Path to noise maps.
-    """
-
-    def __init__(
-        self,
-        pilot_epoch: str,
-        base_folder: str,
-        stokes: str,
-        tiles: bool
-    ) -> None:
-        """
-        Constructor Method
-
-        Args:
-            pilot_epoch: Pilot epoch (0 for RACS).
-            base_folder: Path to base folder in default directory structure.
-            stokes: Stokes parameter (I, Q, U or V).
-            tiles: Use the individual tiles instead of combined mosaics.
-
-        Returns:
-            None
-        """
-        self.logger = logging.getLogger('vasttools.find_sources.EpochInfo')
-
-        BASE_FOLDER = base_folder
-
-        self.use_tiles = tiles
-        self.pilot_epoch = pilot_epoch
-        self.stokes_param = stokes
-
-        if pilot_epoch == "0":
-            survey = "racs"
-        else:
-            survey = "vast_pilot"
-        epoch_str = "EPOCH{}".format(RELEASED_EPOCHS[pilot_epoch])
-        survey_folder = os.path.join(
-            base_folder, "{}".format(epoch_str)
-        )
-
-        self.survey = survey
-        self.epoch_str = epoch_str
-        self.survey_folder = survey_folder
-
-        if self.use_tiles:
-            image_dir = "TILES"
-            stokes_dir = "STOKES{}_IMAGES".format(self.stokes_param)
-        else:
-            image_dir = "COMBINED"
-            stokes_dir = "STOKES{}_IMAGES".format(self.stokes_param)
-
-        IMAGE_FOLDER = os.path.join(
-            BASE_FOLDER,
-            survey_folder,
-            image_dir,
-            stokes_dir)
-
-        if not os.path.isdir(IMAGE_FOLDER):
-            # if not CROSSMATCH_ONLY:
-            self.logger.warning(
-                "{} does not exist. "
-                "Can only do crossmatching.".format(IMAGE_FOLDER)
-            )
-
-        if self.use_tiles:
-            self.logger.warning(
-                "Background noise estimates are not supported for tiles.")
-            self.logger.warning(
-                "Estimating background from mosaics instead.")
-        image_dir = "COMBINED"
-        rms_dir = "STOKES{}_RMSMAPS".format(self.stokes_param)
-
-        RMS_FOLDER = os.path.join(
-            BASE_FOLDER,
-            survey_folder,
-            image_dir,
-            rms_dir)
-
-        if not os.path.isdir(RMS_FOLDER):
-            # if not CROSSMATCH_ONLY:
-            self.logger.critical((
-                "{} does not exist. "
-                "Switching to crossmatch only."
-            ).format(RMS_FOLDER))
-
-        image_dir = "COMBINED"
-        selavy_dir = "STOKES{}_SELAVY".format(self.stokes_param)
-
-        SELAVY_FOLDER = os.path.join(
-            BASE_FOLDER,
-            survey_folder,
-            image_dir,
-            selavy_dir
-        )
-
-        if not os.path.isdir(SELAVY_FOLDER):
-            # if not FIND_FIELDS and not CROSSMATCH_ONLY:
-            self.logger.critical((
-                "{} does not exist. "
-                "Only finding fields"
-            ).format(SELAVY_FOLDER))
-
-        # self.FIND_FIELDS = FIND_FIELDS
-        # self.CROSSMATCH_ONLY = CROSSMATCH_ONLY
-        self.IMAGE_FOLDER = IMAGE_FOLDER
-        self.SELAVY_FOLDER = SELAVY_FOLDER
-        self.RMS_FOLDER = RMS_FOLDER
 
 
 class FieldQuery:

@@ -21,7 +21,7 @@ from astropy.coordinates import Angle
 from vasttools.survey import Fields, Image
 from vasttools.survey import RELEASED_EPOCHS, ALLOWED_PLANETS
 from vasttools.source import Source
-from vasttools.query import Query, EpochInfo
+from vasttools.query import Query
 from vasttools.utils import (
     get_logger,
     build_catalog,
