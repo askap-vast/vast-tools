@@ -6,6 +6,7 @@ import pytest
 
 from astropy.coordinates import Angle, EarthLocation, SkyCoord
 from astropy.io import fits
+from astropy.time import Time
 from pytest_mock import mocker
 from typing import Optional
 
@@ -56,8 +57,11 @@ def mocked_fits_open() -> fits.HDUList:
     header['TELESCOP'] = "ASKAP"
     header['RESTFREQ'] = 887491000.0
     header['DATE-OBS'] = "2020-01-12T05:36:03.834"
+    header['MJD-OBS'] = Time(header['DATE-OBS']).mjd
     header['DATE-BEG'] = "2020-01-12T05:36:03.834"
+    header['MJD-BEG'] = Time(header['DATE-BEG']).mjd
     header['DATE-END'] = "2020-01-12T05:47:50.517"
+    header['MJD-END'] = Time(header['DATE-END']).mjd
     header['TIMESYS'] = "UTC"
     header['RADESYS'] = "ICRS"
     header['CTYPE1'] = "RA---SIN"

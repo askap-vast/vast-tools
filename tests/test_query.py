@@ -10,7 +10,6 @@ from astropy.wcs import WCS
 import importlib.resources
 from mocpy import MOC
 from pytest_mock import mocker
-from radio_beam import Beam
 
 from vasttools import RELEASED_EPOCHS
 from vasttools.survey import load_field_centres, Fields

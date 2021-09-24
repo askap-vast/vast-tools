@@ -1286,7 +1286,6 @@ class Query:
         Returns:
             Source of interest.
         """
-
         group = group.sort_values(by='dateobs')
 
         m = group.iloc[0]
@@ -1294,8 +1293,9 @@ class Query:
         if self.settings['matches_only']:
             if group['detection'].sum() == 0:
                 self.logger.warning(
-                    f"{m.name} has no detections and 'matches only' "
-                    "has been selected. A result source has not been created."
+                    f"'{m['name']}' has no detections and 'matches only' "
+                    "has been selected. This source will not be in the "
+                    "results."
                 )
                 return
         if m['planet']:

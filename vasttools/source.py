@@ -63,6 +63,10 @@ crosshair()
 matplotlib.pyplot.switch_backend('Agg')
 
 
+class SourcePlottingError(Exception):
+    pass
+
+
 class Source:
     """
     This is a class representation of a catalogued source position
@@ -147,7 +151,7 @@ class Source:
             tiles: Set to 'True` if the source is from a tile images,
                 defaults to `False`.
             forced_fits: Set to `True` if forced fits are included in the
-                source measurments, defaults to `False`.
+                source measurements, defaults to `False`.
 
         Returns:
             None
@@ -353,31 +357,44 @@ class Source:
             `False`.
 
         Raises:
-            Exception: Source does not have any forced fits when the
+            SourcePlottingError: Source does not have any forced fits when the
                 'use_forced_for_all' or 'use_forced_for_limits' options have
                 been selected.
+            SourcePlottingError: Number of detections lower than the
+                minimum required.
+            SourcePlottingError: Number of datapoints lower than the
+                minimum required.
+            SourcePlottingError: If measurements dataframe is empty.
         """
         if use_forced_for_all or use_forced_for_limits:
             if not self.forced_fits:
-                raise Exception(
+                raise SourcePlottingError(
                     "Source does not have any forced fits points to plot."
                 )
 
         if self.detections < min_detections:
-            self.logger.error(
-                "Number of detections (%i) lower than minimum required (%i)",
-                self.detections, min_detections
+            msg = (
+                f"Number of detections ({self.detections}) lower "
+                f"than minimum required ({min_detections})"
             )
-            # TODO: Add a raise here?
-            return
+            self.logger.error(msg)
+            raise SourcePlottingError(msg)
 
         if self.measurements.shape[0] < min_points:
-            self.logger.error(
-                "Number of datapoints (%i) lower than minimum required (%i)",
-                self.detections, min_detections
+            msg = (
+                f"Number of datapoints ({self.measurements.shape[0]}) lower "
+                f"than minimum required ({min_points})"
             )
-            # TODO: Add a raise here?
-            return
+            self.logger.error(msg)
+            raise SourcePlottingError(msg)
+
+        if mjd and start_date is not None:
+            msg = (
+                "The 'mjd' and 'start date' options "
+                "cannot be used at the same time!"
+            )
+            self.logger.error(msg)
+            raise SourcePlottingError(msg)
 
         # remove empty values
         measurements = self.measurements
@@ -389,11 +406,9 @@ class Source:
             ]
 
         if measurements.empty:
-            self.logger.debug(
-                "%s has no measurements! No lightcurve will be produced.",
-                self.name
-            )
-            return
+            msg = f"{self.name} has no measurements!"
+            self.logger.error(msg)
+            raise SourcePlottingError(msg)
 
         plot_dates = measurements['dateobs']
         if mjd:
@@ -620,7 +635,7 @@ class Source:
         return_norm: bool = False
     ) -> Union[None, ImageNormalize]:
         """
-        Selects the appropirate image to use as the normalization
+        Selects the appropriate image to use as the normalization
         value for each image.
 
         Either the first `detection` image is used, or the first image
@@ -653,9 +668,8 @@ class Source:
                 raise ValueError(
                     "Fetch cutout data before running this function!"
                 )
-
-        if cutout_data is None:
-            cutout_data = self.cutout_df
+            else:
+                cutout_data = self.cutout_df
 
         if self.detections > 0:
             scale_index = self.measurements[
@@ -1635,7 +1649,7 @@ class Source:
             no_colorbar: If `True`, do not show the colorbar on the png,
                 defaults to `False`.
             title: String to set as title,
-                defaults to None where no title will be used.
+                defaults to None where a default title will be used.
             crossmatch_overlay: If 'True' then a circle is added to the png
                 plot representing the crossmatch radius, defaults to `False`.
             hide_beam: If 'True' then the beam is not plotted onto the png
@@ -1855,7 +1869,7 @@ class Source:
 
         if title is None:
             epoch_time = self.measurements[
-                self.measurements.epoch == epoch
+                self.measurements['epoch'] == epoch
             ].iloc[0].dateobs
             title = "{} Epoch {} {}".format(
                 self.name,
@@ -2272,7 +2286,7 @@ class Source:
         self,
         suffix: str,
         forced_fits: bool
-    ) -> Tuple[List[float], List[float]]:
+    ) -> Tuple[pd.Series, pd.Series]:
         """
         Selects the correct fluxes, upper limits or forced fits
         to calculate the metrics

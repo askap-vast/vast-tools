@@ -1,5 +1,6 @@
 import astropy.units as u
 import copy
+import matplotlib.pyplot as plt
 import numpy as np
 import os
 import pandas as pd
@@ -1195,6 +1196,8 @@ class TestPipeAnalysis:
 
         assert np.all(plot_values == expected_plot_values)
 
+        plt.close(result)
+
     def test__plot_epoch_pair_matplotlib_styleb(
         self,
         mocked_PipeAnalysis_wtwoepoch,
@@ -1223,10 +1226,9 @@ class TestPipeAnalysis:
             np.argsort(plot_values[:,0])
         ]
 
-        print(plot_values)
-        print(expected_plot_values)
-
         assert np.all(plot_values == expected_plot_values)
+
+        plt.close(result)
 
     def test__plot_epoch_pair_matplotlib_int(
         self,
@@ -1257,6 +1259,8 @@ class TestPipeAnalysis:
         ]
 
         assert np.all(plot_values == expected_plot_values)
+
+        plt.close(result)
 
     def test__plot_epoch_pair_bokeh(
         self,
