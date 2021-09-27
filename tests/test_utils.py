@@ -11,7 +11,13 @@ import vasttools.utils as vtu
 
 
 @pytest.fixture
-def coords_df():
+def coords_df() -> pd.DataFrame:
+    """
+    Produces a dataframe of ra and dec coordinates in degrees.
+
+    Returns:
+        Dataframe of ra and dec coordinates.
+    """
     df = pd.DataFrame.from_dict(
         {
             "ra": [180., 270., 180.],
@@ -23,7 +29,16 @@ def coords_df():
 
 
 @pytest.fixture
-def coords_skycoord(coords_df):
+def coords_skycoord(coords_df: pd.DataFrame) -> SkyCoord:
+    """
+    Produces a SkyCoord object from a ra and dec dataframe.
+
+    Args:
+        coords_df: The input dataframe that contains the ra and dec columns.
+
+    Returns:
+        SkyCoord object produced from dataframe.
+    """
     df_skycoord = SkyCoord(
         coords_df['ra'].to_numpy(),
         coords_df['dec'].to_numpy(),
@@ -34,7 +49,14 @@ def coords_skycoord(coords_df):
 
 
 @pytest.fixture
-def catalog_deg_float():
+def catalog_deg_float() -> pd.DataFrame:
+    """
+    Produces a dataframe of ra and dec coordinates in degrees as floats
+    with source names attached.
+
+    Returns:
+        Dataframe of ra and dec coordinates and source name.
+    """
     df = pd.DataFrame(
         data = {
             'ra': [322.4387083, 180., 270.],
@@ -47,7 +69,14 @@ def catalog_deg_float():
 
 
 @pytest.fixture
-def catalog_deg_string():
+def catalog_deg_string() -> pd.DataFrame:
+    """
+    Produces a dataframe of ra and dec coordinates in degrees as strings
+    with source names attached.
+
+    Returns:
+        Dataframe of ra and dec coordinates and source name.
+    """
     df = pd.DataFrame(
         data = {
             'ra': ['322.4387083', '180.0', '270.0'],
@@ -60,7 +89,14 @@ def catalog_deg_string():
 
 
 @pytest.fixture
-def catalog_hms_string():
+def catalog_hms_string() -> pd.DataFrame:
+    """
+    Produces a dataframe of ra and dec coordinates in hms format as strings
+    with source names attached.
+
+    Returns:
+        Dataframe of ra and dec coordinates and source name.
+    """
     df = pd.DataFrame(
         data = {
             'ra': ['21:29:45.29', '12:00:00.00', '18:00:00.00'],
@@ -73,7 +109,17 @@ def catalog_hms_string():
 
 
 @pytest.fixture
-def catalog_skycoord(catalog_deg_float):
+def catalog_skycoord(catalog_deg_float: pd.DataFrame) -> SkyCoord:
+    """
+    Produces a SkyCoord object from a ra and dec catalog dataframe.
+
+    Args:
+        catalog_deg_float:
+            The input dataframe that contains the ra and dec columns.
+
+    Returns:
+        SkyCoord object produced from dataframe.
+    """
     df_skycoord = SkyCoord(
         catalog_deg_float['ra'].to_numpy(),
         catalog_deg_float['dec'].to_numpy(),
@@ -84,7 +130,19 @@ def catalog_skycoord(catalog_deg_float):
 
 
 @pytest.fixture
-def catalog_skycoord_hms(catalog_hms_string):
+def catalog_skycoord_hms(catalog_hms_string: pd.DataFrame) -> SkyCoord:
+    """
+    Produces a SkyCoord object from a ra and dec catalog dataframe, which is
+    in hms dms format.
+
+    Args:
+        catalog_hms_string:
+            The input dataframe that contains the ra and dec columns in the
+            format of hms/dms strings.
+
+    Returns:
+        SkyCoord object produced from dataframe.
+    """
     df_skycoord = SkyCoord(
         catalog_hms_string['ra'].to_numpy(),
         catalog_hms_string['dec'].to_numpy(),
@@ -95,7 +153,13 @@ def catalog_skycoord_hms(catalog_hms_string):
 
 
 @pytest.fixture
-def planet_fields():
+def planet_fields() -> pd.DataFrame:
+    """
+    The expected fields dataframe for a jupiter planet search.
+
+    Returns:
+        Dataframe of Jupiter planet search.
+    """
     fields = pd.DataFrame(
         data={
             'epoch': ['3x', '8'],
@@ -112,7 +176,14 @@ def planet_fields():
 
 
 @pytest.fixture
-def source_df():
+def source_df() -> pd.DataFrame:
+    """
+    Produces a dataframe containing source flux values for testing. Contains
+    peak, integrated and errors.
+
+    Returns:
+        Dataframe with flux values.
+    """
     source_df = pd.DataFrame(
         data={
             'flux_peak': [
@@ -153,13 +224,40 @@ def source_df():
     return source_df
 
 
-def test_gen_skycoord_from_df(coords_df, coords_skycoord):
+def test_gen_skycoord_from_df(
+    coords_df: pd.DataFrame,
+    coords_skycoord: SkyCoord
+) -> None:
+    """
+    Tests the creation of a SkyCoord object from a dataframe.
+
+    Args:
+        coords_df: Dataframe containing the coordinate columns.
+        coords_skycoord: Expected SkyCoord.
+
+    Returns:
+        None.
+    """
     vtu_sc = vtu.gen_skycoord_from_df(coords_df)
 
     assert np.all(coords_skycoord == vtu_sc)
 
 
-def test_gen_skycoord_from_df_hms(catalog_hms_string, catalog_skycoord_hms):
+def test_gen_skycoord_from_df_hms(
+    catalog_hms_string: pd.DataFrame,
+    catalog_skycoord_hms: SkyCoord
+) -> None:
+    """
+    Tests the creation of a SkyCoord object from a dataframe with coordinates
+    in the format of hms dms string.
+
+    Args:
+        catalog_hms_string: Dataframe containing the coordinate columns.
+        catalog_skycoord_hms: Expected SkyCoord.
+
+    Returns:
+        None.
+    """
     vtu_sc = vtu.gen_skycoord_from_df(
         catalog_hms_string,
         ra_unit=u.hourangle,
@@ -168,7 +266,21 @@ def test_gen_skycoord_from_df_hms(catalog_hms_string, catalog_skycoord_hms):
     assert np.all(catalog_skycoord_hms == vtu_sc)
 
 
-def test_gen_skycoord_from_df_colnames(coords_df, coords_skycoord):
+def test_gen_skycoord_from_df_colnames(
+    coords_df: pd.DataFrame,
+    coords_skycoord: SkyCoord
+) -> None:
+    """
+    Tests the creation of a SkyCoord object from a dataframe with custom
+    column names.
+
+    Args:
+        coords_df: Dataframe containing the coordinate columns.
+        coords_skycoord: Expected SkyCoord.
+
+    Returns:
+        None.
+    """
     coords_df = coords_df.rename(columns={
         'ra': 'theRA',
         'dec': 'theDEC'
@@ -180,7 +292,16 @@ def test_gen_skycoord_from_df_colnames(coords_df, coords_skycoord):
     assert np.all(coords_skycoord == vtu_sc)
 
 
-def test_check_file(mocker):
+def test_check_file(mocker) -> None:
+    """
+    Tests check file returns correctly.
+
+    Args:
+        mocker: Pytest mock mocker object.
+
+    Returns:
+        None.
+    """
     mocker_isfile = mocker.patch('os.path.isfile', return_value=True)
 
     test_file = '/test/file/existence.txt'
@@ -190,7 +311,16 @@ def test_check_file(mocker):
     mocker_isfile.assert_called_once_with(test_file)
 
 
-def test_check_racs_exists(mocker):
+def test_check_racs_exists(mocker) -> None:
+    """
+    Tests the RACS check.
+
+    Args:
+        mocker: Pytest mock mocker object.
+
+    Returns:
+        None.
+    """
     mocker_isdir = mocker.patch('os.path.isdir', return_value=True)
     exists = vtu.check_racs_exists('/data/release/path')
 
@@ -198,7 +328,16 @@ def test_check_racs_exists(mocker):
     assert exists == True
 
 
-def test_create_source_directories(mocker):
+def test_create_source_directories(mocker) -> None:
+    """
+    Tests the source directories creation.
+
+    Args:
+        mocker: Pytest mock mocker object.
+
+    Returns:
+        None.
+    """
     mocker_makedirs = mocker.patch('os.makedirs', return_value=None)
 
     base_dir = '/path/to/base/dir/'
@@ -214,7 +353,21 @@ def test_create_source_directories(mocker):
     mocker_makedirs.assert_has_calls(calls)
 
 
-def test_filter_selavy_components(coords_df, coords_skycoord):
+def test_filter_selavy_components(
+    coords_df: pd.DataFrame,
+    coords_skycoord: SkyCoord
+) -> None:
+    """
+    Tests filter selavy components function that should return selavy
+    components only contained with in a specified location.
+
+    Args:
+        coords_df: Dataframe containing the coordinate columns.
+        coords_skycoord: SkyCoord to use.
+
+    Returns:
+        None.
+    """
     target_skycoord = coords_skycoord[0]
 
     size = Angle(1 * u.deg)
@@ -231,7 +384,21 @@ def test_filter_selavy_components(coords_df, coords_skycoord):
     assert filtered.equals(expected)
 
 
-def test_build_catalog_file(mocker, catalog_deg_float):
+def test_build_catalog_file(
+    catalog_deg_float: pd.DataFrame,
+    mocker,
+) -> None:
+    """
+    Tests the build catalog function.
+
+    Args:
+        coords_deg_float: Dataframe containing the coordinate columns.
+            This is the expected result.
+        mocker: Pytest mock mocker object.
+
+    Returns:
+        None.
+    """
     filename = 'testinput.csv'
     source_names = ""
 
@@ -248,7 +415,16 @@ def test_build_catalog_file(mocker, catalog_deg_float):
     assert catalog.equals(catalog_deg_float)
 
 
-def test_build_catalog_string_deg(catalog_deg_string):
+def test_build_catalog_string_deg(catalog_deg_string: pd.DataFrame) -> None:
+    """
+    Tests catalog creation with string coordinates in degrees.
+
+    Args:
+        catalog_deg_string: Dataframe containing the coordinate columns.
+
+    Returns:
+        None.
+    """
     coords = "322.4387083 -4.4866389,180.0 60.0,270.0 -60.0"
     source_names = "PSR J2129-04,Test1,Test2"
 
@@ -257,7 +433,16 @@ def test_build_catalog_string_deg(catalog_deg_string):
     assert catalog[['ra', 'dec', 'name']].equals(catalog_deg_string)
 
 
-def test_build_catalog_string_hms(catalog_hms_string):
+def test_build_catalog_string_hms(catalog_hms_string: pd.DataFrame) -> None:
+    """
+    Tests catalog creation with string coordinates in hms format.
+
+    Args:
+        catalog_hms_string: Dataframe containing the coordinate columns.
+
+    Returns:
+        None.
+    """
     coords = (
         "21:29:45.29 -04:29:11.90,12:00:00.00 60:00:00.00,"
         "18:00:00.00 -60:00:00.00"
@@ -269,27 +454,76 @@ def test_build_catalog_string_hms(catalog_hms_string):
     assert catalog[['ra', 'dec', 'name']].equals(catalog_hms_string)
 
 
-def test_build_SkyCoord_float_deg(catalog_deg_float, catalog_skycoord):
+def test_build_SkyCoord_float_deg(
+    catalog_deg_float: pd.DataFrame,
+    catalog_skycoord: SkyCoord
+) -> None:
+    """
+    Tests build SkyCoord from the dataframe in float deg format.
+
+    Args:
+        catalog_deg_float: Dataframe containing the coordinate columns.
+        catalog_skycoord: Expected SkyCoord result.
+
+    Returns:
+        None.
+    """
     result = vtu.build_SkyCoord(catalog_deg_float)
 
     assert np.all(result == catalog_skycoord)
 
 
-def test_build_SkyCoord_string_deg(catalog_deg_string, catalog_skycoord):
+def test_build_SkyCoord_string_deg(
+    catalog_deg_string,
+    catalog_skycoord
+) -> None:
+    """
+    Tests build SkyCoord from the dataframe in string deg format.
+
+    Args:
+        catalog_deg_string: Dataframe containing the coordinate columns.
+        catalog_skycoord: Expected SkyCoord result.
+
+    Returns:
+        None.
+    """
     result = vtu.build_SkyCoord(catalog_deg_string)
 
+    assert np.all(result == catalog_skycoord)
 
-def test_build_SkyCoord_string_hms(catalog_hms_string, catalog_skycoord_hms):
+
+def test_build_SkyCoord_string_hms(
+    catalog_hms_string: pd.DataFrame,
+    catalog_skycoord_hms: SkyCoord
+) -> None:
+    """
+    Tests build SkyCoord from the dataframe in string hms format.
+
+    Args:
+        catalog_hms_string: Dataframe containing the coordinate columns.
+        catalog_skycoord: Expected SkyCoord result.
+
+    Returns:
+        None.
+    """
     result = vtu.build_SkyCoord(catalog_hms_string)
 
     assert np.all(result == catalog_skycoord_hms)
 
 
-def test_simbad_search(mocker):
+def test_simbad_search(mocker) -> None:
     """
+    Test the SIMBAD search.
+
     This test doesn't actually call the SIMBAD service, it only tests
     using a mocked astropy table that has the three columns of interest.
     Any changes to the SIMBAD astroquery service will need to accounted for.
+
+    Args:
+        mocker: Pytest mock mocker object.
+
+    Returns:
+        None
     """
     objects = ['PSR J2129-04', 'SN 2012dy']
     ra = np.array([322.43871000, 319.71125000], dtype=np.float64) * u.deg
@@ -314,7 +548,16 @@ def test_simbad_search(mocker):
     assert np.all(result_names == np.array(objects))
 
 
-def test_simbad_search_none(mocker):
+def test_simbad_search_none(mocker) -> None:
+    """
+    Test the SIMBAD search None result.
+
+    Args:
+        mocker: Pytest mock mocker object.
+
+    Returns:
+        None
+    """
     objects = ['PSR J2129-04', 'SN 2012dy']
 
     mocker_simbad_query = mocker.patch(
@@ -328,47 +571,77 @@ def test_simbad_search_none(mocker):
     assert result_skycoord == result_names == None
 
 
-def test_match_planet_to_field_sep_4deg(planet_fields):
+@pytest.mark.parametrize("sep_thresh", [4.0, 3.0])
+def test_match_planet_to_field_sep_4deg(
+    sep_thresh: float,
+    planet_fields: pd.DataFrame
+) -> None:
     """
-    Tests the matching of a planet to a field. The only columns that matter
-    are: planet, DATEOBS, centre-ra and centre-dec.
+    Tests the matching of a planet to a field.
+
+    The only columns that matter are: planet, DATEOBS, centre-ra
+    and centre-dec. This te
+
+    Args:
+        planet_fields: Dataframe containing an example planets search.
+        sep_thresh: The separation threshold to test (from parametrize).
+
+    Returns:
+        None
     """
-    # use default sep_thresh of 4.0
-    matches = vtu.match_planet_to_field(planet_fields)
+    matches = vtu.match_planet_to_field(planet_fields, sep_thresh=sep_thresh)
 
-    assert matches.shape[0] == 1
-    assert matches['epoch'].iloc[0] == '3x'
+    if sep_thresh == 4.0:
+        assert matches.shape[0] == 1
+        assert matches['epoch'].iloc[0] == '3x'
+    else:
+        assert matches.empty
 
-
-def test_match_planet_to_field_sep_3deg(planet_fields):
+@pytest.mark.parametrize(
+    "peak,expected",
+    [
+        (True, 121.89841839024031),
+        (False, 59.80572010933274),
+        (False, 0.0)
+    ]
+)
+def test_pipeline_get_eta_metric_peak(
+    peak: bool,
+    expected: float,
+    source_df: pd.DataFrame
+) -> None:
     """
-    Tests the matching of a planet to a field. The only columns that matter
-    are: planet, DATEOBS, centre-ra and centre-dec.
+    Tests the calculation of the eta metric.
+
+    Args:
+        peak: Whether to use peak flux when calculating the eta.
+        expected: Expected eta value.
+        source_df: The dataframe containing the source data.
+
+    Returns:
+        None
     """
-    matches = vtu.match_planet_to_field(planet_fields, sep_thresh=3.0)
+    if expected == 0.0:
+        source_df = source_df.drop(source_df.index[1:])
 
-    assert matches.empty
+    eta = vtu.pipeline_get_eta_metric(source_df, peak=peak)
 
-
-def test_pipeline_get_eta_metric_peak(source_df):
-    eta = vtu.pipeline_get_eta_metric(source_df, peak=True)
-
-    assert eta == pytest.approx(121.89841839024031)
-
-
-def test_pipeline_get_eta_metric_int(source_df):
-    eta = vtu.pipeline_get_eta_metric(source_df)
-
-    assert eta == pytest.approx(59.80572010933274)
+    if expected == 0.0:
+        assert eta == expected
+    else:
+        assert eta == pytest.approx(expected)
 
 
-def test_pipeline_get_eta_metric_zero(source_df):
-    eta = vtu.pipeline_get_eta_metric(source_df.drop(source_df.index[1:]))
+def test_pipeline_get_variable_metrics(source_df: pd.DataFrame) -> None:
+    """
+    Tests the calculation of all variable metrics.
 
-    assert eta == 0.0
+    Args:
+        source_df: The dataframe containing the source data.
 
-
-def test_pipeline_get_variable_metrics(source_df):
+    Returns:
+        None
+    """
     results = vtu.pipeline_get_variable_metrics(source_df)
 
     assert results['eta_peak'] == pytest.approx(121.89841839024031)
@@ -377,7 +650,18 @@ def test_pipeline_get_variable_metrics(source_df):
     assert results['v_int'] == pytest.approx(1.740059768483511)
 
 
-def test_pipeline_get_variable_metrics_zero(source_df):
+def test_pipeline_get_variable_metrics_zero(source_df: pd.DataFrame) -> None:
+    """
+    Tests the calculation of the eta metric when zero is expected.
+
+    Args:
+        peak: Whether to use peak flux when calculating the eta.
+        expected: Expected eta value.
+        source_df: The dataframe containing the source data.
+
+    Returns:
+        None
+    """
     results = vtu.pipeline_get_variable_metrics(
         source_df.drop(source_df.index[1:])
     )

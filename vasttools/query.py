@@ -75,6 +75,9 @@ numexpr.set_num_threads(int(HOST_NCPU / 4))
 
 
 class QueryInitError(Exception):
+    """
+    A defined error for a problem encountered in the initialisation.
+    """
     pass
 
 

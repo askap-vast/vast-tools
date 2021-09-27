@@ -66,6 +66,9 @@ matplotlib.pyplot.switch_backend('Agg')
 
 
 class PipelineDirectoryError(Exception):
+    """
+    An error to indicate an error with the pipeline directory.
+    """
     pass
 
 

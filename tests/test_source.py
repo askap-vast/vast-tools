@@ -12,16 +12,40 @@ from matplotlib.pyplot import Figure
 from pathlib import Path
 from pytest_mock import mocker
 from radio_beam import Beam
+from typing import Optional
 
 import vasttools.source as vts
 
 
 TEST_DATA_DIR = Path(__file__).resolve().parent / 'data'
+"""
+Test data directory relative to this file.
+"""
 
 
 @pytest.fixture
-def get_measurements():
-    def _get_measurements(pipeline: bool = False):
+def get_measurements() -> pd.DataFrame:
+    """
+    Load the measurement dataframes for the dummy source.
+
+    The dataframe is loaded from the test data directory.
+    Note that all source measurements dataframes are pandas so no vaex
+    testing is required.
+
+    Returns:
+        The dataframe containing the source measurements.
+    """
+    def _get_measurements(pipeline: bool = False) -> pd.DataFrame:
+        """
+        The workhorse function to load the measurements.
+
+        Args:
+            pipeline: If 'True' the pipeline version of measurements are
+                loaded in-place of the query version.
+
+        Returns:
+            The dataframe containing the measurements.
+        """
         if pipeline:
             filepath = TEST_DATA_DIR / 'psr-j2129-04-pipe-meas.csv'
         else:
@@ -46,129 +70,72 @@ def get_measurements():
     return _get_measurements
 
 
-@pytest.fixture
-def source_instance(
-    get_measurements,
-    mock_selavy_components,
-    mocked_fits
-) -> vts.Source:
-    def _get_source_instance(
-        pipeline: bool = False,
-        add_cutout_data : bool = False
-    ):
-        psr_coordinate = SkyCoord(
-            322.4387083,
-            -4.4866389,
-            unit=(u.deg, u.deg)
-        )
-        name = 'PSR J2129-04'
-        meas_df = get_measurements(pipeline=pipeline)
+def dummy_filter_selavy_components(x, *args, **kwargs) -> pd.DataFrame:
+    """
+    A dummy filter selavy components return function that just returns
+    the dataframe that was passed to it.
 
-        if pipeline:
-            epochs = ['1', '2', '3', '4', '5', '6']
-            fields = ['VAST_2118-06A' for i in range(6)]
-            forced_fits = False
-        else:
-            epochs = meas_df['epoch'].to_list()
-            fields = meas_df['fields'].to_list()
-            forced_fits = True
+    Args:
+        x: The dataframe argument.
+        args: Positional arguments.
+        kwargs: Keyword arguments.
 
-        stokes = "I"
-        primary_field = "VAST_2118-06A"
-        crossmatch_radius = Angle(10 * u.arcsec)
-        base_folder = '/path/to/data/'
-
-        source = vts.Source(
-            psr_coordinate,
-            name,
-            epochs,
-            fields,
-            stokes,
-            primary_field,
-            crossmatch_radius,
-            meas_df,
-            base_folder,
-            pipeline=pipeline,
-            forced_fits=forced_fits
-        )
-
-        if add_cutout_data:
-            hdul = mocked_fits
-            wcs = WCS(hdul[0].header)
-            selavy_components = mock_selavy_components(pipeline=pipeline)
-            beam = Beam.from_fits_header(hdul[0].header)
-            cutout_df = pd.DataFrame(
-                columns=[
-                    "data",
-                    "wcs",
-                    "header",
-                    "selavy_overlay",
-                    "beam"
-                ]
-            )
-
-            for i in range(source.measurements.shape[0]):
-                cutout_df = cutout_df.append(pd.DataFrame(
-                    data={
-                        "data": [hdul[0].data],
-                        "wcs": [wcs] ,
-                        "header": [hdul[0].header],
-                        "selavy_overlay": [selavy_components],
-                        "beam": [beam]
-                    }
-                ))
-
-            source.cutout_df = cutout_df.reset_index(drop=True)
-
-            source._cutouts_got = True
-            source._size = Angle(5. * u.arcmin)
-
-        return source
-    return _get_source_instance
-
-
-def dummy_filter_selavy_components(x, y, z, a, **kwargs):
+    Returns:
+        Original dataframe argument x.
+    """
     return x
 
 
 @pytest.fixture
-def mock_selavy_components():
-    def _mock_selavy_components(pipeline: bool = False):
-        df = pd.DataFrame(data={
-            'island_id': {
-                0: 'SB9667_island_1000',
-                1: 'SB9667_island_1001',
-                2: 'SB9667_island_1002',
-                3: 'SB9667_island_1003',
-                4: 'SB9667_island_1004'
-            },
-            'ra_deg_cont': {
-                0: 321.972731,
-                1: 317.111595,
-                2: 322.974588,
-                3: 315.077869,
-                4: 315.56781
-            },
-            'dec_deg_cont': {
-                0: 0.699851,
-                1: 0.53981,
-                2: 1.790072,
-                3: 3.011253,
-                4: -0.299919
-            },
-            'maj_axis': {0: 15.6, 1: 18.48, 2: 21.92, 3: 16.77, 4: 14.67},
-            'min_axis': {0: 14.23, 1: 16.03, 2: 16.67, 3: 12.4, 4: 13.64},
-            'pos_ang': {0: 111.96, 1: 43.18, 2: 22.71, 3: 57.89, 4: 63.43}
-        })
+def dummy_selavy_components() -> pd.DataFrame:
+    """
+    Provides a dummy set of selavy components containing only the columns
+    required for testing.
 
-        return df
-    return _mock_selavy_components
+    Returned as a pandas dataframe.
+
+    Returns:
+        The dataframe containing the dummy selavy components.
+    """
+    df = pd.DataFrame(data={
+        'island_id': {
+            0: 'SB9667_island_1000',
+            1: 'SB9667_island_1001',
+            2: 'SB9667_island_1002',
+            3: 'SB9667_island_1003',
+            4: 'SB9667_island_1004'
+        },
+        'ra_deg_cont': {
+            0: 321.972731,
+            1: 317.111595,
+            2: 322.974588,
+            3: 315.077869,
+            4: 315.56781
+        },
+        'dec_deg_cont': {
+            0: 0.699851,
+            1: 0.53981,
+            2: 1.790072,
+            3: 3.011253,
+            4: -0.299919
+        },
+        'maj_axis': {0: 15.6, 1: 18.48, 2: 21.92, 3: 16.77, 4: 14.67},
+        'min_axis': {0: 14.23, 1: 16.03, 2: 16.67, 3: 12.4, 4: 13.64},
+        'pos_ang': {0: 111.96, 1: 43.18, 2: 22.71, 3: 57.89, 4: 63.43}
+    })
+
+    return df
 
 
 @pytest.fixture
-def mocked_fits() -> fits.HDUList:
+def dummy_fits() -> fits.HDUList:
     """
-    Docstring
+    Provides a dummy FITS file to use for FITS operations and plotting.
+
+    Pixel values are randomly generated.
+
+    Returns:
+        The HDUList object.
     """
     data = np.random.rand(100, 100)
 
@@ -210,9 +177,135 @@ def mocked_fits() -> fits.HDUList:
     return hdul
 
 
+@pytest.fixture
+def source_instance(
+    get_measurements: pd.DataFrame,
+    dummy_selavy_components: pd.DataFrame,
+    dummy_fits: fits.HDUList
+) -> vts.Source:
+    """
+    Generates a source instance to use for testing.
+
+    Args:
+        get_measurements: The pytest fixture that loads the measurements.
+        dummy_selavy_components: The pytest fixture that provides a dummy set
+            of selavy components (to mimic the loading of the data selavy
+            components).
+        dummy_fits: The pytest fixture that provides a dummy fits file.
+
+    Returns:
+        The vast tools Source instance for testing.
+    """
+    def _get_source_instance(
+        pipeline: bool = False,
+        add_cutout_data : bool = False
+    ):
+        """
+        The workhorse function that actually generates the source.
+
+        Args:
+            pipeline: If 'True' the pipeline measurements are used in-place of
+                the query measurements.
+            add_cutout_data: If 'True' the cutout data is added to the
+                source instance before returning.
+
+        Returns:
+            The vast tools Source instance for testing.
+        """
+        psr_coordinate = SkyCoord(
+            322.4387083,
+            -4.4866389,
+            unit=(u.deg, u.deg)
+        )
+        name = 'PSR J2129-04'
+        meas_df = get_measurements(pipeline=pipeline)
+
+        if pipeline:
+            epochs = ['1', '2', '3', '4', '5', '6']
+            fields = ['VAST_2118-06A' for i in range(6)]
+            forced_fits = False
+        else:
+            epochs = meas_df['epoch'].to_list()
+            fields = meas_df['fields'].to_list()
+            forced_fits = True
+
+        stokes = "I"
+        primary_field = "VAST_2118-06A"
+        crossmatch_radius = Angle(10 * u.arcsec)
+        base_folder = '/path/to/data/'
+
+        source = vts.Source(
+            psr_coordinate,
+            name,
+            epochs,
+            fields,
+            stokes,
+            primary_field,
+            crossmatch_radius,
+            meas_df,
+            base_folder,
+            pipeline=pipeline,
+            forced_fits=forced_fits
+        )
+
+        if add_cutout_data:
+            hdul = dummy_fits
+            wcs = WCS(hdul[0].header)
+            selavy_components = dummy_selavy_components
+            beam = Beam.from_fits_header(hdul[0].header)
+            cutout_df = pd.DataFrame(
+                columns=[
+                    "data",
+                    "wcs",
+                    "header",
+                    "selavy_overlay",
+                    "beam"
+                ]
+            )
+
+            for i in range(source.measurements.shape[0]):
+                cutout_df = cutout_df.append(pd.DataFrame(
+                    data={
+                        "data": [hdul[0].data],
+                        "wcs": [wcs] ,
+                        "header": [hdul[0].header],
+                        "selavy_overlay": [selavy_components],
+                        "beam": [beam]
+                    }
+                ))
+
+            source.cutout_df = cutout_df.reset_index(drop=True)
+
+            source._cutouts_got = True
+            source._size = Angle(5. * u.arcmin)
+
+        return source
+    return _get_source_instance
+
+
 class TestSource:
+    """
+    Contains all the tests related to the Source class in vast tools.
+    """
     @pytest.mark.parametrize("pipeline", [False, True])
-    def test_init(self, pipeline, source_instance, get_measurements):
+    def test_init(
+        self,
+        pipeline: bool,
+        source_instance: vts.Source,
+    ) -> None:
+        """
+        Tests the initialisation of the source object.
+
+        Parametrized for pipeline a query types.
+
+        Args:
+            pipeline: If 'True' then the Source is initialised as a
+                pipeline source.
+            source_instance: The pytest source_instance fixture.
+
+        Returns:
+            None
+        """
         source = source_instance(pipeline=pipeline)
 
         assert source.pipeline == pipeline
@@ -228,8 +321,30 @@ class TestSource:
         ]
     )
     def test_write_measurements(
-        self, pipeline, simple, outfile, source_instance, mocker
-    ):
+        self,
+        pipeline: bool,
+        simple: bool,
+        outfile: Optional[str],
+        source_instance: vts.Source,
+        mocker
+    ) -> None:
+        """
+        Tests the initialisation of the source object.
+
+        Parametrized for pipeline a query types, in addition to the simple
+        flag and outfile name.
+
+        Args:
+            pipeline: If 'True' then the Source is initialised as a
+                pipeline source.
+            simple: Used for the simple flag in the write_measurements method.
+            outfile: Used as the outfile argument in the write_measurements
+                method.
+            source_instance: The pytest source_instance fixture.
+
+        Returns:
+            None
+        """
         mocker_to_csv = mocker.patch('vasttools.source.pd.DataFrame.to_csv')
 
         source = source_instance(pipeline=pipeline)
@@ -253,13 +368,34 @@ class TestSource:
     )
     def test_plot_lightcurve_errors(
         self,
-        min_points,
-        min_detections,
-        use_forced_for_all,
-        mjd,
-        start_date,
-        source_instance
-    ):
+        min_points: int,
+        min_detections: int,
+        use_forced_for_all: bool,
+        mjd: bool,
+        start_date: Optional[pd.Timestamp],
+        source_instance: vts.Source
+    ) -> None:
+        """
+        Tests the failures when using plot_lightcurve.
+
+        Parametrized for min_points, min_detections, forced fits, mjd and
+        start date.
+
+        Args:
+            min_points: The min_point argument to be passed to the
+                plot_lightcurve method.
+            min_detections: The min_detections argument to be passed to the
+                plot_lightcurve method.
+            used_forced_for_all: The used_forced_for_all argument to be passed
+                to the plot_lightcurve method.
+            mjd: The mjd argument to be passed to the plot_lightcurve method.
+            start_date: The start_date argument to be passed to the
+                plot_lightcurve method.
+            source_instance: The pytest source_instance fixture.
+
+        Returns:
+            None
+        """
         source = source_instance()
 
         if use_forced_for_all is True:
@@ -307,13 +443,33 @@ class TestSource:
     )
     def test_plot_lightcurve(
         self,
-        pipeline,
-        mjd,
-        peak_flux,
-        start_date,
-        source_instance,
-        get_measurements
-    ):
+        pipeline: bool,
+        mjd: bool,
+        peak_flux: bool,
+        start_date: Optional[pd.Timestamp],
+        source_instance: vts.Source,
+        get_measurements: pd.DataFrame
+    ) -> None:
+        """
+        Tests the plot_lightcurve method.
+
+        Parametrized for pipeline a query types, mjd, peak_flux and start
+        date. The data in the plot is asserted against.
+
+        Args:
+            pipeline: If 'True' then the Source is initialised as a
+                pipeline source.
+            mjd: The mjd argument to be passed to the plot_lightcurve method.
+            peak_flux: The peak_flux argument to be passed to the
+                plot_lightcurve method.
+            start_date: The start_date argument to be passed to the
+                plot_lightcurve method.
+            source_instance: The pytest source_instance fixture.
+            get_measurements: The pytest fixture that loads the measurements.
+
+        Returns:
+            None
+        """
         source = source_instance(pipeline=pipeline)
 
         lightcurve = source.plot_lightcurve(
@@ -373,23 +529,44 @@ class TestSource:
         plt.close(lightcurve)
 
     @pytest.mark.parametrize(
-        "forced_limits,forced_all",
+        "use_forced_for_limits,use_forced_for_all",
         [(True, False), (False, True)]
     )
     def test_plot_lightcurve_forced_options(
-        self, forced_limits, forced_all, source_instance, get_measurements
-    ):
+        self,
+        use_forced_for_limits: bool,
+        use_forced_for_all: bool,
+        source_instance: vts.Source,
+        get_measurements: pd.DataFrame
+    ) -> None:
+        """
+        Tests the plot_lightcurve method, specifically the forced options.
+
+        Parametrized for forced all and force limits. The data in the plot
+        is asserted against.
+
+        Args:
+            used_forced_for_limits: The used_forced_for_limits argument to be
+                passed to the plot_lightcurve method.
+            used_forced_for_all: The used_forced_for_all argument to be passed
+                to the plot_lightcurve method.
+            source_instance: The pytest source_instance fixture.
+            get_measurements: The pytest fixture that loads the measurements.
+
+        Returns:
+            None
+        """
         source = source_instance()
 
         lightcurve = source.plot_lightcurve(
-            use_forced_for_limits=forced_limits,
-            use_forced_for_all=forced_all
+            use_forced_for_limits=use_forced_for_limits,
+            use_forced_for_all=use_forced_for_all
         )
 
         meas_df = get_measurements()
         expected_values = {}
 
-        if forced_limits:
+        if use_forced_for_limits:
             temp_meas_df = meas_df[meas_df['detection'] == False]
             expected_values['0_x'] = temp_meas_df['dateobs'].to_numpy()
             expected_values['0_y'] = temp_meas_df['f_flux_peak'].to_numpy()
@@ -403,15 +580,14 @@ class TestSource:
 
         for i, line in enumerate(lightcurve.axes[0].lines):
             # skip the extra upper limit symbol on the lines
-            if forced_limits and i == 1:
+            if use_forced_for_limits and i == 1:
                 continue
             x_data = line.get_xdata()
             y_data = line.get_ydata()
 
             expected_x = expected_values[f'{i}_x']
             expected_y = expected_values[f'{i}_y']
-            # print(expected_x)
-            # print(x_data)
+
             assert np.all(expected_x == x_data)
             assert np.all(expected_y == y_data)
 
@@ -419,8 +595,32 @@ class TestSource:
 
     @pytest.mark.parametrize("pipeline", [False, True])
     def test__get_cutout(
-        self, pipeline, source_instance, mock_selavy_components, mocker
-    ):
+        self,
+        pipeline: bool,
+        source_instance: vts.Source,
+        dummy_selavy_components: pd.DataFrame,
+        mocker
+    ) -> None:
+        """
+        Tests the get_cutout method on the Source, which fetches the cutout
+        data for each measurement.
+
+        The
+
+        Parametrized for pipeline and query type sources.
+
+        Args:
+            pipeline: If 'True' then the Source is initialised as a
+                pipeline source.
+            source_instance: The pytest source_instance fixture.
+            dummy_selavy_components: The pytest fixture that provides a dummy
+                set of selavy components (to mimic the loading of the data
+                selavy components).
+            mocker: The pytest-mock mocker object.
+
+        Returns:
+            None
+        """
         source = source_instance(pipeline=pipeline)
 
         image_mocker = mocker.patch(
@@ -433,12 +633,12 @@ class TestSource:
 
         pandas_read_fwf_mocker = mocker.patch(
             'vasttools.source.pd.read_fwf',
-            return_value=mock_selavy_components(pipeline=pipeline)
+            return_value=dummy_selavy_components
         )
 
         pandas_read_parquet_mocker = mocker.patch(
             'vasttools.source.pd.read_parquet',
-            return_value=mock_selavy_components(pipeline=pipeline)
+            return_value=dummy_selavy_components
         )
 
         filter_selavy_components_mocker = mocker.patch(
@@ -450,6 +650,7 @@ class TestSource:
 
         result = source._get_cutout(test_row)
 
+        assert result[3].shape[0] == 5
 
     @pytest.mark.parametrize(
         "pipeline,expected",
@@ -458,7 +659,23 @@ class TestSource:
             (True, 'PSR_J2129-04_EPOCH1.fits')
         ]
     )
-    def test__get_save_name(self, pipeline, expected, source_instance):
+    def test__get_save_name(
+        self,
+        pipeline: bool,
+        expected: str,
+        source_instance: vts.Source
+    ) -> None:
+        """
+        Test the get_save_name method of the source.
+
+        Args:
+            pipeline: If 'True' then the Source is initialised as a
+                pipeline source.
+            expected: The expected save name from the parametrisation.
+
+        Returns:
+            None
+        """
         source = source_instance(pipeline=pipeline)
 
         outname = source._get_save_name('1', '.fits')
@@ -477,16 +694,44 @@ class TestSource:
     )
     def test_make_png_flag_options(
         self,
-        pipeline,
-        selavy,
-        no_islands,
-        no_colorbar,
-        title,
-        crossmatch_overlay,
-        hide_beam,
-        source_instance,
+        pipeline: bool,
+        selavy: bool,
+        no_islands: bool,
+        no_colorbar: bool,
+        title: Optional[str],
+        crossmatch_overlay: bool,
+        hide_beam: bool,
+        source_instance: vts.Source,
         mocker
-    ):
+    ) -> None:
+        """
+        Tests the make_png method, specifically with the options that are
+        bool options.
+
+        Parametrized for pipeline and selavy, no_islands, no_colourbar,
+        title, crossmatch_overlay and hide_beam.
+
+        Args:
+            pipeline: If 'True' then the Source is initialised as a
+                pipeline source.
+            selavy: The selavy option that is passed to make_png. Passed from
+                the parametrisation.
+            no_islands: The no_islands option that is passed to make_png.
+                Passed from the parametrisation.
+            no_colourbar: The no_colourbar option that is passed to make_png.
+                Passed from the parametrisation.
+            title: The title option that is passed to make_png. Passed from
+                the parametrisation.
+            crossmatch_overlay: The crossmatch_overlay option that is passed
+                to make_png. Passed from the parametrisation.
+            hide_beam: The hide_beam option that is passed to make_png.
+                Passed from the parametrisation.
+            source_instance: The pytest source_instance fixture.
+            mocker: The pytest-mock mocker object.
+
+        Returns:
+            None
+        """
         source = source_instance(pipeline=pipeline, add_cutout_data=True)
 
         png_plot = source.make_png(
@@ -511,7 +756,6 @@ class TestSource:
         assert isinstance(png_plot, Figure)
         assert result_title == title
         assert np.all(result_data == source.cutout_df['data'].iloc[0] * 1.e3)
-
         plt.close(png_plot)
 
     @pytest.mark.parametrize(
@@ -525,13 +769,34 @@ class TestSource:
     )
     def test_make_png_scale_options(
         self,
-        pipeline,
-        percentile,
-        zscale,
-        contrast,
-        source_instance,
+        pipeline: bool,
+        percentile: float,
+        zscale: bool,
+        contrast: float,
+        source_instance: vts.Source,
         mocker
-    ):
+    ) -> None:
+        """
+        Tests the make_png method, specifically with the options that affect
+        the scaling.
+
+        Parametrized for pipeline, zscale and contrast.
+
+        Args:
+            pipeline: If 'True' then the Source is initialised as a
+                pipeline source.
+            percentile: The percentile option that is passed to make_png.
+                Passed from the parametrisation.
+            zscale: The zscale option that is passed to make_png.
+                Passed from the parametrisation.
+            contrast: The contrast option that is passed to make_png.
+                Passed from the parametrisation.
+            source_instance: The pytest source_instance fixture.
+            mocker: The pytest-mock mocker object.
+
+        Returns:
+            None
+        """
         source = source_instance(pipeline=pipeline, add_cutout_data=True)
 
         png_plot = source.make_png(
@@ -542,28 +807,66 @@ class TestSource:
         )
 
         assert isinstance(png_plot, Figure)
-
         plt.close(png_plot)
 
     @pytest.mark.parametrize("pipeline", [False, True])
     def test_skyview_contour_plot(
-        self, pipeline, source_instance, mocked_fits, mocker
-    ):
+        self,
+        pipeline: bool,
+        source_instance: vts.Source,
+        dummy_fits: fits.HDUList,
+        mocker
+    ) -> None:
+        """
+        Tests the skyview_contour_plot method.
+
+        Parametrized for pipeline and query source.
+
+        Args:
+            pipeline: If 'True' then the Source is initialised as a
+                pipeline source.
+            source_instance: The pytest source_instance fixture.
+            dummy_fits: The pytest fixture dummy fits.
+            mocker: The pytest-mock mocker object.
+
+        Returns:
+            None
+        """
         source = source_instance(pipeline=pipeline, add_cutout_data=True)
 
         mocker_skyview = mocker.patch(
             'vasttools.source.SkyView.get_images',
-            return_value=[mocked_fits]
+            return_value=[dummy_fits]
         )
 
         result = source.skyview_contour_plot('1', 'suveycode')
 
         assert isinstance(result, Figure)
-
         plt.close(result)
 
     @pytest.mark.parametrize("pipeline", [False, True])
-    def test_write_ann(self, pipeline, source_instance, mocker):
+    def test_write_ann(
+        self,
+        pipeline: bool,
+        source_instance: vts.Source,
+        mocker
+    ) -> None:
+        """
+        Tests the write ann method.
+
+        The expected ann file is declared in the test.
+
+        Parametrized for pipeline and query sources.
+
+        Args:
+            pipeline: If 'True' then the Source is initialised as a
+                pipeline source.
+            source_instance: The pytest source_instance fixture.
+            mocker: The pytest-mock mocker object.
+
+        Returns:
+            None
+        """
         source = source_instance(pipeline=pipeline, add_cutout_data=True)
 
         mocker_file_open = mocker.patch(
@@ -639,7 +942,28 @@ class TestSource:
         assert expected == file_string
 
     @pytest.mark.parametrize("pipeline", [False, True])
-    def test_write_reg(self, pipeline, source_instance, mocker):
+    def test_write_reg(
+        self,
+        pipeline: bool,
+        source_instance: vts.Source,
+        mocker
+    ) -> None:
+        """
+        Tests the write reg method.
+
+        The expected region file is declared in the test.
+
+        Parametrized for pipeline and query sources.
+
+        Args:
+            pipeline: If 'True' then the Source is initialised as a
+                pipeline source.
+            source_instance: The pytest source_instance fixture.
+            mocker: The pytest-mock mocker object.
+
+        Returns:
+            None
+        """
         source = source_instance(pipeline=pipeline, add_cutout_data=True)
 
         mocker_file_open = mocker.patch(
@@ -731,12 +1055,42 @@ class TestSource:
             ("nSB11169_island_3616", "nisland_3616")
         ]
     )
-    def test__remove_sbid(self, input, expected, source_instance):
-        source = source_instance()
+    def test__remove_sbid(
+        self,
+        input: str,
+        expected: str,
+        source_instance: vts.Source
+    ) -> None:
+        """
+        Tests the remove SBID method.
 
+        Parametrized for negative island.
+
+        Args:
+            input: The input island name string.
+            expected: The expected island name output.
+            source_instance: The pytest source_instance fixture.
+
+        Returns:
+            None
+        """
+        source = source_instance()
         assert expected == source._remove_sbid(input)
 
-    def test_simbad_search(self, source_instance, mocker):
+    def test_simbad_search(self, source_instance: vts.Source, mocker) -> None:
+        """
+        Tests the simbad search method.
+
+        The SIMBAD service is not queried, the call is mocked and asserted
+        against along with the return value.
+
+        Args:
+            source_instance: The pytest source_instance fixture.
+            mocker: The pytest-mock mocker object.
+
+        Returns:
+            None
+        """
         source = source_instance()
 
         mocker_simbad = mocker.patch(
@@ -752,7 +1106,20 @@ class TestSource:
         )
         assert result == -99
 
-    def test_ned_search(self, source_instance, mocker):
+    def test_ned_search(self, source_instance: vts.Source, mocker) -> None:
+        """
+        Tests the NED search method.
+
+        The NED service is not queried, the call is mocked and asserted
+        against along with the return value.
+
+        Args:
+            source_instance: The pytest source_instance fixture.
+            mocker: The pytest-mock mocker object.
+
+        Returns:
+            None
+        """
         source = source_instance()
 
         mocker_simbad = mocker.patch(
@@ -768,7 +1135,22 @@ class TestSource:
         )
         assert result == -99
 
-    def test_casda_search(self, source_instance, mocker):
+    def test_casda_search(self, source_instance: vts.Source, mocker) -> None:
+        """
+        Tests the casda search method.
+
+        The CASDA service is not queried, the call is mocked and asserted
+        against along with the return value.
+
+        Args:
+            source_instance: The pytest source_instance fixture.
+            mocker: The pytest-mock mocker object.
+
+        Returns:
+            None
+        """
+        # TODO: Should create a dummy response and test the other method
+        #       options.
         source = source_instance()
 
         mocker_simbad = mocker.patch(
@@ -796,8 +1178,31 @@ class TestSource:
         ]
     )
     def test__get_fluxes_and_errors(
-        self, pipeline, suffix, forced_fits, source_instance
-    ):
+        self,
+        pipeline: bool,
+        suffix: str,
+        forced_fits: bool,
+        source_instance: vts.Source
+    ) -> None:
+        """
+        Tests the get fluxes and errors method.
+
+        The method gathers the detections and upper limits/forced fluxes
+        depending on what is requested. Parametrized for pipeline and query
+        sources.
+
+        Args:
+            pipeline: If 'True' then the Source is initialised as a
+                pipeline source.
+            suffix: Type of flux suffix, either 'int' or 'peak'. Passed to
+                the get_fluxes_and_errors function.
+            forced_fits: Whether to use forced fits for the upper limits.
+                Passed to the get_fluxes_and_errors function.
+            source_instance: The pytest source_instance fixture.
+
+        Returns:
+            None
+        """
         source = source_instance(pipeline=pipeline)
 
         fluxes, errors = source._get_fluxes_and_errors(
@@ -871,8 +1276,32 @@ class TestSource:
         ]
     )
     def test_calc_eta_metric(
-        self, pipeline, use_int, forced_fits, expected, source_instance
-    ):
+        self,
+        pipeline: bool,
+        use_int: bool,
+        forced_fits: bool,
+        expected: float,
+        source_instance: vts.Source
+    ) -> None:
+        """
+        Tests the calculation of the eta metric.
+
+        Parametrized for pipeline and query sources, along with using the
+        integrated flux and using forced fits.
+
+        Args:
+            pipeline: If 'True' then the Source is initialised as a
+                pipeline source.
+            use_int: Whether to use integrated fluxes instead of peak fluxes.
+                Passed to the calc_eta method.
+            forced_fits: Whether to use forced fits for the calculation.
+                Passed to the calc_eta function.
+            expected: The expected eta value for the parametrization.
+            source_instance: The pytest source_instance fixture.
+
+        Returns:
+            None
+        """
         source = source_instance(pipeline=pipeline)
 
         eta_result = source.calc_eta_metric(
@@ -894,8 +1323,32 @@ class TestSource:
         ]
     )
     def test_calc_v_metric(
-        self, pipeline, use_int, forced_fits, expected, source_instance
-    ):
+        self,
+        pipeline: bool,
+        use_int: bool,
+        forced_fits: bool,
+        expected: float,
+        source_instance: vts.Source
+    ) -> None:
+        """
+        Tests the calculation of the V metric.
+
+        Parametrized for pipeline and query sources, along with using the
+        integrated flux and using forced fits.
+
+        Args:
+            pipeline: If 'True' then the Source is initialised as a
+                pipeline source.
+            use_int: Whether to use integrated fluxes instead of peak fluxes.
+                Passed to the calc_v method.
+            forced_fits: Whether to use forced fits for the calculation.
+                Passed to the calc_v function.
+            expected: The expected v value for the parametrization.
+            source_instance: The pytest source_instance fixture.
+
+        Returns:
+            None
+        """
         source = source_instance(pipeline=pipeline)
 
         v_result = source.calc_v_metric(

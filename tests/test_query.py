@@ -18,7 +18,13 @@ import vasttools.query as vtq
 
 
 @pytest.fixture
-def pilot_moc_mocker():
+def pilot_moc_mocker() -> MOC:
+    """
+    Loads the VAST Pilot Epoch 1 MOC directly.
+
+    Returns:
+        The Pilot epoch 1 MOC.
+    """
     with importlib.resources.path(
         "vasttools.data.mocs",
         "VAST_PILOT_EPOCH01.moc.fits"
@@ -29,11 +35,24 @@ def pilot_moc_mocker():
 
 
 @pytest.fixture
-def vast_query_psrj2129(pilot_moc_mocker, mocker):
-    # For a reason I'm not sure of the moc opening in _build_catalog
-    # cannot open the MOC file within the test. So here I mock the opening
-    # and return the epoch 1 moc file. It seems to work fine outside of the
-    # tests.
+def vast_query_psrj2129(pilot_moc_mocker: MOC, mocker) -> vtq.Query:
+    """
+    Initialises a Query object with the Pulsar J2129-04 as the search
+    subject.
+
+    For a reason I'm not sure of the moc opening in _build_catalog
+    cannot open the MOC file within the test. So here I mock the opening
+    and return the epoch 1 moc file. It seems to work fine outside of the
+    tests.
+
+    Args:
+        pilot_moc_mocker: The pytest fixture that directly loads the
+            pilot epoch 1 MOC.
+        mocker: The pytest mock mocker object.
+
+    Returns:
+        The Query instance.
+    """
     test_dir = '/testing/folder'
     mocker_isdir = mocker.patch(
         'vasttools.query.os.path.isdir',
@@ -56,9 +75,14 @@ def vast_query_psrj2129(pilot_moc_mocker, mocker):
 
 
 @pytest.fixture
-def vast_fields_object_mock():
+def vast_fields_object_dummy() -> pd.DataFrame:
     """
+    A dummy fields available dataframe.
+
     Note that id 4000 is made up.
+
+    Returns:
+        The dummy fields dataframe.
     """
     fields_df = pd.DataFrame(
         data={
@@ -168,8 +192,26 @@ def vast_fields_object_mock():
 
 
 @pytest.fixture
-def fields_df_expected_result():
-    def _get_result(add_files: bool = False):
+def fields_df_expected_result() -> pd.DataFrame:
+    """
+    The expected result from a fields query.
+
+    I.e. the source matched to the available fields.
+
+    Returns:
+        The fields result dataframe.
+    """
+    def _get_result(add_files: bool = False) -> pd.DataFrame:
+        """
+        The actual workhorse function to generate the dataframe.
+
+        Args:
+            add_files: If True then the dummy file locations is added to the
+                results dataframe.
+
+        Returns:
+            The results dataframe.
+        """
         fields_df = pd.DataFrame(
             data={
                 'name': {
@@ -252,19 +294,33 @@ def fields_df_expected_result():
 
 
 @pytest.fixture
-def vast_query_psrj2129_fields(vast_query_psrj2129, fields_df_expected_result):
-    def _add_fields_df(add_files: bool = True):
-        vast_query_psrj2129.fields_found = True
-        vast_query_psrj2129.fields_df = fields_df_expected_result(
-            add_files=add_files
-        )
+def vast_query_psrj2129_fields(
+    vast_query_psrj2129: vtq.Query,
+    fields_df_expected_result: pd.DataFrame
+) -> vtq.Query:
+    """
+    A fixture that returns the pulsar Query instance with the files added
+    to the result.
 
-        return vast_query_psrj2129
-    return _add_fields_df
+    Args:
+        vast_query_psrj2129: The defined Query fixture.
+        fields_df_expected_result: The expected fields df result which is
+            added.
+    """
+    vast_query_psrj2129.fields_found = True
+    vast_query_psrj2129.fields_df = fields_df_expected_result(add_files=True)
+
+    return vast_query_psrj2129
 
 
 @pytest.fixture
-def field_centres_mock():
+def field_centres_dummy() -> pd.DataFrame:
+    """
+    A dummy fields centres file, returned as a dataframe.
+
+    Returns:
+        Dataframe with field centres information.
+    """
     field_centres_df = pd.DataFrame(
         data={
             'field': {89: 'VAST_2118-06A', 94: 'VAST_2143-06A'},
@@ -277,12 +333,36 @@ def field_centres_mock():
 
 
 @pytest.fixture
-def selavy_cat():
+def selavy_cat() -> pd.DataFrame:
+    """
+    A fixture to return a dummy selavy catalogue.
+
+    Returns:
+        Selavy catalogue loaded as a dataframe.
+    """
     def _get_selavy_cat(
         contain_pulsar: bool = False,
         search_around: bool = False,
         add_detection: bool = False
-    ):
+    ) -> pd.DataFrame:
+        """
+        Workhorse function to generate the selavy catalogue.
+
+        Allows for arguments to be passed that can change the selavy catalogue
+        that is generated.
+
+        Args:
+            contain_pulsar: If 'True' then a source candidate is placed
+                at the location of PSR J2129-04.
+            search_around: If 'True' then the dataframe is appended to itself
+                such that multiple results are found if a search around query
+                is used.
+            add_detection: If `True` then a `detection` column is added that
+                mimics the same column that is added in the query process.
+
+        Returns:
+            The selavy catalogue as a pandas dataframe.
+        """
         if contain_pulsar:
             component_name = {0: 'B2129-0429', 1: 'B2111-0353'}
             ra_hms_cont = {0: '21:29:45.29', 1: '21:11:50.0'}
@@ -357,7 +437,19 @@ def selavy_cat():
 
 
 class TestQuery:
-    def test_init_failure_no_inputs(self):
+    """
+    This class contains all the tests related to the Query object in VAST
+    Tools.
+    """
+    def test_init_failure_no_inputs(self) -> None:
+        """
+        Tests the initialisation failure of a Query object.
+
+        Specifically when no input search objects are entered.
+
+        Returns:
+            None
+        """
         with pytest.raises(vtq.QueryInitError) as excinfo:
             query = vtq.Query()
 
@@ -365,7 +457,16 @@ class TestQuery:
             "No coordinates or source names have been provided!"
         )
 
-    def test_init_failure_no_forced_fits_and_search_around(self):
+    def test_init_failure_forced_fits_and_search_around(self) -> None:
+        """
+        Tests the initialisation failure of a Query object.
+
+        Specifically when forced fits and search around options are used
+        together.
+
+        Returns:
+            None
+        """
         with pytest.raises(vtq.QueryInitError) as excinfo:
             query = vtq.Query(
                 source_names=['test'],
@@ -377,7 +478,16 @@ class TestQuery:
             "Forced fits and search around"
         )
 
-    def test_init_failure_length_mismatch(self):
+    def test_init_failure_length_mismatch(self) -> None:
+        """
+        Tests the initialisation failure of a Query object.
+
+        Specifically the number of source names doesn't match the number of
+        entered coordinates.
+
+        Returns:
+            None
+        """
         with pytest.raises(vtq.QueryInitError) as excinfo:
             query = vtq.Query(
                 coords=SkyCoord('00h42.5m', '+41d12m'),
@@ -388,7 +498,15 @@ class TestQuery:
             "The number of entered source names"
         )
 
-    def test_init_failure_invalid_planet(self):
+    def test_init_failure_invalid_planet(self) -> None:
+        """
+        Tests the initialisation failure of a Query object.
+
+        Specifically when an invalid planet is entered.
+
+        Returns:
+            None
+        """
         with pytest.raises(ValueError) as excinfo:
             query = vtq.Query(
                 planets=['Earth']
@@ -396,7 +514,16 @@ class TestQuery:
 
         assert str(excinfo.value) == "Invalid planet object provided!"
 
-    def test_init_failure_base_folder(self):
+    def test_init_failure_base_folder(self) -> None:
+        """
+        Tests the initialisation failure of a Query object.
+
+        Specifically when the base folder directory has not been specified, or
+        set in the environment.
+
+        Returns:
+            None
+        """
         with pytest.raises(vtq.QueryInitError) as excinfo:
             query = vtq.Query(
                 planets=['Mars']
@@ -406,7 +533,15 @@ class TestQuery:
             "The base folder directory could not be determined!"
         )
 
-    def test_init_failure_base_folder_not_found(self):
+    def test_init_failure_base_folder_not_found(self) -> None:
+        """
+        Tests the initialisation failure of a Query object.
+
+        Specifically when no specified base folder is not found.
+
+        Returns:
+            None
+        """
         with pytest.raises(vtq.QueryInitError) as excinfo:
             test_dir = '/testing/folder'
             query = vtq.Query(
@@ -416,7 +551,18 @@ class TestQuery:
 
         assert str(excinfo.value) == f"Base folder {test_dir} not found!"
 
-    def test_init_failure_stokes_v_tiles(self, mocker):
+    def test_init_failure_stokes_v_tiles(self, mocker) -> None:
+        """
+        Tests the initialisation failure of a Query object.
+
+        Specifically when Stokes V is requested on tile images.
+
+        Args:
+            mocker: The pytest-mock mocker object.
+
+        Returns:
+            None
+        """
         with pytest.raises(vtq.QueryInitError) as excinfo:
             isdir_mocker = mocker.patch(
                 'vasttools.query.os.path.isdir',
@@ -437,9 +583,24 @@ class TestQuery:
 
     def test_init_failure_no_sources_in_footprint(
         self,
-        pilot_moc_mocker,
+        pilot_moc_mocker: MOC,
         mocker
-    ):
+    ) -> None:
+        """
+        Tests the initialisation failure of a Query object.
+
+        Specifically when none of the entered coordinates are in the
+        footprint.
+
+        Args:
+            pilot_moc_mocker: The direct loaded epoch 1 MOC (for some reason
+                this does not load correctly if not done like this in the
+                test environment).
+            mocker: The pytest-mock mocker object.
+
+        Returns:
+            None
+        """
         with pytest.raises(vtq.QueryInitError) as excinfo:
             isdir_mocker = mocker.patch(
                 'vasttools.query.os.path.isdir',
@@ -467,7 +628,19 @@ class TestQuery:
             ' are found in the VAST Pilot survey footprint!'
         )
 
-    def test_init_settings(self, mocker):
+    def test_init_settings(self, mocker) -> None:
+        """
+        Tests the initialisation of a Query object.
+
+        Tests that all provided settings are set correctly in the final Query
+        object.
+
+        Args:
+            mocker: The pytest-mock mocker object.
+
+        Returns:
+            None
+        """
         isdir_mocker = mocker.patch(
             'vasttools.query.os.path.isdir',
             return_value=True
@@ -527,29 +700,46 @@ class TestQuery:
 
     def test__field_matching(
         self,
-        vast_query_psrj2129,
-        vast_fields_object_mock,
-        field_centres_mock,
+        vast_query_psrj2129: vtq.Query,
+        vast_fields_object_dummy: pd.DataFrame,
+        field_centres_dummy: pd.DataFrame,
         mocker
-    ):
+    ) -> None:
+        """
+        Tests the field matching method of the query object.
+
+        Checks that the matching fields are correctly identified from the
+        dummy input data.
+
+        Args:
+            vast_query_psrj2129: The dummy Query instance that includes a
+                search for PSR J2129-04.
+            vast_fields_object_dummy: The dummy fields available to perform
+                the search against.
+            field_centres_dummy: The dummy field centres file.
+            mocker: The pytest-mock mocker object.
+
+        Returns:
+            None
+        """
         field_sc = SkyCoord(
-            vast_fields_object_mock["RA_HMS"],
-            vast_fields_object_mock["DEC_DMS"],
+            vast_fields_object_dummy["RA_HMS"],
+            vast_fields_object_dummy["DEC_DMS"],
             unit=(u.hourangle, u.deg)
         )
 
         field_centres_sc = SkyCoord(
-            field_centres_mock["centre-ra"],
-            field_centres_mock["centre-dec"],
+            field_centres_dummy["centre-ra"],
+            field_centres_dummy["centre-dec"],
             unit=(u.deg, u.deg)
         )
-        field_centre_names = field_centres_mock.field
+        field_centre_names = field_centres_dummy.field
 
         row = vast_query_psrj2129.query_df.iloc[0]
         results = vast_query_psrj2129._field_matching(
             row,
             field_sc,
-            vast_fields_object_mock.FIELD_NAME,
+            vast_fields_object_dummy.FIELD_NAME,
             field_centres_sc,
             field_centre_names
         )
@@ -561,8 +751,27 @@ class TestQuery:
         assert results[2] == ['1', '2']
 
     def test_find_fields(
-        self, vast_query_psrj2129, fields_df_expected_result, mocker):
+        self,
+        vast_query_psrj2129: vtq.Query,
+        fields_df_expected_result: pd.DataFrame,
+        mocker
+    ) -> None:
+        """
+        Tests the front facing find fields method.
 
+        The Dask called is mocked and the expected result is returned. This is
+        ok as the function is previously tested.
+
+        Args:
+            vast_query_psrj2129: The dummy Query instance that includes a
+                search for PSR J2129-04.
+            fields_df_expected_result: The expected fields_df result of the
+                search.
+            mocker: The pytest-mock mocker object.
+
+        Returns:
+            None
+        """
         mocked_field_matching_results = (
             [np.array(['VAST_2118-06A', 'VAST_2143-06A'], dtype='object')],
             'VAST_2118-06A',
@@ -594,8 +803,25 @@ class TestQuery:
             fields_df_expected_result()
         )
 
-    def test__add_files_combined(self, vast_query_psrj2129_fields, mocker):
-        test_query = vast_query_psrj2129_fields()
+    def test__add_files_combined(
+        self,
+        vast_query_psrj2129_fields: vtq.Query,
+        mocker
+    ) -> None:
+        """
+        Tests adding the paths to the combined data in the query.
+
+        Assumes the standard VAST Pilot directory and file structure.
+
+        Args:
+            vast_query_psrj2129_fields: The dummy Query instance that includes
+                a search for PSR J2129-04 with the included found fields data.
+            mocker: The pytest-mock mocker object.
+
+        Returns:
+            None
+        """
+        test_query = vast_query_psrj2129_fields
         results = test_query._add_files(test_query.fields_df.loc[0])
 
         expected_results = (
@@ -609,8 +835,25 @@ class TestQuery:
 
         assert results == expected_results
 
-    def test__add_files_tiles(self, vast_query_psrj2129_fields, mocker):
-        test_query = vast_query_psrj2129_fields()
+    def test__add_files_tiles(
+        self,
+        vast_query_psrj2129_fields: vtq.Query,
+        mocker
+    ) -> None:
+        """
+        Tests adding the paths to the tiles data in the query.
+
+        Assumes the standard VAST Pilot directory and file structure.
+
+        Args:
+            vast_query_psrj2129_fields: The dummy Query instance that includes
+                a search for PSR J2129-04 with the included found fields data.
+            mocker: The pytest-mock mocker object.
+
+        Returns:
+            None
+        """
+        test_query = vast_query_psrj2129_fields
 
         test_query.settings['tiles'] = True
 
@@ -631,9 +874,24 @@ class TestQuery:
         assert results == expected_results
 
     def test__add_files_stokesv_combined(
-        self, vast_query_psrj2129_fields, mocker
-    ):
-        test_query = vast_query_psrj2129_fields()
+        self,
+        vast_query_psrj2129_fields: vtq.Query,
+        mocker
+    ) -> None:
+        """
+        Tests adding the paths to the stokes v combined data in the query.
+
+        Assumes the standard VAST Pilot directory and file structure.
+
+        Args:
+            vast_query_psrj2129_fields: The dummy Query instance that includes
+                a search for PSR J2129-04 with the included found fields data.
+            mocker: The pytest-mock mocker object.
+
+        Returns:
+            None
+        """
+        test_query = vast_query_psrj2129_fields
         test_query.settings['stokes'] = 'V'
         test_query.fields_df['stokes'] = 'V'
         results = test_query._add_files(test_query.fields_df.loc[0])
@@ -652,11 +910,27 @@ class TestQuery:
 
     def test__get_components_detection(
         self,
-        vast_query_psrj2129_fields,
-        selavy_cat,
+        vast_query_psrj2129_fields: vtq.Query,
+        selavy_cat: pd.DataFrame,
         mocker
-    ):
-        test_query = vast_query_psrj2129_fields(add_files=True)
+    ) -> None:
+        """
+        Tests the _get_components method of the Query class where a detection
+        is expected.
+
+        The selavy loading is mocked with the selavy catalogue fixture passed
+        in it's place, where the pulsar is contained in the catalogue.
+
+        Args:
+            vast_query_psrj2129_fields: The dummy Query instance that includes
+                a search for PSR J2129-04 with the included found fields data.
+            selavy_cat: The dummy selavy catalogue.
+            mocker: The pytest-mock mocker object.
+
+        Returns:
+            None
+        """
+        test_query = vast_query_psrj2129_fields
 
         mocked_input = test_query.fields_df.groupby('selavy').get_group(
             test_query.fields_df['selavy'].iloc[0]
@@ -677,11 +951,27 @@ class TestQuery:
 
     def test__get_components_non_detection(
         self,
-        vast_query_psrj2129_fields,
-        selavy_cat,
+        vast_query_psrj2129_fields: vtq.Query,
+        selavy_cat: pd.DataFrame,
         mocker
-    ):
-        test_query = vast_query_psrj2129_fields(add_files=True)
+    ) -> None:
+        """
+        Tests the _get_components method of the Query class where no detection
+        is expected.
+
+        The selavy loading is mocked with the selavy catalogue fixture passed
+        in it's place, where the pulsar is not present.
+
+        Args:
+            vast_query_psrj2129_fields: The dummy Query instance that includes
+                a search for PSR J2129-04 with the included found fields data.
+            selavy_cat: The dummy selavy catalogue.
+            mocker: The pytest-mock mocker object.
+
+        Returns:
+            None
+        """
+        test_query = vast_query_psrj2129_fields
 
         mocked_input = test_query.fields_df.groupby('selavy').get_group(
             test_query.fields_df['selavy'].iloc[0]
@@ -711,12 +1001,27 @@ class TestQuery:
 
     def test__get_components_search_around(
         self,
-        vast_query_psrj2129_fields,
-        selavy_cat,
+        vast_query_psrj2129_fields: vtq.Query,
+        selavy_cat: pd.DataFrame,
         mocker
-    ):
-        # manually add the files on
-        test_query = vast_query_psrj2129_fields(add_files=True)
+    ) -> None:
+        """
+        Tests the _get_components method of the Query class where the
+        'search_around' option is used and multiple matches are expected.
+
+        The selavy loading is mocked with the selavy catalogue fixture passed
+        in it's place, where the pulsar present four times.
+
+        Args:
+            vast_query_psrj2129_fields: The dummy Query instance that includes
+                a search for PSR J2129-04 with the included found fields data.
+            selavy_cat: The dummy selavy catalogue.
+            mocker: The pytest-mock mocker object.
+
+        Returns:
+            None
+        """
+        test_query = vast_query_psrj2129_fields
         test_query.settings['search_around'] = True
 
         mocked_input = test_query.fields_df.groupby('selavy').get_group(
@@ -734,9 +1039,24 @@ class TestQuery:
 
     def test__get_forced_fits(
         self,
-        vast_query_psrj2129_fields,
+        vast_query_psrj2129_fields: vtq.Query,
         mocker
-    ):
+    ) -> None:
+        """
+        Tests the method to get the forced fits of the query.
+
+        The actual forced phot package is not tested here. Instead the results
+        and calls are mocked and the calls and provided results are asserted
+        against. The vasttools Image object is also mocked.
+
+        Args:
+            vast_query_psrj2129_fields: The dummy Query instance that includes
+                a search for PSR J2129-04 with the included found fields data.
+            mocker: The pytest-mock mocker object.
+
+        Returns:
+            None
+        """
         mocked_Image = mocker.patch('vasttools.query.Image')
         mocked_Image.return_value.beam.major.to.return_value.value = 15.
         mocked_Image.return_value.beam.minor.to.return_value.value = 10.
@@ -752,7 +1072,7 @@ class TestQuery:
             np.array([True, True])
         )
 
-        test_query = vast_query_psrj2129_fields(add_files=True)
+        test_query = vast_query_psrj2129_fields
         group_name = test_query.fields_df['image'].iloc[0]
         mocked_input = (
             test_query
@@ -787,11 +1107,27 @@ class TestQuery:
 
     def test__init_sources(
         self,
-        vast_query_psrj2129_fields,
-        selavy_cat,
+        vast_query_psrj2129_fields: vtq.Query,
+        selavy_cat: pd.DataFrame,
         mocker
-    ):
-        test_query = vast_query_psrj2129_fields(add_files=True)
+    ) -> None:
+        """
+        Tests the init sources method that groups the results into vasttools
+        Source objects.
+
+        The Source objects are not actually initialised and are instead
+        mocked. The calls made are asserted against.
+
+        Args:
+            vast_query_psrj2129_fields: The dummy Query instance that includes
+                a search for PSR J2129-04 with the included found fields data.
+            selavy_cat: The dummy selavy catalogue.
+            mocker: The pytest-mock mocker object.
+
+        Returns:
+            None
+        """
+        test_query = vast_query_psrj2129_fields
         selavy_df = selavy_cat(contain_pulsar=True)
         sources_df = pd.merge(
             test_query.fields_df,
@@ -817,7 +1153,21 @@ class TestQuery:
         assert source_call_args[4] == 'I'
         assert source_call_args[7].equals(sources_df.drop('#', axis=1))
 
-    def test__check_for_duplicate_epochs(self, vast_query_psrj2129):
+    def test__check_for_duplicate_epochs(
+        self,
+        vast_query_psrj2129: vtq.Query
+    ) -> None:
+        """
+        Tests the duplicate epochs renaming of epochs that is used with planet
+        searches.
+
+        Args:
+            vast_query_psrj2129: The dummy Query instance that includes
+                a search for PSR J2129-04.
+
+        Returns:
+            None
+        """
         epochs = pd.Series(['1', '1', '1', '2', '3'])
         expected = np.array(['1-1', '1-2', '1-3', '2', '3'])
         result = vast_query_psrj2129._check_for_duplicate_epochs(epochs)
@@ -826,14 +1176,28 @@ class TestQuery:
 
     def test_find_sources(
         self,
-        vast_query_psrj2129_fields,
-        selavy_cat,
+        vast_query_psrj2129_fields: vtq.Query,
+        selavy_cat: pd.DataFrame,
         mocker
-    ):
-        # smoke test for find sources all other components are tested
-        # in the above tests. The from_pandas mocker will be used for the
-        # get_components bit and the init_sources.
-        test_query = vast_query_psrj2129_fields()
+    ) -> None:
+        """
+        Smoke test for the user facing 'find_sources' method.
+
+        All components of this method have been tested individually in the
+        tests above. The from_pandas mocker will be used for the
+        get_components part and the init_sources. The result is asserted
+        against to check it was returned correctly.
+
+        Args:
+            vast_query_psrj2129_fields: The dummy Query instance that includes
+                a search for PSR J2129-04 with the included found fields data.
+            selavy_cat: The dummy selavy catalogue.
+            mocker: The pytest-mock mocker object.
+
+        Returns:
+            None
+        """
+        test_query = vast_query_psrj2129_fields
 
         return_df = selavy_cat(
             contain_pulsar=True,

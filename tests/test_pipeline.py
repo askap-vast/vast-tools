@@ -13,6 +13,7 @@ from astropy.wcs import WCS
 from mocpy import MOC
 from pathlib import Path
 from pytest_mock import mocker
+from typing import Dict, List, Union
 
 from vasttools import RELEASED_EPOCHS
 import vasttools.pipeline as vtp
@@ -22,7 +23,16 @@ TEST_DATA_DIR = Path(__file__).resolve().parent / 'data'
 
 
 @pytest.fixture
-def mocked_pipeline_object(mocker):
+def dummy_pipeline_object(mocker) -> vtp.Pipeline:
+    """
+    A dummy Pipeline instance for testing.
+
+    Args:
+        mocker: Pytest mock mocker object.
+
+    Returns:
+        The dummy Pipeline instance.
+    """
     expected_path = '/path/to/pipelineruns/'
     mocker_getenv = mocker.patch(
         'os.getenv', return_value=expected_path
@@ -34,7 +44,15 @@ def mocked_pipeline_object(mocker):
     return pipe
 
 
-def mocked_pipeline_images():
+def dummy_pipeline_images() -> pd.DataFrame:
+    """
+    A dummy pipeline images dataframe.
+
+    Loaded from the test data directory.
+
+    Returns:
+        The dummy pipeline images dataframe.
+    """
     filepath = TEST_DATA_DIR / 'test_images.csv'
 
     images_df = pd.read_csv(filepath)
@@ -43,7 +61,13 @@ def mocked_pipeline_images():
     return images_df
 
 
-def mocked_pipeline_bands():
+def dummy_pipeline_bands() -> pd.DataFrame:
+    """
+    A dummy pipeline bands dataframe.
+
+    Returns:
+        The dummy pipeline bands dataframe.
+    """
     bands_df = pd.DataFrame(
         data={
             'id': {0: 1},
@@ -56,7 +80,13 @@ def mocked_pipeline_bands():
     return bands_df
 
 
-def mocked_pipeline_skyregions():
+def dummy_pipeline_skyregions() -> pd.DataFrame:
+    """
+    A dummy pipeline sky regions dataframe.
+
+    Returns:
+        The dummy pipeline sky regions dataframe.
+    """
     skyregions_df = pd.DataFrame(
         data={
             'id': {1: 2},
@@ -74,7 +104,13 @@ def mocked_pipeline_skyregions():
     return skyregions_df
 
 
-def mocked_pipeline_relations():
+def dummy_pipeline_relations() -> pd.DataFrame:
+    """
+    A dummy pipeline relations dataframe.
+
+    Returns:
+        The dummy pipeline relations dataframe.
+    """
     relations_df = pd.DataFrame(
         data={
             'from_source_id': {6: 729, 74: 2251},
@@ -85,7 +121,15 @@ def mocked_pipeline_relations():
     return relations_df
 
 
-def mocked_pipeline_sources():
+def dummy_pipeline_sources() -> pd.DataFrame:
+    """
+    A dummy pipeline sources dataframe.
+
+    Loaded from the test data directory.
+
+    Returns:
+        The dummy pipeline sources dataframe.
+    """
     filepath = TEST_DATA_DIR / 'test_sources.csv'
 
     sources_df = pd.read_csv(filepath, index_col='id')
@@ -93,7 +137,13 @@ def mocked_pipeline_sources():
     return sources_df
 
 
-def mocked_pipeline_associations():
+def dummy_pipeline_associations() -> pd.DataFrame:
+    """
+    A dummy pipeline associations dataframe.
+
+    Returns:
+        The dummy pipeline associations dataframe.
+    """
     associations_df = pd.DataFrame(
         data={
             'source_id': {
@@ -169,7 +219,15 @@ def mocked_pipeline_associations():
     return associations_df
 
 
-def mocked_pipeline_measurements_vaex():
+def dummy_pipeline_measurements_vaex() -> vaex.dataframe.DataFrame:
+    """
+    A dummy pipeline measurements dataframe, as a vaex dataframe.
+
+    Loaded from the test data directory.
+
+    Returns:
+        The dummy pipeline measurements vaex dataframe.
+    """
     filepath = TEST_DATA_DIR / 'test_measurements_vaex.csv'
     # TODO: check measurements_df = vaex.read_csv(filepath)
     #       Annoyingly vaex fails to read directly from within the testing
@@ -180,21 +238,55 @@ def mocked_pipeline_measurements_vaex():
     return measurements_df
 
 
-def mocked_pipeline_measurements():
+def dummy_pipeline_measurements() -> pd.DataFrame:
+    """
+    A dummy pipeline measurements dataframe, as a pandas dataframe.
+
+    Loaded from the test data directory.
+
+    Returns:
+        The dummy pipeline measurements pandas dataframe.
+    """
     filepath = TEST_DATA_DIR / 'test_measurements.csv'
     measurements_df = pd.read_csv(filepath, index_col='Unnamed: 0')
 
     return measurements_df
 
 
-def mocked_pipeline_measurement_pairs(*args, **kwargs):
+def dummy_pipeline_measurement_pairs(*args, **kwargs) -> pd.DataFrame:
+    """
+    A dummy pipeline measurements pairs dataframe, as a pandas dataframe.
+
+    Loaded from the test data directory.
+
+    Args:
+        args: Provided arguments.
+        kwargs: Keyword arguments.
+
+    Returns:
+        The dummy pipeline measurements pairs pandas dataframe.
+    """
     filepath = TEST_DATA_DIR / 'test_measurement_pairs.csv'
     measurement_pairs_df = pd.read_csv(filepath)
 
     return measurement_pairs_df
 
 
-def mocked_pipeline_measurement_pairs_vaex(*args, **kwargs):
+def dummy_pipeline_measurement_pairs_vaex(
+    *args, **kwargs
+) -> vaex.dataframe.DataFrame:
+    """
+    A dummy pipeline measurements pairs dataframe, as a vaex dataframe.
+
+    Loaded from the test data directory.
+
+    Args:
+        args: Provided arguments.
+        kwargs: Keyword arguments.
+
+    Returns:
+        The dummy pipeline measurements pairs vaex dataframe.
+    """
     filepath = TEST_DATA_DIR / 'test_measurement_pairs.csv'
     measurements_pairs_df = pd.read_csv(filepath)
     measurements_pairs_df = vaex.from_pandas(measurements_pairs_df)
@@ -203,7 +295,15 @@ def mocked_pipeline_measurement_pairs_vaex(*args, **kwargs):
 
 
 @pytest.fixture
-def mocked_pipeline_pairs_df():
+def dummy_pipeline_pairs_df() -> pd.DataFrame:
+    """
+    A dummy pipeline pairs dataframe.
+
+    Loaded from the test data directory.
+
+    Returns:
+        The dummy pipeline pairs pandas dataframe.
+    """
     filepath = TEST_DATA_DIR / 'test_pairs_df_result.csv'
     pairs_df = pd.read_csv(filepath, index_col='id')
     pairs_df['datetime_a'] = pd.to_datetime(
@@ -218,34 +318,60 @@ def mocked_pipeline_pairs_df():
 
 
 def load_parquet_side_effect(
-    value, **kwargs
-):
+    value: str,
+    **kwargs
+) -> Union[pd.DataFrame, vaex.dataframe.DataFrame]:
+    """
+    A side effect function for the loading of the parquet files during the
+    loading of a pipeline run.
+
+    The function is called in the mocked pd.read_parquet function.
+
+    Args:
+        value: The string value being passed to pd.read_parquet in
+            pipeline.py.
+        kwargs: Keyword arguments.
+
+    Returns:
+        The relevant dataframe which is returned from the function. Can be
+        pandas or vaex.
+    """
     if 'bands.parquet' in value:
-        return mocked_pipeline_bands()
+        return dummy_pipeline_bands()
     elif 'associations.parquet' in value:
-        return mocked_pipeline_associations()
+        return dummy_pipeline_associations()
     elif 'images.parquet' in value:
-        return mocked_pipeline_images()
+        return dummy_pipeline_images()
     elif 'relations.parquet' in value:
-        return mocked_pipeline_relations()
+        return dummy_pipeline_relations()
     elif 'skyregions.parquet' in value:
-        return mocked_pipeline_skyregions()
+        return dummy_pipeline_skyregions()
     elif 'sources.parquet' in value:
-        return mocked_pipeline_sources()
+        return dummy_pipeline_sources()
     else:
         raise ValueError('File not recognised.')
 
 
 @pytest.fixture
-def mocked_PipeAnalysis(
-    mocked_pipeline_object,
+def dummy_PipeAnalysis(
+    dummy_pipeline_object: vtp.Pipeline,
     mocker
-):
+) -> vtp.PipeAnalysis:
     """
+    A dummy PipeAnalysis object used in testing.
+
     Because the raw pipeline outputs are processed in the load run function
     it is easier to test while creating the object each time. It is a little
     inefficient and really the pipeline process should be refactored slightly
     to support better testing.
+
+    Args:
+        dummy_pipeline_object: The dummy vtp.Pipeline fixture that is used
+            to load the run.
+        mocker: The pytest mock mocker object.
+
+    Returns:
+        The vtp.PipeAnalysis instance.
     """
     mock_isdir = mocker.patch('os.path.isdir', return_value=True)
     mock_isfile = mocker.patch('os.path.isfile', return_value=False)
@@ -257,10 +383,10 @@ def mocked_PipeAnalysis(
         'vasttools.pipeline.dd.read_parquet',
     )
     dask_read_parquet_mocker.return_value.compute.return_value = (
-        mocked_pipeline_measurements()
+        dummy_pipeline_measurements()
     )
 
-    pipe = mocked_pipeline_object
+    pipe = dummy_pipeline_object
     run_name = 'test_run'
     run = pipe.load_run(run_name)
 
@@ -268,30 +394,52 @@ def mocked_PipeAnalysis(
 
 
 @pytest.fixture
-def mocked_PipeAnalysis_wtwoepoch(
-    mocked_PipeAnalysis,
+def dummy_PipeAnalysis_wtwoepoch(
+    dummy_PipeAnalysis: vtp.PipeAnalysis,
     mocker
-):
+) -> vtp.PipeAnalysis:
+    """
+    A dummy PipeAnalysis object used in testing with the two epoch data
+    pre-loaded.
+
+    Args:
+        dummy_PipeAnalysis: The dummy vtp.PipeAnalysis fixture that is used
+            to load the run.
+        mocker: The pytest mock mocker object.
+
+    Returns:
+        The vtp.PipeAnalysis instance with two epoch data attached.
+    """
     pandas_read_parquet_mocker = mocker.patch(
         'vasttools.pipeline.pd.read_parquet',
-        side_effect=mocked_pipeline_measurement_pairs
+        side_effect=dummy_pipeline_measurement_pairs
     )
 
-    mocked_PipeAnalysis.load_two_epoch_metrics()
+    dummy_PipeAnalysis.load_two_epoch_metrics()
 
-    return mocked_PipeAnalysis
+    return dummy_PipeAnalysis
 
 
 @pytest.fixture
-def mocked_PipeAnalysis_vaex(
-    mocked_pipeline_object,
+def dummy_PipeAnalysis_vaex(
+    dummy_pipeline_object: vtp.Pipeline,
     mocker
-):
+) -> vtp.PipeAnalysis:
     """
+    A dummy PipeAnalysis object used in testing, a vaex version.
+
     Because the raw pipeline outputs are processed in the load run function
     it is easier to test while creating the object each time. It is a little
     inefficient and really the pipeline process should be refactored slightly
     to support better testing.
+
+    Args:
+        dummy_pipeline_object: The dummy vtp.Pipeline fixture that is used
+            to load the run.
+        mocker: The pytest mock mocker object.
+
+    Returns:
+        The vtp.PipeAnalysis instance.
     """
     mock_isdir = mocker.patch('os.path.isdir', return_value=True)
     mock_isfile = mocker.patch('os.path.isfile', return_value=True)
@@ -301,10 +449,10 @@ def mocked_PipeAnalysis_vaex(
     )
     vaex_open_mocker = mocker.patch(
         'vasttools.pipeline.vaex.open',
-        return_value=mocked_pipeline_measurements_vaex()
+        return_value=dummy_pipeline_measurements_vaex()
     )
 
-    pipe = mocked_pipeline_object
+    pipe = dummy_pipeline_object
     run_name = 'test_run'
     run = pipe.load_run(run_name)
 
@@ -312,23 +460,41 @@ def mocked_PipeAnalysis_vaex(
 
 
 @pytest.fixture
-def mocked_PipeAnalysis_vaex_wtwoepoch(
-    mocked_PipeAnalysis,
+def dummy_PipeAnalysis_vaex_wtwoepoch(
+    dummy_PipeAnalysis: vtp.PipeAnalysis,
     mocker
-):
+) -> vtp.PipeAnalysis:
+    """
+    A dummy PipeAnalysis object used in testing with the two epoch data
+    pre-loaded. Vaex version.
+
+    Args:
+        dummy_PipeAnalysis: The dummy vtp.PipeAnalysis fixture that is used
+            to load the run.
+        mocker: The pytest mock mocker object.
+
+    Returns:
+        The vtp.PipeAnalysis instance with two epoch data attached.
+    """
     vaex_open_mocker = mocker.patch(
         'vasttools.pipeline.vaex.open',
-        side_effect=mocked_pipeline_measurement_pairs_vaex
+        side_effect=dummy_pipeline_measurement_pairs_vaex
     )
 
-    mocked_PipeAnalysis.load_two_epoch_metrics()
+    dummy_PipeAnalysis.load_two_epoch_metrics()
 
-    return mocked_PipeAnalysis
+    return dummy_PipeAnalysis
 
 
 @pytest.fixture
-def expected_sources_skycoord():
-    sources = mocked_pipeline_sources()
+def expected_sources_skycoord() -> SkyCoord:
+    """
+    Returns the expected SkyCoord object from the dummy sources dataframe.
+
+    Returns:
+        The SkyCoord object generated from the sources dataframe.
+    """
+    sources = dummy_pipeline_sources()
     sources_sc = SkyCoord(
         ra=sources['wavg_ra'],
         dec=sources['wavg_dec'],
@@ -339,18 +505,44 @@ def expected_sources_skycoord():
 
 
 @pytest.fixture
-def expected_source_measurements_pd(mocked_PipeAnalysis):
+def expected_source_measurements_pd(
+    dummy_PipeAnalysis: vtp.PipeAnalysis
+) -> pd.DataFrame:
+    """
+    A fixture function to produce the measurements dataframe for a single
+    source.
+
+    Args:
+        dummy_PipeAnalysis: The dummy PipeAnalysis instance.
+
+    Returns:
+        The measurements dataframe for a single source.
+    """
     def _filter_source(id: int):
-        meas = mocked_PipeAnalysis.measurements
+        """
+        A function that allows for the source id to be put as an argument.
+
+        Args:
+            id: The source id.
+
+        Returns:
+            The measurements dataframe for a requested source.
+        """
+        meas = dummy_PipeAnalysis.measurements
         meas = meas.loc[meas['source'] == id]
 
         return meas
-
     return _filter_source
 
 
 @pytest.fixture
-def filter_moc():
+def filter_moc() -> MOC:
+    """
+    A dummy MOC to use in the filtering test.
+
+    Returns:
+        A MOC to use as a filter.
+    """
     coords = SkyCoord(
         ra=[321.0, 322.0, 322.0, 321.0],
         dec=[-7., -7., -6., -6.],
@@ -363,28 +555,54 @@ def filter_moc():
 
 
 @pytest.fixture
-def gen_measurement_pairs_df(mocked_PipeAnalysis_wtwoepoch):
-    def _gen_df(epoch_id: int = 2):
+def gen_measurement_pairs_df(
+    dummy_PipeAnalysis_wtwoepoch: vtp.PipeAnalysis
+) -> pd.DataFrame:
+    """
+    Generates a measurement pairs dataframe for a specific 'pair epoch'.
+
+    Args:
+        dummy_PipeAnalysis_wtwoepoch: The dummy PipeAnalysis object with the
+            two epoch metrics loaded.
+
+    Returns:
+        The measurement pairs df filtered for a pair epoch.
+    """
+    def _gen_df(epoch_id: int = 2) -> pd.DataFrame:
+        """
+        Filters a measurement pairs dataframe for a specific 'pair epoch'.
+
+        Args:
+            epoch_id: The id of the measurement pair epoch.
+
+        Returns:
+            The measurement pairs df filtered for a pair epoch.
+        """
         epoch_key = (
-            mocked_PipeAnalysis_wtwoepoch
+            dummy_PipeAnalysis_wtwoepoch
             .pairs_df.loc[epoch_id]['pair_epoch_key']
         )
 
         measurement_pairs_df = (
-            mocked_PipeAnalysis_wtwoepoch.measurement_pairs_df.loc[
-                mocked_PipeAnalysis_wtwoepoch.measurement_pairs_df[
+            dummy_PipeAnalysis_wtwoepoch.measurement_pairs_df.loc[
+                dummy_PipeAnalysis_wtwoepoch.measurement_pairs_df[
                     'pair_epoch_key'
                 ] == epoch_key
             ]
         ).copy()
 
         return measurement_pairs_df
-
     return _gen_df
 
 
 @pytest.fixture
-def gen_sources_metrics_df():
+def gen_sources_metrics_df() -> pd.DataFrame:
+    """
+    Generates a dataframe containing random source metrics used for testing.
+
+    Returns:
+        Source metrics dataframe.
+    """
     data = pd.DataFrame(
         data={
             'eta_peak': 10**(np.random.default_rng().normal(0.5, 1., 10000)),
@@ -401,7 +619,22 @@ def gen_sources_metrics_df():
 
 
 class TestPipeline:
-    def test_init(self, mocker):
+    """
+    Class that contains all the tests for the Pipeline object from
+    vasttools.Pipeline.
+    """
+    def test_init(self, mocker) -> None:
+        """
+        Tests the initialisation of a Pipeline instance.
+
+        The directory checked is mocked to be true.
+
+        Args:
+            mocker: The pytest mocker mock object.
+
+        Returns:
+            None
+        """
         expected_path = '/path/to/pipelineruns/'
         mocker_getenv = mocker.patch(
             'os.getenv', return_value=expected_path
@@ -412,7 +645,19 @@ class TestPipeline:
 
         assert pipe.project_dir == expected_path
 
-    def test_init_projectdir(self, mocker):
+    def test_init_projectdir(self, mocker) -> None:
+        """
+        Tests the initialisation of a Pipeline instance, when the project
+        dir is stated.
+
+        The directory checked is mocked to be true.
+
+        Args:
+            mocker: The pytest mocker mock object.
+
+        Returns:
+            None
+        """
         expected_path = '/path/to/projectdir/'
         mocker_abspath = mocker.patch(
             'os.path.abspath', return_value=expected_path
@@ -423,7 +668,18 @@ class TestPipeline:
 
         assert pipe.project_dir == expected_path
 
-    def test_init_env_fail(self, mocker):
+    def test_init_env_fail(self, mocker) -> None:
+        """
+        Tests the initialisation failure of a Pipeline instance.
+
+        Specifically no project dir has been stated or found in the env.
+
+        Args:
+            mocker: The pytest mocker mock object.
+
+        Returns:
+            None
+        """
         expected_path = '/path/to/pipelineruns/'
         mocker_getenv = mocker.patch(
             'os.getenv', return_value=None
@@ -436,7 +692,18 @@ class TestPipeline:
             "The pipeline run directory could not be determined!"
         )
 
-    def test_init_project_dir_fail(self, mocker):
+    def test_init_project_dir_fail(self, mocker) -> None:
+        """
+        Tests the initialisation failure of a Pipeline instance.
+
+        The directory checked is mocked to be false.
+
+        Args:
+            mocker: The pytest mocker mock object.
+
+        Returns:
+            None
+        """
         expected_path = '/path/to/projectdir/'
         mocker_abspath = mocker.patch(
             'os.path.abspath', return_value=expected_path
@@ -448,7 +715,22 @@ class TestPipeline:
 
         assert str(excinfo.value).startswith("Pipeline run directory")
 
-    def test_list_piperuns(self, mocked_pipeline_object, mocker):
+    def test_list_piperuns(
+        self,
+        dummy_pipeline_object: vtp.Pipeline,
+        mocker
+    ) -> None:
+        """
+        Tests the list piperuns method.
+
+        Args:
+            dummy_pipeline_object: The dummy Pipeline object that is used
+                for testing.
+            mocker: The pytest mocker mock object.
+
+        Returns:
+            None
+        """
         expected_path = '/path/to/pipelineruns'
 
         expected_result = ['job1', 'job2']
@@ -461,16 +743,28 @@ class TestPipeline:
             ]
         )
 
-        result = mocked_pipeline_object.list_piperuns()
+        result = dummy_pipeline_object.list_piperuns()
 
         mocker_glob.assert_called_once_with(os.path.join(expected_path, '*'))
         assert result == expected_result
 
-    def test_list_images(self, mocked_pipeline_object, mocker):
+    def test_list_images(
+        self,
+        dummy_pipeline_object: vtp.Pipeline,
+        mocker
+    ) -> None:
         """
-        Docstring
+        Tests the list images method.
 
-        Assumes pipeline run directory has 'images'.
+        Assumes pipeline run directory has 'images'. Mocks the glob call.
+
+        Args:
+            dummy_pipeline_object: The dummy Pipeline object that is used
+                for testing.
+            mocker: The pytest mocker mock object.
+
+        Returns:
+            None
         """
         expected_path = '/path/to/pipelineruns'
 
@@ -483,7 +777,7 @@ class TestPipeline:
             ]
         )
 
-        result = mocked_pipeline_object.list_images()
+        result = dummy_pipeline_object.list_images()
 
         mocker_glob.assert_called_once_with(os.path.join(
             expected_path, 'images', '*'
@@ -492,21 +786,50 @@ class TestPipeline:
 
     def test_load_run_dir_fail(
         self,
-        mocked_pipeline_object,
+        dummy_pipeline_object: vtp.Pipeline,
         mocker
-    ):
+    ) -> None:
+        """
+        Tests the failure of the load run method.
+
+        Specifically when the run directory is not found. Is dir check is
+        mocked with a False return.
+
+        Args:
+            dummy_pipeline_object: The dummy Pipeline object that is used
+                for testing.
+            mocker: The pytest mocker mock object.
+
+        Returns:
+            None
+        """
         mock_isdir = mocker.patch('os.path.isdir', return_value=False)
 
-        pipe = mocked_pipeline_object
+        pipe = dummy_pipeline_object
 
         with pytest.raises(OSError) as excinfo:
             pipe.load_run('test')
 
     def test_load_run_no_vaex(
         self,
-        mocked_pipeline_object,
+        dummy_pipeline_object: vtp.Pipeline,
         mocker
-    ):
+    ) -> None:
+        """
+        Tests the load run method.
+
+        Specifically when the arrow files are not present so vaex is not used.
+        The usual mocks are in place, including using the read parquet side
+        effect.
+
+        Args:
+            dummy_pipeline_object: The dummy Pipeline object that is used
+                for testing.
+            mocker: The pytest mocker mock object.
+
+        Returns:
+            None
+        """
         mock_isdir = mocker.patch('os.path.isdir', return_value=True)
         mock_isfile = mocker.patch('os.path.isfile', return_value=False)
         pandas_read_parquet_mocker = mocker.patch(
@@ -517,10 +840,10 @@ class TestPipeline:
             'vasttools.pipeline.dd.read_parquet',
         )
         dask_read_parquet_mocker.return_value.compute.return_value = (
-            mocked_pipeline_measurements()
+            dummy_pipeline_measurements()
         )
 
-        pipe = mocked_pipeline_object
+        pipe = dummy_pipeline_object
         run_name = 'test_run'
         run = pipe.load_run(run_name)
 
@@ -529,9 +852,23 @@ class TestPipeline:
 
     def test_load_run_no_vaex_check_columns(
         self,
-        mocked_pipeline_object,
+        dummy_pipeline_object: vtp.Pipeline,
         mocker
-    ):
+    ) -> None:
+        """
+        Tests the load run method.
+
+        Specifically checks that the dataframes have been constructed
+        correctly in the non vaex case.
+
+        Args:
+            dummy_pipeline_object: The dummy Pipeline object that is used
+                for testing.
+            mocker: The pytest mocker mock object.
+
+        Returns:
+            None
+        """
         mock_isdir = mocker.patch('os.path.isdir', return_value=True)
         mock_isfile = mocker.patch('os.path.isfile', return_value=False)
         pandas_read_parquet_mocker = mocker.patch(
@@ -542,10 +879,10 @@ class TestPipeline:
             'vasttools.pipeline.dd.read_parquet',
         )
         dask_read_parquet_mocker.return_value.compute.return_value = (
-            mocked_pipeline_measurements()
+            dummy_pipeline_measurements()
         )
 
-        pipe = mocked_pipeline_object
+        pipe = dummy_pipeline_object
         run_name = 'test_run'
         run = pipe.load_run(run_name)
 
@@ -555,9 +892,24 @@ class TestPipeline:
 
     def test_load_run_vaex(
         self,
-        mocked_pipeline_object,
+        dummy_pipeline_object: vtp.Pipeline,
         mocker
-    ):
+    ) -> None:
+        """
+        Tests the load run method.
+
+        Specifically when the arrow files are present so vaex is used.
+        The usual mocks are in place, including using the read parquet side
+        effect.
+
+        Args:
+            dummy_pipeline_object: The dummy Pipeline object that is used
+                for testing.
+            mocker: The pytest mocker mock object.
+
+        Returns:
+            None
+        """
         mock_isdir = mocker.patch('os.path.isdir', return_value=True)
         mock_isfile = mocker.patch('os.path.isfile', return_value=True)
         pandas_read_parquet_mocker = mocker.patch(
@@ -566,10 +918,10 @@ class TestPipeline:
         )
         vaex_open_mocker = mocker.patch(
             'vasttools.pipeline.vaex.open',
-            return_value = mocked_pipeline_measurements_vaex()
+            return_value = dummy_pipeline_measurements_vaex()
         )
 
-        pipe = mocked_pipeline_object
+        pipe = dummy_pipeline_object
         run_name = 'test_run'
         run = pipe.load_run(run_name)
 
@@ -578,46 +930,102 @@ class TestPipeline:
 
 
 class TestPipeAnalysis:
+    """
+    This class contains tests for both the PipeRun and PipeAnalysis objects in
+    the pipeline component.
+    """
     def test_combine_with_run(
         self,
-        mocked_PipeAnalysis
-    ):
-        run_2 = copy.deepcopy(mocked_PipeAnalysis)
+        dummy_PipeAnalysis: vtp.PipeAnalysis
+    ) -> None:
+        """
+        Tests the combine with other run method.
+
+        To mimic a second run the PipeAnalysis object is copied and the source
+        id's are changed to be different. Both are pandas based.
+
+        Args:
+            dummy_PipeAnalysis: The dummy PipeAnalysis object that is used
+                for testing.
+
+        Returns:
+            None
+        """
+        run_2 = copy.deepcopy(dummy_PipeAnalysis)
         run_2.sources.index = [100, 200, 300]
-        new_run = mocked_PipeAnalysis.combine_with_run(run_2)
+        new_run = dummy_PipeAnalysis.combine_with_run(run_2)
 
         assert new_run.sources.shape[0] == 6
 
     def test_combine_with_run_pandas_vaex(
         self,
-        mocked_PipeAnalysis,
-        mocked_PipeAnalysis_vaex
-    ):
-        mocked_PipeAnalysis.sources.index = [100, 200, 300]
-        new_run = mocked_PipeAnalysis.combine_with_run(
-            mocked_PipeAnalysis_vaex
+        dummy_PipeAnalysis: vtp.PipeAnalysis,
+        dummy_PipeAnalysis_vaex: vtp.PipeAnalysis
+    ) -> None:
+        """
+        Tests the combine with other run method.
+
+        The original run is pandas based and the second run is vaex based.
+
+        Args:
+            dummy_PipeAnalysis: The dummy PipeAnalysis object that is used
+                for testing.
+            dummy_PipeAnalysis_vaex: The dummy PipeAnalysis object that is
+                used for testing that has vaex loaded measurements.
+
+        Returns:
+            None
+        """
+        dummy_PipeAnalysis.sources.index = [100, 200, 300]
+        new_run = dummy_PipeAnalysis.combine_with_run(
+            dummy_PipeAnalysis_vaex
         )
 
         assert new_run.sources.shape[0] == 6
 
     def test_combine_with_run_both_vaex(
         self,
-        mocked_PipeAnalysis_vaex
-    ):
-        run_2 = copy.deepcopy(mocked_PipeAnalysis_vaex)
+        dummy_PipeAnalysis_vaex: vtp.PipeAnalysis
+    ) -> None:
+        """
+        Tests the combine with other run method.
+
+        To mimic a second run the PipeAnalysis object is copied and the source
+        id's are changed to be different. Both are pandas based. Both runs
+        are vaex based.
+
+        Args:
+            dummy_PipeAnalysis_vaex: The dummy PipeAnalysis object that is
+                used for testing that has vaex loaded measurements.
+
+        Returns:
+            None
+        """
+        run_2 = copy.deepcopy(dummy_PipeAnalysis_vaex)
         run_2.sources.index = [100, 200, 300]
-        new_run = mocked_PipeAnalysis_vaex.combine_with_run(run_2)
+        new_run = dummy_PipeAnalysis_vaex.combine_with_run(run_2)
 
         assert new_run.sources.shape[0] == 6
 
     def test_pipeanalysis_get_sources_skycoord(
         self,
-        mocked_PipeAnalysis,
+        dummy_PipeAnalysis: vtp.PipeAnalysis,
         mocker
-    ):
-        pipe = mocked_PipeAnalysis
+    ) -> None:
+        """
+        Tests the get sources sky coord method.
 
-        expected = mocked_pipeline_sources()
+        Args:
+            dummy_PipeAnalysis: The dummy PipeAnalysis object that is used
+                for testing.
+            mocker: The pytest mocker mock object.
+
+        Returns:
+            None
+        """
+        pipe = dummy_PipeAnalysis
+
+        expected = dummy_pipeline_sources()
         expected = SkyCoord(
             ra=expected['wavg_ra'],
             dec=expected['wavg_dec'],
@@ -630,10 +1038,22 @@ class TestPipeAnalysis:
 
     def test_pipeanalysis_get_sources_skycoord_user_sources(
         self,
-        mocked_PipeAnalysis,
+        dummy_PipeAnalysis: vtp.PipeAnalysis,
         mocker
-    ):
-        pipe = mocked_PipeAnalysis
+    ) -> None:
+        """
+        Tests the get sources sky coord method for a custom user defined
+        dataframe.
+
+        Args:
+            dummy_PipeAnalysis: The dummy PipeAnalysis object that is used
+                for testing.
+            mocker: The pytest mocker mock object.
+
+        Returns:
+            None
+        """
+        pipe = dummy_PipeAnalysis
 
         test_sources_df = pd.DataFrame(
             data={
@@ -657,10 +1077,22 @@ class TestPipeAnalysis:
 
     def test_pipeanalysis_get_sources_skycoord_user_sources_hms(
         self,
-        mocked_PipeAnalysis,
+        dummy_PipeAnalysis: vtp.PipeAnalysis,
         mocker
-    ):
-        pipe = mocked_PipeAnalysis
+    ) -> None:
+        """
+        Tests the get sources sky coord method for a custom dataframe where
+        the coordinates are in hms format.
+
+        Args:
+            dummy_PipeAnalysis: The dummy PipeAnalysis object that is used
+                for testing.
+            mocker: The pytest mocker mock object.
+
+        Returns:
+            None
+        """
+        pipe = dummy_PipeAnalysis
 
         test_sources_df = pd.DataFrame(
             data={
@@ -683,11 +1115,29 @@ class TestPipeAnalysis:
 
     def test_pipeanalysis_get_source(
         self,
-        mocked_PipeAnalysis,
-        expected_sources_skycoord,
-        expected_source_measurements_pd,
+        dummy_PipeAnalysis: vtp.PipeAnalysis,
+        expected_sources_skycoord: SkyCoord,
+        expected_source_measurements_pd: pd.DataFrame,
         mocker
-    ):
+    ) -> None:
+        """
+        Tests the get source method that would normally return a
+        vasttools.source.Source instance.
+
+        The Source instance call is mocked with the call args checked.
+
+        Args:
+            dummy_PipeAnalysis: The dummy PipeAnalysis object that is used
+                for testing.
+            expected_sources_skycoord: The expected SkyCoord object generated
+                from the sources.
+            expected_source_measurements_pd: The expected source measurements
+                dataframe.
+            mocker: The pytest mocker mock object.
+
+        Returns:
+            None
+        """
         mocker_source = mocker.patch(
             'vasttools.pipeline.Source',
             return_value = -99
@@ -751,7 +1201,7 @@ class TestPipeAnalysis:
             pipeline=True
         )
 
-        the_source = mocked_PipeAnalysis.get_source(729)
+        the_source = dummy_PipeAnalysis.get_source(729)
 
         mocker_source.assert_called_once()
 
@@ -763,11 +1213,30 @@ class TestPipeAnalysis:
 
     def test_pipeanalysis_get_source_vaex(
         self,
-        mocked_PipeAnalysis_vaex,
-        expected_sources_skycoord,
-        expected_source_measurements_pd,
+        dummy_PipeAnalysis_vaex: vtp.PipeAnalysis,
+        expected_sources_skycoord: SkyCoord,
+        expected_source_measurements_pd: pd.DataFrame,
         mocker
-    ):
+    ) -> None:
+        """
+        Tests the get source method that would normally return a
+        vasttools.source.Source instance.
+
+        The Source instance call is mocked with the call args checked. This
+        test performs the check on a vaex loaded run.
+
+        Args:
+            dummy_PipeAnalysis: The dummy PipeAnalysis object that is used
+                for testing.
+            expected_sources_skycoord: The expected SkyCoord object generated
+                from the sources.
+            expected_source_measurements_pd: The expected source measurements
+                dataframe.
+            mocker: The pytest mocker mock object.
+
+        Returns:
+            None
+        """
         mocker_source = mocker.patch(
             'vasttools.pipeline.Source',
             return_value = -99
@@ -831,7 +1300,7 @@ class TestPipeAnalysis:
             pipeline=True
         )
 
-        the_source = mocked_PipeAnalysis_vaex.get_source(729)
+        the_source = dummy_PipeAnalysis_vaex.get_source(729)
 
         mocker_source.assert_called_once()
 
@@ -843,37 +1312,65 @@ class TestPipeAnalysis:
 
     def test_pipeanalysis_load_two_epoch_metrics_pandas(
         self,
-        mocked_PipeAnalysis,
-        mocked_pipeline_pairs_df,
+        dummy_PipeAnalysis: vtp.PipeAnalysis,
+        dummy_pipeline_pairs_df: pd.DataFrame,
         mocker
-    ):
+    ) -> None:
+        """
+        Tests the method that loads the two epoch metrics.
+
+        This test is for pandas loaded dataframes.
+
+        Args:
+            dummy_PipeAnalysis: The dummy PipeAnalysis object that is used
+                for testing.
+            dummy_pipeline_pairs_df: The dummy pairs dataframe.
+            mocker: The pytest mocker mock object.
+
+        Returns:
+            None
+        """
         pandas_read_parquet_mocker = mocker.patch(
             'vasttools.pipeline.pd.read_parquet',
-            side_effect=mocked_pipeline_measurement_pairs
+            side_effect=dummy_pipeline_measurement_pairs
         )
 
-        mocked_PipeAnalysis.load_two_epoch_metrics()
+        dummy_PipeAnalysis.load_two_epoch_metrics()
 
-        assert mocked_PipeAnalysis.pairs_df.equals(mocked_pipeline_pairs_df)
-        assert mocked_PipeAnalysis.measurement_pairs_df.shape[0] == 30
+        assert dummy_PipeAnalysis.pairs_df.equals(dummy_pipeline_pairs_df)
+        assert dummy_PipeAnalysis.measurement_pairs_df.shape[0] == 30
 
     def test_pipeanalysis_load_two_epoch_metrics_vaex(
         self,
-        mocked_PipeAnalysis_vaex,
-        mocked_pipeline_pairs_df,
+        dummy_PipeAnalysis_vaex: vtp.PipeAnalysis,
+        dummy_pipeline_pairs_df: pd.DataFrame,
         mocker
-    ):
+    ) -> None:
+        """
+        Tests the method that loads the two epoch metrics.
+
+        This test is for vaex loaded dataframes.
+
+        Args:
+            dummy_PipeAnalysis: The dummy PipeAnalysis object that is used
+                for testing.
+            dummy_pipeline_pairs_df: The dummy pairs dataframe.
+            mocker: The pytest mocker mock object.
+
+        Returns:
+            None
+        """
         vaex_open_mocker = mocker.patch(
             'vasttools.pipeline.vaex.open',
-            side_effect=mocked_pipeline_measurement_pairs_vaex
+            side_effect=dummy_pipeline_measurement_pairs_vaex
         )
 
-        mocked_PipeAnalysis_vaex.load_two_epoch_metrics()
+        dummy_PipeAnalysis_vaex.load_two_epoch_metrics()
 
-        assert mocked_PipeAnalysis_vaex.pairs_df.equals(
-            mocked_pipeline_pairs_df
+        assert dummy_PipeAnalysis_vaex.pairs_df.equals(
+            dummy_pipeline_pairs_df
         )
-        assert mocked_PipeAnalysis_vaex.measurement_pairs_df.shape[0] == 30
+        assert dummy_PipeAnalysis_vaex.measurement_pairs_df.shape[0] == 30
 
     @pytest.mark.parametrize("row, kwargs, expected", [
         (
@@ -903,20 +1400,49 @@ class TestPipeAnalysis:
     ])
     def test__add_times(
         self,
-        row,
-        kwargs,
-        expected,
-        mocked_PipeAnalysis
-    ):
-        result = mocked_PipeAnalysis._add_times(row, **kwargs)
+        row: pd.Series,
+        kwargs: Dict[str, bool],
+        expected: List[pd.Timestamp],
+        dummy_PipeAnalysis: vtp.PipeAnalysis
+    ) -> None:
+        """
+        Tests the method that adds times to be searched for planet matches.
+
+        The test is parametrised to run for every hour is False and True.
+
+        Args:
+            row: The pandas series containing the DATE-OBS and duration.
+            kwargs: Contains the 'every_hour' argument to pass.
+            expected: The expected pandas series result.
+            dummy_PipeAnalysis: The dummy PipeAnalysis object that is used
+                for testing.
+
+        Returns:
+            None
+        """
+        result = dummy_PipeAnalysis._add_times(row, **kwargs)
 
         assert result == expected
 
     def test_check_for_planets(
         self,
-        mocked_PipeAnalysis,
+        dummy_PipeAnalysis: vtp.PipeAnalysis,
         mocker
-    ):
+    ) -> None:
+        """
+        Tests the method checks the pipeline run for planets.
+
+        The dask call is mocked as the actual method that finds the planets
+        is tested in the utils tests.
+
+        Args:
+            dummy_PipeAnalysis: The dummy PipeAnalysis object that is used
+                for testing.
+            mocker: The pytest mock mocker object.
+
+        Returns:
+            None
+        """
         dask_from_pandas_mocker = mocker.patch(
             'vasttools.pipeline.dd.from_pandas',
         )
@@ -944,7 +1470,7 @@ class TestPipeAnalysis:
             'Neptune': 10,
         })
 
-        result = mocked_PipeAnalysis.check_for_planets()
+        result = dummy_PipeAnalysis.check_for_planets()
         call = dask_from_pandas_mocker.call_args.args[0]
 
         dask_from_pandas_mocker.assert_called_once()
@@ -953,16 +1479,45 @@ class TestPipeAnalysis:
 
     def test_filter_by_moc(
         self,
-        mocked_PipeAnalysis,
-        filter_moc,
-        mocker
-    ):
-        result = mocked_PipeAnalysis.filter_by_moc(filter_moc)
+        dummy_PipeAnalysis: vtp.PipeAnalysis,
+        filter_moc: MOC,
+    ) -> None:
+        """
+        Tests the filter by moc function.
+
+        The filter moc has been designed to leave two sources
+        (10 measurements).
+
+        Args:
+            dummy_PipeAnalysis: The dummy PipeAnalysis object that is used
+                for testing.
+            filter_moc: The MOC used for filtering.
+
+        Returns:
+            None
+        """
+        result = dummy_PipeAnalysis.filter_by_moc(filter_moc)
 
         assert result.sources.shape[0] == 2
         assert result.measurements.shape[0] == 10
 
-    def test__distance_from_edge(self, mocked_PipeAnalysis):
+    def test__distance_from_edge(
+        self,
+        dummy_PipeAnalysis: vtp.PipeAnalysis
+    ) -> None:
+        """
+        Tests the distance from edge method.
+
+        The function works by calculating how far the pixel is from the edge
+        (i.e. zero pixels). The expected result is defined in the test.
+
+        Args:
+            dummy_PipeAnalysis: The dummy PipeAnalysis object that is used
+                for testing.
+
+        Returns:
+            None
+        """
         input_array = np.array(
             [[0, 0, 0, 0, 0, 0],
             [0, 1, 1, 1, 1, 0],
@@ -981,15 +1536,30 @@ class TestPipeAnalysis:
             [0, 0, 0, 0, 0, 0]]
         )
 
-        result = mocked_PipeAnalysis._distance_from_edge(input_array)
+        result = dummy_PipeAnalysis._distance_from_edge(input_array)
 
         assert np.all(result == expected)
 
     def test__create_moc_from_fits(
         self,
-        mocked_PipeAnalysis,
+        dummy_PipeAnalysis: vtp.PipeAnalysis,
         mocker
-    ):
+    ) -> None:
+        """
+        Tests the create MOC from fits method.
+
+        As the actual create MOC function does not need to be tested here, the
+        calls are mocked and checks are made against the calls. And that the
+        return result is passed through. A FITS object is created in the test.
+
+        Args:
+            dummy_PipeAnalysis: The dummy PipeAnalysis object that is used
+                for testing.
+            mocker: The pytest mock mocker object.
+
+        Returns:
+            None
+        """
         image_data = np.ones((4,4), dtype=np.float32)
         image_data= np.pad(
             image_data, pad_width=1, mode='constant', constant_values=np.nan
@@ -1022,7 +1592,7 @@ class TestPipeAnalysis:
             return_value=-99
         )
 
-        result = mocked_PipeAnalysis._create_moc_from_fits('test.fits')
+        result = dummy_PipeAnalysis._create_moc_from_fits('test.fits')
         called_coords = moc_from_polygon_skycoord_mocker.call_args.args[0]
         pixels = image_wcs.world_to_array_index(called_coords)
 
@@ -1030,41 +1600,66 @@ class TestPipeAnalysis:
         assert np.all(pixels != 0)
         assert result == -99
 
-    def test_create_moc(self, mocked_PipeAnalysis, mocker):
+    def test_create_moc(
+        self,
+        dummy_PipeAnalysis: vtp.PipeAnalysis,
+        mocker
+    ) -> None:
+        """
+        Tests the front facing create moc method.
+
+        Asserts that the above tested function is called once.
+
+        Args:
+            dummy_PipeAnalysis: The dummy PipeAnalysis object that is used
+                for testing.
+            mocker: The pytest mock mocker object.
+
+        Returns:
+            None
+        """
         create_moc_from_fits_mocker = mocker.patch(
             'vasttools.pipeline.PipeRun._create_moc_from_fits'
         )
 
-        # moc_union_mocker = mocker.patch(
-        #     'mocpy.MOC.union',
-        # )
-
-        result = mocked_PipeAnalysis.create_moc()
+        result = dummy_PipeAnalysis.create_moc()
 
         create_moc_from_fits_mocker.assert_called_once()
-        # union_calls = moc_union_mocker.call_args_list
 
     def test_create_moc_multiple_regions(
         self,
-        mocked_PipeAnalysis,
+        dummy_PipeAnalysis: vtp.PipeAnalysis,
         mocker
-    ):
+    ) -> None:
+        """
+        Tests the create moc method for multiple regions present.
+
+        Asserts that the union MOC method is called.
+
+        Args:
+            dummy_PipeAnalysis: The dummy PipeAnalysis object that is used
+                for testing.
+            mocker: The pytest mock mocker object.
+
+        Returns:
+            None
+        """
         create_moc_from_fits_mocker = mocker.patch(
             'vasttools.pipeline.PipeRun._create_moc_from_fits'
         )
 
         moc_union_mocker = create_moc_from_fits_mocker.return_value.union
 
-        new_image_row = mocked_PipeAnalysis.images.iloc[0]
+        new_image_row = dummy_PipeAnalysis.images.iloc[0]
         new_image_row.name = 10
 
-        mocked_PipeAnalysis.images = mocked_PipeAnalysis.images.append(
+        dummy_PipeAnalysis.images = dummy_PipeAnalysis.images.append(
             new_image_row
         )
 
-        mocked_PipeAnalysis.images.loc[10, 'skyreg_id'] = 4
+        dummy_PipeAnalysis.images.loc[10, 'skyreg_id'] = 4
 
-        result = mocked_PipeAnalysis.create_moc()
+        result = dummy_PipeAnalysis.create_moc()
 
         create_calls = create_moc_from_fits_mocker.call_args_list
         union_calls = moc_union_mocker.call_args_list
@@ -1074,12 +1669,23 @@ class TestPipeAnalysis:
 
     def test_recalc_sources_df(
         self,
-        mocked_PipeAnalysis,
+        dummy_PipeAnalysis: vtp.PipeAnalysis,
         mocker
-    ):
+    ) -> None:
+        """
+        Tests the method that recalculates the source statistics.
+
+        Args:
+            dummy_PipeAnalysis: The dummy PipeAnalysis object that is used
+                for testing.
+            mocker: The pytest mock mocker object.
+
+        Returns:
+            None
+        """
         pandas_read_parquet_mocker = mocker.patch(
             'vasttools.pipeline.pd.read_parquet',
-            side_effect=mocked_pipeline_measurement_pairs
+            side_effect=dummy_pipeline_measurement_pairs
         )
 
         # define this to speed up the test to avoid dask
@@ -1121,36 +1727,42 @@ class TestPipeAnalysis:
             .return_value
         ) = metrics_return_value
 
-        mocked_PipeAnalysis.load_two_epoch_metrics()
+        dummy_PipeAnalysis.load_two_epoch_metrics()
 
         # remove measurements from image id 2
-        new_measurements = mocked_PipeAnalysis.measurements[
-            mocked_PipeAnalysis.measurements.image_id != 2
+        new_measurements = dummy_PipeAnalysis.measurements[
+            dummy_PipeAnalysis.measurements.image_id != 2
         ].copy()
 
-        result = mocked_PipeAnalysis.recalc_sources_df(new_measurements)
+        result = dummy_PipeAnalysis.recalc_sources_df(new_measurements)
 
         assert result['n_selavy'].to_list() == [4, 4, 4]
-        assert result.shape[1] == mocked_PipeAnalysis.sources.shape[1]
+        assert result.shape[1] == dummy_PipeAnalysis.sources.shape[1]
 
     def test__get_epoch_pair_plotting_df(
         self,
-        mocked_PipeAnalysis,
-        mocked_pipeline_pairs_df,
+        dummy_PipeAnalysis_wtwoepoch: vtp.PipeAnalysis,
+        dummy_pipeline_pairs_df: pd.DataFrame,
         mocker
-    ):
-        pandas_read_parquet_mocker = mocker.patch(
-            'vasttools.pipeline.pd.read_parquet',
-            side_effect=mocked_pipeline_measurement_pairs
-        )
+    ) -> None:
+        """
+        Tests the method that generates a dataframe and other metrics used
+        in plotting two epoch metric values.
 
-        mocked_PipeAnalysis.load_two_epoch_metrics()
+        Args:
+            dummy_PipeAnalysis_wtwoepoch: The dummy PipeAnalysis object that
+                is used for testing that includes the two epoch metrics.
+            dummy_pipeline_pairs_df: The dummy pipelien pairs dataframe.
+            mocker: The pytest mock mocker object.
 
+        Returns:
+            None
+        """
         epoch_id = 2
 
         df_filter, num_pairs, num_candidates, td_days = (
-            mocked_PipeAnalysis._get_epoch_pair_plotting_df(
-                mocked_PipeAnalysis.measurement_pairs_df,
+            dummy_PipeAnalysis_wtwoepoch._get_epoch_pair_plotting_df(
+                dummy_PipeAnalysis_wtwoepoch.measurement_pairs_df,
                 epoch_id,
                 'vs_peak',
                 'm_peak',
@@ -1160,7 +1772,7 @@ class TestPipeAnalysis:
         )
 
         expected_td_days = (
-            mocked_pipeline_pairs_df.loc[2]['td'].total_seconds() / 86400.
+            dummy_pipeline_pairs_df.loc[2]['td'].total_seconds() / 86400.
         )
 
         assert num_pairs == 30
@@ -1169,14 +1781,27 @@ class TestPipeAnalysis:
 
     def test__plot_epoch_pair_matplotlib(
         self,
-        mocked_PipeAnalysis_wtwoepoch,
-        gen_measurement_pairs_df,
+        dummy_PipeAnalysis_wtwoepoch: vtp.PipeAnalysis,
+        gen_measurement_pairs_df: pd.DataFrame,
         mocker
-    ):
+    ) -> None:
+        """
+        Tests the matplotlib method of plotting the epoch pair metrics.
+
+        Args:
+            dummy_PipeAnalysis_wtwoepoch: The dummy PipeAnalysis object that
+                is used for testing that includes the two epoch metrics.
+            gen_measurement_pairs_df: Measurement pairs df for a specific
+                epoch.
+            mocker: The pytest mock mocker object.
+
+        Returns:
+            None
+        """
         epoch_id = 2
         expected_measurement_pairs_df = gen_measurement_pairs_df(epoch_id)
 
-        result = mocked_PipeAnalysis_wtwoepoch._plot_epoch_pair_matplotlib(
+        result = dummy_PipeAnalysis_wtwoepoch._plot_epoch_pair_matplotlib(
             epoch_id,
             expected_measurement_pairs_df
         )
@@ -1200,14 +1825,28 @@ class TestPipeAnalysis:
 
     def test__plot_epoch_pair_matplotlib_styleb(
         self,
-        mocked_PipeAnalysis_wtwoepoch,
-        gen_measurement_pairs_df,
+        dummy_PipeAnalysis_wtwoepoch: vtp.PipeAnalysis,
+        gen_measurement_pairs_df: pd.DataFrame,
         mocker
-    ):
+    ) -> None:
+        """
+        Tests the matplotlib style b method of plotting the epoch pair
+        metrics.
+
+        Args:
+            dummy_PipeAnalysis_wtwoepoch: The dummy PipeAnalysis object that
+                is used for testing that includes the two epoch metrics.
+            gen_measurement_pairs_df: Measurement pairs df for a specific
+                epoch.
+            mocker: The pytest mock mocker object.
+
+        Returns:
+            None
+        """
         epoch_id = 2
         expected_measurement_pairs_df = gen_measurement_pairs_df(epoch_id)
 
-        result = mocked_PipeAnalysis_wtwoepoch._plot_epoch_pair_matplotlib(
+        result = dummy_PipeAnalysis_wtwoepoch._plot_epoch_pair_matplotlib(
             epoch_id,
             expected_measurement_pairs_df,
             plot_style='b'
@@ -1230,16 +1869,30 @@ class TestPipeAnalysis:
 
         plt.close(result)
 
-    def test__plot_epoch_pair_matplotlib_int(
+    def test__plot_epoch_pair_matplotlib_int_flux(
         self,
-        mocked_PipeAnalysis_wtwoepoch,
-        gen_measurement_pairs_df,
+        dummy_PipeAnalysis_wtwoepoch: vtp.PipeAnalysis,
+        gen_measurement_pairs_df: pd.DataFrame,
         mocker
-    ):
+    ) -> None:
+        """
+        Tests the matplotlib method of plotting the epoch pair metrics using
+        the integrated fluxes.
+
+        Args:
+            dummy_PipeAnalysis_wtwoepoch: The dummy PipeAnalysis object that
+                is used for testing that includes the two epoch metrics.
+            gen_measurement_pairs_df: Measurement pairs df for a specific
+                epoch.
+            mocker: The pytest mock mocker object.
+
+        Returns:
+            None
+        """
         epoch_id = 2
         expected_measurement_pairs_df = gen_measurement_pairs_df(epoch_id)
 
-        result = mocked_PipeAnalysis_wtwoepoch._plot_epoch_pair_matplotlib(
+        result = dummy_PipeAnalysis_wtwoepoch._plot_epoch_pair_matplotlib(
             epoch_id,
             expected_measurement_pairs_df,
             use_int_flux=True
@@ -1264,59 +1917,87 @@ class TestPipeAnalysis:
 
     def test__plot_epoch_pair_bokeh(
         self,
-        mocked_PipeAnalysis_wtwoepoch,
-        gen_measurement_pairs_df,
+        dummy_PipeAnalysis_wtwoepoch: vtp.PipeAnalysis,
+        gen_measurement_pairs_df: pd.DataFrame,
         mocker
-    ):
+    ) -> None:
+        """
+        Smoke tests the bokeh method of plotting the epoch pair metrics.
+
+        Args:
+            dummy_PipeAnalysis_wtwoepoch: The dummy PipeAnalysis object that
+                is used for testing that includes the two epoch metrics.
+            gen_measurement_pairs_df: Measurement pairs df for a specific
+                epoch.
+            mocker: The pytest mock mocker object.
+
+        Returns:
+            None
+        """
         epoch_id = 2
         expected_measurement_pairs_df = gen_measurement_pairs_df(epoch_id)
 
-        result = mocked_PipeAnalysis_wtwoepoch._plot_epoch_pair_bokeh(
+        result = dummy_PipeAnalysis_wtwoepoch._plot_epoch_pair_bokeh(
             epoch_id,
             expected_measurement_pairs_df
         )
 
-        # expected_plot_values = np.fabs(measurement_pairs_df[
-        #     ['m_peak', 'vs_peak']
-        # ].to_numpy())
-        #
-        # expected_plot_values = expected_plot_values[
-        #     np.argsort(expected_plot_values[:,0])
-        # ]
-
         # smoke test as I'm not sure at the moment how to test with bokeh.
+        assert True
 
     def test__plot_epoch_pair_bokeh_styleb(
         self,
-        mocked_PipeAnalysis_wtwoepoch,
-        gen_measurement_pairs_df,
+        dummy_PipeAnalysis_wtwoepoch: vtp.PipeAnalysis,
+        gen_measurement_pairs_df: pd.DataFrame,
         mocker
-    ):
+    ) -> None:
+        """
+        Smoke tests the bokeh style b method of plotting the epoch pair
+        metrics.
+
+        Args:
+            dummy_PipeAnalysis_wtwoepoch: The dummy PipeAnalysis object that
+                is used for testing that includes the two epoch metrics.
+            gen_measurement_pairs_df: Measurement pairs df for a specific
+                epoch.
+            mocker: The pytest mock mocker object.
+
+        Returns:
+            None
+        """
         epoch_id = 2
         expected_measurement_pairs_df = gen_measurement_pairs_df(epoch_id)
 
-        result = mocked_PipeAnalysis_wtwoepoch._plot_epoch_pair_bokeh(
+        result = dummy_PipeAnalysis_wtwoepoch._plot_epoch_pair_bokeh(
             epoch_id,
             expected_measurement_pairs_df,
             plot_style='b'
         )
 
-        # expected_plot_values = np.fabs(measurement_pairs_df[
-        #     ['m_peak', 'vs_peak']
-        # ].to_numpy())
-        #
-        # expected_plot_values = expected_plot_values[
-        #     np.argsort(expected_plot_values[:,0])
-        # ]
-
         # smoke test as I'm not sure at the moment how to test with bokeh.
+        assert True
 
     def test_plot_two_epoch_pairs_matplotlib(
         self,
-        mocked_PipeAnalysis_wtwoepoch,
-        gen_measurement_pairs_df,
+        dummy_PipeAnalysis_wtwoepoch: vtp.PipeAnalysis,
+        gen_measurement_pairs_df: pd.DataFrame,
         mocker
-    ):
+    ) -> None:
+        """
+        Tests the front facing method to plot the two epoch metrics
+        (matplotlib). Asserts the right functions are called and the return
+        results passed through.
+
+        Args:
+            dummy_PipeAnalysis_wtwoepoch: The dummy PipeAnalysis object that
+                is used for testing that includes the two epoch metrics.
+            gen_measurement_pairs_df: Measurement pairs df for a specific
+                epoch.
+            mocker: The pytest mock mocker object.
+
+        Returns:
+            None
+        """
         plot_epoch_pair_mocker = mocker.patch(
             'vasttools.pipeline.PipeAnalysis._plot_epoch_pair_matplotlib',
             return_value = -99
@@ -1325,7 +2006,7 @@ class TestPipeAnalysis:
         epoch_id = 2
         expected_measurement_pairs_df = gen_measurement_pairs_df(epoch_id)
 
-        result = mocked_PipeAnalysis_wtwoepoch.plot_two_epoch_pairs(
+        result = dummy_PipeAnalysis_wtwoepoch.plot_two_epoch_pairs(
             epoch_id,
             plot_type='matplotlib'
         )
@@ -1338,10 +2019,25 @@ class TestPipeAnalysis:
 
     def test_plot_two_epoch_pairs_bokeh(
         self,
-        mocked_PipeAnalysis_wtwoepoch,
-        gen_measurement_pairs_df,
+        dummy_PipeAnalysis_wtwoepoch: vtp.Pipeline,
+        gen_measurement_pairs_df: pd.DataFrame,
         mocker
-    ):
+    ) -> None:
+        """
+        Tests the front facing method to plot the two epoch metrics
+        (matplotlib). Asserts the right functions are called and the return
+        results passed through.
+
+        Args:
+            dummy_PipeAnalysis_wtwoepoch: The dummy PipeAnalysis object that
+                is used for testing that includes the two epoch metrics.
+            gen_measurement_pairs_df: Measurement pairs df for a specific
+                epoch.
+            mocker: The pytest mock mocker object.
+
+        Returns:
+            None
+        """
         plot_epoch_pair_mocker = mocker.patch(
             'vasttools.pipeline.PipeAnalysis._plot_epoch_pair_bokeh',
             return_value = -99
@@ -1350,7 +2046,7 @@ class TestPipeAnalysis:
         epoch_id = 2
         expected_measurement_pairs_df = gen_measurement_pairs_df(epoch_id)
 
-        result = mocked_PipeAnalysis_wtwoepoch.plot_two_epoch_pairs(epoch_id)
+        result = dummy_PipeAnalysis_wtwoepoch.plot_two_epoch_pairs(epoch_id)
 
         plot_epoch_pair_mocker.assert_called_once()
         assert plot_epoch_pair_mocker.call_args.args[1].equals(
@@ -1358,65 +2054,102 @@ class TestPipeAnalysis:
         )
         assert result == -99
 
+    @pytest.mark.parametrize(
+        "vs_thresh,use_int_flux,expected_shape,expected_ids",
+        [
+            (4.3, False, 1, [2251]),
+            (10.0, True, 2, [729, 2251])
+        ]
+    )
     def test_run_two_epoch_analysis(
         self,
-        mocked_PipeAnalysis_wtwoepoch,
-    ):
-        result_sources, result_pairs = (
-            mocked_PipeAnalysis_wtwoepoch.run_two_epoch_analysis(
-                4.3,
-                0.26
-            )
-        )
+        vs_thresh: float,
+        use_int_flux: bool,
+        expected_shape: int,
+        expected_ids: List[int],
+        dummy_PipeAnalysis_wtwoepoch: vtp.PipeAnalysis,
+    ) -> None:
+        """
+        Tests the main run two epoch analysis function. Tests using int flux
+        and passing custom threshold.
 
-        assert result_sources.shape[0] == 1
-        assert result_sources.iloc[0].name == 2251
+        Args:
+            vs_thresh: The threshold to use for the vs metric.
+            use_int_flux: The True, False flag from the parametrize for using
+                int fluxes.
+            expected_shape: Expected shape of the result.
+            expected_ids: The expected ids of the sources returned.
+            dummy_PipeAnalysis_wtwoepoch: The dummy PipeAnalysis object that
+                is used for testing that includes the two epoch metrics.
 
-    def test_run_two_epoch_analysis_int_values(
-        self,
-        mocked_PipeAnalysis_wtwoepoch,
-    ):
+        Returns:
+            None
+        """
         result_sources, result_pairs = (
-            mocked_PipeAnalysis_wtwoepoch.run_two_epoch_analysis(
-                10.0,
+            dummy_PipeAnalysis_wtwoepoch.run_two_epoch_analysis(
+                vs_thresh,
                 0.26,
-                use_int_flux=True
+                use_int_flux=use_int_flux
             )
         )
 
-        assert result_sources.shape[0] == 2
-        assert np.all(result_sources.index == [729, 2251])
+        assert result_sources.shape[0] == expected_shape
+        assert np.all(result_sources.index == expected_ids)
 
+    @pytest.mark.parametrize(
+        'use_int_flux,expected_values',
+        [
+            (False, [0.5, 1., 1., 2.]),
+            (True, [1.5, 3., 2., 4.])
+        ]
+    )
     def test__fit_eta_v(
         self,
-        mocked_PipeAnalysis,
-        gen_sources_metrics_df
-    ):
-        expected_values = [0.5, 1., 1., 2.]
+        use_int_flux: bool,
+        expected_values: List[float],
+        dummy_PipeAnalysis: vtp.PipeAnalysis,
+        gen_sources_metrics_df: pd.DataFrame
+    ) -> None:
+        """
+        Tests fitting the values to the eta and v distributions.
+        Integrated flux is also tested through the parametrisation.
 
-        result = mocked_PipeAnalysis._fit_eta_v(gen_sources_metrics_df)
+        Args:
+            use_int_flux: The True, False flag from the parametrize for using
+                int fluxes.
+            expected_shape: Expected fit values.
+            dummy_PipeAnalysis: The dummy PipeAnalysis object that is used
+                for testing.
+            gen_sources_metrics_df: A generated sources dataframe containing
+                randomly generated metric values (pytest fixture).
 
-        assert result == pytest.approx(expected_values, rel=1e-1)
-
-    def test__fit_eta_v_int_flux(
-        self,
-        mocked_PipeAnalysis,
-        gen_sources_metrics_df
-    ):
-        expected_values = [1.5, 3., 2., 4.]
-
-        result = mocked_PipeAnalysis._fit_eta_v(
+        Returns:
+            None
+        """
+        result = dummy_PipeAnalysis._fit_eta_v(
             gen_sources_metrics_df,
-            use_int_flux=True
+            use_int_flux=use_int_flux
         )
 
         assert result == pytest.approx(expected_values, rel=1e-1)
 
     def test__gaussian_fit(
         self,
-        mocked_PipeAnalysis,
+        dummy_PipeAnalysis: vtp.PipeAnalysis,
         mocker
-    ):
+    ) -> None:
+        """
+        Tests performing the gaussian fits to the source metrics.
+        The actual norm.pdf function is not tested, just the calls to the
+        function are asserted on.
+
+        Args:
+            dummy_PipeAnalysis: The dummy PipeAnalysis object that is used
+                for testing.
+
+        Returns:
+            None
+        """
         norm_pdf_mocker = mocker.patch(
             'vasttools.pipeline.norm.pdf',
             return_value = -99
@@ -1426,7 +2159,7 @@ class TestPipeAnalysis:
         test_mean = 1.
         test_sigma = 2.
 
-        result = mocked_PipeAnalysis._gaussian_fit(
+        result = dummy_PipeAnalysis._gaussian_fit(
             test_data,
             test_mean,
             test_sigma
@@ -1441,10 +2174,24 @@ class TestPipeAnalysis:
 
     def test__make_bins(
         self,
-        mocked_PipeAnalysis,
-        gen_sources_metrics_df
-    ):
-        result_bins = mocked_PipeAnalysis._make_bins(
+        dummy_PipeAnalysis: vtp.PipeAnalysis,
+        gen_sources_metrics_df: pd.DataFrame
+    ) -> None:
+        """
+        Tests the bin generation. Because the values in gen_sources_metrics_df
+        are random there can be a slight change in the number of bins. It
+        should be 18 +/- 1.
+
+        Args:
+            dummy_PipeAnalysis: The dummy PipeAnalysis object that is used
+                for testing.
+            gen_sources_metrics_df: A generated sources dataframe containing
+                randomly generated metric values (pytest fixture).
+
+        Returns:
+            None
+        """
+        result_bins = dummy_PipeAnalysis._make_bins(
             np.log10(gen_sources_metrics_df['eta_peak'])
         )
 
@@ -1452,33 +2199,54 @@ class TestPipeAnalysis:
 
     def test_eta_v_diagnostic_plot(
         self,
-        mocked_PipeAnalysis,
-        gen_sources_metrics_df
-    ):
+        dummy_PipeAnalysis: vtp.PipeAnalysis,
+        gen_sources_metrics_df: pd.DataFrame
+    ) -> None:
         """
-        Smoke test
+        Smoke test for the eta v diagnostic plot.
+
+        Args:
+            dummy_PipeAnalysis: The dummy PipeAnalysis object that is used
+                for testing.
+            gen_sources_metrics_df: A generated sources dataframe containing
+                randomly generated metric values (pytest fixture).
+
+        Returns:
+            None
         """
-        plot = mocked_PipeAnalysis.eta_v_diagnostic_plot(
+        plot = dummy_PipeAnalysis.eta_v_diagnostic_plot(
             1.5,
             1.5,
             df=gen_sources_metrics_df
         )
 
+        # smoke test
+        assert True
+
     def test__plot_eta_v_matplotlib(
         self,
-        mocked_PipeAnalysis,
-        gen_sources_metrics_df,
+        dummy_PipeAnalysis: vtp.PipeAnalysis,
+        gen_sources_metrics_df: pd.DataFrame,
         mocker
-    ):
+    ) -> None:
         """
-        Smoke test.
+        Smoke test for the eta v plot (matplotlib).
+
+        Args:
+            dummy_PipeAnalysis: The dummy PipeAnalysis object that is used
+                for testing.
+            gen_sources_metrics_df: A generated sources dataframe containing
+                randomly generated metric values (pytest fixture).
+
+        Returns:
+            None
         """
         make_bins_mocker = mocker.patch(
             'vasttools.pipeline.PipeAnalysis._make_bins',
             return_value = [0, 1, 2, 3, 4]
         )
 
-        plot = mocked_PipeAnalysis._plot_eta_v_matplotlib(
+        plot = dummy_PipeAnalysis._plot_eta_v_matplotlib(
             gen_sources_metrics_df,
             0.5,
             1.,
@@ -1487,22 +2255,34 @@ class TestPipeAnalysis:
             1.5,
             1.5,
         )
+
+        # smoke test
+        assert True
 
     def test__plot_eta_v_bokeh(
         self,
-        mocked_PipeAnalysis,
-        gen_sources_metrics_df,
+        dummy_PipeAnalysis: vtp.PipeAnalysis,
+        gen_sources_metrics_df: pd.DataFrame,
         mocker
-    ):
+    ) -> None:
         """
-        Smoke test.
+        Smoke test for the eta v plot (bokeh).
+
+        Args:
+            dummy_PipeAnalysis: The dummy PipeAnalysis object that is used
+                for testing.
+            gen_sources_metrics_df: A generated sources dataframe containing
+                randomly generated metric values (pytest fixture).
+
+        Returns:
+            None
         """
         make_bins_mocker = mocker.patch(
             'vasttools.pipeline.PipeAnalysis._make_bins',
             return_value = [0, 1, 2, 3, 4]
         )
 
-        plot = mocked_PipeAnalysis._plot_eta_v_bokeh(
+        plot = dummy_PipeAnalysis._plot_eta_v_bokeh(
             gen_sources_metrics_df,
             0.5,
             1.,
@@ -1511,6 +2291,9 @@ class TestPipeAnalysis:
             1.5,
             1.5,
         )
+
+        # smoke test
+        assert True
 
     # No test for run_eta_v_analysis as it uses all the functions tested
     # above.

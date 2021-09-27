@@ -15,7 +15,13 @@ import vasttools.survey as vts
 
 
 @pytest.fixture
-def mocked_load_fields_file() -> pd.DataFrame:
+def dummy_load_fields_file() -> pd.DataFrame:
+    """
+    Produces a dummy fields file.
+
+    Returns:
+        Dummy fields dataframe.
+    """
     df = pd.DataFrame(
         data = {
             'SBID': ['9876', '9876'],
@@ -36,9 +42,12 @@ def mocked_load_fields_file() -> pd.DataFrame:
 
 
 @pytest.fixture
-def mocked_fits_open() -> fits.HDUList:
+def dummy_fits_open() -> fits.HDUList:
     """
-    Docstring
+    Produces a dummy fits file (hdulist).
+
+    Returns:
+        The fits file as an hdulist instance.
     """
     data = np.zeros((100,100), dtype=np.float32)
     for i in range(100):
@@ -84,6 +93,14 @@ def mocked_fits_open() -> fits.HDUList:
 
 @pytest.fixture
 def init_Image() -> vts.Image:
+    """
+    Produces a vast tools Image instance.
+
+    Uses the internal function to handle arguments.
+
+    Returns:
+        The Image instance.
+    """
     def _init_Image(
         field: str = "VAST_0012+00",
         epoch: str = '1',
@@ -92,7 +109,22 @@ def init_Image() -> vts.Image:
         tiles: bool = False,
         base_folder: str = '/mocked/basefolder/',
         rmspath: Optional[str] = None
-    ):
+    ) -> vts.Image:
+        """
+        Returns the Image instance.
+
+        Args:
+            field: The field name of the Image.
+            epoch: The epoch of the Image.
+            stokes: The stokes parameter of the image.
+            path: Path of the image.
+            tiles: Whether the image is tiles or combined.
+            base_folder: Base folder of data.
+            rmspath: Path of the rms image.
+
+        Returns:
+            The image instance.
+        """
         img = vts.Image(
             field=field,
             epoch=epoch,
@@ -109,7 +141,16 @@ def init_Image() -> vts.Image:
     return _init_Image
 
 
-def test_load_field_centres(mocker):
+def test_load_field_centres(mocker) -> None:
+    """
+    Tests loading the field centres file.
+
+    Args:
+        mocker: Pytest mock mocker object.
+
+    Returns:
+        None
+    """
     assumed_path = "vasttools.data.csvs"
     assumed_filename = "vast_field_centres.csv"
 
@@ -128,7 +169,16 @@ def test_load_field_centres(mocker):
     assert result == -99
 
 
-def test_load_fields_file(mocker):
+def test_load_fields_file(mocker) -> None:
+    """
+    Tests loading the fields file.
+
+    Args:
+        mocker: Pytest mock mocker object.
+
+    Returns:
+        None
+    """
     assumed_path = "vasttools.data.csvs"
     assumed_filename = 'vast_epoch01_info.csv'
     epoch = '1'
@@ -151,7 +201,16 @@ def test_load_fields_file(mocker):
     assert result == -99
 
 
-def test_load_fields_file_epoch_fail(mocker):
+def test_load_fields_file_epoch_fail(mocker) -> None:
+    """
+    Tests loading the fields file with an invalid epoch.
+
+    Args:
+        mocker: Pytest mock mocker object.
+
+    Returns:
+        None
+    """
     assumed_path = "vasttools.data.csvs"
     assumed_filename = 'vast_epoch01_info.csv'
     epoch = '96x'
@@ -169,10 +228,23 @@ def test_load_fields_file_epoch_fail(mocker):
     )
 
 
-def test_get_fields_per_epoch_info(mocked_load_fields_file, mocker):
+def test_get_fields_per_epoch_info(
+    dummy_load_fields_file: pd.DataFrame,
+    mocker
+) -> None:
+    """
+    Tests loading the field per epochs.
+
+    Args:
+        dummy_load_fields_file: The dummy fields file.
+        mocker: Pytest mock mocker object.
+
+    Returns:
+        None
+    """
     load_fields_file_mocker = mocker.patch(
         'vasttools.survey.load_fields_file',
-        return_value=mocked_load_fields_file
+        return_value=dummy_load_fields_file
     )
 
     expected_shape = len(RELEASED_EPOCHS)
@@ -182,7 +254,13 @@ def test_get_fields_per_epoch_info(mocked_load_fields_file, mocker):
     assert result.shape[0] == expected_shape
 
 
-def test_get_askap_observing_location():
+def test_get_askap_observing_location() -> None:
+    """
+    Tests loading the ASKAP observing location.
+
+    Returns:
+        None
+    """
     ASKAP_latitude = Angle("-26:41:46.0", unit=u.deg)
     ASKAP_longitude = Angle("116:38:13.0", unit=u.deg)
 
@@ -196,24 +274,56 @@ def test_get_askap_observing_location():
 
 
 class TestFields:
-    def test_fields_init(self, mocked_load_fields_file, mocker):
+    """
+    Class that includes tests for the Fields class in vasttools.survey.
+    """
+    def test_fields_init(
+        self,
+        dummy_load_fields_file: pd.DataFrame,
+        mocker
+    ) -> None:
+        """
+        Tests initialisation of a Fields object.
+
+        Args:
+            dummy_load_fields_file: The dummy field file.
+            mocker: Pytest mock mocker object.
+
+        Returns:
+            None
+        """
         load_fields_file_mocker = mocker.patch(
             'vasttools.survey.load_fields_file',
-            return_value=mocked_load_fields_file
+            return_value=dummy_load_fields_file
         )
 
         expected_skycoord = SkyCoord(
-            Angle(mocked_load_fields_file["RA_HMS"], unit=u.hourangle),
-            Angle(mocked_load_fields_file["DEC_DMS"], unit=u.deg)
+            Angle(dummy_load_fields_file["RA_HMS"], unit=u.hourangle),
+            Angle(dummy_load_fields_file["DEC_DMS"], unit=u.deg)
         )
 
         fields_result = vts.Fields('1')
 
-        assert fields_result.fields.equals(mocked_load_fields_file)
+        assert fields_result.fields.equals(dummy_load_fields_file)
         assert np.all(fields_result.direction == expected_skycoord)
 
-    def test_fields_init_nan(self, mocked_load_fields_file, mocker):
-        mock_result = mocked_load_fields_file.copy()
+    def test_fields_init_nan(
+        self,
+        dummy_load_fields_file: pd.DataFrame,
+        mocker
+    ) -> None:
+        """
+        Tests initialisation of a Fields object that has a NaN object
+        included in the fields file.
+
+        Args:
+            dummy_load_fields_file: The dummy field file.
+            mocker: Pytest mock mocker object.
+
+        Returns:
+            None
+        """
+        mock_result = dummy_load_fields_file.copy()
         mock_result.at[1, 'BMAJ'] = np.nan
 
         load_fields_file_mocker = mocker.patch(
@@ -227,7 +337,28 @@ class TestFields:
 
 
 class TestImage:
-    def test_image_init_combined_nopath(self, init_Image, mocker):
+    """
+    Class that includes all the tests for the Image class in
+    vastools.survey.
+    """
+    def test_image_init_combined_nopath(
+        self,
+        init_Image: vts.Image,
+        mocker
+    ) -> None:
+        """
+        Tests initialisation of a Image object with no path declaration,
+        for image type 'combined'.
+
+        I.e. the path returned is that of the standard VAST data release.
+
+        Args:
+            init_Image: The Image pytest fixture.
+            mocker: Pytest mock mocker object.
+
+        Returns:
+            None
+        """
         mock_isfile = mocker.patch('os.path.isfile', return_value=True)
 
         image = init_Image()
@@ -243,7 +374,24 @@ class TestImage:
         assert image.imgname == expected_filename
         assert image.image_fail == False
 
-    def test_image_init_tiles_nopath(self, init_Image, mocker):
+    def test_image_init_tiles_nopath(
+        self,
+        init_Image: vts.Image,
+        mocker
+    ) -> None:
+        """
+        Tests initialisation of a Image object with no path declaration,
+        for image type 'tiles'.
+
+        I.e. the path returned is that of the standard VAST data release.
+
+        Args:
+            init_Image: The Image pytest fixture.
+            mocker: Pytest mock mocker object.
+
+        Returns:
+            None
+        """
         mock_isfile = mocker.patch('os.path.isfile', return_value=True)
 
         image = init_Image(tiles=True)
@@ -261,7 +409,24 @@ class TestImage:
         assert image.imgname == expected_filename
         assert image.image_fail == False
 
-    def test_image_init_combined_nopath_stokesv(self, init_Image, mocker):
+    def test_image_init_combined_nopath_stokesv(
+        self,
+        init_Image: vts.Image,
+        mocker
+    ) -> None:
+        """
+        Tests initialisation of a Image object with no path declaration,
+        for image type 'combined' and 'stokes v'.
+
+        I.e. the path returned is that of the standard VAST data release.
+
+        Args:
+            init_Image: The Image pytest fixture.
+            mocker: Pytest mock mocker object.
+
+        Returns:
+            None
+        """
         mock_isfile = mocker.patch('os.path.isfile', return_value=True)
 
         image = init_Image(stokes='V')
@@ -276,7 +441,24 @@ class TestImage:
         assert image.imgpath == expected_path
         assert image.imgname == expected_filename
 
-    def test_image_init_tiles_nopath_stokesv(self, init_Image, mocker):
+    def test_image_init_tiles_nopath_stokesv(
+        self,
+        init_Image: vts.Image,
+        mocker
+    ) -> None:
+        """
+        Tests initialisation of a Image object with no path declaration,
+        for image type 'tiles' and 'stokes v'.
+
+        I.e. the path returned is that of the standard VAST data release.
+
+        Args:
+            init_Image: The Image pytest fixture.
+            mocker: Pytest mock mocker object.
+
+        Returns:
+            None
+        """
         mock_isfile = mocker.patch('os.path.isfile', return_value=True)
 
         image = init_Image(tiles=True, stokes='V')
@@ -293,7 +475,17 @@ class TestImage:
         assert image.imgpath == expected_path
         assert image.imgname == expected_filename
 
-    def test_image_init_path(self, init_Image, mocker):
+    def test_image_init_path(self, init_Image: vts.Image, mocker) -> None:
+        """
+        Tests initialisation of a Image object with a path declaration.
+
+        Args:
+            init_Image: The Image pytest fixture.
+            mocker: Pytest mock mocker object.
+
+        Returns:
+            None
+        """
         mock_isfile = mocker.patch('os.path.isfile', return_value=True)
 
         expected_filename = "image1.fits"
@@ -307,7 +499,22 @@ class TestImage:
         assert image.imgpath == expected_path
         assert image.imgname == expected_filename
 
-    def test_image_init_image_fail(self, init_Image, mocker):
+    def test_image_init_image_fail(
+        self,
+        init_Image: vts.Image,
+        mocker
+    ) -> None:
+        """
+        Tests initialisation of a Image object where the image cannot be
+        found.
+
+        Args:
+            init_Image: The Image pytest fixture.
+            mocker: Pytest mock mocker object.
+
+        Returns:
+            None
+        """
         mock_isfile = mocker.patch('os.path.isfile', return_value=False)
 
         expected_filename = "image1.fits"
@@ -320,11 +527,29 @@ class TestImage:
 
         assert image.image_fail == True
 
-    def test_image_get_data(self, init_Image, mocked_fits_open, mocker):
+    def test_image_get_data(
+        self,
+        init_Image: vts.Image,
+        dummy_fits_open: fits.HDUList,
+        mocker
+    ) -> None:
+        """
+        Tests the get_data method of the Image.
+
+        A dummy fits is used, which is declared as a pytest fixture.
+
+        Args:
+            init_Image: The Image pytest fixture.
+            dummy_fits_open: The dummy fits object.
+            mocker: Pytest mock mocker object.
+
+        Returns:
+            None
+        """
         mock_isfile = mocker.patch('os.path.isfile', return_value=True)
         mock_fits_open = mocker.patch(
             'vasttools.survey.fits.open',
-            return_value=mocked_fits_open
+            return_value=dummy_fits_open
         )
 
         image = init_Image()
@@ -340,15 +565,31 @@ class TestImage:
         mock_fits_open.assert_called_once_with(expected_path)
 
     def test_image_get_rms_img_combined_nopath(
-        self, init_Image, mocked_fits_open, mocker
-    ):
+        self,
+        init_Image: vts.Image,
+        dummy_fits_open: fits.HDUList,
+        mocker
+    ) -> None:
         """
+        Tests the fetching of the rms image name where no path has been
+        declared.
+
         No need to test tiles as it does the same replacements.
+
+        The same dummy fits is used for the rms loading.
+
+        Args:
+            init_Image: The Image pytest fixture.
+            dummy_fits_open: The dummy fits object.
+            mocker: Pytest mock mocker object.
+
+        Returns:
+            None
         """
         mock_isfile = mocker.patch('os.path.isfile', return_value=True)
         mock_fits_open = mocker.patch(
             'vasttools.survey.fits.open',
-            return_value=mocked_fits_open
+            return_value=dummy_fits_open
         )
 
         # Use the defaults on the init_Image fixture.
@@ -367,15 +608,29 @@ class TestImage:
         mock_fits_open.assert_called_once_with(expected_path)
 
     def test_image_get_rms_img_path(
-        self, init_Image, mocked_fits_open, mocker
-    ):
+        self,
+        init_Image: vts.Image,
+        dummy_fits_open: fits.HDUList,
+        mocker
+    ) -> None:
         """
-        Docstring
+        Tests the fetching of the rms image name where a path has been
+        declared.
+
+        The same dummy fits is used for the rms loading.
+
+        Args:
+            init_Image: The Image pytest fixture.
+            dummy_fits_open: The dummy fits object.
+            mocker: Pytest mock mocker object.
+
+        Returns:
+            None
         """
         mock_isfile = mocker.patch('os.path.isfile', return_value=True)
         mock_fits_open = mocker.patch(
             'vasttools.survey.fits.open',
-            return_value=mocked_fits_open
+            return_value=dummy_fits_open
         )
 
         expected_filename = "image1_rms.fits"
@@ -392,12 +647,30 @@ class TestImage:
         mock_fits_open.assert_called_once_with(expected_path)
 
     def test_image_measure_coord_pixel_values(
-        self, init_Image, mocked_fits_open, mocker
-    ):
+        self,
+        init_Image: vts.Image,
+        dummy_fits_open: fits.HDUList,
+        mocker
+    ) -> None:
+        """
+        Tests the measuring of pixel values in the image data given
+        the coordinates.
+
+        The pixels are fixed values in the fixture so the expected values
+        can be worked out.
+
+        Args:
+            init_Image: The Image pytest fixture.
+            dummy_fits_open: The dummy fits object.
+            mocker: Pytest mock mocker object.
+
+        Returns:
+            None
+        """
         mock_isfile = mocker.patch('os.path.isfile', return_value=True)
         mock_fits_open = mocker.patch(
             'vasttools.survey.fits.open',
-            return_value=mocked_fits_open
+            return_value=dummy_fits_open
         )
 
         image = init_Image()
@@ -423,12 +696,30 @@ class TestImage:
         assert np.all(values == expected_values)
 
     def test_image_measure_coord_pixel_values_rms(
-        self, init_Image, mocked_fits_open, mocker
-    ):
+        self,
+        init_Image: vts.Image,
+        dummy_fits_open: fits.HDUList,
+        mocker
+    ) -> None:
+        """
+        Tests the measuring of pixel values in the rms image data given
+        the coordinates.
+
+        The pixels are fixed values in the fixture so the expected values
+        can be worked out.
+
+        Args:
+            init_Image: The Image pytest fixture.
+            dummy_fits_open: The dummy fits object.
+            mocker: Pytest mock mocker object.
+
+        Returns:
+            None
+        """
         mock_isfile = mocker.patch('os.path.isfile', return_value=True)
         mock_fits_open = mocker.patch(
             'vasttools.survey.fits.open',
-            return_value=mocked_fits_open
+            return_value=dummy_fits_open
         )
 
         image = init_Image()

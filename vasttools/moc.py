@@ -12,6 +12,7 @@ from astropy import units as u
 from astropy.coordinates import Angle, SkyCoord
 from astropy.table import Table
 from mocpy import MOC, STMOC
+from typing import Union
 
 from vasttools import RELEASED_EPOCHS
 from vasttools.survey import load_field_centres
@@ -84,7 +85,7 @@ class VASTMOCS(object):
 
         return moc
 
-    def load_pilot_field_moc(self, field: str) -> MOC:
+    def load_pilot_field_moc(self, field: Union[str, int]) -> MOC:
         """
         Load MOCs corresponding to the VAST Pilot 'field', which is a
         collection of tiles.

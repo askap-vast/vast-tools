@@ -64,6 +64,9 @@ matplotlib.pyplot.switch_backend('Agg')
 
 
 class SourcePlottingError(Exception):
+    """
+    A custom exception for plotting errors.
+    """
     pass
 
 
