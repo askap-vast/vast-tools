@@ -92,6 +92,7 @@ nav:
   - Contributing & Developing:
     - Developing VAST Tools: contributing/develop.md
     - GitHub Platform: contributing/github.md
+    - Tests: contributing/tests.md
     - Documentation: contributing/docsdev.md
   - Help and Acknowledgements: help_and_acknowledgements.md
   - Reference:

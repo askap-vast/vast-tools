@@ -5,6 +5,9 @@ Please refer to [this section](github.md) on how to interact with the GitHub rep
 
 This page gives details on some specific details of VAST Tools when it comes to maintenance and development.
 
+!!! note "Note: PEP 8"
+    The VAST Tools codebase follows the python [PEP 8 style guide](https://pep8.org){:target="_blank"}.
+
 ## Adding a New Epoch
 
 VAST Tools contains packaged observing information and MOC files for each epoch of the VAST Pilot Survey that is available.
