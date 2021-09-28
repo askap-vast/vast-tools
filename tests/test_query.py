@@ -994,7 +994,7 @@ class TestQuery:
 
         assert result.shape[0] == 1
         assert result.iloc[0]['rms_image'] == 1.
-        assert result.iloc[0]['detection'] is False
+        assert result.iloc[0]['detection'] == False
 
     def test__get_components_search_around(
         self,

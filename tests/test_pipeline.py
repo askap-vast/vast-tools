@@ -1474,7 +1474,7 @@ class TestPipeAnalysis:
         call = dask_from_pandas_mocker.call_args.args[0]
 
         dask_from_pandas_mocker.assert_called_once()
-        assert call.isnull().values.any() is False
+        assert call.isnull().values.any() == False
         assert call.planet.value_counts().equals(expected_planet_counts)
 
     def test_filter_by_moc(
