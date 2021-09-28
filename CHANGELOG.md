@@ -13,12 +13,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added unit testing for the codebase [#285](https://github.com/askap-vast/vast-tools/pull/285).
 - Added documentation on tests [#285](https://github.com/askap-vast/vast-tools/pull/285).
 - Added github workflow to run pytest on new PRs [#285](https://github.com/askap-vast/vast-tools/pull/285).
+- Added documentation using the mkdocs framework [#273](https://github.com/askap-vast/vast-tools/pull/273).
 
 #### Changed
 
 - Refactored data loading to use importlib.resources [#285](https://github.com/askap-vast/vast-tools/pull/285).
 - Refactored some data loading to be method base [#285](https://github.com/askap-vast/vast-tools/pull/285).
 - Moved `RELEASED_EPOCHS` and `ALLOWED_PLANETS` to top level import [#285](https://github.com/askap-vast/vast-tools/pull/285).
+- Changed docstrings to google format for docs compatibility [#273](https://github.com/askap-vast/vast-tools/pull/273).
 
 #### Fixed
 
@@ -31,6 +33,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 #### List of PRs
 
 - [#285](https://github.com/askap-vast/vast-tools/pull/285): test, feat, dep: Added codebase unit testing.
+- [#273](https://github.com/askap-vast/vast-tools/pull/273): docs, dep: Documentation using mkdocs
 - [#274](https://github.com/askap-vast/vast-tools/pull/274): fix: fixing typo in exception
 - [#270](https://github.com/askap-vast/vast-tools/pull/270): dep: Changed over dependency management to poetry
 - [#264](https://github.com/askap-vast/vast-tools/pull/264): feat: Add negative selavy catalogues
