@@ -1,7 +1,7 @@
 # VAST Tools
 
 [![astropy](http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat)](http://www.astropy.org/)
-![Tests](https://github.com/askap-vast/vast-tools/actions/workflows/pytest/badge.svg)
+![Tests](https://github.com/askap-vast/vast-tools/actions/workflows/pytest.yml/badge.svg)
 
 This repository holds the code of the VAST Tools, a Python module to interact with results from the VAST Pipeline and the VAST Pilot Survey data.
 
