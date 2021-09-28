@@ -58,7 +58,7 @@ def catalog_deg_float() -> pd.DataFrame:
         Dataframe of ra and dec coordinates and source name.
     """
     df = pd.DataFrame(
-        data = {
+        data={
             'ra': [322.4387083, 180., 270.],
             'dec': [-4.4866389, 60., -60.],
             'name': ['PSR J2129-04', 'Test1', 'Test2']
@@ -78,7 +78,7 @@ def catalog_deg_string() -> pd.DataFrame:
         Dataframe of ra and dec coordinates and source name.
     """
     df = pd.DataFrame(
-        data = {
+        data={
             'ra': ['322.4387083', '180.0', '270.0'],
             'dec': ['-4.4866389', '60.0', '-60.0'],
             'name': ['PSR J2129-04', 'Test1', 'Test2']
@@ -98,7 +98,7 @@ def catalog_hms_string() -> pd.DataFrame:
         Dataframe of ra and dec coordinates and source name.
     """
     df = pd.DataFrame(
-        data = {
+        data={
             'ra': ['21:29:45.29', '12:00:00.00', '18:00:00.00'],
             'dec': ['-04:29:11.90', '60:00:00.00', '-60:00:00.00'],
             'name': ['PSR J2129-04', 'Test1', 'Test2']
@@ -189,35 +189,35 @@ def source_df() -> pd.DataFrame:
             'flux_peak': [
                 -0.1536501944065094,
                 -0.11119924485683441,
-                 -0.7933286428451538,
-                 1.0169366598129272,
-                 3.0840001106262207,
-                 7.142000198364258
-             ],
-             'flux_peak_err': [
+                -0.7933286428451538,
+                1.0169366598129272,
+                3.0840001106262207,
+                7.142000198364258
+            ],
+            'flux_peak_err': [
                 0.2477360963821411,
                 0.24757413566112518,
                 0.2197069227695465,
                 0.2355700582265854,
                 0.26184606552124023,
                 0.2906762361526489
-             ],
-             'flux_int': [
+            ],
+            'flux_int': [
                 -0.1536501944065094,
                 -0.11119924485683441,
                 -0.7933286428451538,
                 1.0169366598129272,
                 3.947999954223633,
                 8.831000328063965
-             ],
-             'flux_int_err': [
+            ],
+            'flux_int_err': [
                 0.2477360963821411,
                 0.24757413566112518,
                 0.2197069227695465,
                 0.2355700582265854,
                 0.5366007089614868,
                 0.5815157890319824
-             ]
+            ]
         }
     )
 
@@ -325,7 +325,7 @@ def test_check_racs_exists(mocker) -> None:
     exists = vtu.check_racs_exists('/data/release/path')
 
     mocker_isdir.assert_called_once_with('/data/release/path/EPOCH00')
-    assert exists == True
+    assert exists is True
 
 
 def test_create_source_directories(mocker) -> None:
@@ -568,7 +568,7 @@ def test_simbad_search_none(mocker) -> None:
     result_skycoord, result_names = vtu.simbad_search(objects)
 
     mocker_simbad_query.assert_called_once_with(objects)
-    assert result_skycoord == result_names == None
+    assert result_skycoord == result_names is None
 
 
 @pytest.mark.parametrize("sep_thresh", [4.0, 3.0])
@@ -596,6 +596,7 @@ def test_match_planet_to_field_sep_4deg(
         assert matches['epoch'].iloc[0] == '3x'
     else:
         assert matches.empty
+
 
 @pytest.mark.parametrize(
     "peak,expected",

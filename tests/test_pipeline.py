@@ -848,7 +848,7 @@ class TestPipeline:
         run = pipe.load_run(run_name)
 
         assert run.name == run_name
-        assert run._vaex_meas == False
+        assert run._vaex_meas is False
 
     def test_load_run_no_vaex_check_columns(
         self,
@@ -918,7 +918,7 @@ class TestPipeline:
         )
         vaex_open_mocker = mocker.patch(
             'vasttools.pipeline.vaex.open',
-            return_value = dummy_pipeline_measurements_vaex()
+            return_value=dummy_pipeline_measurements_vaex()
         )
 
         pipe = dummy_pipeline_object
@@ -926,7 +926,7 @@ class TestPipeline:
         run = pipe.load_run(run_name)
 
         assert run.name == run_name
-        assert run._vaex_meas == True
+        assert run._vaex_meas is True
 
 
 class TestPipeAnalysis:
@@ -1068,7 +1068,7 @@ class TestPipeAnalysis:
         )
 
         result = pipe.get_sources_skycoord(
-            user_sources = test_sources_df,
+            user_sources=test_sources_df,
             ra_col='ra',
             dec_col='dec'
         )
@@ -1107,7 +1107,7 @@ class TestPipeAnalysis:
         )
 
         result = pipe.get_sources_skycoord(
-            user_sources = test_sources_df,
+            user_sources=test_sources_df,
             ra_unit=u.hourangle
         )
 
@@ -1140,7 +1140,7 @@ class TestPipeAnalysis:
         """
         mocker_source = mocker.patch(
             'vasttools.pipeline.Source',
-            return_value = -99
+            return_value=-99
         )
 
         # Source init args for reference:
@@ -1239,7 +1239,7 @@ class TestPipeAnalysis:
         """
         mocker_source = mocker.patch(
             'vasttools.pipeline.Source',
-            return_value = -99
+            return_value=-99
         )
 
         # Source init args for reference:
@@ -1456,7 +1456,7 @@ class TestPipeAnalysis:
             .return_value
             .compute
             .return_value
-        ) = pd.DataFrame(data={'planet_test': [True,]})
+        ) = pd.DataFrame(data={'planet_test': [True]})
 
         expected_planet_counts = pd.Series({
             'Sun': 20,
@@ -1474,7 +1474,7 @@ class TestPipeAnalysis:
         call = dask_from_pandas_mocker.call_args.args[0]
 
         dask_from_pandas_mocker.assert_called_once()
-        assert call.isnull().values.any() == False
+        assert call.isnull().values.any() is False
         assert call.planet.value_counts().equals(expected_planet_counts)
 
     def test_filter_by_moc(
@@ -1519,21 +1519,25 @@ class TestPipeAnalysis:
             None
         """
         input_array = np.array(
-            [[0, 0, 0, 0, 0, 0],
-            [0, 1, 1, 1, 1, 0],
-            [0, 1, 1, 1, 1, 0],
-            [0, 1, 1, 1, 1, 0],
-            [0, 1, 1, 1, 1, 0],
-            [0, 0, 0, 0, 0, 0]]
+            [
+                [0, 0, 0, 0, 0, 0],
+                [0, 1, 1, 1, 1, 0],
+                [0, 1, 1, 1, 1, 0],
+                [0, 1, 1, 1, 1, 0],
+                [0, 1, 1, 1, 1, 0],
+                [0, 0, 0, 0, 0, 0]
+            ]
         )
 
         expected = np.array(
-            [[0, 0, 0, 0, 0, 0],
-            [0, 1, 1, 1, 1, 0],
-            [0, 1, 2, 2, 1, 0],
-            [0, 1, 2, 2, 1, 0],
-            [0, 1, 1, 1, 1, 0],
-            [0, 0, 0, 0, 0, 0]]
+            [
+                [0, 0, 0, 0, 0, 0],
+                [0, 1, 1, 1, 1, 0],
+                [0, 1, 2, 2, 1, 0],
+                [0, 1, 2, 2, 1, 0],
+                [0, 1, 1, 1, 1, 0],
+                [0, 0, 0, 0, 0, 0]
+            ]
         )
 
         result = dummy_PipeAnalysis._distance_from_edge(input_array)
@@ -1560,8 +1564,8 @@ class TestPipeAnalysis:
         Returns:
             None
         """
-        image_data = np.ones((4,4), dtype=np.float32)
-        image_data= np.pad(
+        image_data = np.ones((4, 4), dtype=np.float32)
+        image_data = np.pad(
             image_data, pad_width=1, mode='constant', constant_values=np.nan
         )
 
@@ -1712,7 +1716,7 @@ class TestPipeAnalysis:
             'eta_peak': {
                 729: 327.6134309054469,
                 730: 5.842483557954741,
-                 2251: 327.61343090548564
+                2251: 327.61343090548564
              }
         })
 
@@ -1811,12 +1815,12 @@ class TestPipeAnalysis:
         ].to_numpy())
 
         expected_plot_values = expected_plot_values[
-            np.argsort(expected_plot_values[:,0])
+            np.argsort(expected_plot_values[:, 0])
         ]
 
         plot_values = result.axes[0].collections[0].get_offsets()
         plot_values = plot_values[
-            np.argsort(plot_values[:,0])
+            np.argsort(plot_values[:, 0])
         ]
 
         assert np.all(plot_values == expected_plot_values)
@@ -1857,12 +1861,12 @@ class TestPipeAnalysis:
         ].to_numpy()
 
         expected_plot_values = expected_plot_values[
-            np.argsort(expected_plot_values[:,0])
+            np.argsort(expected_plot_values[:, 0])
         ]
 
         plot_values = result.axes[0].collections[2].get_offsets()
         plot_values = plot_values[
-            np.argsort(plot_values[:,0])
+            np.argsort(plot_values[:, 0])
         ]
 
         assert np.all(plot_values == expected_plot_values)
@@ -1903,12 +1907,12 @@ class TestPipeAnalysis:
         ].to_numpy())
 
         expected_plot_values = expected_plot_values[
-            np.argsort(expected_plot_values[:,0])
+            np.argsort(expected_plot_values[:, 0])
         ]
 
         plot_values = result.axes[0].collections[0].get_offsets()
         plot_values = plot_values[
-            np.argsort(plot_values[:,0])
+            np.argsort(plot_values[:, 0])
         ]
 
         assert np.all(plot_values == expected_plot_values)
@@ -2000,7 +2004,7 @@ class TestPipeAnalysis:
         """
         plot_epoch_pair_mocker = mocker.patch(
             'vasttools.pipeline.PipeAnalysis._plot_epoch_pair_matplotlib',
-            return_value = -99
+            return_value=-99
         )
 
         epoch_id = 2
@@ -2040,7 +2044,7 @@ class TestPipeAnalysis:
         """
         plot_epoch_pair_mocker = mocker.patch(
             'vasttools.pipeline.PipeAnalysis._plot_epoch_pair_bokeh',
-            return_value = -99
+            return_value=-99
         )
 
         epoch_id = 2
@@ -2152,7 +2156,7 @@ class TestPipeAnalysis:
         """
         norm_pdf_mocker = mocker.patch(
             'vasttools.pipeline.norm.pdf',
-            return_value = -99
+            return_value=-99
         )
 
         test_data = pd.Series([0.03, 38., 84., 1090.])
@@ -2243,7 +2247,7 @@ class TestPipeAnalysis:
         """
         make_bins_mocker = mocker.patch(
             'vasttools.pipeline.PipeAnalysis._make_bins',
-            return_value = [0, 1, 2, 3, 4]
+            return_value=[0, 1, 2, 3, 4]
         )
 
         plot = dummy_PipeAnalysis._plot_eta_v_matplotlib(
@@ -2279,7 +2283,7 @@ class TestPipeAnalysis:
         """
         make_bins_mocker = mocker.patch(
             'vasttools.pipeline.PipeAnalysis._make_bins',
-            return_value = [0, 1, 2, 3, 4]
+            return_value=[0, 1, 2, 3, 4]
         )
 
         plot = dummy_PipeAnalysis._plot_eta_v_bokeh(

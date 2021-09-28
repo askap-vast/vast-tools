@@ -127,7 +127,7 @@ def test_moc_load_pilot_stmoc(vast_tools_moc: VASTMOCS, mocker) -> None:
 
     importlib_mocker.assert_called_once_with('vasttools.data.mocs', filename)
     stmoc_mocker.assert_called_once_with(importlib_mocker.return_value)
-    assert result == True
+    assert result is True
 
 
 def test_moc_load_pilot_epoch_moc_str(
@@ -180,6 +180,7 @@ def test_moc_load_pilot_epoch_moc_fail(vast_tools_moc: VASTMOCS) -> None:
 
     assert str(excinfo.value) == f"EPOCH {epoch} not recognised"
 
+
 @pytest.mark.parametrize("field", ['1', 1])
 def test_moc_load_pilot_field_moc(
     field: Union[str, int],
@@ -231,6 +232,7 @@ def test_moc_load_pilot_field_moc_fail(vast_tools_moc: VASTMOCS) -> None:
     with pytest.raises(ValueError) as excinfo:
         vast_tools_moc.load_pilot_field_moc(field)
 
+
 @pytest.mark.parametrize("itype", ['COMBINED', 'TILES'])
 def test_moc_load_pilot_tile_moc(
     itype: str,
@@ -264,7 +266,7 @@ def test_moc_load_pilot_tile_moc(
     fields_mocker = mocker.patch(
         'vasttools.moc.load_field_centres',
         return_value=pd.DataFrame(
-            data={'field': [field,]}
+            data={'field': [field]}
         )
     )
 
@@ -318,7 +320,7 @@ def test_moc_load_pilot_tile_moc_field_fail(
     fields_mocker = mocker.patch(
         'vasttools.moc.load_field_centres',
         return_value=pd.DataFrame(
-            data={'field': ['VAST_2053+00A',]}
+            data={'field': ['VAST_2053+00A']}
         )
     )
 

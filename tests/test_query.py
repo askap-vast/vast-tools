@@ -60,7 +60,7 @@ def vast_query_psrj2129(pilot_moc_mocker: MOC, mocker) -> vtq.Query:
     )
     mocker_moc_open = mocker.patch(
         'mocpy.MOC.from_fits',
-        return_value = pilot_moc_mocker
+        return_value=pilot_moc_mocker
     )
     psr_coordinate = SkyCoord(322.4387083, -4.4866389, unit=(u.deg, u.deg))
 
@@ -427,7 +427,7 @@ def selavy_cat() -> pd.DataFrame:
         )
 
         if search_around:
-            selavy_df = selavy_df.append(selavy_df.loc[[0,0,0]])
+            selavy_df = selavy_df.append(selavy_df.loc[[0, 0, 0]])
 
         if add_detection:
             selavy_df['detection'] = [True, False]
@@ -609,7 +609,7 @@ class TestQuery:
 
             mocker_moc_open = mocker.patch(
                 'mocpy.MOC.from_fits',
-                return_value = pilot_moc_mocker
+                return_value=pilot_moc_mocker
             )
             test_dir = '/testing/folder'
             test_coords = SkyCoord(
@@ -694,7 +694,6 @@ class TestQuery:
             forced_cluster_threshold=forced_cluster_threshold,
             output_dir=output_dir
         )
-
 
         assert query.settings == expected_settings
 
@@ -907,7 +906,6 @@ class TestQuery:
 
         assert results == expected_results
 
-
     def test__get_components_detection(
         self,
         vast_query_psrj2129_fields: vtq.Query,
@@ -947,7 +945,6 @@ class TestQuery:
         expected['detection'] = True
 
         assert expected.equals(result)
-
 
     def test__get_components_non_detection(
         self,
@@ -991,13 +988,13 @@ class TestQuery:
             .return_value
             .measure_coord_pixel_values
             .return_value
-        ) = np.array([0.001,])
+        ) = np.array([0.001])
 
         result = test_query._get_components(mocked_input)
 
         assert result.shape[0] == 1
         assert result.iloc[0]['rms_image'] == 1.
-        assert result.iloc[0]['detection'] == False
+        assert result.iloc[0]['detection'] is False
 
     def test__get_components_search_around(
         self,

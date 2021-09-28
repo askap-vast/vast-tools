@@ -23,7 +23,7 @@ def dummy_load_fields_file() -> pd.DataFrame:
         Dummy fields dataframe.
     """
     df = pd.DataFrame(
-        data = {
+        data={
             'SBID': ['9876', '9876'],
             'FIELD_NAME': ['VAST_1234+00A', 'VAST_1234+00A'],
             'BEAM': [0, 1],
@@ -49,7 +49,7 @@ def dummy_fits_open() -> fits.HDUList:
     Returns:
         The fits file as an hdulist instance.
     """
-    data = np.zeros((100,100), dtype=np.float32)
+    data = np.zeros((100, 100), dtype=np.float32)
     for i in range(100):
         data[i] = np.arange(100*i, 100*(i+1))
 
@@ -372,7 +372,7 @@ class TestImage:
 
         assert image.imgpath == expected_path
         assert image.imgname == expected_filename
-        assert image.image_fail == False
+        assert image.image_fail is False
 
     def test_image_init_tiles_nopath(
         self,
@@ -407,7 +407,7 @@ class TestImage:
 
         assert image.imgpath == expected_path
         assert image.imgname == expected_filename
-        assert image.image_fail == False
+        assert image.image_fail is False
 
     def test_image_init_combined_nopath_stokesv(
         self,
@@ -525,7 +525,7 @@ class TestImage:
 
         image = init_Image(path=expected_path)
 
-        assert image.image_fail == True
+        assert image.image_fail is True
 
     def test_image_get_data(
         self,
@@ -604,7 +604,7 @@ class TestImage:
 
         assert image.rmspath == expected_path
         assert image.rmsname == expected_filename
-        assert image.rms_fail == False
+        assert image.rms_fail is False
         mock_fits_open.assert_called_once_with(expected_path)
 
     def test_image_get_rms_img_path(
@@ -643,7 +643,7 @@ class TestImage:
         image.get_rms_img()
 
         assert image.rmspath == expected_path
-        assert image.rms_fail == False
+        assert image.rms_fail is False
         mock_fits_open.assert_called_once_with(expected_path)
 
     def test_image_measure_coord_pixel_values(
@@ -681,7 +681,7 @@ class TestImage:
                 '21:29:51.246',
                 '21:29:54.231'
             ],
-            dec = [
+            dec=[
                 '-04:28:08.24',
                 '-04:31:20.36',
                 '-04:29:35.07'
@@ -731,7 +731,7 @@ class TestImage:
                 '21:29:47.035',
                 '21:29:40.032'
             ],
-            dec = [
+            dec=[
                 '-04:28:17.65',
                 '-04:29:40.65',
                 '-04:31:26.26'

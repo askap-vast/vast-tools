@@ -198,7 +198,7 @@ def source_instance(
     """
     def _get_source_instance(
         pipeline: bool = False,
-        add_cutout_data : bool = False
+        add_cutout_data: bool = False
     ):
         """
         The workhorse function that actually generates the source.
@@ -267,7 +267,7 @@ def source_instance(
                 cutout_df = cutout_df.append(pd.DataFrame(
                     data={
                         "data": [hdul[0].data],
-                        "wcs": [wcs] ,
+                        "wcs": [wcs],
                         "header": [hdul[0].header],
                         "selavy_overlay": [selavy_components],
                         "beam": [beam]
