@@ -63,8 +63,9 @@ These are detailed in the table below.
 ### Dummy Pipeline Run
 
 To test the pipeline component a dummy pipeline run was constructed.
-This was done by using the test data for the VAST Pipeline, run extracting three sources and all accompanying data.
+This was done by using the test data for the VAST Pipeline and extracting three sources and all accompanying data.
 One of these sources was made sure to be PSR J2129-04.
+Specifically this means exporting the pipeline data products that are normally loaded by the pipeline component.
 
 Small dataframes that represent the data are defined directly in the `tests/test_pipeline.py` where as the larger dataframes are contained in the files detailed above.
 
@@ -104,7 +105,7 @@ Tips on writing tests:
 
 * Follow the style already present if you are unsure.
 * Make use of [pytest fixtures](https://docs.pytest.org/en/latest/how-to/fixtures.html){:target="_blank"}.
-* Use the pytest-mock plugin framework to mock required parts of the tests. For example, try this [this guide](https://medium.com/analytics-vidhya/mocking-in-python-with-pytest-mock-part-i-6203c8ad3606){:target="_blank"}.
+* Use the pytest-mock plugin framework to mock required parts of the tests. [This guide](https://medium.com/analytics-vidhya/mocking-in-python-with-pytest-mock-part-i-6203c8ad3606){:target="_blank"} may help newcomers.
 * Write docstrings for your tests so that it is clear what is being tested.
 
 ## Tests Coverage
