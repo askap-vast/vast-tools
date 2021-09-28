@@ -8,7 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Added
 
+- Added documentation using the mkdocs framework [#273](https://github.com/askap-vast/vast-tools/pull/273).
+
 #### Changed
+
+- Changed docstrings to google format for docs compatibility [#273](https://github.com/askap-vast/vast-tools/pull/273).
 
 #### Fixed
 
@@ -16,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#273](https://github.com/askap-vast/vast-tools/pull/273): docs, dep: Documentation using mkdocs
 - [#274](https://github.com/askap-vast/vast-tools/pull/274): fix: fixing typo in exception
 - [#270](https://github.com/askap-vast/vast-tools/pull/270): dep: Changed over dependency management to poetry
 - [#264](https://github.com/askap-vast/vast-tools/pull/264): feat: Add negative selavy catalogues
