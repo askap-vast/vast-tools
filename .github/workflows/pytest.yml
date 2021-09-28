@@ -26,4 +26,6 @@ jobs:
     - name: Install python dependencies
       run: poetry install
     - name: Run pytests
-      run: pytest -vv
+      run: |
+        poetry run pytest -vv
+        poetry run coverage report
