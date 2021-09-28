@@ -110,8 +110,9 @@ Tips on writing tests:
 
 ## Tests Coverage
 
-The [pytest-cov](https://pytest-cov.readthedocs.io/en/latest/){:target="_blank"} package is included in the dependancies and the current coverage of the tests can be seen by running the command:
+The [pytest-cov](https://pytest-cov.readthedocs.io/en/latest/){:target="_blank"} package is included in the dependancies. 
+A coverage report can be obtained by including the following option when running the tests:
 
 ```terminal
-pytest --cov=vasttools tests/
+pytest -vv --cov=vasttools
 ```

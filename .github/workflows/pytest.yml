@@ -27,5 +27,4 @@ jobs:
       run: poetry install
     - name: Run pytests
       run: |
-        poetry run pytest -vv
-        poetry run coverage report
+        poetry run pytest --cov=vasttools -vv
