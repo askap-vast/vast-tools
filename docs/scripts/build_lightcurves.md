@@ -4,7 +4,7 @@ This script allows you to quickly build lightcurves of sources you have extracte
 
 Peak fluxes are used by default, integrated fluxes can be used by using the `--use-int-flux` flag.
 
-# Running the script
+## Running the script
 Prior to running this script you should query the survey data using `find_sources.py` with the `--vast-pilot` flag set to your desired epochs. Then run `build_lightcurves FOLDER` where `FOLDER` is the output folder of the previous query.
 
 ## Usage

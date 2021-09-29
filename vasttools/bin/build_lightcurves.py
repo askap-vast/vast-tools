@@ -1,11 +1,15 @@
 #!/usr/bin/env python
+"""
+A script to generate lightcurve plots from the outputs of 'find_sources'.
 
-# Example command:
+Example:
+    ```terminal
+    build_lightcurves outputfolder
+    ```
 
-# ./build_lightcurves.py outputfolder
-
-from vasttools.utils import get_logger
-
+Attributes:
+    runstart (datetime.datetime): The running start time of the script.
+"""
 import argparse
 import os
 # import numexpr
@@ -14,19 +18,20 @@ import glob
 import pandas as pd
 from astropy.coordinates import SkyCoord
 from astropy import units as u
+from typing import List
 from vasttools.source import Source
+from vasttools.utils import get_logger
 
 runstart = datetime.datetime.now()
 
 
-def parse_args():
-    '''
-    Parse arguments
+def parse_args() -> argparse.Namespace:
+    """
+    Parse the arguments.
 
-    :returns: Argument namespace
-    :rtype: `argparse.Namespace`
-    '''
-
+    Returns:
+        The argument namespace.
+    """
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
@@ -102,8 +107,17 @@ def parse_args():
     return args
 
 
-def load_sources(folder):
-    """docstring for get_source_files"""
+def load_sources(folder: str) -> List[Source]:
+    """Loads the sources from the given 'find_sources' output directory.
+
+    Sources are returned as a list of Source objects.
+
+    Args:
+        folder: The path to the 'find_sources' output folder.
+
+    Returns:
+        List of sources loaded from the output folder.
+    """
 
     files = sorted(
         glob.glob(os.path.join(folder, '*_measurements.csv'))
@@ -125,7 +139,25 @@ def load_sources(folder):
     return sources
 
 
-def source_from_measurements_file(measurement_file, outdir, sort=False):
+def source_from_measurements_file(
+    measurement_file: str, outdir: str, sort: bool = False
+) -> Source:
+    """Creates a vasttools.source.Source object from a `measurements.csv`
+    file produced from `find_sources`.
+
+    The output directory for the Source objects is set to the original
+    `find_source` output directory.
+
+    Args:
+        measurement_file: The full or relative path to the 'measurements.csv'
+            file.
+        outdir: The output directory for the Source object.
+        sort: Whether the `find_sources` output has been sorted into unique
+            source directories.
+
+    Returns:
+        Source object.
+    """
     if sort:
         file_split = measurement_file.split("/")
         outdir = os.path.join(outdir, file_split[-2])
@@ -167,7 +199,12 @@ def source_from_measurements_file(measurement_file, outdir, sort=False):
     return thesource
 
 
-def main():
+def main() -> None:
+    """The main function.
+
+    Returns:
+        None
+    """
     args = parse_args()
     os.nice(args.nice)
 

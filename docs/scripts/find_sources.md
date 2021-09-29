@@ -10,29 +10,37 @@ The outputs are/can be:
 * Figure png plots of postage stamp, with overlaid selavy sources and synthesised beam.
 * Per source measurments CSV file containing all the matched measurements, and forced extractions if selected.
 
-# Running on your own machine
-**No local data is required to run the `--find-fields` option which will find which fields that contain your sources of interest.** To create postage FITS files or PNG images, a copy of the survey data is required locally.
+## Running on your own machine
+
+!!!tip
+    No local data is required to run the `--find-fields` option which will find which fields that contain your sources of interest. To create postage FITS files or PNG images, a copy of the survey data is required locally.
 
 You must tell the script where your data is and as of v2.0 this data must follow the same directory structure and naming scheme of the VAST Pilot release. The easiest method is to set the environment variable `VAST_DATA_DIR` to the data path which will be read by the module, for example on bash:
-```
+
+```console
 export VAST_DATA_DIR=/path/to/my-pilot-data/
 ```
+
 If this variable is not set you can define the path to this data using the following option when running the script:
-```
+
+```console
 --base-folder /path/to/my-pilot-data/
 ```
 
 If you are running `find_sources` on your own machine we recommend first using the `--find-fields` flag, downloading the relevant fields and then re-running the script as normal.
 
 ## Running on Nimbus
+
 You can access running the script on the vast-data instance by selecting the terminal in your Jupyter Hub session.
 
 See [this wiki page](https://github.com/askap-vast/vast-project/wiki/Nimbus:-SSH,-Downloads,-Pipeline-&-Jupyter-Hub) for information on Nimbus.
 
-## Warning!
-* The default crossmatching uses **components**. Check your results to see if the component is part of an island (`has_sibling` column will = 1) and query the island catalogue, using the `island_id` if you need further information on your source.
+!!! warning
+    The default crossmatching uses **components**. Check your results to see if the component is part of an island (`has_sibling` column will = 1) and query the island catalogue, using the `island_id` if you need further information on your source.
+  
 
 ## RACS
+
 If you are running this script on ada or Nimbus you also have access to RACS data to search for sources. Remember that RACS is not a VAST data product and you *MUST* let Tara or David know that you intend to use RACS. Also keep in mind that this is not final quality RACS data, there are some issues with the data so please be aware when interpreting results. Currently only Stokes I data is available.
 
 RACS can be included by specifying `--epochs all`, or you can only select RACS using `--epochs 0`. If you would like to query all VAST epochs (and exclude RACS) then use `--epochs all-vast`.
@@ -46,7 +54,8 @@ Most options should be self explanatory. See examples below on how to run the sc
 All output is placed in an output directory of which the name can be set with the option `--out-folder`.
 
 Can be run on any Stokes parameter, but only one at a time.
-```
+
+```console
 usage: find_sources [-h] [--coords COORDS] [--source-names SOURCE_NAMES] [--ncpu NCPU] [--epochs EPOCHS]
                        [--imsize IMSIZE] [--maxsep MAXSEP] [--out-folder OUT_FOLDER]
                        [--crossmatch-radius CROSSMATCH_RADIUS] [--use-tiles] [--islands] [--base-folder BASE_FOLDER]
@@ -161,6 +170,7 @@ optional arguments:
 To run the script needs at least some coordinates, or a planet to search for. Coordinates are entered using the `--coords` parameter as demonstrated below, while planets can be specified using the `--planet` parameter.
 
 ### Command line: Single Coordinate
+
 Here the format can be either in Hours or decimal degrees: 
 * `"HH:MM:SS.ss +/-DD:MM:SS.ss"`
 * `"DDD.ddd +/-DD.ddd"`
@@ -181,6 +191,7 @@ find_sources --coords "22:37:5.6000 +34:24:31.90" --source-names "SN 2014C"
 
 
 ### Command line: Multiple Coordinates
+
 Same format as above but now separate coodinates with `,`: 
 * `"HH:MM:SS.ss +/-DD:MM:SS.ss,HH:MM:SS.ss +/-DD:MM:SS.ss,HH:MM:SS.ss +/-DD:MM:SS.ss"`
 * `"DDD.ddd +/-DD.ddd,DDD.ddd +/-DD.ddd,DDD.ddd +/-DD.ddd"`
@@ -202,6 +213,7 @@ find_sources --coords "22:37:5.6000 +34:24:31.90,22:37:5.6000 -34:24:31.90,13:37
 ```
 
 ### Input CSV file
+
 To crossmatch many coordinates it's recommended to use a csv. Instead of entering coordinates, enter the name of the csv. The `--source-names` option is not used with CSV files.
 
 E.g. 
@@ -216,6 +228,7 @@ ra,dec,name
 ```
 
 ## Outputs
+
 The following files are or can be produced (for tiles the `combined` will be replaced with `tile`):
 
 * `{source_name}_measurements.csv` - csv file containing the crossmatch results per source. For detections, the source information included is taken direct from the selavy catalogues (see the [selavy documentation](https://www.atnf.csiro.au/computing/software/askapsoft/sdp/docs/current/analysis/postprocessing.html#component-catalogue)). All fluxes are in mJy. Upper limits and forced fits (if both/either are selected) are also included here.
