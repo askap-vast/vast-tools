@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Added
 
+- Docs badge on readme [#288](https://github.com/askap-vast/vast-tools/pull/288).
 - Added unit testing for the codebase [#285](https://github.com/askap-vast/vast-tools/pull/285).
 - Added documentation on tests [#285](https://github.com/askap-vast/vast-tools/pull/285).
 - Added github workflow to run pytest on new PRs [#285](https://github.com/askap-vast/vast-tools/pull/285).
@@ -17,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Changed
 
+- Updated docs dependencies versions to fix notebook pages [#288](https://github.com/askap-vast/vast-tools/pull/288).
 - Refactored data loading to use importlib.resources [#285](https://github.com/askap-vast/vast-tools/pull/285).
 - Refactored some data loading to be method base [#285](https://github.com/askap-vast/vast-tools/pull/285).
 - Moved `RELEASED_EPOCHS` and `ALLOWED_PLANETS` to top level import [#285](https://github.com/askap-vast/vast-tools/pull/285).
@@ -34,6 +36,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#288](https://github.com/askap-vast/vast-tools/pull/288): docs, dep: Updated docs dependencies.
 - [#285](https://github.com/askap-vast/vast-tools/pull/285): test, feat, dep: Added codebase unit testing.
 - [#287](https://github.com/askap-vast/vast-tools/pull/287): docs, dep: Documentation using mkdocs
 - [#286](https://github.com/askap-vast/vast-tools/pull/286): docs, dep: Revert "Documentation using mkdocs (#273)"
