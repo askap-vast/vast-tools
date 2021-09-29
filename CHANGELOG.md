@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Changed
 
+- Minor documentation edits [#289](https://github.com/askap-vast/vast-tools/pull/289).
 - Updated docs dependencies versions to fix notebook pages [#288](https://github.com/askap-vast/vast-tools/pull/288).
 - Refactored data loading to use importlib.resources [#285](https://github.com/askap-vast/vast-tools/pull/285).
 - Refactored some data loading to be method base [#285](https://github.com/askap-vast/vast-tools/pull/285).
@@ -26,6 +27,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Fixed
 
+- Fixed docs announcement bar link [#289](https://github.com/askap-vast/vast-tools/pull/289).
 - Fixed jsmin dependancy install (2.2.2 -> 3.0.0) [#285](https://github.com/askap-vast/vast-tools/pull/285).
 - Remerged docs branch [#287](https://github.com/askap-vast/vast-tools/pull/287).
 - Docs branch reverted to avoid squashing to make merge of tests straightforward [#286](https://github.com/askap-vast/vast-tools/pull/286).
@@ -36,6 +38,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#289](https://github.com/askap-vast/vast-tools/pull/289): docs: Minor documentations edits.
 - [#288](https://github.com/askap-vast/vast-tools/pull/288): docs, dep: Updated docs dependencies.
 - [#285](https://github.com/askap-vast/vast-tools/pull/285): test, feat, dep: Added codebase unit testing.
 - [#287](https://github.com/askap-vast/vast-tools/pull/287): docs, dep: Documentation using mkdocs
