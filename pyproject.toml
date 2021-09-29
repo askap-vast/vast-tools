@@ -4,7 +4,7 @@ version = "2.0.0-dev"
 description = "Python module to interact with ASKAP VAST data."
 license = "MIT"
 homepage = "https://github.com/askap-vast/vasttools/"
-authors = ["Adam Stewart <adam.stewart@sydney.edu.au>", "Dougal Dobie <ddob1600@uni.sydney.edu.au>"]
+authors = ["Adam Stewart <adam.stewart@sydney.edu.au>", "Dougal Dobie <ddobie@swin.edu.au>"]
 include = ["vasttools/data", "example_notebooks"]
 
 [tool.poetry.dependencies]
