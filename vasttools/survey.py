@@ -1,5 +1,17 @@
-# Functions and classes related to loading and searching survey data
+"""Functions and classes related to loading and searching of the survey data.
 
+Attributes:
+    RELEASED_EPOCHS (Dict[str, str]): Dictionary containing the released
+        epochs with the values being the 0 padded representation that the data
+        file names use.
+    FILED_FILES (Dict[str, str]): Package paths to the CSV files containing
+        the observational information of each epoch.
+    FIELD_CENTRES (pandas.core.frame.DataFrame): DataFrame loaded from a
+        packaged CSV that contains the field centres for each individual
+        pilot field.
+    ALLOWED_PLANETS (List[str]): List of accepted planet and other object
+        names.
+"""
 import sys
 import os
 import pandas as pd
@@ -13,7 +25,7 @@ import logging
 import logging.handlers
 import logging.config
 
-from astropy.coordinates import Angle
+from astropy.coordinates import Angle, EarthLocation
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.io import fits
@@ -21,10 +33,14 @@ from astropy.wcs import WCS
 from astropy.wcs.utils import skycoord_to_pixel
 from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
 from radio_beam import Beam
+from typing import Tuple, Optional
 
 warnings.filterwarnings('ignore', category=AstropyWarning, append=True)
-warnings.filterwarnings('ignore',
-                        category=AstropyDeprecationWarning, append=True)
+warnings.filterwarnings(
+    'ignore',
+    category=AstropyDeprecationWarning,
+    append=True
+)
 
 
 RELEASED_EPOCHS = {
@@ -78,6 +94,7 @@ FIELD_CENTRES = pd.read_csv(
     )
 )
 
+# TODO: Not sure this belongs in survey.
 ALLOWED_PLANETS = [
     'mercury',
     'venus',
@@ -91,14 +108,14 @@ ALLOWED_PLANETS = [
 ]
 
 
-def get_fields_per_epoch_info():
-    '''
+def get_fields_per_epoch_info() -> pd.DataFrame:
+    """
     Function to create a dataframe suitable for fast
     field querying per epoch.
 
-    :returns: Dataframe of epoch information
-    :rtype: `pandas.core.frame.DataFrame`
-    '''
+    Returns:
+        Dataframe of epoch information
+    """
 
     for i, e in enumerate(FIELD_FILES):
         temp = pd.read_csv(FIELD_FILES[e], comment='#')
@@ -120,14 +137,13 @@ def get_fields_per_epoch_info():
     return epoch_fields
 
 
-def get_askap_observing_location():
-    '''
+def get_askap_observing_location() -> EarthLocation:
+    """
     Function to return ASKAP observing location.
 
-    :returns: Location of ASKAP
-    :rtype: `astropy.coordinates.earth.EarthLocation`
-    '''
-    from astropy.coordinates import EarthLocation
+    Returns:
+        Location of ASKAP.
+    """
     ASKAP_latitude = Angle("-26:41:46.0", unit=u.deg)
     ASKAP_longitude = Angle("116:38:13.0", unit=u.deg)
 
@@ -139,41 +155,29 @@ def get_askap_observing_location():
 
 
 class Fields:
-    '''
+    """
     Class to represent the VAST Pilot survey fields of a given
     epoch.
 
-    Attributes
-    ----------
+    Attributes:
+        fields (pandas.core.frame.DataFrame):
+            DataFrame containing the fields information for the selected
+            epoch.
+        direction (astropy.coordinates.sky_coordinate.SkyCoord):
+            SkyCoord object representing the centres of each beam that
+            make up each field in the epoch.
+    """
 
-    fields : pandas.core.frame.DataFrame
-        DataFrame containing the fields information for the selected
-        epoch.
-    direction : astropy.coordinates.sky_coordinate.SkyCoord
-        SkyCoord object representing the centres of each beam that
-        make up each field in the epoch.
-    field_cat : pandas.core.frame.DataFrame
-        A dataframe containing the nearest beam for the sources
-        queried (created through the 'find' method)
-
-    Methods
-    -------
-
-    find(src_coord, max_sep, catalog)
-        Finds the nearest beam centre to the queried coordinates.
-
-    write_fields_cat(outfile)
-        Write the results of find to a csv file.
-    '''
-
-    def __init__(self, epoch):
-        '''
+    def __init__(self, epoch: str) -> None:
+        """
         Constructor method.
 
-        :param epoch: The epoch number of fields to collect
-        :type epoch: str
-        '''
+        Args:
+            epoch: The epoch number of fields to collect.
 
+        Returns:
+            None
+        """
         self.logger = logging.getLogger('vasttools.survey.Fields')
         self.logger.debug('Created Fields instance')
         self.logger.debug(FIELD_FILES[epoch])
@@ -189,152 +193,148 @@ class Fields:
             Angle(self.fields["DEC_DMS"], unit=u.deg)
         )
 
-    def find(self, src_coord, max_sep, catalog):
-        '''
-        Find which field each source in the catalogue is in.
+    # TODO: The below methods are no longer used in the code base.
+    #       So these should probably be removed.
 
-        :param src_coord: Coordinates of sources to find fields for
-        :type src_coord: `astropy.coordinates.sky_coordinate.SkyCoord`
-        :param max_sep: Maximum allowable separation between source
-            and beam centre in degrees
-        :type max_sep: float
-        :param catalog: Catalogue of sources to find fields for
-        :type catalog: `pandas.core.frame.DataFrame`
+    # ATTRIBUTE DOCSTRING:
+    # field_cat (pandas.core.frame.DataFrame):
+    #     A dataframe containing the nearest beam for the sources
+    #     queried (created through the 'find' method)
 
-        :returns: An updated catalogue with nearest field data for each
-            source, and a boolean array corresponding to whether the source
-            is within max_sep
-        :rtype: `pandas.core.frame.DataFrame`, `numpy.ndarray`
-        '''
-        self.logger.debug(src_coord)
-        self.logger.debug(catalog[np.isnan(src_coord.ra)])
-        nearest_beams, seps, _d3d = src_coord.match_to_catalog_sky(
-            self.direction)
-        self.logger.debug(seps.deg)
-        self.logger.debug(
-            "Nearest beams: {}".format(self.fields["BEAM"][nearest_beams]))
-        within_beam = seps.deg < max_sep
-        catalog["sbid"] = self.fields["SBID"].iloc[nearest_beams].values
-        nearest_fields = self.fields["FIELD_NAME"].iloc[nearest_beams]
-        self.logger.debug(nearest_fields)
-        catalog["field_name"] = nearest_fields.values
-        catalog["original_index"] = catalog.index.values
-        obs_dates = self.fields["DATEOBS"].iloc[nearest_beams]
-        date_end = self.fields["DATEEND"].iloc[nearest_beams]
-        catalog["obs_date"] = obs_dates.values
-        catalog["date_end"] = date_end.values
-        beams = self.fields["BEAM"][nearest_beams]
-        catalog["beam"] = beams.values
-        new_catalog = catalog[within_beam].reset_index(drop=True)
-        self.logger.info(
-            "Field match found for {}/{} sources.".format(
-                len(new_catalog.index), len(nearest_beams)))
-
-        if len(new_catalog.index) - len(nearest_beams) != 0:
-            self.logger.warning(
-                "No field matches found for sources with index (or name):")
-            for i in range(0, len(catalog.index)):
-                if i not in new_catalog["original_index"]:
-                    if "name" in catalog.columns:
-                        self.logger.warning(catalog["name"].iloc[i])
-                    else:
-                        self.logger.warning("{:03d}".format(i + 1))
-        else:
-            self.logger.info("All sources found!")
-
-        self.field_cat = new_catalog
-
-        return new_catalog, within_beam
-
-    def write_fields_cat(self, outfile):
-        '''
-        Write the source-fields catalogue to file
-
-        :param outfile: Name of the file to write to
-        :type outfile: str
-        '''
-
-        self.field_cat.drop(
-            ["original_index"],
-            axis=1).to_csv(
-            outfile,
-            index=False)
-        self.logger.info("Written field catalogue to {}.".format(outfile))
+    # def find(
+    #     self,
+    #     src_coord: SkyCoord,
+    #     max_sep: float,
+    #     catalog: pd.DataFrame
+    # ) -> Tuple[pd.DataFrame, np.ndarray]:
+    #     """
+    #     Find which field each source in the catalogue is in.
+    #
+    #     Args:
+    #         src_coord: Coordinates of sources to find fields for.
+    #         max_sep: Maximum allowable separation between source
+    #             and beam centre in degrees.
+    #         catalog: Catalogue of sources to find fields for.
+    #
+    #     Returns:
+    #         An updated catalogue with nearest field data for each
+    #         source, and a boolean array corresponding to whether the source
+    #         is within max_sep.
+    #     """
+    #     self.logger.debug(src_coord)
+    #     self.logger.debug(catalog[np.isnan(src_coord.ra)])
+    #     nearest_beams, seps, _d3d = src_coord.match_to_catalog_sky(
+    #         self.direction)
+    #     self.logger.debug(seps.deg)
+    #     self.logger.debug(
+    #         "Nearest beams: {}".format(self.fields["BEAM"][nearest_beams]))
+    #     within_beam = seps.deg < max_sep
+    #     catalog["sbid"] = self.fields["SBID"].iloc[nearest_beams].values
+    #     nearest_fields = self.fields["FIELD_NAME"].iloc[nearest_beams]
+    #     self.logger.debug(nearest_fields)
+    #     catalog["field_name"] = nearest_fields.values
+    #     catalog["original_index"] = catalog.index.values
+    #     obs_dates = self.fields["DATEOBS"].iloc[nearest_beams]
+    #     date_end = self.fields["DATEEND"].iloc[nearest_beams]
+    #     catalog["obs_date"] = obs_dates.values
+    #     catalog["date_end"] = date_end.values
+    #     beams = self.fields["BEAM"][nearest_beams]
+    #     catalog["beam"] = beams.values
+    #     new_catalog = catalog[within_beam].reset_index(drop=True)
+    #     self.logger.info(
+    #         "Field match found for {}/{} sources.".format(
+    #             len(new_catalog.index), len(nearest_beams)))
+    #
+    #     if len(new_catalog.index) - len(nearest_beams) != 0:
+    #         self.logger.warning(
+    #             "No field matches found for sources with index (or name):")
+    #         for i in range(0, len(catalog.index)):
+    #             if i not in new_catalog["original_index"]:
+    #                 if "name" in catalog.columns:
+    #                     self.logger.warning(catalog["name"].iloc[i])
+    #                 else:
+    #                     self.logger.warning("{:03d}".format(i + 1))
+    #     else:
+    #         self.logger.info("All sources found!")
+    #
+    #     self.field_cat = new_catalog
+    #
+    #     return new_catalog, within_beam
+    #
+    # def write_fields_cat(self, outfile: str) -> None:
+    #     """
+    #     Write the source-fields catalogue to file.
+    #
+    #     Args:
+    #         outfile: Name of the file to write to.
+    #
+    #     Returns:
+    #         None
+    #     """
+    #     self.field_cat.drop(
+    #         ["original_index"],
+    #         axis=1).to_csv(
+    #         outfile,
+    #         index=False)
+    #     self.logger.info("Written field catalogue to {}.".format(outfile))
 
 
 class Image:
-    '''
+    """
     Represent and interact with an Image file from the VAST Pilot Survey.
 
-    Attributes
-    ----------
-    sbid : int
-        The SBID of the image.
-    field : str
-        The field name.
-    epoch : str
-        The epoch the image is part of.
-    stokes : str
-        The Stokes value of the image.
-    path : str
-        The path to the image file on the system.
-    header : astropy.io.fits.Header
-        The header of the image
-    wcs : astropy.wcs.WCS
-        The WCS object generated from the header.
-    data : numpy.ndarry
-        Array of the image data.
-    beam : radio_beam.Beam
-        Radio beam object representing the beam of
-        the image.
-    rmspath : str
-        The path to the rms file on the system.
-    rms_header : astropy.io.fits.Header
-        The header of the RMS image
-    rmsname : str
-        The name of the RMS image.
-    rms_fail : bool
-        Becomes `True` if the RMS image is not found.
+    Attributes:
+        sbid (int): The SBID of the image.
+        field (str): The field name.
+        epoch (str): The epoch the image is part of.
+        stokes (str): The Stokes value of the image.
+        path (str): The path to the image file on the system.
+        header (astropy.io.fits.Header): The header of the image
+        wcs (astropy.wcs.WCS): The WCS object generated from the header.
+        data (numpy.ndarry): Array of the image data.
+        beam (radio_beam.Beam): radio_beam.Beam object representing the beam
+            of the image. Refer to the
+            [radio_beam](https://radio-beam.readthedocs.io/en/latest/)
+            documentation for more information.
+        rmspath (str): The path to the rms file on the system.
+        rms_header (astropy.io.fits.Header): The header of the RMS image
+        rmsname (str): The name of the RMS image.
+        rms_fail (bool): Becomes `True` if the RMS image is not found.
+    """
 
-    Methods
-    -------
+    def __init__(
+        self,
+        field: str,
+        epoch: str,
+        stokes: str,
+        base_folder: str,
+        tiles: bool = False,
+        sbid: Optional[str] = None,
+        path: Optional[str] = None,
+        rmspath: Optional[str] = None,
+        rms_header: Optional[fits.Header] = None
+    ) -> None:
+        """
+        Constructor method.
 
-    get_rms_img()
-        Matches and loads the RMS image for the loaded image.
+        Args:
+            field: Name of the field.
+            epoch: The epoch of the field requested.
+            stokes: Stokes parameter of interest.
+            base_folder: Path to base folder if using
+                default directory structure.
+            tiles: Will use 'COMBINED' images when 'True' and 'TILES' when
+                'False', defaults to `False`.
+            sbid: SBID of the field, defaults to None.
+            path: Path to the image file if already known, defaults to None.
+            rmspath: The path to the corresponding rms image file if known,
+                defaults to None.
+            rms_header: Header of rms FITS image if already obtained,
+                defaults to None.
 
-    measure_coord_pixel_values(coords, rms=False)
-        Measure pixel values as the coords location. When rms
-        is 'True' the values are read from the RMS image.
-    '''
-
-    def __init__(self, field, epoch, stokes, base_folder,
-                 tiles=False, sbid=None, path=None, rmspath=None,
-                 rms_header=None):
-        '''
-        Constructor method
-
-        :param field: Name of the field
-        :type field: str
-        :param epoch:
-        :type epoch:
-        :param stokes: Stokes parameter of interest
-        :type stokes: str
-        :param base_folder: Path to base folder if using
-            default directory structure
-        :type base_folder: str
-        :param tiles: Whether to use tiles or combined images,
-            defaults to `False`
-        :type tiles: bool, optional
-        :param sbid: SBID of the field, defaults to None
-        :type sbid: str, optional
-        :param path: , defaults to None
-        :type path: , optional
-        :param rmspath: , defaults to None
-        :type rmspath: , optional
-        :param rms_header: Header of rms FITS image, defaults to None
-        :type rms_header: astropy.io.fits.Header, optional
-        '''
-
+        Returns:
+            None
+        """
         self.logger = logging.getLogger('vasttools.survey.Image')
         self.logger.debug('Created Image instance')
 
@@ -399,10 +399,13 @@ class Image:
                 self.logger.error("Beam information could not be read!")
                 self.beam = None
 
-    def get_rms_img(self):
-        '''
+    def get_rms_img(self) -> None:
+        """
         Load the noisemap corresponding to the image.
-        '''
+
+        Returns:
+            None
+        """
         if self.rmspath is None:
             self.rmsname = self.imgname.replace('.fits', '_rms.fits')
             self.rmspath = self.imgpath.replace(
@@ -427,18 +430,20 @@ class Image:
             except Exception as e:
                 self.rms_data = hdul[0].data
 
-    def measure_coord_pixel_values(self, coords, rms=False):
-        '''
+    def measure_coord_pixel_values(
+        self,
+        coords: SkyCoord,
+        rms: bool = False
+    ) -> np.ndarray:
+        """Measures the pixel values at the provided coordinate values.
 
-        :param coords: Coordinate of interest
-        :type coords:
-        :param rms: Query the RMS image, defaults to `False`
-        :type rms: bool, optional
+        Args:
+            coords: Coordinate of interest.
+            rms: Query the RMS image, defaults to `False`.
 
-        :returns: Pixel values stored in an array at the coords
-            locations
-        :rtype: numpy.ndarray.
-        '''
+        Returns:
+            Pixel values stored in an array at the coords locations.
+        """
 
         if rms is True:
             if self.rms_header is None:
