@@ -1,6 +1,6 @@
 # Introduction
 
-VAST Tools is a python package written to streamline and enable the exploration of the VAST data products, including those produced by the VAST Pipeline.
+VAST Tools is a python package written to streamline and enable the exploration of the VAST data products, including those produced by the [VAST Pipeline](https://vast-survey.org/vast-pipeline/){:target="_blank"}.
 
 As of the current version, VAST Tools provides the following:
 
