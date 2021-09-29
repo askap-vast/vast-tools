@@ -1,21 +1,9 @@
 #!/usr/bin/env python
-"""
-A script find sources in the VAST Pilot Survey.
 
-Includes options to provide light curves, cutouts and overlay files for
-viewers such as kvis and DS9.
+# Example command:
 
-Example:
-    ```terminal
-    find_sources "16:16:00.22 +22:16:04.83" --create-png --imsize 5.0 \
---png-zscale-contrast 0.1 --png-selavy-overlay --use-combined
-    ```
-
-Attributes:
-    runstart (datetime.datetime): The running start time of the script.
-"""
-
-
+# ./find_sources.py "16:16:00.22 +22:16:04.83" --create-png --imsize 5.0
+# --png-zscale-contrast 0.1 --png-selavy-overlay --use-combined
 from astropy import units as u
 from astropy.coordinates import Angle
 from vasttools.survey import Fields, Image
@@ -39,13 +27,14 @@ import sys
 runstart = datetime.datetime.now()
 
 
-def parse_args() -> argparse.Namespace:
-    """
-    Parse the arguments.
+def parse_args():
+    '''
+    Parse arguments
 
-    Returns:
-        The argument namespace.
-    """
+    :returns: Argument namespace
+    :rtype: `argparse.Namespace`
+    '''
+
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
@@ -337,18 +326,10 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def check_output_directory(args: argparse.Namespace) -> bool:
-    """Creates the output directory while checking if path already exists.
-
-    Will overwrite if user has requested the clobber option.
-
-    Args:
-        args: The argparse.Namespace object.
-
-    Returns:
-        'True' if the output directory has been created successfully.
-        Otherwise, 'False'.
-    """
+def check_output_directory(args):
+    '''
+    Build the output directory and store the path
+    '''
 
     logger = logging.getLogger()
 
@@ -374,12 +355,7 @@ def check_output_directory(args: argparse.Namespace) -> bool:
     return True
 
 
-def main() -> None:
-    """The main function.
-
-    Returns:
-        None
-    """
+def main():
     args = parse_args()
 
     os.nice(args.nice)

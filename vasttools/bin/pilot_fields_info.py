@@ -1,36 +1,29 @@
 #!/usr/bin/env python
-"""
-A script to query the VAST Pilot Survey observations.
 
-Includes options to show PSF sizes and saving the outputs to file.
+# Example command:
 
-Example:
-    ```terminal
-    pilot_fields_info VAST_0532-50A VAST_1212+00A VAST_2257-06A
-    ```
+# ./build_lightcurves.py outputfolder
 
-Attributes:
-    runstart (datetime.datetime): The running start time of the script.
-"""
+from vasttools.query import FieldQuery
+from vasttools.utils import get_logger
+
 import argparse
 import os
 import pandas as pd
 import datetime
 import sys
-from typing import List
-from vasttools.query import FieldQuery
-from vasttools.utils import get_logger
 
 runstart = datetime.datetime.now()
 
 
-def parse_args() -> argparse.Namespace:
-    """
-    Parse the arguments.
+def parse_args():
+    '''
+    Parse arguments
 
-    Returns:
-        The argument namespace.
-    """
+    :returns: Argument namespace
+    :rtype: `argparse.Namespace`
+    '''
+
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
@@ -92,15 +85,7 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def read_fields(fields_file: str) -> List[str]:
-    """Reads the field names from the input file.
-
-    Args:
-        fields_file: The path of the input file containing the field names.
-
-    Returns:
-        List of field names to query.
-    """
+def read_fields(fields_file):
     fields = pd.read_csv(fields_file, comment='#')
     try:
         fields = fields.field_name.to_list()
@@ -110,12 +95,7 @@ def read_fields(fields_file: str) -> List[str]:
     return fields
 
 
-def main() -> None:
-    """The main function.
-
-    Returns:
-        None
-    """
+def main():
     args = parse_args()
     os.nice(args.nice)
 

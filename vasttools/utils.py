@@ -1,30 +1,8 @@
-"""Utility functions used throughout the package.
-
-Attributes:
-    use_colorlog (bool): Whether the logging should use colorlog or not.
-"""
 import os
 import sys
 import logging
 import logging.handlers
 import logging.config
-import matplotlib.markers
-import matplotlib.lines
-import numpy as np
-import pandas as pd
-
-from astropy import units as u
-from astropy.coordinates import SkyCoord, Angle
-from astroquery.simbad import Simbad
-from astropy.time import Time
-from astropy.coordinates import solar_system_ephemeris
-from astropy.coordinates import get_body, get_moon
-from multiprocessing_logging import install_mp_handler
-from typing import Optional, Union, Tuple, List
-
-# crosshair imports
-from matplotlib.transforms import Affine2D
-from matplotlib.path import Path
 
 try:
     import colorlog
@@ -32,25 +10,38 @@ try:
 except ImportError:
     use_colorlog = False
 
+# crosshair imports
+from matplotlib.transforms import Affine2D
+from matplotlib.path import Path
+import matplotlib.markers
+import matplotlib.lines
+import pandas as pd
+from astropy import units as u
+from astropy.coordinates import SkyCoord
+import numpy as np
+from multiprocessing_logging import install_mp_handler
+from astroquery.simbad import Simbad
 from vasttools.survey import get_askap_observing_location
+from astropy.time import Time
+from astropy.coordinates import solar_system_ephemeris
+from astropy.coordinates import get_body, get_moon
 
 
-def get_logger(
-    debug: bool,
-    quiet: bool,
-    logfile: str = None
-) -> logging.RootLogger:
-    """
-    Set up the logger.
+def get_logger(debug, quiet, logfile=None):
+    '''
+    Set up the logger
 
-    Args:
-        debug: Set stream level to debug.
-        quiet: Suppress all non-essential output.
-        logfile: File to output log to.
+    :param debug: Set stream level to debug
+    :type debug: bool
+    :param quiet: Suppress all non-essential output
+    :type quiet: bool
+    :param logfile: File to output log to
+    :type logfile: str
 
-    Returns:
-        Logger object.
-    """
+    :returns: Logger
+    :rtype: `logging.RootLogger`
+    '''
+
     logger = logging.getLogger()
     s = logging.StreamHandler()
     if logfile is not None:
@@ -96,40 +87,42 @@ def get_logger(
     return logger
 
 
-def _set_crosshair(self) -> None:
-    """This function adds a true crosshair marker to matplotlib.
+def _set_crosshair(self):
+    '''This module adds a true crosshair marker to matplotlib.
 
     ============================== ===========================================
     marker                         description
     ============================== ===========================================
     `"c"`                          crosshair
 
-    Usage:
-        ```python
-        import matplotlib.pyplot as plt
-        import crosshair
-        plt.scatter(0,0, marker='c', s=100)
-        plt.show()
-        ```
+    Usage
+    -----
 
-    Notes:
-        I tried to stay as close to the style of `matplotlib/lib/markers.py`,
-        so it can easily implemented in mpl after further testing.
+    import matplotlib.pyplot as plt
+    import crosshair
+    plt.scatter(0,0, marker='c', s=100)
+    plt.show()
 
-        How to implement this in matplotlib via a module was inspired by:
-        https://stackoverflow.com/a/16655800/5064815
+    Notes
+    -----
 
-        Be aware that for small sizes the crosshair looks like four dots or
-        even a circle.  This is due to the fact that in this case the linewidth
-        is larger then the length of the 'hairs' of the crosshair. This is know
-        and similar behaviour is seen for other markers at small sizes.
+    I tried to stay as close to the style of `matplotlib/lib/markers.py`,
+    so it can easily implemented in mpl after further testing.
 
-    Author:
-        L. A. Boogaard (13/07/2017)
+    How to implement this in matplotlib via a module was inspired by:
+    https://stackoverflow.com/a/16655800/5064815
 
-    Returns:
-        None
-    """
+    Be aware that for small sizes the crosshair looks like four dots or
+    even a circle.  This is due to the fact that in this case the linewidth
+    is larger then the length of the 'hairs' of the crosshair. This is know
+    and similar behaviour is seen for other markers at small sizes.
+
+    Author
+    ------
+    L. A. Boogaard (13/07/2017)
+
+    '''
+
     _crosshair_path = Path([(0.0, -0.5),  # center, bottom
                             (0.0, -0.25),  # center, q_bot
                             (-0.5, 0.0),  # left, center
@@ -153,31 +146,25 @@ def _set_crosshair(self) -> None:
     self._path = _crosshair_path
 
 
-def crosshair() -> None:
-    """
+def crosshair():
+    '''
     A wrapper function to set the crosshair marker in
     matplotlib using the function written by L. A. Boogaard.
-
-    Returns:
-        None
-    """
+    '''
 
     matplotlib.markers.MarkerStyle._set_crosshair = _set_crosshair
     matplotlib.markers.MarkerStyle.markers['c'] = 'crosshair'
     matplotlib.lines.Line2D.markers = matplotlib.markers.MarkerStyle.markers
 
 
-def check_file(path: str) -> bool:
-    """
-    Check if logging file exists.
+def check_file(path):
+    '''
+    Check if logging file exists
 
-    Args:
-        path: filepath to check
+    :param path: filepath to check
+    :type path: str
+    '''
 
-    Returns:
-        Boolean representing the file existence, 'True' if present, otherwise
-        'False'.
-    """
     logger = logging.getLogger()
     exists = os.path.isfile(path)
     if not exists:
@@ -187,17 +174,19 @@ def check_file(path: str) -> bool:
     return exists
 
 
-def build_catalog(coords: str, source_names: str) -> pd.DataFrame:
-    """
-    Build the catalogue of target sources.
+def build_catalog(coords, source_names):
+    '''
+    Build the catalogue of target sources
 
-    Args:
-        coords: The coordinates (comma-separated) or filename entered.
-        source_names: Comma-separated source names.
+    :param coords:
+    :type coords:
+    :param source_names:
+    :type source_names:
 
-    Returns:
-        Catalogue of target sources.
-    """
+    :returns: Catalogue of target sources
+    :rtype: `pandas.core.frame.DataFrame`
+    '''
+
     logger = logging.getLogger()
 
     if " " not in coords:
@@ -210,6 +199,7 @@ def build_catalog(coords: str, source_names: str) -> pd.DataFrame:
             sys.exit()
         try:
             catalog = pd.read_csv(user_file, comment="#")
+            print(catalog)
             catalog.dropna(how="all", inplace=True)
             logger.debug(catalog)
             catalog.columns = map(str.lower, catalog.columns)
@@ -265,16 +255,17 @@ def build_catalog(coords: str, source_names: str) -> pd.DataFrame:
     return catalog
 
 
-def build_SkyCoord(catalog: pd.DataFrame) -> SkyCoord:
-    """
-    Create a SkyCoord array for each target source.
+def build_SkyCoord(catalog):
+    '''
+    Create a SkyCoord array for each target source
 
-    Args:
-        catalog: Catalog of source coordinates.
+    :param catalog: Catalog of source coordinates
+    :type catalog: `pandas.core.frame.DataFrame`
 
-    Returns:
-        Target source(s) SkyCoord.
-    """
+    :returns: Target source SkyCoord
+    :rtype: `astropy.coordinates.sky_coordinate.SkyCoord`
+    '''
+
     logger = logging.getLogger()
 
     ra_str = catalog['ra'].iloc[0]
@@ -307,45 +298,43 @@ def build_SkyCoord(catalog: pd.DataFrame) -> SkyCoord:
     return src_coords
 
 
-def filter_selavy_components(
-    selavy_df: pd.DataFrame,
-    selavy_sc: SkyCoord,
-    imsize: Union[Angle, Tuple[Angle, Angle]],
-    target: SkyCoord
-) -> pd.DataFrame:
-    """
+def filter_selavy_components(selavy_df, selavy_sc, imsize, target):
+    '''
     Create a shortened catalogue by filtering out selavy components
-    outside of the image.
+    outside of the image
 
-    Args:
-        selavy_df: Dataframe of selavy components.
-        selavy_sc: SkyCoords containing selavy components.
-        imsize: Size of the image along each axis. Can be a single Angle
-            object or a tuple of two Angle objects.
-        target: SkyCoord of target centre.
+    :param selavy_df: Dataframe of selavy components
+    :type selavy_df: `pandas.core.frame.DataFrame`
+    :param selavy_sc: SkyCoords containing selavy components
+    :type selavy_sc: `astropy.coordinates.sky_coordinate.SkyCoord
+    :param imsize: Size of the image along each axis
+    :type imsize: `astropy.coordinates.angles.Angle` or tuple of two
+        `Angle` objects
+    :param target: SkyCoord of target centre
+    :type target: `astropy.coordinates.sky_coordinate.SkyCoord`
 
-    Returns:
-        Shortened catalogue.
-    """
+    :returns: Shortened catalogue
+    :rtype: `pandas.core.frame.DataFrame`
+    '''
+
     seps = target.separation(selavy_sc)
     mask = seps <= imsize / 1.4
     return selavy_df[mask].reset_index(drop=True)
 
 
-def simbad_search(
-    objects: List[str],
-    logger: Optional[logging.RootLogger] = None
-) -> Union[Tuple[SkyCoord, List[str]], Tuple[None, None]]:
-    """
+def simbad_search(objects, logger=None):
+    '''
     Searches SIMBAD for object coordinates and returns coordinates and names
 
-    Args:
-        objects: List of object names to query.
-        logger: Logger to use, defaults to None.
+    :param objects: List of object names to query
+    :type objects: list
+    :param logger: Logger to use, defaults to None
+    :type logger: , optional
 
-    Returns:
-        Coordinates and source names. Each will be NoneType if search fails.
-    """
+    :returns: coordinates and source names
+    :rtype: tuple
+    '''
+
     if logger is None:
         logger = logging.getLogger()
 
@@ -365,7 +354,6 @@ def simbad_search(
 
         return c, simbad_names
 
-    # TODO: This needs better handling below.
     except Exception as e:
         logger.debug(
             "Error in performing the SIMBAD object search!\nError: %s",
@@ -374,23 +362,22 @@ def simbad_search(
         return None, None
 
 
-def match_planet_to_field(group: pd.DataFrame) -> pd.DataFrame:
-    """
+def match_planet_to_field(group):
+    '''
     Processes a dataframe that contains observational info
     and calculates whether a planet is within 4 degrees of the
-    observation.
-
-    Used as part of groupby functions hence the argument
+    observation. Used as part of groupby functions hence the argument
     is a group.
 
-    Args:
-        group: Required columns are planet, DATEOBS, centre-ra and centre-dec.
+    :param group: Required columns are planet, DATEOBS, centre-ra and
+        centre-dec.
+    :type group: pandas.core.frame.DataFrame
 
-    Returns:
-        The group with planet location information added and
+    :returns: The group with planet location information added and
         filtered for only those which are within 4 degress. Hence an
         empty dataframe could be returned.
-    """
+    :rtype: pandas.core.frame.DataFrame
+    '''
     planet = group.iloc[0]['planet']
     dates = Time(group['DATEOBS'].tolist())
     fields_skycoord = SkyCoord(
@@ -418,30 +405,30 @@ def match_planet_to_field(group: pd.DataFrame) -> pd.DataFrame:
     return group
 
 
-def check_racs_exists(base_dir: str) -> bool:
-    """
+def check_racs_exists(base_dir):
+    '''
     Check if RACS directory exists
 
-    Args:
-        base_dir: Path to base directory
+    :param base_dir: Path to base directory
+    :type base_dir: str
 
-    Returns:
-        True if exists, False otherwise.
-    """
+    :returns: True if exists, False otherwise
+    :rtype: bool
+    '''
+
     return os.path.isdir(os.path.join(base_dir, "EPOCH00"))
 
 
-def create_source_directories(outdir: str, sources: List[str]) -> None:
-    """
-    Create directory for all sources in a list.
+def create_source_directories(outdir, sources):
+    '''
+    Create directory for all sources in a list
 
-    Args:
-        outdir: Base directory.
-        sources: List of source names.
+    :param outdir: Base directory
+    :type outdir: str
+    :param sources: List of sources
+    :type sources: list
+    '''
 
-    Returns:
-        None
-    """
     logger = logging.getLogger()
 
     for i in sources:
@@ -451,27 +438,29 @@ def create_source_directories(outdir: str, sources: List[str]) -> None:
 
 
 def gen_skycoord_from_df(
-    df: pd.DataFrame,
-    ra_col: str = 'ra',
-    dec_col: str = 'dec',
-    ra_unit: u.Unit = u.degree,
-    dec_unit: u.Unit = u.degree
-) -> SkyCoord:
-    """
+    df, ra_col='ra', dec_col='dec', ra_unit=u.degree, dec_unit=u.degree
+):
+    '''
     Create a SkyCoord object from a provided dataframe.
 
-    Args:
-        df: A dataframe containing the RA and Dec columns.
-        ra_col: The column to use for the Right Ascension, defaults to 'ra'.
-        dec_col: The column to use for the Declination, defaults to 'dec'.
-        ra_unit: The unit of the RA column, defaults to degrees. Must be
-            an astropy.unit value.
-        dec_unit: The unit of the Dec column, defaults to degrees. Must be
-            an astropy.unit value.
+    :param df: A dataframe containing the RA and Dec columns.
+    :type df: pandas.core.frame.DataFrame, optional
+    :param ra_col: The column to use for the Right Ascension, defaults to
+        'ra'.
+    :type ra_col: str, optional
+    :param dec_col: The column to use for the Declination, defaults to 'dec'.
+    :type dec_col: str, optional
+    :param ra_unit: The unit of the RA column, defaults to degrees. Must be
+        an astropy.unit value.
+    :type ra_unit: astropy.unit, optional
+    :param dec_unit: The unit of the Dec column, defaults to degrees. Must be
+        an astropy.unit value.
+    :type dec_unit: astropy.unit, optional
 
-    Returns:
-        SkyCoord object
-    """
+    :returns sc: SkyCoord object
+    :rtype: astropy.coordinates.SkyCoord
+    '''
+
     sc = SkyCoord(
         df[ra_col].values, df[dec_col].values, unit=(ra_unit, dec_unit)
     )
@@ -479,22 +468,23 @@ def gen_skycoord_from_df(
     return sc
 
 
-def pipeline_get_eta_metric(df: pd.DataFrame, peak: bool = False) -> float:
-    """
+def pipeline_get_eta_metric(row, df, peak=False):
+    '''
     Calculates the eta variability metric of a source.
     Works on the grouped by dataframe using the fluxes
-    of the associated measurements.
+    of the assoicated measurements.
 
-    Args:
-        df: A dataframe containing the grouped measurements, i.e. only
-            the measurements from one source. Requires the flux_int/peak and
-            flux_peak/int_err columns.
-        peak: Whether to use peak flux instead of integrated, defaults to
-            False.
+    :param df: A dataframe containing the grouped measurements, i.e. only
+        the measurements from one source. Requires the flux_int/peak and
+        flux_peak/int_err columns.
+    :type df: pandas.core.frame.DataFrame, optional
+    :param peak: Whether to use peak flux instead of integrated, defaults to
+        False.
+    :type peak: bool, optional
 
-    Returns eta:
-        The eta variability metric.
-    """
+    :returns eta: The eta variability metric.
+    :rtype: float
+    '''
     if df.shape[0] == 1:
         return 0.
 
@@ -509,27 +499,27 @@ def pipeline_get_eta_metric(df: pd.DataFrame, peak: bool = False) -> float:
     return eta
 
 
-def pipeline_get_variable_metrics(df: pd.DataFrame) -> pd.Series:
-    """
+def pipeline_get_variable_metrics(df):
+    '''
     Calculates the variability metrics of a source. Works on the grouped by
-    dataframe using the fluxes of the associated measurements.
+    dataframe using the fluxes of the assoicated measurements.
 
-    Args:
-        df: A dataframe containing the grouped measurements, i.e. only
-            the measurements from one source. Requires the flux_int/peak and
-            flux_peak/int_err columns.
+    :param df: A dataframe containing the grouped measurements, i.e. only
+        the measurements from one source. Requires the flux_int/peak and
+        flux_peak/int_err columns.
+    :type df: pandas.core.frame.DataFrame, optional
 
-    Returns:
-        The variability metrics, v_int, v_peak, eta_int and eta_peak
+    :returns d: The variability metrics, v_int, v_peak, eta_int and eta_peak
         as a pandas series.
-    """
+    :rtype: pandas.core.frame.Series
+    '''
     d = {}
     for col in ['flux_int', 'flux_peak']:
         d[f'{col}_sq'] = (df[col]**2).mean()
     d['v_int'] = df['flux_int'].std() / df['flux_int'].mean()
     d['v_peak'] = df['flux_peak'].std() / df['flux_peak'].mean()
-    d['eta_int'] = pipeline_get_eta_metric(df)
-    d['eta_peak'] = pipeline_get_eta_metric(df, peak=True)
+    d['eta_int'] = pipeline_get_eta_metric(d, df)
+    d['eta_peak'] = pipeline_get_eta_metric(d, df, peak=True)
 
     for col in ['flux_int', 'flux_peak']:
         d.pop(f'{col}_sq')
