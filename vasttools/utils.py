@@ -361,7 +361,7 @@ def simbad_search(
 
         c = SkyCoord(ra, dec, unit=(u.deg, u.deg))
 
-        simbad_names = np.array(result_table['MAIN_ID'])
+        simbad_names = np.array(result_table['TYPED_ID'])
 
         return c, simbad_names
 
@@ -374,10 +374,12 @@ def simbad_search(
         return None, None
 
 
-def match_planet_to_field(group: pd.DataFrame) -> pd.DataFrame:
+def match_planet_to_field(
+    group: pd.DataFrame, sep_thresh: float = 4.0
+) -> pd.DataFrame:
     """
     Processes a dataframe that contains observational info
-    and calculates whether a planet is within 4 degrees of the
+    and calculates whether a planet is within 'sep_thresh' degrees of the
     observation.
 
     Used as part of groupby functions hence the argument
@@ -385,11 +387,14 @@ def match_planet_to_field(group: pd.DataFrame) -> pd.DataFrame:
 
     Args:
         group: Required columns are planet, DATEOBS, centre-ra and centre-dec.
+        sep_thresh: The separation threshold for the planet position to the
+            field centre. If the planet is lower than this value then the
+            planet is considered to be in the field. Unit is degrees.
 
     Returns:
         The group with planet location information added and
-        filtered for only those which are within 4 degress. Hence an
-        empty dataframe could be returned.
+        filtered for only those which are within 'sep_thresh' degrees. Hence
+        an empty dataframe could be returned.
     """
     planet = group.iloc[0]['planet']
     dates = Time(group['DATEOBS'].tolist())
@@ -412,7 +417,7 @@ def match_planet_to_field(group: pd.DataFrame) -> pd.DataFrame:
     group['sep'] = seps.deg
 
     group = group.loc[
-        group['sep'] < 4.0
+        group['sep'] < sep_thresh
     ]
 
     return group
@@ -524,14 +529,16 @@ def pipeline_get_variable_metrics(df: pd.DataFrame) -> pd.Series:
         as a pandas series.
     """
     d = {}
-    for col in ['flux_int', 'flux_peak']:
-        d[f'{col}_sq'] = (df[col]**2).mean()
-    d['v_int'] = df['flux_int'].std() / df['flux_int'].mean()
-    d['v_peak'] = df['flux_peak'].std() / df['flux_peak'].mean()
-    d['eta_int'] = pipeline_get_eta_metric(df)
-    d['eta_peak'] = pipeline_get_eta_metric(df, peak=True)
 
-    for col in ['flux_int', 'flux_peak']:
-        d.pop(f'{col}_sq')
+    if df.shape[0] == 1:
+        d['v_int'] = 0.
+        d['v_peak'] = 0.
+        d['eta_int'] = 0.
+        d['eta_peak'] = 0.
+    else:
+        d['v_int'] = df['flux_int'].std() / df['flux_int'].mean()
+        d['v_peak'] = df['flux_peak'].std() / df['flux_peak'].mean()
+        d['eta_int'] = pipeline_get_eta_metric(df)
+        d['eta_peak'] = pipeline_get_eta_metric(df, peak=True)
 
     return pd.Series(d)

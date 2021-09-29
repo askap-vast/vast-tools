@@ -4,21 +4,18 @@ Attributes:
     BASE_MOC_PATH (str): The base MOC path (str) in relation to the package.
 
 """
-
-import pkg_resources
 import os
-from mocpy import MOC, STMOC, World2ScreenMPL
-from vasttools.survey import RELEASED_EPOCHS, FIELD_CENTRES
+import importlib.resources
+
 from astropy.time import Time
-import matplotlib.pyplot as plt
 from astropy import units as u
 from astropy.coordinates import Angle, SkyCoord
 from astropy.table import Table
+from mocpy import MOC, STMOC
+from typing import Union
 
-
-BASE_MOC_PATH = pkg_resources.resource_filename(
-    __name__, "./data/mocs/"
-)
+from vasttools import RELEASED_EPOCHS
+from vasttools.survey import load_field_centres
 
 
 class VASTMOCS(object):
@@ -42,10 +39,13 @@ class VASTMOCS(object):
         Returns:
             STMOC of the VAST Pilot survey. A `mocpy.STMOC` object.
         """
+        stmoc_name = 'VAST_PILOT.stmoc.fits'
 
-        stmoc_path = os.path.join(
-            BASE_MOC_PATH, 'VAST_PILOT.stmoc.fits'
-        )
+        with importlib.resources.path(
+            "vasttools.data.mocs",
+            stmoc_name
+        ) as stmoc_path:
+            stmoc_path = stmoc_path.resolve()
 
         stmoc = STMOC.from_fits(stmoc_path)
 
@@ -73,17 +73,19 @@ class VASTMOCS(object):
 
         epoch_str = RELEASED_EPOCHS[epoch]
 
-        moc_path = os.path.join(
-            BASE_MOC_PATH, 'VAST_PILOT_EPOCH{}.moc.fits'.format(
-                epoch_str
-            )
-        )
+        moc_name = 'VAST_PILOT_EPOCH{}.moc.fits'.format(epoch_str)
+
+        with importlib.resources.path(
+            "vasttools.data.mocs",
+            moc_name
+        ) as moc_path:
+            moc_path = moc_path.resolve()
 
         moc = MOC.from_fits(moc_path)
 
         return moc
 
-    def load_pilot_field_moc(self, field: str) -> MOC:
+    def load_pilot_field_moc(self, field: Union[str, int]) -> MOC:
         """
         Load MOCs corresponding to the VAST Pilot 'field', which is a
         collection of tiles.
@@ -99,18 +101,26 @@ class VASTMOCS(object):
         Raises:
             Exception: VAST Pilot field is not valid (1 - 6).
         """
-        if isinstance(field, int):
-            field = str(field)
         # While this could be an int it's left as string to be consistent
         # with the other loads.
-        if field not in ['1', '2', '3', '4', '5', '6']:
-            raise Exception(
+        fields = ['1', '2', '3', '4', '5', '6']
+
+        if isinstance(field, int):
+            field = str(field)
+
+        if field not in fields:
+            raise ValueError(
                 f"VAST Pilot field #{field} is not valid - valid fields"
-                " are numbered 1 - 6."
+                " are numbered {}.".format(", ".join(fields))
             )
 
-        moc_path = os.path.join(
-            BASE_MOC_PATH, 'VAST_PILOT_FIELD_{}.fits'.format(field))
+        moc_name = f'VAST_PILOT_FIELD_{field}.fits'
+
+        with importlib.resources.path(
+            "vasttools.data.mocs",
+            moc_name
+        ) as moc_path:
+            moc_path = moc_path.resolve()
 
         moc = MOC.from_fits(moc_path)
 
@@ -132,27 +142,29 @@ class VASTMOCS(object):
                 ('COMBINED' or 'TILES').
             Exception: Entered field is not found.
         """
-
         types = ["COMBINED", "TILES"]
 
         itype = itype.upper()
 
         if itype not in types:
             raise Exception(
-                "Image type not recognised. Valid entries are"
-                " 'COMBINED' or 'TILES'."
+                "Image type not recognised. Valid entries are:"
+                " {}.".format(", ".join(types))
             )
 
-        if field not in FIELD_CENTRES.field.values:
+        field_centres = load_field_centres()
+        if field not in field_centres['field'].to_numpy():
             raise Exception(
                 "Field {} not recognised".format(field)
             )
 
-        moc_path = os.path.join(
-            BASE_MOC_PATH, itype, '{}.EPOCH01.I.moc.fits'.format(
-                field
-            )
-        )
+        moc_name = f'{field}.EPOCH01.I.moc.fits'
+
+        with importlib.resources.path(
+            f"vasttools.data.mocs.{itype}",
+            moc_name
+        ) as moc_path:
+            moc_path = moc_path.resolve()
 
         moc = MOC.from_fits(moc_path)
 

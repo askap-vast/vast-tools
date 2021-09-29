@@ -6,23 +6,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased](https://github.com/askap-vast/vast-tools/compare/v2.0.0-rc.5...HEAD)
 
+**Note** Changelog started from PR[#273](https://github.com/askap-vast/vast-tools/pull/273) hence full notes are not available from before this point.
+
 #### Added
 
+- Added unit testing for the codebase [#285](https://github.com/askap-vast/vast-tools/pull/285).
+- Added documentation on tests [#285](https://github.com/askap-vast/vast-tools/pull/285).
+- Added github workflow to run pytest on new PRs [#285](https://github.com/askap-vast/vast-tools/pull/285).
 - Added documentation using the mkdocs framework [#273](https://github.com/askap-vast/vast-tools/pull/273).
 
 #### Changed
 
+- Refactored data loading to use importlib.resources [#285](https://github.com/askap-vast/vast-tools/pull/285).
+- Refactored some data loading to be method base [#285](https://github.com/askap-vast/vast-tools/pull/285).
+- Moved `RELEASED_EPOCHS` and `ALLOWED_PLANETS` to top level import [#285](https://github.com/askap-vast/vast-tools/pull/285).
 - Changed docstrings to google format for docs compatibility [#273](https://github.com/askap-vast/vast-tools/pull/273).
 
 #### Fixed
 
+- Fixed jsmin dependancy install (2.2.2 -> 3.0.0) [#285](https://github.com/askap-vast/vast-tools/pull/285).
 - Remerged docs branch [#287](https://github.com/askap-vast/vast-tools/pull/287).
 - Docs branch reverted to avoid squashing to make merge of tests straightforward [#286](https://github.com/askap-vast/vast-tools/pull/286).
 
 #### Removed
 
+- Removed `EpochInfo` class from query as no longer used [#285](https://github.com/askap-vast/vast-tools/pull/285).
+
 #### List of PRs
 
+- [#285](https://github.com/askap-vast/vast-tools/pull/285): test, feat, dep: Added codebase unit testing.
 - [#287](https://github.com/askap-vast/vast-tools/pull/287): docs, dep: Documentation using mkdocs
 - [#286](https://github.com/askap-vast/vast-tools/pull/286): docs, dep: Revert "Documentation using mkdocs (#273)"
 - [#273](https://github.com/askap-vast/vast-tools/pull/273): docs, dep: Documentation using mkdocs

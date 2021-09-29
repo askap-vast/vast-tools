@@ -1,15 +1,14 @@
 [tool.poetry]
 name = "vasttools"
-version = "2.0.0rc5"
+version = "2.0.0-dev"
 description = "Python module to interact with ASKAP VAST data."
 license = "MIT"
 homepage = "https://github.com/askap-vast/vasttools/"
-authors = ["Dougal Dobie <ddob1600@uni.sydney.edu.au>"]
+authors = ["Adam Stewart <adam.stewart@sydney.edu.au>", "Dougal Dobie <ddobie@swin.edu.au>"]
 include = ["vasttools/data", "example_notebooks"]
 
 [tool.poetry.dependencies]
 python = "^3.8.0"
-astroml = "^0.4.1"
 astropy = "^4.2"
 astroquery = "^0.4.1"
 bokeh = "^2.1.1"
@@ -46,6 +45,10 @@ mknotebooks = "^0.6.2"
 Pygments = "^2.8.1"
 lightgallery = "^0.5"
 mkdocs-git-revision-date-localized-plugin = "^0.9.2"
+pytest = "^6.2.4"
+pytest-mock = "^3.6.1"
+autopep8 = "^1.5.7"
+pytest-cov = "^2.12.1"
 
 [tool.poetry.scripts]
 build_lightcurves = "vasttools.bin.build_lightcurves:main"

@@ -65,6 +65,12 @@ The guidelines to dealing with reviews and conversations on GitHub are essential
 * The PR author will re-request the review by clicking on the :octicons-sync-16: on the top right corner and might ping the reviewer on a comment if necessary with `@github_name`.
 * When the PR is approved by at least one reviewer you might want to merge it to dev (you should have that privileges), unless you want to make sure that such PR is reviewed by another reviewer (e.g. you are doing big changes or important changes or you want to make sure that other person is aware/updated about the changes in that PR).
 
+### PEP 8 Speaks
+
+The [`PEP 8 Speaks`](https://github.com/marketplace/pep-8-speaks){:target="_blank"} app will automatically review any python code in the pull request to make sure the proposed code conforms to the [PEP 8 style](https://pep8.org){:target="_blank"}.
+Please address any lines of code that the app flags and upon a new push to the pull request branch, the app will automatically update the message to say if all PEP8 issues have been addressed.
+If there is no post by the app on an opened pull request it means the app has found no style issues in the proposed code.
+
 ## Releases
 
 In to order to make a release, please follow these steps:
