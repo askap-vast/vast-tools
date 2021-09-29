@@ -416,8 +416,6 @@ def match_planet_to_field(
     group['dec'] = planet_coords.dec.deg
     group['sep'] = seps.deg
 
-    print(group['sep'])
-
     group = group.loc[
         group['sep'] < sep_thresh
     ]

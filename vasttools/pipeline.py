@@ -683,8 +683,6 @@ class PipeRun(object):
         source_mask = moc.contains(
             self.sources_skycoord.ra, self.sources_skycoord.dec)
 
-        print(source_mask)
-
         new_sources = self.sources.loc[source_mask].copy()
 
         if self._vaex_meas:
