@@ -16,10 +16,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Fixed
 
+- Remerged docs branch [#287](https://github.com/askap-vast/vast-tools/pull/287).
+- Docs branch reverted to avoid squashing to make merge of tests straightforward [#286](https://github.com/askap-vast/vast-tools/pull/286).
+
 #### Removed
 
 #### List of PRs
 
+- [#287](https://github.com/askap-vast/vast-tools/pull/287): docs, dep: Documentation using mkdocs
+- [#286](https://github.com/askap-vast/vast-tools/pull/286): docs, dep: Revert "Documentation using mkdocs (#273)"
 - [#273](https://github.com/askap-vast/vast-tools/pull/273): docs, dep: Documentation using mkdocs
 - [#274](https://github.com/askap-vast/vast-tools/pull/274): fix: fixing typo in exception
 - [#270](https://github.com/askap-vast/vast-tools/pull/270): dep: Changed over dependency management to poetry
