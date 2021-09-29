@@ -38,7 +38,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
-- [#289](https://github.com/askap-vast/vast-tools/pull/289): docs: Minor documentations edits.
+- [#289](https://github.com/askap-vast/vast-tools/pull/289): docs: Minor documentation edits.
 - [#288](https://github.com/askap-vast/vast-tools/pull/288): docs, dep: Updated docs dependencies.
 - [#285](https://github.com/askap-vast/vast-tools/pull/285): test, feat, dep: Added codebase unit testing.
 - [#287](https://github.com/askap-vast/vast-tools/pull/287): docs, dep: Documentation using mkdocs
