@@ -1048,7 +1048,10 @@ class PipeAnalysis(PipeRun):
                 new_flux_values = measurements_df.loc[id_values][i].to_numpy()
                 print('d')
                 new_measurement_pairs[pairs_i] = new_flux_values
+                new_measurement_pairs = new_measurement_pairs.materialize(pairs_i)
                 print('e')
+                del id_values
+                del new_flux_values
         print('6')
         del measurements_df
         print('7')
