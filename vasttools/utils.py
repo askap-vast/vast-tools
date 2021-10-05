@@ -542,3 +542,41 @@ def pipeline_get_variable_metrics(df: pd.DataFrame) -> pd.Series:
         d['eta_peak'] = pipeline_get_eta_metric(df, peak=True)
 
     return pd.Series(d)
+
+
+def calculate_vs_metric(
+    flux_a: float, flux_b: float, flux_err_a: float, flux_err_b: float
+) -> float:
+    """
+    Calculate the Vs variability metric which is the t-statistic that the
+    provided fluxes are variable. See Section 5 of Mooley et al. (2016)
+    for details, DOI: 10.3847/0004-637X/818/2/105.
+
+    Args:
+        flux_a (float): flux value "A".
+        flux_b (float): flux value "B".
+        flux_err_a (float): error of `flux_a`.
+        flux_err_b (float): error of `flux_b`.
+
+    Returns:
+        float: the Vs metric for flux values "A" and "B".
+    """
+    return (flux_a - flux_b) / np.hypot(flux_err_a, flux_err_b)
+
+
+def calculate_m_metric(flux_a: float, flux_b: float) -> float:
+    """
+    Calculate the m variability metric which is the modulation index between
+    two fluxes.
+    This is proportional to the fractional variability.
+    See Section 5 of Mooley et al. (2016) for details,
+    DOI: 10.3847/0004-637X/818/2/105.
+
+    Args:
+        flux_a (float): flux value "A".
+        flux_b (float): flux value "B".
+
+    Returns:
+        float: the m metric for flux values "A" and "B".
+    """
+    return 2 * ((flux_a - flux_b) / (flux_a + flux_b))

@@ -55,7 +55,9 @@ from vasttools.source import Source
 from vasttools.utils import (
     match_planet_to_field,
     pipeline_get_variable_metrics,
-    gen_skycoord_from_df
+    gen_skycoord_from_df,
+    calculate_vs_metric,
+    calculate_m_metric
 )
 from vasttools.survey import Image
 
@@ -929,8 +931,136 @@ class PipeAnalysis(PipeRun):
             bands, measurements, measurement_pairs_file, vaex_meas, n_workers
         )
 
+    def _filter_meas_pairs_df(
+        self,
+        measurements_df: Union[pd.DataFrame, vaex.dataframe.DataFrame]
+    ) -> pd.DataFrame:
+        """
+        A utility method to filter the measurement pairs dataframe to remove
+        pairs that are no longer in the measurements dataframe.
+
+        Args:
+            measurements_df: The altered measurements dataframe in the same
+                format as the standard pipeline dataframe.
+
+        Returns:
+            The filtered measurement pairs dataframe.
+        """
+        if not self._loaded_two_epoch_metrics:
+            self.load_two_epoch_metrics()
+
+        if self._vaex_meas_pairs:
+            new_measurement_pairs = self.measurement_pairs_df.copy()
+        else:
+            new_measurement_pairs = vaex.from_pandas(
+                self.measurement_pairs_df
+            )
+
+        mask_a = new_measurement_pairs['meas_id_a'].isin(
+            measurements_df['id'].values
+        ).values
+
+        mask_b = new_measurement_pairs['meas_id_b'].isin(
+            measurements_df['id'].values
+        ).values
+
+        new_measurement_pairs['mask_a'] = mask_a
+        new_measurement_pairs['mask_b'] = mask_b
+
+        mask = np.logical_and(mask_a, mask_b)
+        new_measurement_pairs['mask'] = mask
+        new_measurement_pairs = new_measurement_pairs[
+            new_measurement_pairs['mask'] == True
+        ]
+
+        new_measurement_pairs = new_measurement_pairs.extract()
+        new_measurement_pairs = new_measurement_pairs.drop(
+            ['mask_a', 'mask_b', 'mask']
+        )
+
+        new_measurement_pairs = new_measurement_pairs.to_pandas_df()
+
+        return new_measurement_pairs
+
+    def recalc_measurement_pairs_df(
+        self,
+        measurements_df: Union[pd.DataFrame, vaex.dataframe.DataFrame]
+    ) -> pd.DataFrame:
+        """
+        A method to recalculate the two epoch pair metrics based upon a
+        provided altered measurements dataframe.
+
+        Designed for use when the measurement fluxes have been changed.
+
+        Args:
+            measurements_df: The altered measurements dataframe in the same
+                format as the standard pipeline dataframe.
+
+        Returns:
+            The recalculated measurement pairs dataframe.
+        """
+        if not self._loaded_two_epoch_metrics:
+            self.load_two_epoch_metrics()
+
+        new_measurement_pairs = self._filter_meas_pairs_df(measurements_df)
+
+        # convert a vaex measurements df to panads so an index can be set
+        if isinstance(measurements_df, vaex.dataframe.DataFrame):
+            measurements_df = measurements_df.to_pandas_df()
+
+        flux_cols = [
+            'flux_int',
+            'flux_int_err',
+            'flux_peak',
+            'flux_peak_err',
+            'id'
+        ]
+
+        measurements_df = (
+            measurements_df
+            .loc[:,flux_cols]
+            .drop_duplicates('id')
+            .set_index('id')
+        )
+
+        for i in flux_cols:
+            if i == 'id':
+                continue
+            for j in ['a', 'b']:
+                pairs_i = i + f'_{j}'
+                id_values = new_measurement_pairs[f'meas_id_{j}'].to_numpy()
+                new_flux_values = measurements_df.loc[id_values][i].to_numpy()
+                new_measurement_pairs[pairs_i] = new_flux_values
+
+        # calculate 2-epoch metrics
+        new_measurement_pairs["vs_peak"] = calculate_vs_metric(
+            new_measurement_pairs['flux_peak_a'],
+            new_measurement_pairs['flux_peak_b'],
+            new_measurement_pairs['flux_peak_err_a'],
+            new_measurement_pairs['flux_peak_err_b']
+        )
+        new_measurement_pairs["vs_int"] = calculate_vs_metric(
+            new_measurement_pairs['flux_int_a'],
+            new_measurement_pairs['flux_int_b'],
+            new_measurement_pairs['flux_int_err_a'],
+            new_measurement_pairs['flux_int_err_b']
+        )
+        new_measurement_pairs["m_peak"] = calculate_m_metric(
+            new_measurement_pairs['flux_peak_a'],
+            new_measurement_pairs['flux_peak_b']
+        )
+        new_measurement_pairs["m_int"] = calculate_m_metric(
+            new_measurement_pairs['flux_int_a'],
+            new_measurement_pairs['flux_int_b']
+        )
+
+        return new_measurement_pairs
+
     def recalc_sources_df(
-        self, measurements_df: pd.DataFrame, min_vs: float = 4.3
+        self,
+        measurements_df: Union[pd.DataFrame, vaex.dataframe.DataFrame],
+        min_vs: float = 4.3,
+        measurement_pairs_df: Optional[pd.DataFrame] = None
     ) -> pd.DataFrame:
         """
         Regenerates a sources dataframe using a user provided measurements
@@ -938,15 +1068,19 @@ class PipeAnalysis(PipeRun):
 
         Args:
             measurements_df: Dataframe of measurements with default pipeline
-                columns. A `pandas.core.frame.DataFrame` instance.
+                columns. A `pandas.core.frame.DataFrame` or
+                `vaex.dataframe.DataFrame` instance.
             min_vs: Minimum value of the Vs two epoch parameter to use
                 when appending the two epoch metrics maximum.
+            measurement_pairs_df: The recalculated measurement pairs dataframe
+                if applicable. If not provided then the process will assume
+                the fluxes have not changed and will purely filter the
+                measurement pairs dataframe.
 
         Returns:
             The regenerated sources_df.  A `pandas.core.frame.DataFrame`
             instance.
         """
-
         if not self._vaex_meas:
             measurements_df = vaex.from_pandas(measurements_df)
 
@@ -1064,57 +1198,39 @@ class PipeAnalysis(PipeRun):
         if not self._loaded_two_epoch_metrics:
             self.load_two_epoch_metrics()
 
-        if self._vaex_meas_pairs:
+        if measurement_pairs_df is None:
+            measurement_pairs_df = self._filter_meas_pairs_df(measurements_df)
+
+        if isinstance(measurement_pairs_df, vaex.dataframe.DataFrame):
             new_measurement_pairs = (
-                self.measurement_pairs_df[
-                    self.measurement_pairs_df.vs_int.abs() >= min_vs
-                    or self.measurement_pairs_df.vs_peak.abs() >= min_vs
+                measurement_pairs_df[
+                    measurement_pairs_df['vs_int'].abs() >= min_vs
+                    or measurement_pairs_df['vs_peak'].abs() >= min_vs
                 ]
             )
         else:
             min_vs_mask = np.logical_or(
-                (self.measurement_pairs_df.vs_int.abs() >= min_vs).values,
-                (self.measurement_pairs_df.vs_peak.abs() >= min_vs).values
+                (measurement_pairs_df['vs_int'].abs() >= min_vs).to_numpy(),
+                (measurement_pairs_df['vs_peak'].abs() >= min_vs).to_numpy()
             )
-            new_measurement_pairs = self.measurement_pairs_df.loc[min_vs_mask]
-
-        # make masks of dropped measurements
-        mask_a = new_measurement_pairs.meas_id_a.isin(
-            measurements_df.id.values
-        ).values
-
-        mask_b = new_measurement_pairs.meas_id_b.isin(
-            measurements_df.id.values
-        ).values
-
-        meas_mask = np.logical_and(mask_a, mask_b)
-
-        if self._vaex_meas_pairs:
-            new_measurement_pairs = new_measurement_pairs.extract()
-            new_measurement_pairs['mask_a'] = mask_a
-            new_measurement_pairs['mask_b'] = mask_b
-            new_measurement_pairs = new_measurement_pairs[
-                new_measurement_pairs.mask_a == True
-                and new_measurement_pairs.mask_b == True
-            ]
-        else:
-            new_measurement_pairs = new_measurement_pairs.loc[meas_mask]
+            new_measurement_pairs = measurement_pairs_df.loc[min_vs_mask]
             new_measurement_pairs = vaex.from_pandas(new_measurement_pairs)
 
+
         new_measurement_pairs['vs_int_abs'] = (
-            new_measurement_pairs.vs_int.abs()
+            new_measurement_pairs['vs_int'].abs()
         )
 
         new_measurement_pairs['vs_peak_abs'] = (
-            new_measurement_pairs.vs_peak.abs()
+            new_measurement_pairs['vs_peak'].abs()
         )
 
         new_measurement_pairs['m_int_abs'] = (
-            new_measurement_pairs.m_int.abs()
+            new_measurement_pairs['m_int'].abs()
         )
 
         new_measurement_pairs['m_peak_abs'] = (
-            new_measurement_pairs.m_peak.abs()
+            new_measurement_pairs['m_peak'].abs()
         )
 
         sources_df_two_epochs = new_measurement_pairs.groupby(
@@ -2556,7 +2672,7 @@ class Pipeline(object):
                     right_on='id'
                 )
                 .rename(columns={'source_id': 'source'})
-            )
+            ).reset_index(drop=True)
 
         images = images.set_index('id')
 
