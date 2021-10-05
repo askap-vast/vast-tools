@@ -34,7 +34,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Removed
 
-- Removed MANIFEST.in file [#288](https://github.com/askap-vast/vast-tools/pull/288).
+- Removed MANIFEST.in file [#289](https://github.com/askap-vast/vast-tools/pull/289).
 - Removed `EpochInfo` class from query as no longer used [#285](https://github.com/askap-vast/vast-tools/pull/285).
 
 #### List of PRs
