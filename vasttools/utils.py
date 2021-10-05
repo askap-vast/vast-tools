@@ -587,7 +587,7 @@ def skymap2moc(filename: str, cutoff: float) -> mocpy.moc.moc.MOC:
 def find_in_moc(
     moc: mocpy.moc.moc.MOC,
     df: pd.DataFrame,
-    pipe=True: bool
+    pipe: bool = True
 ) -> np.ndarray:
     """
     Find the sources that are contained within a MOC
@@ -616,7 +616,8 @@ def find_in_moc(
 
 def add_credible_levels(
     filename: str,
-    df: pd.DataFrame, pipe=True: bool
+    df: pd.DataFrame,
+    pipe: bool = True
 ) -> None:
     """
     Calculate the minimum credible region containing each source
