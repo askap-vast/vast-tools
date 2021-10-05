@@ -549,7 +549,7 @@ def pipeline_get_variable_metrics(df: pd.DataFrame) -> pd.Series:
     return pd.Series(d)
 
 
-def skymap2moc(filename: str, cutoff: float) -> mocpy.moc.moc.MOC:
+def skymap2moc(filename: str, cutoff: float) -> MOC:
     """
     Creates a MOC of the specified credible region of a given skymap.
 
@@ -579,13 +579,13 @@ def skymap2moc(filename: str, cutoff: float) -> mocpy.moc.moc.MOC:
     idx = np.where(credible_levels < cutoff)[0]
     levels = np.ones(len(idx))*level
 
-    moc = mocpy.MOC.from_healpix_cells(idx, depth=levels)
+    moc = MOC.from_healpix_cells(idx, depth=levels)
 
     return moc
 
 
 def find_in_moc(
-    moc: mocpy.moc.moc.MOC,
+    moc: MOC,
     df: pd.DataFrame,
     pipe: bool = True
 ) -> np.ndarray:

@@ -8,7 +8,6 @@ from astropy.table import Table
 from pytest_mock import mocker
 
 import vasttools.utils as vtu
-import mocpy
 
 
 @pytest.fixture
