@@ -18,6 +18,8 @@ from typing import Dict, List, Union
 from vasttools import RELEASED_EPOCHS
 import vasttools.pipeline as vtp
 
+import mocpy
+
 
 TEST_DATA_DIR = Path(__file__).resolve().parent / 'data'
 
