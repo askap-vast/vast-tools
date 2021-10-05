@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Added
 
+- Added pep8speaks config file to project [#290](https://github.com/askap-vast/vast-tools/pull/290).
 - Added a method to recalculate the measurement pairs dataframe (two epoch metrics) [#290](https://github.com/askap-vast/vast-tools/pull/290).
 - Docs badge on readme [#288](https://github.com/askap-vast/vast-tools/pull/288).
 - Added unit testing for the codebase [#285](https://github.com/askap-vast/vast-tools/pull/285).
