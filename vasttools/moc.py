@@ -1,82 +1,70 @@
-# Simple class to interface and load the VAST mocs
+"""Simple class to interface and load the VAST MOCS.
 
-import pkg_resources
+Attributes:
+    BASE_MOC_PATH (str): The base MOC path (str) in relation to the package.
+
+"""
 import os
-from mocpy import MOC, STMOC, World2ScreenMPL
-from vasttools.survey import RELEASED_EPOCHS, FIELD_CENTRES
+import importlib.resources
+
 from astropy.time import Time
-import matplotlib.pyplot as plt
 from astropy import units as u
 from astropy.coordinates import Angle, SkyCoord
+from astropy.table import Table
+from mocpy import MOC, STMOC
+from typing import Union
 
-
-BASE_MOC_PATH = pkg_resources.resource_filename(
-    __name__, "./data/mocs/"
-)
+from vasttools import RELEASED_EPOCHS
+from vasttools.survey import load_field_centres
 
 
 class VASTMOCS(object):
-    '''
-    Class to interface with VAST MOC files.
+    """
+    Class to interface with VAST MOC files included in the package.
+    """
 
-    Attributes
-    ----------
-
-    None
-
-    Methods
-    -------
-
-    load_pilot_stmoc()
-        Load the VAST Pilot survey complete STMOC. Returns an
-        STMOC object.
-
-    load_pilot_epoch_moc(epoch)
-        Load a specific epoch MOC file, returns a MOC object.
-
-    load_pilot_field_moc(field, itype='COMBINED')
-        Load a specific field MOC file from the Pilot survey.
-        Returns a MOC object.
-
-    query_vizier_vast_pilot(table_id, max_rows=10000)
-        A wrapper function to quicky obtain all sources from
-        a Vizier catalogue that are located within the VAST
-        pilot survey footprint.
-    '''
-
-    def __init__(self):
+    def __init__(self) -> None:
         '''
-        Constructor method
-        '''
+        Constructor method.
 
+        Returns:
+            None
+        '''
         super(VASTMOCS, self).__init__()
 
-    def load_pilot_stmoc(self):
-        '''
-        Load spacetime MOC
+    def load_pilot_stmoc(self) -> STMOC:
+        """
+        Load space and time MOC of all VAST Pilot observations.
 
-        :returns: STMOC of the VAST Pilot survey.
-        :rtype: mocpy.stmoc.stmoc.STMOC
-        '''
+        Returns:
+            STMOC of the VAST Pilot survey. A `mocpy.STMOC` object.
+        """
+        stmoc_name = 'VAST_PILOT.stmoc.fits'
 
-        stmoc_path = os.path.join(
-            BASE_MOC_PATH, 'VAST_PILOT.stmoc.fits'
-        )
+        with importlib.resources.path(
+            "vasttools.data.mocs",
+            stmoc_name
+        ) as stmoc_path:
+            stmoc_path = stmoc_path.resolve()
 
         stmoc = STMOC.from_fits(stmoc_path)
 
         return stmoc
 
-    def load_pilot_epoch_moc(self, epoch='1'):
-        '''
-        Load MOC corresponding to one epoch of the pilot
+    def load_pilot_epoch_moc(self, epoch: str = '1') -> MOC:
+        """
+        Load MOC corresponding to one epoch of the pilot survey.
 
-        :param epoch: Epoch to load, defaults to '1'.
-        :type epoch: str, optional
+        Args:
+            epoch: Epoch to load as a string with no zero padding.
+                E.g. '3x'.
 
-        :returns: MOC of the requested epoch.
-        :rtype: mocpy.moc.moc.MOC
-        '''
+        Returns:
+            MOC of the requested epoch. A `mocpy.MOC` object.
+
+        Raises:
+            Exception: Entered epoch is not recognised.
+        """
 
         if epoch not in RELEASED_EPOCHS:
             raise Exception(
@@ -85,94 +73,118 @@ class VASTMOCS(object):
 
         epoch_str = RELEASED_EPOCHS[epoch]
 
-        moc_path = os.path.join(
-            BASE_MOC_PATH, 'VAST_PILOT_EPOCH{}.moc.fits'.format(
-                epoch_str
-            )
-        )
+        moc_name = 'VAST_PILOT_EPOCH{}.moc.fits'.format(epoch_str)
+
+        with importlib.resources.path(
+            "vasttools.data.mocs",
+            moc_name
+        ) as moc_path:
+            moc_path = moc_path.resolve()
 
         moc = MOC.from_fits(moc_path)
 
         return moc
 
-    def load_pilot_field_moc(self, field: str) -> MOC:
-        '''
+    def load_pilot_field_moc(self, field: Union[str, int]) -> MOC:
+        """
         Load MOCs corresponding to the VAST Pilot 'field', which is a
         collection of tiles.
 
-        :param field: number of the VAST Pilot field requested.
-        :type field: str
+        Enter as a string ranging from fields 1 – 6.
 
-        :returns: Tile MOC
-        :rtype: mocpy.moc.moc.MOC
-        '''
-        if isinstance(field, int):
-            field = str(field)
+        Args:
+            field: Name of the VAST Pilot field requested.
+
+        Returns:
+            The field MOC. A `mocpy.MOC` object.
+
+        Raises:
+            Exception: VAST Pilot field is not valid (1 - 6).
+        """
         # While this could be an int it's left as string to be consistent
         # with the other loads.
-        if field not in ['1', '2', '3', '4', '5', '6']:
-            raise Exception(
+        fields = ['1', '2', '3', '4', '5', '6']
+
+        if isinstance(field, int):
+            field = str(field)
+
+        if field not in fields:
+            raise ValueError(
                 f"VAST Pilot field #{field} is not valid - valid fields"
-                " are numbered 1 - 6."
+                " are numbered {}.".format(", ".join(fields))
             )
 
-        moc_path = os.path.join(
-            BASE_MOC_PATH, 'VAST_PILOT_FIELD_{}.fits'.format(field))
+        moc_name = f'VAST_PILOT_FIELD_{field}.fits'
+
+        with importlib.resources.path(
+            "vasttools.data.mocs",
+            moc_name
+        ) as moc_path:
+            moc_path = moc_path.resolve()
 
         moc = MOC.from_fits(moc_path)
 
         return moc
 
-    def load_pilot_tile_moc(self, field, itype='COMBINED'):
-        '''
-        Load MOCs corresponding to pilot tile field.
+    def load_pilot_tile_moc(self, field: str, itype: str = 'COMBINED') -> MOC:
+        """
+        Load the MOC corresponding to the requested pilot tile field.
 
-        :param field: name of field requested
-        :type field: str
-        :param itype: Image type (COMBINED or TILES), defaults to 'COMBINED'
-        :type itype: str, optional
+        Args:
+            field: The name of field requested. For example, 'VAST_0012-06A'.
+            itype: Image type (COMBINED or TILES), defaults to 'COMBINED'.
 
-        :returns: Tile MOC
-        :rtype: mocpy.moc.moc.MOC
-        '''
+        Returns:
+            Tile MOC. A `mocpy.MOC` object.
 
+        Raises:
+            Exception: Entered image type is not recognised
+                ('COMBINED' or 'TILES').
+            Exception: Entered field is not found.
+        """
         types = ["COMBINED", "TILES"]
 
         itype = itype.upper()
 
         if itype not in types:
             raise Exception(
-                "Image type not recognised. Valid entries are"
-                " 'COMBINED' or 'TILES'."
+                "Image type not recognised. Valid entries are:"
+                " {}.".format(", ".join(types))
             )
 
-        if field not in FIELD_CENTRES.field.values:
+        field_centres = load_field_centres()
+        if field not in field_centres['field'].to_numpy():
             raise Exception(
                 "Field {} not recognised".format(field)
             )
 
-        moc_path = os.path.join(
-            BASE_MOC_PATH, itype, '{}.EPOCH01.I.moc.fits'.format(
-                field
-            )
-        )
+        moc_name = f'{field}.EPOCH01.I.moc.fits'
+
+        with importlib.resources.path(
+            f"vasttools.data.mocs.{itype}",
+            moc_name
+        ) as moc_path:
+            moc_path = moc_path.resolve()
 
         moc = MOC.from_fits(moc_path)
 
         return moc
 
-    def query_vizier_vast_pilot(self, table_id, max_rows=10000):
-        '''
-        Query Vizier table for sources within Pilot fields
+    def query_vizier_vast_pilot(
+        self,
+        table_id: str,
+        max_rows: int = 10000
+    ) -> Table:
+        """
+        Query the Vizier service for sources within Pilot footprint.
 
-        :param table_id: Vizier ID of table to query
-        :type table_id: str
-        :param max_rows: Maximum rows to return, defaults to 10000
-        :type max_rows: int, optional
+        Args:
+            table_id: Vizier ID of table to query.
+            max_rows: Maximum rows to return, defaults to 10000.
 
-        :returns: Table of Vizier results.
-        :rtype: astropy.table.Table
-        '''
+        Returns:
+            Astropy table of Vizier results.
+        """
 
         moc = self.load_pilot_epoch_moc('1')
 

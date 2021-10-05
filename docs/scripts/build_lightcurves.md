@@ -1,18 +1,18 @@
-# build\_lightcurves.py
+# build\_lightcurves
 
 This script allows you to quickly build lightcurves of sources you have extracted using `find_sources.py`. While in v2.0 `find_sources.py` can now output lightcurve plots directly, this script can be helpful to run the lightcurve plotting again on a complete `find_sources.py` output.
 
 Peak fluxes are used by default, integrated fluxes can be used by using the `--use-int-flux` flag.
 
-# Running the script
-Prior to running this script you should query the survey data using `find_sources.py` with the `--vast-pilot` flag set to your desired epochs. Then run `build_lightcurves.py FOLDER` where `FOLDER` is the output folder of the previous query.
+## Running the script
+Prior to running this script you should query the survey data using `find_sources.py` with the `--vast-pilot` flag set to your desired epochs. Then run `build_lightcurves FOLDER` where `FOLDER` is the output folder of the previous query.
 
 ## Usage
 
 Most options should be self explanatory. The lightcurve plots are saved in the same directory as the input.
 
 ```
-usage: build_lightcurves.py [-h] [--use-int-flux] [--quiet] [--debug] [--min-points MIN_POINTS]
+usage: build_lightcurves [-h] [--use-int-flux] [--quiet] [--debug] [--min-points MIN_POINTS]
                             [--min-detections MIN_DETECTIONS] [--mjd] [--grid]
                             [--yaxis-start {auto,0}] [--use-forced-for-limits] [--use-forced-for-all]
                             [--hide-legend] [--plot-dpi PLOT_DPI] [--nice NICE]

@@ -1,15 +1,27 @@
 #!/usr/bin/env python
+"""
+A script find sources in the VAST Pilot Survey.
 
-# Example command:
+Includes options to provide light curves, cutouts and overlay files for
+viewers such as kvis and DS9.
 
-# ./find_sources.py "16:16:00.22 +22:16:04.83" --create-png --imsize 5.0
-# --png-zscale-contrast 0.1 --png-selavy-overlay --use-combined
+Example:
+    ```terminal
+    find_sources "16:16:00.22 +22:16:04.83" --create-png --imsize 5.0 \
+--png-zscale-contrast 0.1 --png-selavy-overlay --use-combined
+    ```
+
+Attributes:
+    runstart (datetime.datetime): The running start time of the script.
+"""
+
+
 from astropy import units as u
 from astropy.coordinates import Angle
+from vasttools import RELEASED_EPOCHS, ALLOWED_PLANETS
 from vasttools.survey import Fields, Image
-from vasttools.survey import RELEASED_EPOCHS, ALLOWED_PLANETS
 from vasttools.source import Source
-from vasttools.query import Query, EpochInfo
+from vasttools.query import Query
 from vasttools.utils import (
     get_logger,
     build_catalog,
@@ -27,14 +39,13 @@ import sys
 runstart = datetime.datetime.now()
 
 
-def parse_args():
-    '''
-    Parse arguments
+def parse_args() -> argparse.Namespace:
+    """
+    Parse the arguments.
 
-    :returns: Argument namespace
-    :rtype: `argparse.Namespace`
-    '''
-
+    Returns:
+        The argument namespace.
+    """
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
@@ -326,10 +337,18 @@ def parse_args():
     return args
 
 
-def check_output_directory(args):
-    '''
-    Build the output directory and store the path
-    '''
+def check_output_directory(args: argparse.Namespace) -> bool:
+    """Creates the output directory while checking if path already exists.
+
+    Will overwrite if user has requested the clobber option.
+
+    Args:
+        args: The argparse.Namespace object.
+
+    Returns:
+        'True' if the output directory has been created successfully.
+        Otherwise, 'False'.
+    """
 
     logger = logging.getLogger()
 
@@ -355,7 +374,12 @@ def check_output_directory(args):
     return True
 
 
-if __name__ == '__main__':
+def main() -> None:
+    """The main function.
+
+    Returns:
+        None
+    """
     args = parse_args()
 
     os.nice(args.nice)
@@ -554,3 +578,7 @@ if __name__ == '__main__':
             runtime.seconds / 60.
         )
     )
+
+
+if __name__ == '__main__':
+    main()

@@ -1,4 +1,4 @@
-# find\_sources.py
+# find\_sources
 
 This script allows you to quickly query data from the RACS and VAST Pilot surveys on provided coordinates, either through the command line or using a csv list.
 
@@ -10,29 +10,37 @@ The outputs are/can be:
 * Figure png plots of postage stamp, with overlaid selavy sources and synthesised beam.
 * Per source measurments CSV file containing all the matched measurements, and forced extractions if selected.
 
-# Running on your own machine
-**No local data is required to run the `--find-fields` option which will find which fields that contain your sources of interest.** To create postage FITS files or PNG images, a copy of the survey data is required locally.
+## Running on your own machine
+
+!!!tip
+    No local data is required to run the `--find-fields` option which will find which fields that contain your sources of interest. To create postage FITS files or PNG images, a copy of the survey data is required locally.
 
 You must tell the script where your data is and as of v2.0 this data must follow the same directory structure and naming scheme of the VAST Pilot release. The easiest method is to set the environment variable `VAST_DATA_DIR` to the data path which will be read by the module, for example on bash:
-```
+
+```console
 export VAST_DATA_DIR=/path/to/my-pilot-data/
 ```
+
 If this variable is not set you can define the path to this data using the following option when running the script:
-```
+
+```console
 --base-folder /path/to/my-pilot-data/
 ```
 
-If you are running `find_sources.py` on your own machine we recommend first using the `--find-fields` flag, downloading the relevant fields and then re-running the script as normal.
+If you are running `find_sources` on your own machine we recommend first using the `--find-fields` flag, downloading the relevant fields and then re-running the script as normal.
 
 ## Running on Nimbus
+
 You can access running the script on the vast-data instance by selecting the terminal in your Jupyter Hub session.
 
 See [this wiki page](https://github.com/askap-vast/vast-project/wiki/Nimbus:-SSH,-Downloads,-Pipeline-&-Jupyter-Hub) for information on Nimbus.
 
-## Warning!
-* The default crossmatching uses **components**. Check your results to see if the component is part of an island (`has_sibling` column will = 1) and query the island catalogue, using the `island_id` if you need further information on your source.
+!!! warning
+    The default crossmatching uses **components**. Check your results to see if the component is part of an island (`has_sibling` column will = 1) and query the island catalogue, using the `island_id` if you need further information on your source.
+  
 
 ## RACS
+
 If you are running this script on ada or Nimbus you also have access to RACS data to search for sources. Remember that RACS is not a VAST data product and you *MUST* let Tara or David know that you intend to use RACS. Also keep in mind that this is not final quality RACS data, there are some issues with the data so please be aware when interpreting results. Currently only Stokes I data is available.
 
 RACS can be included by specifying `--epochs all`, or you can only select RACS using `--epochs 0`. If you would like to query all VAST epochs (and exclude RACS) then use `--epochs all-vast`.
@@ -46,8 +54,9 @@ Most options should be self explanatory. See examples below on how to run the sc
 All output is placed in an output directory of which the name can be set with the option `--out-folder`.
 
 Can be run on any Stokes parameter, but only one at a time.
-```
-usage: find_sources.py [-h] [--coords COORDS] [--source-names SOURCE_NAMES] [--ncpu NCPU] [--epochs EPOCHS]
+
+```console
+usage: find_sources [-h] [--coords COORDS] [--source-names SOURCE_NAMES] [--ncpu NCPU] [--epochs EPOCHS]
                        [--imsize IMSIZE] [--maxsep MAXSEP] [--out-folder OUT_FOLDER]
                        [--crossmatch-radius CROSSMATCH_RADIUS] [--use-tiles] [--islands] [--base-folder BASE_FOLDER]
                        [--stokes {I,Q,U,V}] [--quiet] [--forced-fits]
@@ -161,6 +170,7 @@ optional arguments:
 To run the script needs at least some coordinates, or a planet to search for. Coordinates are entered using the `--coords` parameter as demonstrated below, while planets can be specified using the `--planet` parameter.
 
 ### Command line: Single Coordinate
+
 Here the format can be either in Hours or decimal degrees: 
 * `"HH:MM:SS.ss +/-DD:MM:SS.ss"`
 * `"DDD.ddd +/-DD.ddd"`
@@ -168,19 +178,20 @@ Note the space between the coodinates and the quotation marks.
 
 E.g.
 ```
-find_sources.py --coords "22:37:5.6000 +34:24:31.90"
+find_sources --coords "22:37:5.6000 +34:24:31.90"
 ```
 ```
-find_sources.py --coords "339.2733333 34.4088611"
+find_sources --coords "339.2733333 34.4088611"
 ```
 
 It's recommended to provide a source name using the option `--source-names`, e.g.
 ```
-find_sources.py --coords "22:37:5.6000 +34:24:31.90" --source-names "SN 2014C"
+find_sources --coords "22:37:5.6000 +34:24:31.90" --source-names "SN 2014C"
 ```
 
 
 ### Command line: Multiple Coordinates
+
 Same format as above but now separate coodinates with `,`: 
 * `"HH:MM:SS.ss +/-DD:MM:SS.ss,HH:MM:SS.ss +/-DD:MM:SS.ss,HH:MM:SS.ss +/-DD:MM:SS.ss"`
 * `"DDD.ddd +/-DD.ddd,DDD.ddd +/-DD.ddd,DDD.ddd +/-DD.ddd"`
@@ -189,24 +200,25 @@ Note there is no space between the commas.
 
 E.g. 
 ```
-find_sources.py --coords "22:37:5.6000 +34:24:31.90,22:37:5.6000 -34:24:31.90,13:37:5.6000 -84:24:31.90"
+find_sources --coords "22:37:5.6000 +34:24:31.90,22:37:5.6000 -34:24:31.90,13:37:5.6000 -84:24:31.90"
 ```
 ```
-find_sources.py --coords "339.2733333 34.4088611,154.2733333 -34.4088611,20.2733333 -54.4088611"
+find_sources --coords "339.2733333 34.4088611,154.2733333 -34.4088611,20.2733333 -54.4088611"
 ```
 
 Source names can still be defined using the option `--source-names` with the same comma notation e.g.
 
 ```
-find_sources.py --coords "22:37:5.6000 +34:24:31.90,22:37:5.6000 -34:24:31.90,13:37:5.6000 -84:24:31.90" --source-names "SN 2014C,SN 2012C,SN2019B"
+find_sources --coords "22:37:5.6000 +34:24:31.90,22:37:5.6000 -34:24:31.90,13:37:5.6000 -84:24:31.90" --source-names "SN 2014C,SN 2012C,SN2019B"
 ```
 
 ### Input CSV file
+
 To crossmatch many coordinates it's recommended to use a csv. Instead of entering coordinates, enter the name of the csv. The `--source-names` option is not used with CSV files.
 
 E.g. 
 ```
-find_sources.py --coords my_coords.csv
+find_sources --coords my_coords.csv
 ```
 
 The columns `ra` and `dec` are required and can be in either of the formats shown in the command line options. `name` is also accepted and is recommended. E.g.
@@ -216,6 +228,7 @@ ra,dec,name
 ```
 
 ## Outputs
+
 The following files are or can be produced (for tiles the `combined` will be replaced with `tile`):
 
 * `{source_name}_measurements.csv` - csv file containing the crossmatch results per source. For detections, the source information included is taken direct from the selavy catalogues (see the [selavy documentation](https://www.atnf.csiro.au/computing/software/askapsoft/sdp/docs/current/analysis/postprocessing.html#component-catalogue)). All fluxes are in mJy. Upper limits and forced fits (if both/either are selected) are also included here.
@@ -233,19 +246,19 @@ The following files are or can be produced (for tiles the `combined` will be rep
 Search for a match to one source and create a FITS postage stamp of 5 arcminutes across. Will place the output in `example_source`.
 
 ```
-find_sources.py "22:37:5.6000 +34:24:31.90" --imsize 5.0 --source-names "SN 2014C" --out-folder example_source
+find_sources "22:37:5.6000 +34:24:31.90" --imsize 5.0 --source-names "SN 2014C" --out-folder example_source
 ```
 
 To include a png output with selavy overlay:
 
 ```
-find_sources.py "22:37:5.6000 +34:24:31.90" --imsize 5.0 --source-names "SN 2014C" --out-folder example_source --create-png --png-selavy-overlay
+find_sources "22:37:5.6000 +34:24:31.90" --imsize 5.0 --source-names "SN 2014C" --out-folder example_source --create-png --png-selavy-overlay
 ```
 Now search in Stokes V to a different directory and also include a kvis annotation file and an extra coodinate:
 ```
-find_sources.py "22:37:5.6000 +34:24:31.90,22:37:5.6000 +44:24:31.90" --imsize 5.0 --source-names "SN 2014C,SN 2019I" --out-folder example_source_stokesv_ --create-png --png-selavy-overlay --stokes="V" --ann
+find_sources "22:37:5.6000 +34:24:31.90,22:37:5.6000 +44:24:31.90" --imsize 5.0 --source-names "SN 2014C,SN 2019I" --out-folder example_source_stokesv_ --create-png --png-selavy-overlay --stokes="V" --ann
 ```
 Search through a csv of coordinates, make pngs, use zscale with a contrast of 0.2, create annotation and region files.:
 ```
-find_sources.py my_coords.csv --imsize 5.0  --out-folder example_source --create-png --png-selavy-overlay --png-use-zscale --png-zscale-contrast 0.2 --ann --reg
+find_sources my_coords.csv --imsize 5.0  --out-folder example_source --create-png --png-selavy-overlay --png-use-zscale --png-zscale-contrast 0.2 --ann --reg
 ```
