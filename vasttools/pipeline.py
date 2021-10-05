@@ -1007,6 +1007,14 @@ class PipeAnalysis(PipeRun):
             measurements_df[['id']]
         )
         print('2')
+        if isinstance(new_measurement_pairs, vaex.dataframe.DataFrame):
+            new_measurement_pairs = new_measurement_pairs.drop(
+                ['vs_peak', 'vs_int', 'm_peak', 'm_int']
+            )
+        else:
+            new_measurement_pairs = new_measurement_pairs.drop(
+                ['vs_peak', 'vs_int', 'm_peak', 'm_int'], axis=1
+            )
         flux_cols = [
             'flux_int',
             'flux_int_err',
@@ -1034,8 +1042,8 @@ class PipeAnalysis(PipeRun):
             for j in ['a', 'b']:
                 pairs_i = i + f'_{j}'
                 id_values = new_measurement_pairs[f'meas_id_{j}'].to_numpy()
-                new_flux_values = measurements_df.loc[id_values][i].to_numpy()
-                new_measurement_pairs[pairs_i] = new_flux_values
+                # new_flux_values = measurements_df.loc[id_values][i].to_numpy()
+                new_measurement_pairs[pairs_i] = measurements_df.loc[id_values][i].to_numpy()
         print('6')
         del measurements_df
         print('7')
