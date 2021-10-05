@@ -554,11 +554,11 @@ def skymap2moc(filename: str, cutoff: float) -> mocpy.moc.moc.MOC:
     Creates a MOC of the specified credible region of a given skymap.
 
     Args:
-        filename: Path to the healpix skymap file
-        cutoff: Credible level cutoff
+        filename: Path to the healpix skymap file.
+        cutoff: Credible level cutoff.
         
-    Returns
-        A MOC containing the credible region
+    Returns:
+        A MOC containing the credible region.
     """
 
     if not 0.0 <= cutoff <= 1.0:
@@ -584,17 +584,18 @@ def skymap2moc(filename: str, cutoff: float) -> mocpy.moc.moc.MOC:
     return moc
 
 
-def find_in_moc(moc, df, pipe=True):
-    '''
+def find_in_moc(moc: mocpy.moc.moc.MOC, df: pd.DataFrame, pipe=True: bool) -> np.ndarray:
+    """
     Find the sources that are contained within a MOC
-
-    :param moc: MOC of interest
-    :type moc: mocpy.moc.moc.MOC
-    :param df: Dataframe of sources
-    :type df: pandas.core.frame.DataFrame
-    :returns: Index of all sources contained within the MOC
-    :rtype: numpy.ndarray
-    '''
+    
+    Args:
+        moc: The MOC of interest.
+        df: Dataframe of sources.
+        pipe: Whether the dataframe is from the pipeline or not. Defaults to True.
+    
+    Returns:
+        Numpy array containing the indices of all sources contained within the MOC.
+    """
 
     if pipe:
         ra_col = 'wavg_ra'
@@ -609,15 +610,18 @@ def find_in_moc(moc, df, pipe=True):
     return np.where(moc.contains(ra, dec))[0]
 
 
-def add_credible_levels(filename, df, pipe=True):
-    '''
-    Calculate the minimum credible region containing each source and add to DF
-
-    :param filename: Path to the skymap file
-    :type filename: str
-    :param df: Dataframe of sources
-    :type df: pandas.core.frame.DataFrame
-    '''
+def add_credible_levels(filename: str, df: pd.DataFrame, pipe=True: bool) -> None:
+    """
+    Calculate the minimum credible region containing each source and add to the dataframe in-place.
+    
+    Args:
+        filename: Path to the healpix skymap file.
+        df: Dataframe of sources.
+        pipe: Whether the dataframe is from the pipeline or not. Defaults to True.
+    
+    Returns:
+        None
+    """
     if not os.path.isfile(filename):
         raise Exception("{} does not exist".format(filename))
 
