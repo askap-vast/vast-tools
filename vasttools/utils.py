@@ -549,18 +549,17 @@ def pipeline_get_variable_metrics(df: pd.DataFrame) -> pd.Series:
     return pd.Series(d)
 
 
-def skymap2moc(filename, cutoff):
-    '''
-    Creates a MOC of the credible region of a given skymap
+def skymap2moc(filename: str, cutoff: float) -> mocpy.moc.moc.MOC:
+    """
+    Creates a MOC of the specified credible region of a given skymap.
 
-    :param filename: Path to the skymap file
-    :type filename: str
-    :param cutoff: Credible level cutoff
-    :type cutoff: float
-
-    :returns: MOC
-    :rtype: mocpy.moc.moc.MOC
-    '''
+    Args:
+        filename: Path to the healpix skymap file
+        cutoff: Credible level cutoff
+        
+    Returns
+        A MOC containing the credible region
+    """
 
     if not 0.0 <= cutoff <= 1.0:
         raise Exception("Credible level cutoff must be between 0 and 1")
