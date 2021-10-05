@@ -317,6 +317,9 @@ For example, some measurements could have been removed or the fluxes could have 
 
 :fontawesome-regular-file-alt: [Code reference](../../reference/pipeline/#vasttools.pipeline.PipeAnalysis.recalc_sources_df).
 
+!!! warning "Warning: Long Run Time"
+    Beware that for large pipeline runs the recalculation can take some time to complete.
+
 This method recalculates the `sources` dataframe using the provided `measurements` dataframe.
 In particular, all the columns that are averages, counts or the variability metrics are recalculated.
 It is useful for cases where measurements are filtered out of the original measurements dataframe, or have fluxes changed, and hence the `source` dataframe becomes out of sync.
@@ -329,8 +332,13 @@ Returns a pandas dataframe.
     
     If no measurement pairs dataframe is provided then a filtered measurement pairs dataframe will be used to calculate the new columns with the original fluxes.
 
-!!! warning "Warning: Long Run Time"
-    Beware that for large pipeline runs the recalculation can take a little time to complete.
+!!! warning "Warning: Not Recalculated"
+    Two metrics are not re-calculated:
+    
+      * `new`
+      * `new_source_high_sigma`
+      
+    As these metrics are too complex to recalculate in this environment.
 
 !!!example
     ```python

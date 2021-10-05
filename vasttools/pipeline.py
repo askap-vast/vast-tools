@@ -934,7 +934,7 @@ class PipeAnalysis(PipeRun):
     def _filter_meas_pairs_df(
         self,
         measurements_df: Union[pd.DataFrame, vaex.dataframe.DataFrame]
-    ) -> pd.DataFrame:
+    ) -> Union[pd.DataFrame, vaex.dataframe.DataFrame]:
         """
         A utility method to filter the measurement pairs dataframe to remove
         pairs that are no longer in the measurements dataframe.
@@ -978,14 +978,15 @@ class PipeAnalysis(PipeRun):
             ['mask_a', 'mask_b', 'mask']
         )
 
-        new_measurement_pairs = new_measurement_pairs.to_pandas_df()
+        if not self._vaex_meas_pairs:
+            new_measurement_pairs = new_measurement_pairs.to_pandas_df()
 
         return new_measurement_pairs
 
     def recalc_measurement_pairs_df(
         self,
         measurements_df: Union[pd.DataFrame, vaex.dataframe.DataFrame]
-    ) -> pd.DataFrame:
+    ) -> Union[pd.DataFrame, vaex.dataframe.DataFrame]:
         """
         A method to recalculate the two epoch pair metrics based upon a
         provided altered measurements dataframe.
@@ -1002,12 +1003,6 @@ class PipeAnalysis(PipeRun):
         if not self._loaded_two_epoch_metrics:
             self.load_two_epoch_metrics()
 
-        new_measurement_pairs = self._filter_meas_pairs_df(measurements_df)
-
-        # convert a vaex measurements df to panads so an index can be set
-        if isinstance(measurements_df, vaex.dataframe.DataFrame):
-            measurements_df = measurements_df.to_pandas_df()
-
         flux_cols = [
             'flux_int',
             'flux_int_err',
@@ -1016,9 +1011,18 @@ class PipeAnalysis(PipeRun):
             'id'
         ]
 
+        # convert a vaex measurements df to panads so an index can be set
+        if isinstance(measurements_df, vaex.dataframe.DataFrame):
+            measurements_df = measurements_df[flux_cols].to_pandas_df()
+        else:
+            measurements_df = measurements_df.loc[:, flux_cols]
+
+        new_measurement_pairs = self._filter_meas_pairs_df(
+            measurements_df[['id']]
+        )
+
         measurements_df = (
             measurements_df
-            .loc[:,flux_cols]
             .drop_duplicates('id')
             .set_index('id')
         )
@@ -1034,24 +1038,24 @@ class PipeAnalysis(PipeRun):
 
         # calculate 2-epoch metrics
         new_measurement_pairs["vs_peak"] = calculate_vs_metric(
-            new_measurement_pairs['flux_peak_a'],
-            new_measurement_pairs['flux_peak_b'],
-            new_measurement_pairs['flux_peak_err_a'],
-            new_measurement_pairs['flux_peak_err_b']
+            new_measurement_pairs['flux_peak_a'].to_numpy(),
+            new_measurement_pairs['flux_peak_b'].to_numpy(),
+            new_measurement_pairs['flux_peak_err_a'].to_numpy(),
+            new_measurement_pairs['flux_peak_err_b'].to_numpy()
         )
         new_measurement_pairs["vs_int"] = calculate_vs_metric(
-            new_measurement_pairs['flux_int_a'],
-            new_measurement_pairs['flux_int_b'],
-            new_measurement_pairs['flux_int_err_a'],
-            new_measurement_pairs['flux_int_err_b']
+            new_measurement_pairs['flux_int_a'].to_numpy(),
+            new_measurement_pairs['flux_int_b'].to_numpy(),
+            new_measurement_pairs['flux_int_err_a'].to_numpy(),
+            new_measurement_pairs['flux_int_err_b'].to_numpy()
         )
         new_measurement_pairs["m_peak"] = calculate_m_metric(
-            new_measurement_pairs['flux_peak_a'],
-            new_measurement_pairs['flux_peak_b']
+            new_measurement_pairs['flux_peak_a'].to_numpy(),
+            new_measurement_pairs['flux_peak_b'].to_numpy()
         )
         new_measurement_pairs["m_int"] = calculate_m_metric(
-            new_measurement_pairs['flux_int_a'],
-            new_measurement_pairs['flux_int_b']
+            new_measurement_pairs['flux_int_a'].to_numpy(),
+            new_measurement_pairs['flux_int_b'].to_numpy()
         )
 
         return new_measurement_pairs
@@ -1199,7 +1203,9 @@ class PipeAnalysis(PipeRun):
             self.load_two_epoch_metrics()
 
         if measurement_pairs_df is None:
-            measurement_pairs_df = self._filter_meas_pairs_df(measurements_df)
+            measurement_pairs_df = self._filter_meas_pairs_df(
+                measurements_df[['id']]
+            )
 
         if isinstance(measurement_pairs_df, vaex.dataframe.DataFrame):
             new_measurement_pairs = (
