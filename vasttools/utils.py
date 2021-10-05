@@ -30,6 +30,8 @@ from typing import Optional, Union, Tuple, List
 from matplotlib.transforms import Affine2D
 from matplotlib.path import Path
 
+from pathlib import Path
+
 try:
     import colorlog
     use_colorlog = True
@@ -564,12 +566,13 @@ def skymap2moc(filename: str, cutoff: float) -> MOC:
         ValueError: Credible level cutoff must be between 0 and 1
         FileNotFoundError: File does not exist
     """
+    skymap = Path(filename)
 
     if not 0.0 <= cutoff <= 1.0:
         raise Exception("Credible level cutoff must be between 0 and 1")
 
-    if not os.path.isfile(filename):
-        raise Exception("{} does not exist".format(filename))
+    if not skymap.is_file():
+        raise Exception("{} does not exist".format(skymap))
 
     hpx = hp.read_map(filename, verbose=True, nest=True)
     nside = hp.get_nside(hpx)
@@ -638,7 +641,9 @@ def add_credible_levels(
     Raises:
         FileNotFoundError: File does not exist
     """
-    if not os.path.isfile(filename):
+
+    skymap = Path(filename)
+    if not skymap.is_file():
         raise Exception("{} does not exist".format(filename))
 
     if pipe:
