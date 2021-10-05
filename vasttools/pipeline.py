@@ -1040,10 +1040,15 @@ class PipeAnalysis(PipeRun):
             if i == 'id':
                 continue
             for j in ['a', 'b']:
+                print('a')
                 pairs_i = i + f'_{j}'
+                print('b')
                 id_values = new_measurement_pairs[f'meas_id_{j}'].to_numpy()
-                # new_flux_values = measurements_df.loc[id_values][i].to_numpy()
-                new_measurement_pairs[pairs_i] = measurements_df.loc[id_values][i].to_numpy()
+                print('c')
+                new_flux_values = measurements_df.loc[id_values][i].to_numpy()
+                print('d')
+                new_measurement_pairs[pairs_i] = new_flux_values
+                print('e')
         print('6')
         del measurements_df
         print('7')
