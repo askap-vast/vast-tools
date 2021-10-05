@@ -2283,16 +2283,17 @@ class PipeAnalysis(PipeRun):
 
     def add_credible_levels(self, filename: str) -> None:
         """
-        Calculate the minimum credible region of a given skymap containing each source 
-        
+        Calculate the minimum credible region of a given skymap
+        containing each source.
+
         Args:
             filename: The path to the skymap in healpix format
-        
+
         Returns:
             None
         """
         add_credible_levels(filename, self.sources)
-        
+
 
 class Pipeline(object):
     """
