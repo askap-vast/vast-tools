@@ -556,7 +556,7 @@ def skymap2moc(filename: str, cutoff: float) -> mocpy.moc.moc.MOC:
     Args:
         filename: Path to the healpix skymap file.
         cutoff: Credible level cutoff.
-        
+
     Returns:
         A MOC containing the credible region.
     """
@@ -584,17 +584,21 @@ def skymap2moc(filename: str, cutoff: float) -> mocpy.moc.moc.MOC:
     return moc
 
 
-def find_in_moc(moc: mocpy.moc.moc.MOC, df: pd.DataFrame, pipe=True: bool) -> np.ndarray:
+def find_in_moc(
+    moc: mocpy.moc.moc.MOC,
+    df: pd.DataFrame,
+    pipe=True: bool
+) -> np.ndarray:
     """
     Find the sources that are contained within a MOC
-    
+
     Args:
         moc: The MOC of interest.
         df: Dataframe of sources.
-        pipe: Whether the dataframe is from the pipeline or not. Defaults to True.
-    
+        pipe: Whether the dataframe is from the pipeline. Defaults to True.
+
     Returns:
-        Numpy array containing the indices of all sources contained within the MOC.
+        Indices of all sources contained within the MOC.
     """
 
     if pipe:
@@ -610,15 +614,19 @@ def find_in_moc(moc: mocpy.moc.moc.MOC, df: pd.DataFrame, pipe=True: bool) -> np
     return np.where(moc.contains(ra, dec))[0]
 
 
-def add_credible_levels(filename: str, df: pd.DataFrame, pipe=True: bool) -> None:
+def add_credible_levels(
+    filename: str,
+    df: pd.DataFrame, pipe=True: bool
+) -> None:
     """
-    Calculate the minimum credible region containing each source and add to the dataframe in-place.
-    
+    Calculate the minimum credible region containing each source
+    and add to the dataframe in-place.
+
     Args:
         filename: Path to the healpix skymap file.
         df: Dataframe of sources.
-        pipe: Whether the dataframe is from the pipeline or not. Defaults to True.
-    
+        pipe: Whether the dataframe is from the pipeline. Defaults to True.
+
     Returns:
         None
     """
