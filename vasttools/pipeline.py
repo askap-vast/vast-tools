@@ -1002,7 +1002,11 @@ class PipeAnalysis(PipeRun):
         """
         if not self._loaded_two_epoch_metrics:
             self.load_two_epoch_metrics()
-
+        print('1')
+        new_measurement_pairs = self._filter_meas_pairs_df(
+            measurements_df[['id']]
+        )
+        print('2')
         flux_cols = [
             'flux_int',
             'flux_int_err',
@@ -1010,24 +1014,21 @@ class PipeAnalysis(PipeRun):
             'flux_peak_err',
             'id'
         ]
-
+        print('3')
         # convert a vaex measurements df to panads so an index can be set
         if isinstance(measurements_df, vaex.dataframe.DataFrame):
             measurements_df = measurements_df[flux_cols].to_pandas_df()
         else:
             measurements_df = measurements_df.loc[:, flux_cols]
-
-        new_measurement_pairs = self._filter_meas_pairs_df(
-            measurements_df[['id']]
-        )
-
+        print('4')
         measurements_df = (
             measurements_df
             .drop_duplicates('id')
             .set_index('id')
         )
-
+        print('5')
         for i in flux_cols:
+            print(i)
             if i == 'id':
                 continue
             for j in ['a', 'b']:
@@ -1035,7 +1036,9 @@ class PipeAnalysis(PipeRun):
                 id_values = new_measurement_pairs[f'meas_id_{j}'].to_numpy()
                 new_flux_values = measurements_df.loc[id_values][i].to_numpy()
                 new_measurement_pairs[pairs_i] = new_flux_values
-
+        print('6')
+        del measurements_df
+        print('7')
         # calculate 2-epoch metrics
         new_measurement_pairs["vs_peak"] = calculate_vs_metric(
             new_measurement_pairs['flux_peak_a'].to_numpy(),
@@ -1043,21 +1046,24 @@ class PipeAnalysis(PipeRun):
             new_measurement_pairs['flux_peak_err_a'].to_numpy(),
             new_measurement_pairs['flux_peak_err_b'].to_numpy()
         )
+        print('8')
         new_measurement_pairs["vs_int"] = calculate_vs_metric(
             new_measurement_pairs['flux_int_a'].to_numpy(),
             new_measurement_pairs['flux_int_b'].to_numpy(),
             new_measurement_pairs['flux_int_err_a'].to_numpy(),
             new_measurement_pairs['flux_int_err_b'].to_numpy()
         )
+        print('9')
         new_measurement_pairs["m_peak"] = calculate_m_metric(
             new_measurement_pairs['flux_peak_a'].to_numpy(),
             new_measurement_pairs['flux_peak_b'].to_numpy()
         )
+        print('10')
         new_measurement_pairs["m_int"] = calculate_m_metric(
             new_measurement_pairs['flux_int_a'].to_numpy(),
             new_measurement_pairs['flux_int_b'].to_numpy()
         )
-
+        print('11')
         return new_measurement_pairs
 
     def recalc_sources_df(

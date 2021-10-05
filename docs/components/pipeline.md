@@ -302,6 +302,9 @@ This is stored as the attribute `PipeAnalysis.pairs_df`.
 
 :fontawesome-regular-file-alt: [Code reference](../../reference/pipeline/#vasttools.pipeline.PipeAnalysis.recalc_measurement_pairs_df).
 
+!!! warning "Warning: Long Run Time"
+    Beware that for large pipeline runs the recalculation can take some time to complete.
+
 A method to recalculate the measurement pairs dataframe using a provided measurements dataframe that is assumed to have been edited.
 For example, some measurements could have been removed or the fluxes could have been changed to corrected values.
 
