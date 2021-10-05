@@ -1223,8 +1223,8 @@ class PipeAnalysis(PipeRun):
         if isinstance(measurement_pairs_df, vaex.dataframe.DataFrame):
             new_measurement_pairs = (
                 measurement_pairs_df[
-                    measurement_pairs_df['vs_int'].abs() >= min_vs
-                    or measurement_pairs_df['vs_peak'].abs() >= min_vs
+                    measurement_pairs_df['vs_int'].abs() >= min_vs or
+                    measurement_pairs_df['vs_peak'].abs() >= min_vs
                 ]
             )
         else:
