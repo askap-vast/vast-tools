@@ -3,4 +3,5 @@
 pycodestyle:  # Same as scanner.linter value. Other option is flake8
     ignore:  # Errors and warnings to ignore
         - E712  # comparison to False should be 'if cond is False:' or 'if not cond:'
+        - W503 # line break before binary operator
         - W504 # line break after binary operator
