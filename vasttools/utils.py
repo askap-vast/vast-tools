@@ -559,6 +559,10 @@ def skymap2moc(filename: str, cutoff: float) -> MOC:
 
     Returns:
         A MOC containing the credible region.
+
+    Raises:
+        ValueError: Credible level cutoff must be between 0 and 1
+        FileNotFoundError: File does not exist
     """
 
     if not 0.0 <= cutoff <= 1.0:
@@ -630,6 +634,9 @@ def add_credible_levels(
 
     Returns:
         None
+
+    Raises:
+        FileNotFoundError: File does not exist
     """
     if not os.path.isfile(filename):
         raise Exception("{} does not exist".format(filename))
