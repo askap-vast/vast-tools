@@ -302,8 +302,9 @@ This is stored as the attribute `PipeAnalysis.pairs_df`.
 
 :fontawesome-regular-file-alt: [Code reference](../../reference/pipeline/#vasttools.pipeline.PipeAnalysis.recalc_measurement_pairs_df).
 
-!!! warning "Warning: Long Run Time"
-    Beware that for large pipeline runs the recalculation can take some time to complete.
+!!! warning "Warning: Run Time & Memory"
+    Beware that for large pipeline runs the recalculation can take some time to complete and use up considerable memory.
+    On a shared instance, e.g. a Jupyter Hub environment, the admin may need to be consulted to allow for enough memory access.
 
 A method to recalculate the measurement pairs dataframe using a provided measurements dataframe that is assumed to have been edited.
 For example, some measurements could have been removed or the fluxes could have been changed to corrected values.
@@ -320,8 +321,9 @@ For example, some measurements could have been removed or the fluxes could have 
 
 :fontawesome-regular-file-alt: [Code reference](../../reference/pipeline/#vasttools.pipeline.PipeAnalysis.recalc_sources_df).
 
-!!! warning "Warning: Long Run Time"
-    Beware that for large pipeline runs the recalculation can take some time to complete.
+!!! warning "Warning: Run Time & Memory"
+    Beware that for large pipeline runs the recalculation can take some time to complete and use up considerable memory.
+    On a shared instance, e.g. a Jupyter Hub environment, the admin may need to be consulted to allow for enough memory access.
 
 This method recalculates the `sources` dataframe using the provided `measurements` dataframe.
 In particular, all the columns that are averages, counts or the variability metrics are recalculated.
