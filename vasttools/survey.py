@@ -69,7 +69,7 @@ def load_fields_file(epoch: str) -> pd.DataFrame:
         ValueError: Raised when epoch requested is not released.
     """
     if epoch not in RELEASED_EPOCHS:
-        if len(epoch) > 2 and epoch.startswith('0'):
+        if len(str(epoch)) > 2 and epoch.startswith('0'):
             epoch = epoch[1:]
         if epoch not in RELEASED_EPOCHS:
             raise ValueError(
