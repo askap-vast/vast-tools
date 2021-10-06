@@ -576,7 +576,7 @@ def skymap2moc(filename: str, cutoff: float) -> MOC:
     if not skymap.is_file():
         raise Exception("{} does not exist".format(skymap))
 
-    hpx = hp.read_map(filename, verbose=True, nest=True)
+    hpx = hp.read_map(filename, nest=True)
     nside = hp.get_nside(hpx)
     level = np.log2(nside)
 
@@ -655,7 +655,7 @@ def add_credible_levels(
         ra_col = 'ra'
         dec_col = 'dec'
 
-    hpx = hp.read_map(filename, verbose=True)
+    hpx = hp.read_map(filename)
     nside = hp.get_nside(hpx)
 
     i = np.flipud(np.argsort(hpx))
