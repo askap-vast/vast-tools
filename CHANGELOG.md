@@ -26,6 +26,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Fixed
 
+- Fixed test_query.py::TestQuery::test_init_failure_base_folder test [#291](https://github.com/askap-vast/vast-tools/pull/291).
 - Fixed jsmin dependancy install (2.2.2 -> 3.0.0) [#285](https://github.com/askap-vast/vast-tools/pull/285).
 - Remerged docs branch [#287](https://github.com/askap-vast/vast-tools/pull/287).
 - Docs branch reverted to avoid squashing to make merge of tests straightforward [#286](https://github.com/askap-vast/vast-tools/pull/286).
@@ -36,6 +37,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#291](https://github.com/askap-vast/vast-tools/pull/291): tests: Fixed TestQuery::test_init_failure_base_folder test.
 - [#288](https://github.com/askap-vast/vast-tools/pull/288): docs, dep: Updated docs dependencies.
 - [#285](https://github.com/askap-vast/vast-tools/pull/285): test, feat, dep: Added codebase unit testing.
 - [#287](https://github.com/askap-vast/vast-tools/pull/287): docs, dep: Documentation using mkdocs

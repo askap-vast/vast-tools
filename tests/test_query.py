@@ -514,16 +514,23 @@ class TestQuery:
 
         assert str(excinfo.value) == "Invalid planet object provided!"
 
-    def test_init_failure_base_folder(self) -> None:
+    def test_init_failure_base_folder(self, mocker) -> None:
         """
         Tests the initialisation failure of a Query object.
 
         Specifically when the base folder directory has not been specified, or
         set in the environment.
 
+        Args:
+            mocker: The pytest-mock mocker object.
+
         Returns:
             None
         """
+        mocker_getenv = mocker.patch(
+            'os.getenv', return_value=None
+        )
+
         with pytest.raises(vtq.QueryInitError) as excinfo:
             query = vtq.Query(
                 planets=['Mars']
