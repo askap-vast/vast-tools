@@ -32,6 +32,8 @@ from matplotlib.path import Path
 
 from pathlib import Path
 
+import healpy as hp
+
 try:
     import colorlog
     use_colorlog = True
