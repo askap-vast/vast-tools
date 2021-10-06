@@ -5,7 +5,7 @@ VAST Tools uses the [`pytest`](https://pytest.org){:target="_blank"} framework t
 The [`pytest-mock`](https://github.com/pytest-dev/pytest-mock/){:target="_blank"} plugin is also used to streamline any required mocks.
 
 !!! note "Automatic Tests"
-    The test suit is run automatically on every new pull request opened.
+    The test suite is run automatically on every new pull request opened.
 
 !!! warning "Complex Testing"
     Some aspects of the codebase are challenging to test comprehensively due to the complexity of the tasks.
