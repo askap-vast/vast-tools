@@ -11,8 +11,8 @@ This page gives details on some specific details of VAST Tools when it comes to 
 ## Development Checklist
 
 When adding features to the project it is important to document and test as much of the new code as possible.
-While it can be cumbersome, it really helps to maintain code quality and also the documentation for any future developers.
-Below is a checklist to refer to when adding new features or fixes to vast-tools:
+While it can be cumbersome, it really helps to maintain both the code quality and the documentation for any future developers.
+Below is a checklist to refer to when adding new features or fixes to vast tools.
 
   - Make sure docstrings and type hints are present on any new functions and classes.
   - Write tests where possible for new code (refer to the [Tests](../tests) section).
