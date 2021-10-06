@@ -4,6 +4,8 @@ import pandas as pd
 
 from pathlib import Path
 from mocpy import MOC
+from astropy import units as u
+from astropy.coordinates import SkyCoord, Angle
 
 
 def skymap2moc(filename: str, cutoff: float) -> MOC:
