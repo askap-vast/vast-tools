@@ -12,6 +12,7 @@ import vasttools.utils as vtu
 
 TEST_DATA_DIR = Path(__file__).resolve().parent / 'data'
 
+
 @pytest.fixture
 def coords_df() -> pd.DataFrame:
     """
@@ -686,48 +687,48 @@ def test_pipeline_get_variable_metrics_zero(source_df: pd.DataFrame) -> None:
     )
 
     assert np.all(results.to_numpy() == 0.0)
-    
+
 
 def test_find_in_moc(source_df: pd.DataFrame) -> None:
     """
     Tests finding which sources are contained within a MOC.
-    
-    Args: 
+
+    Args:
         source_df: The dataframe containing the source data.
-    
+
     Returns:
         None
     """
     filename = TEST_DATA_DIR / 'test_skymap_gw190814.fits.gz'
-    results = [True, False, False, False, False, True]
-    
-    moc_skymap = vtu.skymap2moc(filename, 0.8)
-    
+    results = np.array([0, 1])
+
+    moc_skymap = vtu.skymap2moc(filename, 0.9)
+
     func_output = vtu.find_in_moc(moc_skymap, source_df, pipe=False)
-    
-    assert func_output == results
-    
+
+    assert (func_output == results).all()
+
 
 def test_add_credible_levels(source_df: pd.DataFrame) -> None:
     """
     Tests adding the credible levels from a skymap.
-    
+
     Args:
         source_df: The dataframe containing the source data.
-    
+
     Returns:
         None
     """
-    credible_levels = [0.802502,
-                       0.28886,
-                       1,
-                       1,
-                       1,
-                       0.978301
-                      ]
+    credible_levels = np.array([0.80250182,
+                                0.28886045,
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.97830106,
+                                ])
 
     filename = TEST_DATA_DIR / 'test_skymap_gw190814.fits.gz'
     vtu.add_credible_levels(filename, source_df, pipe=False)
-    
-    assert source_df['credible_level'].values == credible_levels
 
+    assert source_df['credible_level'].values == pytest.approx(
+        credible_levels, rel=1e-1)
