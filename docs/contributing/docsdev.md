@@ -27,10 +27,16 @@ scripts
 theme
 ```
 
-Start the development server:
+Start the development server from the root project directory (i.e. not inside the `docs` folder) by using the command:
 
 ```console
 (pipeline_env)$ mkdocs serve
+```
+
+By default this launches the server on the localhost port of `8008` and can be reached by entering into preferred browser the address:
+
+```
+localhost:8008
 ```
 
 Files in the docs directory are then 'watched' such that any changes will cause the mkdocs server to reload the new content.
