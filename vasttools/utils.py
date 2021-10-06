@@ -662,8 +662,8 @@ def add_credible_levels(
     sorted_credible_levels = np.cumsum(hpx[i])
     credible_levels = np.empty_like(sorted_credible_levels)
     credible_levels[i] = sorted_credible_levels
-    theta = 0.5*np.pi - np.deg2rad(df[dec_col])
-    phi = np.deg2rad(df[ra_col])
+    theta = 0.5*np.pi - np.deg2rad(df[dec_col].values)
+    phi = np.deg2rad(df[ra_col].values)
 
     ipix = hp.ang2pix(nside, theta, phi)
 
