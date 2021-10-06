@@ -56,10 +56,9 @@ from vasttools.utils import (
     match_planet_to_field,
     pipeline_get_variable_metrics,
     gen_skycoord_from_df,
-    add_credible_levels
 )
 from vasttools.survey import Image
-
+from vasttools.tools import add_credible_levels
 
 HOST_NCPU = cpu_count()
 numexpr.set_num_threads(int(HOST_NCPU / 4))
