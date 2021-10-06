@@ -15,11 +15,11 @@ TEST_DATA_DIR = Path(__file__).resolve().parent / 'data'
 @pytest.fixture
 def source_df() -> pd.DataFrame:
     """
-    Produces a dataframe containing source flux values for testing. Contains
-    peak, integrated and errors.
+    Produces a dataframe containing source coordinates for testing. Contains
+    ra and dec.
 
     Returns:
-        Dataframe with flux values.
+        Dataframe with coordinates.
     """
     source_df = pd.DataFrame(
         data={
