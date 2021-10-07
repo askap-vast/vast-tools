@@ -1,5 +1,10 @@
 # Query
 
+!!! warning "Version 2.0.0 Epoch 12 Update"
+    In v2.0.0 of vast tools, what was defined as `EPOCH12` has now been redefined as `EPOCH13`.
+    `EPOCH12` is now the epoch that was observed between `11x` and `13` that was processed after these observations.
+    Please refer to the [VAST wiki page](https://github.com/askap-vast/vast-project/wiki/Pilot-Survey-Status-&-Data){:target="_blank"} for the full details (VAST GitHub organization membership required).
+
 The `Query` component of VAST Tools is used to query the VAST Pilot Survey data directly.
 
 !!!warning "Deprecation Warning"

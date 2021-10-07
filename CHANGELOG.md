@@ -10,6 +10,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Added
 
+- Added support for epoch 13 (formerly epoch 12) [#293](https://github.com/askap-vast/vast-tools/pull/293).
+- Added new data files for epoch 12 [#293](https://github.com/askap-vast/vast-tools/pull/293).
+- Added epoch 12 warnings for query and moc components in code and docs [#293](https://github.com/askap-vast/vast-tools/pull/293).
 - Added pep8speaks config file to project [#290](https://github.com/askap-vast/vast-tools/pull/290).
 - Added a method to recalculate the measurement pairs dataframe (two epoch metrics) [#290](https://github.com/askap-vast/vast-tools/pull/290).
 - Docs badge on readme [#288](https://github.com/askap-vast/vast-tools/pull/288).
@@ -20,6 +23,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Changed
 
+- Changed all former epoch 12 data files to epoch 13 [#293](https://github.com/askap-vast/vast-tools/pull/293).
 - Updated vaex-core version to 4.5.0 [#290](https://github.com/askap-vast/vast-tools/pull/290).
 - Updated docs dependencies versions to fix notebook pages [#288](https://github.com/askap-vast/vast-tools/pull/288).
 - Refactored data loading to use importlib.resources [#285](https://github.com/askap-vast/vast-tools/pull/285).
@@ -40,6 +44,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#293](https://github.com/askap-vast/vast-tools/pull/293): feat: Added EPOCH13 support.
 - [#290](https://github.com/askap-vast/vast-tools/pull/290): docs, dep, feat: Added a recalc two epoch metrics method.
 - [#291](https://github.com/askap-vast/vast-tools/pull/291): tests: Fixed TestQuery::test_init_failure_base_folder test.
 - [#288](https://github.com/askap-vast/vast-tools/pull/288): docs, dep: Updated docs dependencies.

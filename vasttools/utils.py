@@ -12,6 +12,7 @@ import matplotlib.markers
 import matplotlib.lines
 import numpy as np
 import pandas as pd
+import warnings
 
 from astropy import units as u
 from astropy.coordinates import SkyCoord, Angle
@@ -580,3 +581,26 @@ def calculate_m_metric(flux_a: float, flux_b: float) -> float:
         float: the m metric for flux values "A" and "B".
     """
     return 2 * ((flux_a - flux_b) / (flux_a + flux_b))
+
+
+def epoch12_user_warning() -> None:
+    """
+    A function to raise a user warning about the new epoch 12 and 13
+    definitions.
+
+    To be removed in a future release.
+
+    Returns:
+        None
+    """
+    # TODO: Remove warning in future release.
+    warning_msg = (
+        "Using v2.0.0 epoch definitions which inserts a new epoch 12, "
+        "displacing the existing epoch 12 to epoch 13. "
+        "Code written before this time that uses vast-tools may need to be "
+        "updated to reproduce results. See "
+        "https://github.com/askap-vast/vast-project/wiki/"
+        "Pilot-Survey-Status-&-Data"
+    )
+
+    warnings.warn(warning_msg)
