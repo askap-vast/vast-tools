@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added documentation on tests [#285](https://github.com/askap-vast/vast-tools/pull/285).
 - Added github workflow to run pytest on new PRs [#285](https://github.com/askap-vast/vast-tools/pull/285).
 - Added documentation using the mkdocs framework [#273](https://github.com/askap-vast/vast-tools/pull/273).
+- Added tools sub-module consisting of skymap/MOC interface tools [#277](https://github.com/askap-vast/vast-tools/pull/277).
 
 #### Changed
 
@@ -37,6 +38,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#277](https://github.com/askap-vast/vast-tools/pull/277): tests, docs, feat, dep: Add skymap utils
 - [#291](https://github.com/askap-vast/vast-tools/pull/291): tests: Fixed TestQuery::test_init_failure_base_folder test.
 - [#288](https://github.com/askap-vast/vast-tools/pull/288): docs, dep: Updated docs dependencies.
 - [#285](https://github.com/askap-vast/vast-tools/pull/285): test, feat, dep: Added codebase unit testing.
