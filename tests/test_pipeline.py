@@ -349,7 +349,7 @@ def load_parquet_side_effect(
     elif 'sources.parquet' in value:
         return dummy_pipeline_sources()
     else:
-        raise ValueError('File not recognised.')
+        raise ValueError(f'{value} file not recognised.')
 
 
 @pytest.fixture
@@ -461,7 +461,7 @@ def dummy_PipeAnalysis_vaex(
 
 @pytest.fixture
 def dummy_PipeAnalysis_vaex_wtwoepoch(
-    dummy_PipeAnalysis: vtp.PipeAnalysis,
+    dummy_PipeAnalysis_vaex: vtp.PipeAnalysis,
     mocker
 ) -> vtp.PipeAnalysis:
     """
@@ -469,8 +469,8 @@ def dummy_PipeAnalysis_vaex_wtwoepoch(
     pre-loaded. Vaex version.
 
     Args:
-        dummy_PipeAnalysis: The dummy vtp.PipeAnalysis fixture that is used
-            to load the run.
+        dummy_PipeAnalysis_vaex: The dummy vtp.PipeAnalysis fixture that is
+            used to load the run, vaex version.
         mocker: The pytest mock mocker object.
 
     Returns:
@@ -481,9 +481,9 @@ def dummy_PipeAnalysis_vaex_wtwoepoch(
         side_effect=dummy_pipeline_measurement_pairs_vaex
     )
 
-    dummy_PipeAnalysis.load_two_epoch_metrics()
+    dummy_PipeAnalysis_vaex.load_two_epoch_metrics()
 
-    return dummy_PipeAnalysis
+    return dummy_PipeAnalysis_vaex
 
 
 @pytest.fixture
@@ -1670,6 +1670,92 @@ class TestPipeAnalysis:
 
         assert len(create_calls) == 2
         moc_union_mocker.assert_called_once()
+
+    @pytest.mark.parametrize(
+        'fixture_name',
+        ['dummy_PipeAnalysis_wtwoepoch', 'dummy_PipeAnalysis_vaex_wtwoepoch']
+    )
+    def test__filter_meas_pairs_df(self, fixture_name: str, request) -> None:
+        """
+        Tests the utility method that filters the measurement pairs dataframe.
+
+        Args:
+            fixture_name: The name of the fixture to load.
+            request: The pytest request fixture, used to load the
+                relevant fixture.
+
+        Returns:
+            None
+        """
+        the_fixture = request.getfixturevalue(fixture_name)
+        # remove measurements from image id 2
+        mask = the_fixture.measurements['image_id'] != 2
+
+        new_measurements = the_fixture.measurements[
+            mask
+        ].copy()
+
+        # get IDs of those removed
+        meas_ids = (
+            the_fixture.measurements[~mask]['id'].to_numpy()
+        )
+
+        result = the_fixture._filter_meas_pairs_df(
+            new_measurements
+        )
+
+        assert result.shape[0] == 18
+        assert np.any(result['meas_id_a'].isin(meas_ids).to_numpy()) == False
+        assert np.any(result['meas_id_b'].isin(meas_ids).to_numpy()) == False
+
+    @pytest.mark.parametrize(
+        'fixture_name',
+        ['dummy_PipeAnalysis_wtwoepoch', 'dummy_PipeAnalysis_vaex_wtwoepoch']
+    )
+    def test_recalc_measurement_pairs_df(
+        self,
+        fixture_name: str,
+        request
+    ) -> None:
+        """
+        Tests the method that recalculates the measurement pairs dataframe.
+
+        Args:
+            fixture_name: The name of the fixture to load.
+            request: The pytest request fixture, used to load the
+                relevant fixture.
+
+        Returns:
+            None
+        """
+        the_fixture = request.getfixturevalue(fixture_name)
+
+        # mulitply fluxes by 100 as new meas
+        new_meas = the_fixture.measurements.copy()
+        new_meas['flux_int'] = new_meas['flux_int'] * 100.
+        new_meas['flux_peak'] = new_meas['flux_peak'] * 100.
+
+        result = the_fixture.recalc_measurement_pairs_df(new_meas)
+
+        expected_vs_peak = the_fixture.measurement_pairs_df['vs_peak'] * 100.
+        expected_vs_int = the_fixture.measurement_pairs_df['vs_int'] * 100.
+
+        expected_m_peak = the_fixture.measurement_pairs_df['m_peak']
+        expected_m_int = the_fixture.measurement_pairs_df['m_int']
+
+        assert result['vs_peak'].to_numpy() == pytest.approx(
+            expected_vs_peak.to_numpy()
+        )
+        assert result['vs_int'].to_numpy() == pytest.approx(
+            expected_vs_int.to_numpy()
+        )
+
+        assert result['m_peak'].to_numpy() == pytest.approx(
+            expected_m_peak.to_numpy()
+        )
+        assert result['m_int'].to_numpy() == pytest.approx(
+            expected_m_int.to_numpy()
+        )
 
     def test_recalc_sources_df(
         self,
