@@ -21,7 +21,7 @@ from astropy.wcs import WCS
 from astropy.wcs.utils import skycoord_to_pixel
 from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
 from radio_beam import Beam
-from typing import Tuple, Optional
+from typing import Tuple, Optional, List
 
 from vasttools import RELEASED_EPOCHS
 
@@ -102,6 +102,8 @@ def load_fields_file(epoch: str) -> pd.DataFrame:
             'vasttools.data.csvs', 'vast_epoch11x_info.csv'),
         "12": importlib.resources.path(
             'vasttools.data.csvs', 'vast_epoch12_info.csv'),
+        "13": importlib.resources.path(
+            'vasttools.data.csvs', 'vast_epoch13_info.csv'),
     }
 
     with paths[epoch] as fields_csv:
@@ -151,6 +153,16 @@ def get_askap_observing_location() -> EarthLocation:
     )
 
     return observing_location
+
+
+def get_supported_epochs() -> List[str]:
+    """
+    Returns the user a list of supported VAST Pilot epochs.
+
+    Returns:
+        List of supported epochs.
+    """
+    return list(sorted(RELEASED_EPOCHS.values()))
 
 
 class Fields:

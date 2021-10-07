@@ -668,3 +668,35 @@ def test_pipeline_get_variable_metrics_zero(source_df: pd.DataFrame) -> None:
     )
 
     assert np.all(results.to_numpy() == 0.0)
+
+
+def test_calculate_vs_metric() -> None:
+    """
+    Tests the calculation of the vs two epoch metric.
+
+    Returns:
+        None
+    """
+    flux_a = 200.
+    flux_b = 100.
+    flux_err_a = 3.
+    flux_err_b = 4.
+
+    result = vtu.calculate_vs_metric(flux_a, flux_b, flux_err_a, flux_err_b)
+
+    assert result == 20.
+
+
+def test_calculate_m_metric() -> None:
+    """
+    Tests the calculation of the m two epoch metric.
+
+    Returns:
+        None
+    """
+    flux_a = 2.
+    flux_b = 1.
+
+    result = vtu.calculate_m_metric(flux_a, flux_b)
+
+    assert result == 2. / 3.

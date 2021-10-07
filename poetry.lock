@@ -414,6 +414,18 @@ optional = false
 python-versions = ">=2.7"
 
 [[package]]
+name = "filelock"
+version = "3.2.0"
+description = "A platform independent file lock."
+category = "main"
+optional = false
+python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
+
+[package.extras]
+docs = ["furo (>=2021.8.17b43)", "sphinx (>=4.1)", "sphinx-autodoc-typehints (>=1.12)"]
+testing = ["coverage (>=4)", "pytest (>=4)", "pytest-cov", "pytest-timeout (>=1.4.2)"]
+
+[[package]]
 name = "forced_phot"
 version = "0.1.0"
 description = ""
@@ -813,7 +825,7 @@ test = ["coverage", "pytest (>=6.0)", "pytest-cov", "pytest-mock", "requests", "
 
 [[package]]
 name = "jupyterlab"
-version = "3.1.4"
+version = "3.1.14"
 description = "JupyterLab computational environment"
 category = "dev"
 optional = false
@@ -2006,7 +2018,7 @@ vaex-core = ">=4.0.0,<5"
 
 [[package]]
 name = "vaex-core"
-version = "4.3.0.post1"
+version = "4.5.1"
 description = "Core of vaex"
 category = "main"
 optional = false
@@ -2017,6 +2029,7 @@ aplus = "*"
 blake3 = "*"
 cloudpickle = "*"
 dask = "*"
+filelock = "*"
 frozendict = "*"
 future = ">=0.15.2"
 nest-asyncio = ">=1.3.3"
@@ -2094,7 +2107,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytes
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8.0"
-content-hash = "34dcd183d95cc0722ef489c50e8965c43ce4603ab46d09d5ba70bc985ca46169"
+content-hash = "ff818287627a251dcc6bfbe3b49c6dd62f7659f6bf171c451c77d32657953b0f"
 
 [metadata.files]
 anyio = [
@@ -2449,6 +2462,10 @@ entrypoints = [
     {file = "entrypoints-0.3-py2.py3-none-any.whl", hash = "sha256:589f874b313739ad35be6e0cd7efde2a4e9b6fea91edcc34e58ecbb8dbe56d19"},
     {file = "entrypoints-0.3.tar.gz", hash = "sha256:c70dd71abe5a8c85e55e12c19bd91ccfeec11a6e99044204511f9ed547d48451"},
 ]
+filelock = [
+    {file = "filelock-3.2.0-py2.py3-none-any.whl", hash = "sha256:61a99e9b12b47b685d1389f4cf969c1eba0efd2348a8471f86e01e8c622267af"},
+    {file = "filelock-3.2.0.tar.gz", hash = "sha256:85ecb30757aa19d06bfcdad29cc332b9a3e4851bf59976aea1e8dadcbd9ef883"},
+]
 forced_phot = []
 frozendict = [
     {file = "frozendict-2.0.4-py3-none-any.whl", hash = "sha256:19105b0ac694d4bd092b0e7eca79fb480d4b40aaf2905f5d9afe9faad961ef72"},
@@ -2558,8 +2575,8 @@ jupyter-server = [
     {file = "jupyter_server-1.10.2.tar.gz", hash = "sha256:d3a3b68ebc6d7bfee1097f1712cf7709ee39c92379da2cc08724515bb85e72bf"},
 ]
 jupyterlab = [
-    {file = "jupyterlab-3.1.4-py3-none-any.whl", hash = "sha256:b8ab11e2d6c467674f6e7c779c08cd6d33759bccda50dcf1f0b96ac3e4e6ed6d"},
-    {file = "jupyterlab-3.1.4.tar.gz", hash = "sha256:82b5ea0f4bd500ff2a6aa27304a206007d7bbe8bc2bc5c685014d72462c985da"},
+    {file = "jupyterlab-3.1.14-py3-none-any.whl", hash = "sha256:1241ff4ab8604a281eda5d8215fe59e418737edcdfe71df09a0bd5fdd4ccfd2c"},
+    {file = "jupyterlab-3.1.14.tar.gz", hash = "sha256:13174cb6076dd5da6f1b85725ccfcc9518d8f98e86b8b644fc89b1dfaeda63a9"},
 ]
 jupyterlab-execute-time = [
     {file = "jupyterlab_execute_time-2.0.5-py3-none-any.whl", hash = "sha256:6419b25370f11696f07e691157d2fe96bcb2a28783135b85626e5d15dc80f175"},
@@ -3391,20 +3408,20 @@ vaex-astro = [
     {file = "vaex_astro-0.8.2-py3-none-any.whl", hash = "sha256:22178d297877fb08e63a68461a549323461d411107eb64b84b8306bfad886fee"},
 ]
 vaex-core = [
-    {file = "vaex-core-4.3.0.post1.tar.gz", hash = "sha256:a7897c21a9c6dc640e4400697ac65851a73dfec730d99dd37272562e1f7037a6"},
-    {file = "vaex_core-4.3.0.post1-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:9a0291d2cd339da4c37e3685e3c1f40f4b7ad0bd3c3588090b9cecb10f514904"},
-    {file = "vaex_core-4.3.0.post1-cp36-cp36m-manylinux2010_x86_64.whl", hash = "sha256:ee1025d4b17bf70e997b4e6ea1a3abe1e22686b5c6d8e65c2776db04250e341c"},
-    {file = "vaex_core-4.3.0.post1-cp36-cp36m-win_amd64.whl", hash = "sha256:2f7e0acdb2efcf29b547863b6841784049ad0830befbf091056ff8ac9af31a6e"},
-    {file = "vaex_core-4.3.0.post1-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:0ea8ed5d2b9c2aaca6145ce174fa645531eca37fe3e4cba466723e4f13e82ee4"},
-    {file = "vaex_core-4.3.0.post1-cp37-cp37m-manylinux2010_x86_64.whl", hash = "sha256:18e855b1e83af03b805b5dabd75ca88baf136bed84de4631f28037111995c8a8"},
-    {file = "vaex_core-4.3.0.post1-cp37-cp37m-win_amd64.whl", hash = "sha256:af09dd3842131b745fe52c6006c1b25b71d710eb6ede403c83a73c11b0a5d8ef"},
-    {file = "vaex_core-4.3.0.post1-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:858658d06a1e2e4c3c71d6ce10e78e3a9b4c1b62bf13e0e852756cfc564dd119"},
-    {file = "vaex_core-4.3.0.post1-cp38-cp38-manylinux2010_x86_64.whl", hash = "sha256:c41b0ad76c303322913293b44e8d2f7fce05f85a2f2363de2b5c515d83b9cfa7"},
-    {file = "vaex_core-4.3.0.post1-cp38-cp38-win_amd64.whl", hash = "sha256:4d5d4c9f05bbc621e5aef5838e6f17c4e46c369e9599f4437daf2d6fc431162b"},
-    {file = "vaex_core-4.3.0.post1-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:67d7be2e89f54e2cab4fc7c3f202baf76f6e9bfea5c35a2830e26809f7253c8f"},
-    {file = "vaex_core-4.3.0.post1-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:e2954d62e3578eb21bd1225f368864a3cd79d33e43c315d79fb0d8c54ddc0aa4"},
-    {file = "vaex_core-4.3.0.post1-cp39-cp39-manylinux2010_x86_64.whl", hash = "sha256:af2daedf26b2d35155df40bf8b6caadb4c9efe50a23d70617642c02b7ed46606"},
-    {file = "vaex_core-4.3.0.post1-cp39-cp39-win_amd64.whl", hash = "sha256:4fffa79604f08ac055124c20b2a7f5e9f4ac46a0e71de878c3f6a7aee07f0438"},
+    {file = "vaex-core-4.5.1.tar.gz", hash = "sha256:96fbb96252c2450b1c3250dea0262e8e3cddf63f6da47d5343472f0a94dc50a2"},
+    {file = "vaex_core-4.5.1-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:ae52ec57586650fd5d51c30062c0d4391eb19a412e23e5b6dfe32190ee0de633"},
+    {file = "vaex_core-4.5.1-cp36-cp36m-manylinux2010_x86_64.whl", hash = "sha256:e7d4970a030956151a4c17d2d1da16a6b41e751869dacf4aa2c34571b9e8774c"},
+    {file = "vaex_core-4.5.1-cp36-cp36m-win_amd64.whl", hash = "sha256:35192e74206f58150f454460866a6c11c5bdcdf931b5bfbab6c550cb4300dbf7"},
+    {file = "vaex_core-4.5.1-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:e286a52616de9ab4a048e675bf1b03fa7ddfacd1dfe6f528e452e00bd3ab60b9"},
+    {file = "vaex_core-4.5.1-cp37-cp37m-manylinux2010_x86_64.whl", hash = "sha256:1fbace80b52a104f33322b3b35bf30e4718b39ab307e652f1e1bd400ee6cdf7d"},
+    {file = "vaex_core-4.5.1-cp37-cp37m-win_amd64.whl", hash = "sha256:b5dd16aa1aa7486b08ef62a00ed85829b311ebbd99302fb495e6ce127b9d5675"},
+    {file = "vaex_core-4.5.1-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:72c7ceacde3c3715a75202374cd3960bb6ed257f543b4b4bf36128915bc7ad30"},
+    {file = "vaex_core-4.5.1-cp38-cp38-manylinux2010_x86_64.whl", hash = "sha256:6d124431364b3eac46c765bb3990e717b23c93053e028a5fcddee50a11223eee"},
+    {file = "vaex_core-4.5.1-cp38-cp38-win_amd64.whl", hash = "sha256:98cac1733334c98d4cf93214f0050304a818f2228769839c1a8c3bc804f35a23"},
+    {file = "vaex_core-4.5.1-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:1bdf72620ba0ef66a673ad04bef8cdf37b7e2c74ae086d25218325189893fd5f"},
+    {file = "vaex_core-4.5.1-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:71fec2b7875d993875c5a8b5a647011b8a2303c6e7012a12f4790b4c24cf605e"},
+    {file = "vaex_core-4.5.1-cp39-cp39-manylinux2010_x86_64.whl", hash = "sha256:d81d83a892bb19bf26a638e21eaa438758ef1c25f8df13653cfdf9f39598068c"},
+    {file = "vaex_core-4.5.1-cp39-cp39-win_amd64.whl", hash = "sha256:d99afc3ac9b69db7ba19b3011b1ad69730e04cdce297ba08c4780d38153a93f4"},
 ]
 vaex-hdf5 = [
     {file = "vaex-hdf5-0.7.0.tar.gz", hash = "sha256:73f898f9bc3fa5c61a67fb31a85be296bbd37d157cdf2a1d48d22f0ccad024c6"},

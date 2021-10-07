@@ -12,6 +12,7 @@ import matplotlib.markers
 import matplotlib.lines
 import numpy as np
 import pandas as pd
+import warnings
 
 from astropy import units as u
 from astropy.coordinates import SkyCoord, Angle
@@ -542,3 +543,64 @@ def pipeline_get_variable_metrics(df: pd.DataFrame) -> pd.Series:
         d['eta_peak'] = pipeline_get_eta_metric(df, peak=True)
 
     return pd.Series(d)
+
+
+def calculate_vs_metric(
+    flux_a: float, flux_b: float, flux_err_a: float, flux_err_b: float
+) -> float:
+    """
+    Calculate the Vs variability metric which is the t-statistic that the
+    provided fluxes are variable. See Section 5 of Mooley et al. (2016)
+    for details, DOI: 10.3847/0004-637X/818/2/105.
+
+    Args:
+        flux_a (float): flux value "A".
+        flux_b (float): flux value "B".
+        flux_err_a (float): error of `flux_a`.
+        flux_err_b (float): error of `flux_b`.
+
+    Returns:
+        float: the Vs metric for flux values "A" and "B".
+    """
+    return (flux_a - flux_b) / np.hypot(flux_err_a, flux_err_b)
+
+
+def calculate_m_metric(flux_a: float, flux_b: float) -> float:
+    """
+    Calculate the m variability metric which is the modulation index between
+    two fluxes.
+    This is proportional to the fractional variability.
+    See Section 5 of Mooley et al. (2016) for details,
+    DOI: 10.3847/0004-637X/818/2/105.
+
+    Args:
+        flux_a (float): flux value "A".
+        flux_b (float): flux value "B".
+
+    Returns:
+        float: the m metric for flux values "A" and "B".
+    """
+    return 2 * ((flux_a - flux_b) / (flux_a + flux_b))
+
+
+def epoch12_user_warning() -> None:
+    """
+    A function to raise a user warning about the new epoch 12 and 13
+    definitions.
+
+    To be removed in a future release.
+
+    Returns:
+        None
+    """
+    # TODO: Remove warning in future release.
+    warning_msg = (
+        "Using v2.0.0 epoch definitions which inserts a new epoch 12, "
+        "displacing the existing epoch 12 to epoch 13. "
+        "Code written before this time that uses vast-tools may need to be "
+        "updated to reproduce results. See "
+        "https://github.com/askap-vast/vast-project/wiki/"
+        "Pilot-Survey-Status-&-Data"
+    )
+
+    warnings.warn(warning_msg)
