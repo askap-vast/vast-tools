@@ -5,7 +5,7 @@
     `EPOCH12` is now the epoch that was observed between `11x` and `13` that was processed after these observations.
     Please refer to the [VAST wiki page](https://github.com/askap-vast/vast-project/wiki/Pilot-Survey-Status-&-Data){:target="_blank"} for the full details (VAST GitHub organization membership required).
 
-The `Survey` component offers some convenient parameters and data on the VAST Pilot Survey or the ASKAP telescope.
+The `Survey` component offers convenient data on the VAST Pilot Survey or the ASKAP telescope.
 
 These include:
 
@@ -22,52 +22,6 @@ The `Survey` component also contains two classes `Fields` and `Image` that may b
 
 Unlike the other components, some tools and functions are directly imported from the `Survey` component.
 These are detailed in the section below.
-
-### Survey Component Attributes
-
-#### RELEASED_EPOCHS
-
-:fontawesome-regular-file-alt: [Code reference](../../reference/survey/#vasttools.survey).
-
-`RELEASED_EPOCHS` is a python dictionary that contains the supported epochs as a string value as the keys and the zero-padded string epoch name as the respective value.
-
-!!! example
-    ```python
-    from vasttools.survey import RELEASED_EPOCHS
-    
-    print(RELEASED_EPOCHS)
-    # output
-    {'0': '00', '1': '01', '2': '02', '3x': '03x', '4x': '04x', '5x': '05x', '6x': '06x', '7x': '07x', '8': '08', '9': '09', '10x': '10x', '11x': '11x', '12': '12'}
-    ```
-
-#### FIELD_CENTRES
-
-:fontawesome-regular-file-alt: [Code reference](../../reference/survey/#vasttools.survey).
-
-Returns a pandas dataframe containing three columns: 
-
-  * `field` is the name of the field in question.
-  * `centre-ra` is the centre right ascension coordinate of the respective field in degrees.
-  * `centre-dec` is the centre declination coordinate of the respective field in degrees.
-
-!!! note "Note: RACS Fields"
-    The field centres of all the [`Rapid ASKAP Continuum Survey (RACS)`](https://research.csiro.au/racs/){:target="_blank"} fields (low frequency component) are also included.
-
-!!! example
-    ```python
-    from vasttools.survey import FIELD_CENTRES
-    
-    FIELD_CENTRES
-    ```
-    Pandas dataframe output:
-    
-    |      | field         |     centre-ra |   centre-dec |
-    |-----:|:--------------|--------------:|-------------:|
-    |    0 | VAST_0012+00A |   3.10175     |   0.00377094 |
-    |    1 | VAST_0012-06A |   3.10156     |  -6.29821    |
-    |  ... | ...           |  ...          |  ...         |
-    | 1014 | RACS_2359-25A |   0.000611873 | -25.1363     |
-    | 1015 | RACS_2359-43A |   0.00902694  | -43.8906     |
 
 ### Survey Component Functions
 
@@ -127,6 +81,85 @@ There are no arguments available to the function.
     ```
     Note that epoch values are strings.
 
+#### get_supported_epochs
+
+:fontawesome-regular-file-alt: [Code reference](../../reference/survey/#vasttools.survey.get_supported_epochs).
+
+Returns a list of the currently supported VAST Pilot Survey epochs.
+
+!!! example
+    ```python
+    from vasttools.survey import get_supported_epochs
+
+    epochs = get_supported_epochs()
+    print(epochs)
+    ```
+    ```terminal
+    ['00', '01', '02', '03x', '04x', '05x', '06x', '07x', '08', '09', '10x', '11x', '12', '13']
+    ```
+
+#### load_field_centres
+
+:fontawesome-regular-file-alt: [Code reference](../../reference/survey/#vasttools.survey.load_field_centres).
+
+Returns a pandas dataframe containing three columns: 
+
+  * `field` is the name of the field in question.
+  * `centre-ra` is the centre right ascension coordinate of the respective field in degrees.
+  * `centre-dec` is the centre declination coordinate of the respective field in degrees.
+
+!!! note "Note: RACS Fields"
+    The field centres of all the [`Rapid ASKAP Continuum Survey (RACS)`](https://research.csiro.au/racs/){:target="_blank"} fields (low frequency component) are also included.
+
+!!! example
+    ```python
+    from vasttools.survey import load_field_centres
+    
+    field_centres = load_field_centres()
+    ```
+    Pandas dataframe output:
+    
+    |      | field         |     centre-ra |   centre-dec |
+    |-----:|:--------------|--------------:|-------------:|
+    |    0 | VAST_0012+00A |   3.10175     |   0.00377094 |
+    |    1 | VAST_0012-06A |   3.10156     |  -6.29821    |
+    |  ... | ...           |  ...          |  ...         |
+    | 1014 | RACS_2359-25A |   0.000611873 | -25.1363     |
+    | 1015 | RACS_2359-43A |   0.00902694  | -43.8906     |
+
+#### load_fields_file
+
+:fontawesome-regular-file-alt: [Code reference](../../reference/survey/#vasttools.survey.load_fields_file).
+
+This function allows the user to load the packaged field information file of the requested epoch as a pandas dataframe.
+The included columns are:
+
+  * SBID
+  * FIELD_NAME
+  * BEAM 
+  * RA_HMS
+  * DEC_DMS
+  * DATEOBS
+  * DATEEND
+  * NINT
+  * BMAJ
+  * BMIN
+  * BPA
+
+!!! example
+    ```python
+    from vasttools.survey import load_fields_file
+    
+    epoch_1_fields = load_fields_file('1')
+    ```
+    Output dataframe:
+    
+    |    |   SBID | FIELD_NAME    |   BEAM | RA_HMS       | DEC_DMS      | DATEOBS                 | DATEEND                 |   NINT |    BMAJ |    BMIN |     BPA |
+    |---:|-------:|:--------------|-------:|:-------------|:-------------|:------------------------|:------------------------|-------:|--------:|--------:|--------:|
+    |  0 |   9667 | VAST_0012+00A |      0 | 00:10:19.001 | +00:31:29.93 | 2019-08-27 14:28:14.841 | 2019-08-27 14:40:31.384 |     75 | 20.7209 | 12.2932 | 58.0166 |
+    |  1 |   9667 | VAST_0012+00A |      1 | 00:14:31.001 | +00:31:29.93 | 2019-08-27 14:28:14.841 | 2019-08-27 14:40:31.384 |     75 | 21.9846 | 10.9006 | 61.7216 |
+    |  2 |   9667 | VAST_0012+00A |      2 | 00:10:19.001 | -00:31:29.93 | 2019-08-27 14:28:14.841 | 2019-08-27 14:40:31.384 |     75 | 21.4643 | 11.1449 | 62.5205 |
+    |  3 |   9667 | VAST_0012+00A |      3 | 00:14:31.001 | -00:31:29.93 | 2019-08-27 14:28:14.841 | 2019-08-27 14:40:31.384 |     75 | 23.5133 | 10.5041 | 60.4566 |
 
 ### Fields Class
 
