@@ -273,6 +273,19 @@ def test_get_askap_observing_location() -> None:
     assert result == expected
 
 
+def test_get_supported_epochs() -> None:
+    """
+    Tests the fetching of the supported epochs.
+
+    Returns:
+        None
+    """
+    expected = list(sorted(RELEASED_EPOCHS.values()))
+    result = vts.get_supported_epochs()
+
+    assert result == expected
+
+
 class TestFields:
     """
     Class that includes tests for the Fields class in vasttools.survey.

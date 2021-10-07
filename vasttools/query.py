@@ -61,7 +61,7 @@ from vasttools.survey import (
 from vasttools.source import Source
 from vasttools.utils import (
     filter_selavy_components, simbad_search, match_planet_to_field,
-    check_racs_exists
+    check_racs_exists, epoch12_user_warning
 )
 from vasttools.moc import VASTMOCS
 from forced_phot import ForcedPhot
@@ -389,6 +389,9 @@ class Query:
 
 
         self.fields_found = False
+
+        # TODO: Remove warning in future release.
+        epoch12_user_warning()
 
     def _validate_settings(self) -> bool:
         """
