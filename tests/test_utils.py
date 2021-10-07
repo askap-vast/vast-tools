@@ -6,11 +6,8 @@ import pytest
 from astropy.coordinates import SkyCoord, Angle
 from astropy.table import Table
 from pytest_mock import mocker
-from pathlib import Path
 
 import vasttools.utils as vtu
-
-TEST_DATA_DIR = Path(__file__).resolve().parent / 'data'
 
 
 @pytest.fixture

@@ -10,12 +10,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Added
 
+- Added tools sub-module consisting of skymap/MOC interface tools [#277](https://github.com/askap-vast/vast-tools/pull/277).
 - Docs badge on readme [#288](https://github.com/askap-vast/vast-tools/pull/288).
 - Added unit testing for the codebase [#285](https://github.com/askap-vast/vast-tools/pull/285).
 - Added documentation on tests [#285](https://github.com/askap-vast/vast-tools/pull/285).
 - Added github workflow to run pytest on new PRs [#285](https://github.com/askap-vast/vast-tools/pull/285).
 - Added documentation using the mkdocs framework [#273](https://github.com/askap-vast/vast-tools/pull/273).
-- Added tools sub-module consisting of skymap/MOC interface tools [#277](https://github.com/askap-vast/vast-tools/pull/277).
 
 #### Changed
 
