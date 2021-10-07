@@ -21,7 +21,7 @@ from astropy.wcs import WCS
 from astropy.wcs.utils import skycoord_to_pixel
 from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
 from radio_beam import Beam
-from typing import Tuple, Optional
+from typing import Tuple, Optional, List
 
 from vasttools import RELEASED_EPOCHS
 
@@ -151,6 +151,16 @@ def get_askap_observing_location() -> EarthLocation:
     )
 
     return observing_location
+
+
+def get_supported_epochs() -> List[str]:
+    """
+    Returns the user a list of supported VAST Pilot epochs.
+
+    Returns:
+        List of supported epochs.
+    """
+    return list(sorted(RELEASED_EPOCHS.values()))
 
 
 class Fields:
