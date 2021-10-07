@@ -12,6 +12,7 @@ import vasttools.tools as vtt
 
 TEST_DATA_DIR = Path(__file__).resolve().parent / 'data'
 
+
 @pytest.fixture
 def source_df() -> pd.DataFrame:
     """
@@ -43,6 +44,7 @@ def source_df() -> pd.DataFrame:
     )
 
     return source_df
+
 
 def test_find_in_moc(source_df: pd.DataFrame) -> None:
     """
