@@ -298,21 +298,63 @@ This is stored as the attribute `PipeAnalysis.pairs_df`.
     my_pipe_run.pairs_df
     ```
 
+#### recalc_measurement_pairs_df
+
+:fontawesome-regular-file-alt: [Code reference](../../reference/pipeline/#vasttools.pipeline.PipeAnalysis.recalc_measurement_pairs_df).
+
+!!! warning "Warning: Run Time & Memory"
+    Beware that for large pipeline runs the recalculation can take some time to complete and use up considerable memory.
+    On a shared instance, e.g. a Jupyter Hub environment, the admin may need to be consulted to allow for enough memory access.
+
+A method to recalculate the measurement pairs dataframe using a provided measurements dataframe that is assumed to have been edited.
+For example, some measurements could have been removed or the fluxes could have been changed to corrected values.
+
+!!! tip
+    The result of this method can be used with [`recalc_sources_df`](#recalc_sources_df) to update the significant `vs` and `m` columns in the sources dataframe.
+
+!!!example
+    ```python
+    new_measurement_pairs = my_pipe_run.recalc_measurement_pairs_df(my_filtered_measurements)
+    ```
+
 #### recalc_sources_df
 
 :fontawesome-regular-file-alt: [Code reference](../../reference/pipeline/#vasttools.pipeline.PipeAnalysis.recalc_sources_df).
+
+!!! warning "Warning: Run Time & Memory"
+    Beware that for large pipeline runs the recalculation can take some time to complete and use up considerable memory.
+    On a shared instance, e.g. a Jupyter Hub environment, the admin may need to be consulted to allow for enough memory access.
 
 This method recalculates the `sources` dataframe using the provided `measurements` dataframe.
 In particular, all the columns that are averages, counts or the variability metrics are recalculated.
 It is useful for cases where measurements are filtered out of the original measurements dataframe, or have fluxes changed, and hence the `source` dataframe becomes out of sync.
 Returns a pandas dataframe.
 
-!!! warning "Warning: Long Run Time"
-    Beware that for large pipeline runs the recalculation take a while to complete.
+!!! tip "Tip: Changed Measurement Fluxes"
+    If the measurement fluxes have been changed then a recalculated measurement pairs dataframe should be provided in order to calculate the correct new values of the significant `vs` and `m` columns.
+    A recalculated pairs dataframe can be obtained from the [`recalc_measurement_pairs_df`](#recalc_measurement_pairs_df) detailed on this page, and can be supplied using the `measurement_pairs_df` argument.
+    See the example section below on how to supply the dataframe.
+    
+    If no measurement pairs dataframe is provided then a filtered measurement pairs dataframe will be used to calculate the new columns with the original fluxes.
+
+!!! warning "Warning: Not Recalculated"
+    Two metrics are not re-calculated:
+    
+      * `new`
+      * `new_source_high_sigma`
+      
+    As these metrics are too complex to recalculate in this environment.
 
 !!!example
     ```python
     new_sources_df = my_pipe_run.recalc_sources_df(my_filtered_measurements)
+    ```
+    Or with a corrected measurement pairs dataframe:
+    ```python
+    new_measurement_pairs = my_pipe_run.recalc_measurement_pairs_df(my_filtered_measurements)
+    
+    new_sources_df = my_pipe_run.recalc_sources_df(
+        my_filtered_measurements, measurement_pairs_df=new_measurement_pairs)
     ```
     The new sources could then be assigned to the pipeline run if desired:
     ```python
