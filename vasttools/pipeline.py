@@ -101,6 +101,7 @@ class PipeRun(object):
         sources_skycoord (astroy.coordinates.SkyCoord): A SkyCoord object of
             the default sources attribute.
     """
+
     def __init__(
         self,
         name: str,
@@ -353,7 +354,7 @@ class PipeRun(object):
 
         measurements = measurements.rename(
             columns={
-              'time': 'dateobs',
+                'time': 'dateobs',
             }
         ).sort_values(
             by='dateobs'
@@ -875,6 +876,7 @@ class PipeAnalysis(PipeRun):
         sources_skycoord (astropy.coordinates.sky_coordinate.SkyCoord):
             A SkyCoord object of the default sources attribute.
     """
+
     def __init__(
         self,
         name: str,
@@ -1109,11 +1111,11 @@ class PipeAnalysis(PipeRun):
         )
 
         measurements_df['interim_ew'] = (
-           measurements_df['ra_wrap'] * measurements_df['weight_ew']
+            measurements_df['ra_wrap'] * measurements_df['weight_ew']
         )
 
         measurements_df['interim_ns'] = (
-           measurements_df['dec'] * measurements_df['weight_ns']
+            measurements_df['dec'] * measurements_df['weight_ns']
         )
 
         for col in ['flux_int', 'flux_peak']:
@@ -1234,7 +1236,6 @@ class PipeAnalysis(PipeRun):
             )
             new_measurement_pairs = measurement_pairs_df.loc[min_vs_mask]
             new_measurement_pairs = vaex.from_pandas(new_measurement_pairs)
-
 
         new_measurement_pairs['vs_int_abs'] = (
             new_measurement_pairs['vs_int'].abs()
