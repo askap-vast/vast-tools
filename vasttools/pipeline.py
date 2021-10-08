@@ -60,7 +60,7 @@ from vasttools.utils import (
     calculate_m_metric
 )
 from vasttools.survey import Image
-
+from vasttools.tools import add_credible_levels
 
 HOST_NCPU = cpu_count()
 numexpr.set_num_threads(int(HOST_NCPU / 4))
@@ -2414,6 +2414,19 @@ class PipeAnalysis(PipeRun):
             return eta_cutoff, v_cutoff, candidates, plot, diag
         else:
             return eta_cutoff, v_cutoff, candidates, plot
+
+    def add_credible_levels(self, filename: str) -> None:
+        """
+        Calculate the minimum credible region of a given skymap
+        containing each source.
+
+        Args:
+            filename: The path to the skymap in healpix format
+
+        Returns:
+            None
+        """
+        add_credible_levels(filename, self.sources)
 
 
 class Pipeline(object):

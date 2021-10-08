@@ -25,13 +25,15 @@ from typing import Optional, Union, Tuple, List
 
 # crosshair imports
 from matplotlib.transforms import Affine2D
-from matplotlib.path import Path
+import matplotlib.path as path
+
 
 try:
     import colorlog
     use_colorlog = True
 except ImportError:
     use_colorlog = False
+
 
 from vasttools.survey import get_askap_observing_location
 
@@ -131,22 +133,22 @@ def _set_crosshair(self) -> None:
     Returns:
         None
     """
-    _crosshair_path = Path([(0.0, -0.5),  # center, bottom
-                            (0.0, -0.25),  # center, q_bot
-                            (-0.5, 0.0),  # left, center
-                            (-0.25, 0.0),  # q_left, center
-                            (0.0, 0.25),  # center, q_top
-                            (0.0, 0.5),  # center, top
-                            (0.25, 0.0),  # q_right, center
-                            (0.5, 0.0)],  # right, center
-                           [Path.MOVETO,
-                            Path.LINETO,
-                            Path.MOVETO,
-                            Path.LINETO,
-                            Path.MOVETO,
-                            Path.LINETO,
-                            Path.MOVETO,
-                            Path.LINETO])
+    _crosshair_path = path.Path([(0.0, -0.5),  # center, bottom
+                                 (0.0, -0.25),  # center, q_bot
+                                 (-0.5, 0.0),  # left, center
+                                 (-0.25, 0.0),  # q_left, center
+                                 (0.0, 0.25),  # center, q_top
+                                 (0.0, 0.5),  # center, top
+                                 (0.25, 0.0),  # q_right, center
+                                 (0.5, 0.0)],  # right, center
+                                [path.Path.MOVETO,
+                                 path.Path.LINETO,
+                                 path.Path.MOVETO,
+                                 path.Path.LINETO,
+                                 path.Path.MOVETO,
+                                 path.Path.LINETO,
+                                 path.Path.MOVETO,
+                                 path.Path.LINETO])
 
     self._transform = Affine2D().scale(1.0)
     self._snap_threshold = 1.0
