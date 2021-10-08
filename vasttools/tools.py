@@ -6,6 +6,8 @@ from pathlib import Path
 from mocpy import MOC
 from astropy import units as u
 from astropy.coordinates import SkyCoord, Angle
+from astropy.time import Time
+from pathlib import Path
 
 
 def skymap2moc(filename: str, cutoff: float) -> MOC:
@@ -123,3 +125,108 @@ def add_credible_levels(
     ipix = hp.ang2pix(nside, theta, phi)
 
     df.loc[:, 'credible_level'] = credible_levels[ipix]
+    
+    
+def create_fields_csv(epoch_num: str, db_path: str) -> None:
+    field_columns = ['FIELD_NAME', 'SBID', 'SCAN_START', 'SCAN_LEN']
+    beam_columns = ['BEAM_NUM',
+                    'RA_DEG',
+                    'DEC_DEG',
+                    'PSF_MAJOR',
+                    'PSF_MINOR',
+                    'PSF_ANGLE'
+                    ]
+
+    vast_db = Path(db_path)
+
+    epoch = vast_db / 'epoch_{}'.format(epoch_num.replace('x','')
+
+    beam_files = list(epoch.glob('beam_inf_*.csv'))
+    field_data = epoch / 'field_data.csv'
+    
+    field_df = pd.read_csv(field_data)
+    field_df = field_df.loc[:, required_columns]
+
+    for i, beam_file in enumerate(beam_files):
+        field = "VAST_" + beam_file.name.split('VAST_')[-1].split(beam_file.suffix)[0]
+        sbid = int(beam_file.name.split('beam_inf_')[-1].split('-')[0])
+
+        temp = pd.read_csv(beam_file)
+        temp = temp.loc[:, beam_columns]
+        temp['SBID'] = sbid
+        temp['FIELD_NAME'] = field
+        
+        if i == 0:
+            beam_df = temp.copy()
+        else:
+            beam_df = beam_df.append(temp)
+
+    epoch_csv = beam_df.merge(field_df,
+                              left_on=['SBID', 'FIELD_NAME'],
+                              right_on=['SBID', 'FIELD_NAME']
+                              )
+
+    # convert the coordinates to match format in tools v2.0.0
+    coordinates = SkyCoord(
+        ra=epoch_csv['RA_DEG'].to_numpy(),
+        dec=epoch_csv['DEC_DEG'].to_numpy(),
+        unit=(u.deg, u.deg)
+    )
+
+    epoch_csv['RA_HMS'] = coordinates.ra.to_string(u.hour,
+                                                   sep=":",
+                                                   precision=3
+                                                   )
+    epoch_csv['DEC_DMS'] = coordinates.dec.to_string(sep=":",
+                                                     precision=3,
+                                                     alwayssign=True
+                                                     )
+                                                     
+    start_times = epoch_csv['SCAN_START'].to_numpy() / 86400.
+    end_times = start_numpy + epoch_csv['SCAN_LEN'].to_numpy() / 86400.
+    start_times = Time(start_times, format='mjd')
+    end_times = Time(end_times, format='mjd')
+    
+    epoch_csv['DATEOBS'] = start_times.iso
+    epoch_csv['DATEEND'] = end_times.iso
+    epoch_csv['NINT'] = np.around(epoch_csv['SCAN_LEN'] / 10.).astype(np.int64)
+    
+    drop_cols = ['SCAN_START', 'SCAN_LEN', 'RA_DEG', 'DEC_DEG']
+    epoch_csv = epoch_csv.drop(drop_cols, axis=1)
+    epoch_csv = epoch_csv.rename(columns={'BEAM_NUM': 'BEAM',
+                                          'PSF_MAJOR': 'BMAJ',
+                                          'PSF_MINOR': 'BMIN',
+                                          'PSF_ANGLE': 'BPA'})
+    epoch_csv = epoch_csv.loc[:, [
+        'SBID',
+        'FIELD_NAME',
+        'BEAM',
+        'RA_HMS',
+        'DEC_DMS',
+        'DATEOBS',
+        'DATEEND',
+        'NINT',
+        'BMAJ',
+        'BMIN',
+        'BPA'
+    ]]
+    
+    epoch_csv.to_csv('vast_epoch{}_info.csv'.format(epoch_num, index=False)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
