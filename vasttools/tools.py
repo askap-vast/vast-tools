@@ -20,6 +20,7 @@ from vasttools.survey import load_fields_file
 
 # Skymap tools
 
+
 def skymap2moc(filename: str, cutoff: float) -> MOC:
     """
     Creates a MOC of the specified credible region of a given skymap.
@@ -144,7 +145,7 @@ def create_fields_csv(epoch_num: str, db_path: str) -> None:
     Args:
         epoch_num: Epoch number of interest
         db_path: Path to the askap_surveys database
-        
+
     Returns:
         None
     """
@@ -238,10 +239,11 @@ def create_fields_csv(epoch_num: str, db_path: str) -> None:
 
 # New epoch tools
 
+
 def add_obs_date(epoch: str, image_dir: str, epoch_path: str = None):
     """
-    Add datetime information to fits files.
-    
+    Add datetime information to all fits files in a single epoch.
+
     Args:
         epoch: The epoch of interest
         image_dir: The name of the folder containing the images to be updated
@@ -249,18 +251,18 @@ def add_obs_date(epoch: str, image_dir: str, epoch_path: str = None):
         epoch_path: Full path to the folder containing the epoch.
             Defaults to None, which will set the value based on the
             `VAST_DATA_DIR` environment variable and `epoch`.
-    
+
     Returns:
         None
     """
-    
+
     if epoch_path is None:
         base_folder = Path(os.getenv('VAST_DATA_DIR'))
         epoch_path = base_folder / 'EPOCH{}'.format(epoch)
-    
+
     epoch_info = load_fields_file(epoch)
 
-    glob_str = os.path.join(epoch_path,image_dir, "*.fits")
+    glob_str = os.path.join(epoch_path, image_dir, "*.fits")
     raw_images = sorted(glob.glob(glob_str))
 
     for filename in raw_images:
@@ -269,7 +271,7 @@ def add_obs_date(epoch: str, image_dir: str, epoch_path: str = None):
         field_start = Time(field_info.DATEOBS)
         field_end = Time(field_info.DATEEND)
         duration = field_end - field_start
-        
+
         hdu = fits.open(i, mode="update")
         hdu[0].header["DATE-OBS"] = field_start.fits
         hdu[0].header["MJD-OBS"] = field_start.mjd
@@ -280,19 +282,20 @@ def add_obs_date(epoch: str, image_dir: str, epoch_path: str = None):
         hdu[0].header["TELAPSE"] = duration.sec
         hdu[0].header["TIMEUNIT"] = "s"
         hdu.close()
-    
-def gen_mocs_field(fits_file: str) ->:
+
+
+def gen_mocs_field(fits_file: str) -> (moc.MOC, moc.STMOC):
     """
     Generate a MOC and STMOC for a single fits file
-    
+
     Args:
         fits_file: path to the fits file
-    
+
     Returns:
-        None
+        The MOC and STMOC
     """
     with fits.open(fits_file) as vast_fits:
-        vast_data = vast_fits[0].data[0,0,:,:]
+        vast_data = vast_fits[0].data[0, 0, :, :]
         vast_header = vast_fits[0].header
         vast_wcs = WCS(vast_header, naxis=2)
 
@@ -301,11 +304,12 @@ def gen_mocs_field(fits_file: str) ->:
     dist = ndi.distance_transform_cdt(binary, metric='taxicab')
     mask = dist[1:-1, 1:-1]
 
-    x,y = np.where(mask == 1)
+    x, y = np.where(mask == 1)
     # need to know when to reverse by checking axis sizes.
-    pixels = np.column_stack((y,x))
+    pixels = np.column_stack((y, x))
 
-    coords = SkyCoord(vast_wcs.wcs_pix2world(pixels, 0), unit="deg", frame="icrs")
+    coords = SkyCoord(vast_wcs.wcs_pix2world(
+        pixels, 0), unit="deg", frame="icrs")
 
     moc = MOC.from_polygon_skycoord(coords, max_depth=10)
     start = Time([vast_header['DATE-BEG']])
@@ -318,6 +322,49 @@ def gen_mocs_field(fits_file: str) ->:
     field = fits_file.split("/")[-1].split(".")[4]
 
     moc_name = "{}.{}.I.moc.fits".format(field, epoch)
-    
+
     moc.write(moc_name, overwrite=True)
     stmoc.write(moc_name.replace("moc", "stmoc"), overwrite=True)
+
+    return moc, stmoc
+
+
+def gen_mocs_epoch(epoch: str, image_dir: str, epoch_path: str = None):
+    """
+    Generate MOCs and STMOCs for all images in a single epoch.
+
+    Args:
+        epoch: The epoch of interest
+        image_dir: The name of the folder containing the images to be updated
+            E.g. `TILES`, `STOKES_I_COMBINED`
+        epoch_path: Full path to the folder containing the epoch.
+            Defaults to None, which will set the value based on the
+            `VAST_DATA_DIR` environment variable and `epoch`.
+
+    Returns:
+        None
+    """
+
+    if epoch_path is None:
+        base_folder = Path(os.getenv('VAST_DATA_DIR'))
+        epoch_path = base_folder / 'EPOCH{}'.format(epoch)
+
+    epoch_info = load_fields_file(epoch)
+
+    glob_str = os.path.join(epoch_path, image_dir, "*.fits")
+    raw_images = sorted(glob.glob(glob_str))
+
+    for i, f in enumerate(raw_images):
+        themoc, thestmoc = gen_mocs_field(f)
+
+        if i == 0:
+            mastermoc = themoc
+            masterstemoc = thestmoc
+        else:
+            mastermoc = mastermoc.union(themoc)
+            masterstemoc = masterstemoc.union(thestmoc)
+
+    master_name = "VAST_PILOT_{}_moc.fits".format(epoch)
+
+    mastermoc.write(master_name, overwrite=True)
+    masterstemoc.write(master_name.replace("moc", "stmoc"), overwrite=True)
