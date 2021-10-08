@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Added
 
+- Added tools sub-module consisting of skymap/MOC interface tools [#277](https://github.com/askap-vast/vast-tools/pull/277).
 - Added `get_supported_epochs` function to survey component [#294](https://github.com/askap-vast/vast-tools/pull/294).
 - Added support for epoch 13 (formerly epoch 12) [#293](https://github.com/askap-vast/vast-tools/pull/293).
 - Added new data files for epoch 12 [#293](https://github.com/askap-vast/vast-tools/pull/293).
@@ -51,6 +52,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 #### List of PRs
 
 - [#289](https://github.com/askap-vast/vast-tools/pull/289): docs: Minor documentation edits.
+- [#277](https://github.com/askap-vast/vast-tools/pull/277): tests, docs, feat, dep: Add skymap utils
 - [#294](https://github.com/askap-vast/vast-tools/pull/294): docs, feat: Survey code tidy and docs correction.
 - [#293](https://github.com/askap-vast/vast-tools/pull/293): feat: Added EPOCH13 support.
 - [#290](https://github.com/askap-vast/vast-tools/pull/290): docs, dep, feat: Added a recalc two epoch metrics method.
