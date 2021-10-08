@@ -2,9 +2,10 @@
 
 The `Tools` sub-package is a mish-mash of useful VAST-related functions that do not have a home elsewhere. It can be used for:
 
+  * Adding a new epoch of observations to the package
   * Filtering VAST data using gravitational wave skymaps and MOCs
   
-### Component functions
+### Skymaps and MOCs
 
 #### skymap2moc
 :fontawesome-regular-file-alt: [Code reference](../../reference/tools/#vasttools.tools.skymap2moc).
@@ -45,3 +46,17 @@ The arguments to this function are the path to the skymap file, the source DataF
     from vasttools.tools import add_credible_levels
     add_credible_levels('gw170817.fits.gz', source_df, pipe=False)
     ```
+
+### Adding new epochs
+:fontawesome-regular-file-alt: [Code reference](../../reference/tools/#vasttools.tools.create_fields_csv).
+
+This function creates a fields csv file for a given epoch using data from the `askap_surveys` repository.
+The arguments to this function are the epoch and the path to the repository.
+
+!!! example "Example: Building a new fields csv"
+    Build a new fields csv file for epoch 17
+    ```python
+    from vasttools.tools import create_fields_csv
+    create_fields_csv(17, /path/to/askap_surveys/db/)
+    ```
+

@@ -128,6 +128,14 @@ def add_credible_levels(
     
     
 def create_fields_csv(epoch_num: str, db_path: str) -> None:
+    """
+    Create the fields csv for a single epoch using the askap_surveys database
+    
+    Args:
+        epoch_num: Epoch number of interest
+        db_path: Path to the askap_surveys database
+    """
+
     field_columns = ['FIELD_NAME', 'SBID', 'SCAN_START', 'SCAN_LEN']
     beam_columns = ['BEAM_NUM',
                     'RA_DEG',
@@ -138,14 +146,15 @@ def create_fields_csv(epoch_num: str, db_path: str) -> None:
                     ]
 
     vast_db = Path(db_path)
-
-    epoch = vast_db / 'epoch_{}'.format(epoch_num.replace('x','')
+    if type(epoch_num) is int:
+        epoch_num = str(epoch_num)
+    epoch = vast_db / 'epoch_{}'.format(epoch_num.replace('x',''))
 
     beam_files = list(epoch.glob('beam_inf_*.csv'))
     field_data = epoch / 'field_data.csv'
     
     field_df = pd.read_csv(field_data)
-    field_df = field_df.loc[:, required_columns]
+    field_df = field_df.loc[:, field_columns]
 
     for i, beam_file in enumerate(beam_files):
         field = "VAST_" + beam_file.name.split('VAST_')[-1].split(beam_file.suffix)[0]
@@ -183,7 +192,7 @@ def create_fields_csv(epoch_num: str, db_path: str) -> None:
                                                      )
                                                      
     start_times = epoch_csv['SCAN_START'].to_numpy() / 86400.
-    end_times = start_numpy + epoch_csv['SCAN_LEN'].to_numpy() / 86400.
+    end_times = start_times + epoch_csv['SCAN_LEN'].to_numpy() / 86400.
     start_times = Time(start_times, format='mjd')
     end_times = Time(end_times, format='mjd')
     
@@ -211,7 +220,7 @@ def create_fields_csv(epoch_num: str, db_path: str) -> None:
         'BPA'
     ]]
     
-    epoch_csv.to_csv('vast_epoch{}_info.csv'.format(epoch_num, index=False)
+    epoch_csv.to_csv('vast_epoch{}_info.csv'.format(epoch_num), index=False)
     
     
     
