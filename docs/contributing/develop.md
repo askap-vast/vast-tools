@@ -53,10 +53,10 @@ When a new epoch is ready to be added to VAST Tools the following must be comple
 2. Generate new MOC files and updated existing STMOC file:
     
     * A MOC of the entire epoch should be placed in `vastools/data/mocs/` with a name in the format of `VAST_PILOT_EPOCHXX.moc.fits`, replacing `XX` with the two digit zero padded epoch number.
-        This is created by creating a MOC for each individual tile image in the epoch and then combining them into one MOC file, which can be done using [`vasttools.tools.gen_mocs_epoch`](../../reference/tools/#vasttools.tools.gen_mocs_epoch)
+        This is created by creating a MOC for each individual tile image in the epoch and then combining them into one MOC file, which can be done using [`vasttools.tools.gen_mocs_epoch`](../../reference/tools/#vasttools.tools.gen_mocs_epoch). This *should not* be performed in the `vasttools/data/mocs` directory. Instead, users should run it in a separate directory, check the output and then manually copy the files across.
 
     * Update the `VAST_PILOT.stmoc.fits` which the tiles from the new epoch.
-        An STMOC should be made for each tile and then added to the existing `VAST_PILOT.stmoc.fits`.
+        An STMOC should be made for each tile and then added to the existing `VAST_PILOT.stmoc.fits`. [`vasttools.tools.gen_mocs_epoch`](../../reference/tools/#vasttools.tools.gen_mocs_epoch) will also produce a new `VAST_PILOT.stmoc.fits`. This *should not* be performed in the `vasttools/data/mocs` directory. Instead, users should run it in a separate directory, check the output and then manually copy the files across.
 
 3. Add the new epoch to the `RELEASED_EPOCHS` variable found in [`vasttools.survey`](../../reference/survey).
 

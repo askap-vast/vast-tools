@@ -91,7 +91,7 @@ The arguments to this function is the path to the fits file.
 #### gen_mocs_epoch
 :fontawesome-regular-file-alt: [Code reference](../../reference/tools/#vasttools.tools.gen_mocs_epoch).
 
-This function creates a MOC and STMOC from a single fits image. It is unlikely that users would ever have to call this directly, and it should instead be called as part of [`gen_mocs_epoch`](./gen_mocs_epoch).
+This function creates all MOCs and STMOCs for the provided epoch, and a new complete Pilot STMOC. It *should not* be run in the `vasttools/data/mocs` directory. Instead, users should run it in a separate directory, check the output and then manually copy the files across.
 The arguments to this function is the path to the fits file.
 
 !!! example "Example: Generate MOCs and STMOCs for a single epoch"

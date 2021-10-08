@@ -17,6 +17,8 @@ from astropy.time import Time
 from pathlib import Path
 
 from vasttools.survey import load_fields_file
+from vasttools.pipeline import PipeRun
+from vasttools.moc import VASTMOCS
 
 # Skymap tools
 
@@ -331,7 +333,8 @@ def gen_mocs_field(fits_file: str) -> (MOC, STMOC):
 
 def gen_mocs_epoch(epoch: str, image_dir: str, epoch_path: str = None):
     """
-    Generate MOCs and STMOCs for all images in a single epoch.
+    Generate MOCs and STMOCs for all images in a single epoch, and create a new 
+    full pilot STMOC
 
     Args:
         epoch: The epoch of interest
@@ -344,6 +347,8 @@ def gen_mocs_epoch(epoch: str, image_dir: str, epoch_path: str = None):
     Returns:
         None
     """
+    
+    full_STMOC = VASTMOCS.load_pilot_stmoc()
 
     if epoch_path is None:
         base_folder = Path(os.getenv('VAST_DATA_DIR'))
@@ -368,3 +373,6 @@ def gen_mocs_epoch(epoch: str, image_dir: str, epoch_path: str = None):
 
     mastermoc.write(master_name, overwrite=True)
     masterstemoc.write(master_name.replace("moc", "stmoc"), overwrite=True)
+    
+    full_STMOC = full_STMOC.union(masterstemoc)
+    full_STMOC.write('VAST_PILOT.stmoc.fits', overwrite=True)
