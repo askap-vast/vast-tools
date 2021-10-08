@@ -333,7 +333,7 @@ def gen_mocs_field(fits_file: str) -> (MOC, STMOC):
 
 def gen_mocs_epoch(epoch: str, image_dir: str, epoch_path: str = None):
     """
-    Generate MOCs and STMOCs for all images in a single epoch, and create a new 
+    Generate MOCs and STMOCs for all images in a single epoch, and create a new
     full pilot STMOC
 
     Args:
@@ -347,7 +347,7 @@ def gen_mocs_epoch(epoch: str, image_dir: str, epoch_path: str = None):
     Returns:
         None
     """
-    
+
     full_STMOC = VASTMOCS.load_pilot_stmoc()
 
     if epoch_path is None:
@@ -373,6 +373,6 @@ def gen_mocs_epoch(epoch: str, image_dir: str, epoch_path: str = None):
 
     mastermoc.write(master_name, overwrite=True)
     masterstemoc.write(master_name.replace("moc", "stmoc"), overwrite=True)
-    
+
     full_STMOC = full_STMOC.union(masterstemoc)
     full_STMOC.write('VAST_PILOT.stmoc.fits', overwrite=True)
