@@ -1,3 +1,4 @@
+import os
 import healpy as hp
 import numpy as np
 import pandas as pd
@@ -8,6 +9,9 @@ from astropy import units as u
 from astropy.coordinates import SkyCoord, Angle
 from astropy.time import Time
 from pathlib import Path
+import glob
+
+from vasttools.survey import load_fields_file
 
 
 def skymap2moc(filename: str, cutoff: float) -> MOC:
@@ -222,3 +226,45 @@ def create_fields_csv(epoch_num: str, db_path: str) -> None:
     ]]
 
     epoch_csv.to_csv('vast_epoch{}_info.csv'.format(epoch_num), index=False)
+    
+    
+
+        
+def add_obs_date(epoch: str, image_dir: str, epoch_path: str = None):
+    """
+    
+    """
+    
+    if epoch_path is None:
+        base_folder = Path(os.getenv('VAST_DATA_DIR'))
+        epoch_path = base_folder / 'EPOCH{}'.format(epoch)
+    
+    epoch_info = load_fields_file(epoch)
+
+    glob_str = os.path.join(epoch_path,image_dir, "*.fits")
+    raw_images = sorted(glob.glob(glob_str))
+
+    for filename in raw_images:
+        field = filename.split("/")[-1].split(".")[4]
+        field_info = epoch_info[epoch_info.FIELD_NAME == field].iloc[0]
+        field_start = Time(field_info.DATEOBS)
+        field_end = Time(field_info.DATEEND)
+        duration = field_end - field_start
+        
+        hdu = fits.open(i, mode="update")
+        hdu[0].header["DATE-OBS"] = field_start.fits
+        hdu[0].header["MJD-OBS"] = field_start.mjd
+        hdu[0].header["DATE-BEG"] = field_start.fits
+        hdu[0].header["DATE-END"] = field_end.fits
+        hdu[0].header["MJD-BEG"] = field_start.mjd
+        hdu[0].header["MJD-END"] = field_end.mjd
+        hdu[0].header["TELAPSE"] = duration.sec
+        hdu[0].header["TIMEUNIT"] = "s"
+        hdu.close()
+    
+    
+    
+    
+    
+    
+    
