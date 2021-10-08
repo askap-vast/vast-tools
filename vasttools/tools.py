@@ -41,7 +41,7 @@ def skymap2moc(filename: str, cutoff: float) -> MOC:
     credible_levels[i] = sorted_credible_levels
 
     idx = np.where(credible_levels < cutoff)[0]
-    levels = np.ones(len(idx))*level
+    levels = np.ones(len(idx)) * level
 
     moc = MOC.from_healpix_cells(idx, depth=levels)
 
@@ -117,7 +117,7 @@ def add_credible_levels(
     sorted_credible_levels = np.cumsum(hpx[i])
     credible_levels = np.empty_like(sorted_credible_levels)
     credible_levels[i] = sorted_credible_levels
-    theta = 0.5*np.pi - np.deg2rad(df[dec_col].values)
+    theta = 0.5 * np.pi - np.deg2rad(df[dec_col].values)
     phi = np.deg2rad(df[ra_col].values)
 
     ipix = hp.ang2pix(nside, theta, phi)
