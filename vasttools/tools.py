@@ -1,3 +1,6 @@
+"""Functions and classes related to VAST that have no specific category
+and can be used generically.
+"""
 import healpy as hp
 import numpy as np
 import pandas as pd
