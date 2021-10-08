@@ -14,6 +14,8 @@ import glob
 from vasttools.survey import load_fields_file
 
 
+# Skymap tools
+
 def skymap2moc(filename: str, cutoff: float) -> MOC:
     """
     Creates a MOC of the specified credible region of a given skymap.
@@ -229,10 +231,9 @@ def create_fields_csv(epoch_num: str, db_path: str) -> None:
     ]]
 
     epoch_csv.to_csv('vast_epoch{}_info.csv'.format(epoch_num), index=False)
-    
-    
 
-        
+# New epoch tools
+
 def add_obs_date(epoch: str, image_dir: str, epoch_path: str = None):
     """
     Add datetime information to fits files.
@@ -276,9 +277,43 @@ def add_obs_date(epoch: str, image_dir: str, epoch_path: str = None):
         hdu[0].header["TIMEUNIT"] = "s"
         hdu.close()
     
+def gen_mocs_field(fits_file: str) ->:
+    """
+    Generate a MOC and STMOC for a single fits file
     
+    Args:
+        fits_file: path to the fits file
     
+    Returns:
+        None
+    """
+    with fits.open(fits_file) as vast_fits:
+        vast_data = vast_fits[0].data[0,0,:,:]
+        vast_header = vast_fits[0].header
+        vast_wcs = WCS(vast_header, naxis=2)
+
+    binary = (~np.isnan(vast_data)).astype(int)
+    binary = np.pad(binary, 1, mode='constant')
+    dist = ndi.distance_transform_cdt(binary, metric='taxicab')
+    mask = dist[1:-1, 1:-1]
+
+    x,y = np.where(mask == 1)
+    # need to know when to reverse by checking axis sizes.
+    pixels = np.column_stack((y,x))
+
+    coords = SkyCoord(vast_wcs.wcs_pix2world(pixels, 0), unit="deg", frame="icrs")
+
+    moc = MOC.from_polygon_skycoord(coords, max_depth=10)
+    start = Time([vast_header['DATE-BEG']])
+    end = Time([vast_header['DATE-END']])
+    stmoc = STMOC.from_spatial_coverages(
+        start, end, [moc]
+    )
+
+    epoch = fits_file.split("/")[-4]
+    field = fits_file.split("/")[-1].split(".")[4]
+
+    moc_name = "{}.{}.I.moc.fits".format(field, epoch)
     
-    
-    
-    
+    moc.write(moc_name, overwrite=True)
+    stmoc.write(moc_name.replace("moc", "stmoc"), overwrite=True)
