@@ -2,17 +2,21 @@ import os
 import healpy as hp
 import numpy as np
 import pandas as pd
+import glob
+
+import scipy.ndimage as ndi
 
 from pathlib import Path
 from mocpy import MOC
+from mocpy import STMOC
 from astropy import units as u
 from astropy.coordinates import SkyCoord, Angle
+from astropy.io import fits
+from astropy.wcs import WCS
 from astropy.time import Time
 from pathlib import Path
-import glob
 
 from vasttools.survey import load_fields_file
-
 
 # Skymap tools
 
