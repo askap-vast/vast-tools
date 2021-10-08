@@ -17,7 +17,6 @@ from astropy.time import Time
 from pathlib import Path
 
 from vasttools.survey import load_fields_file
-from vasttools.pipeline import PipeRun
 from vasttools.moc import VASTMOCS
 
 # Skymap tools
