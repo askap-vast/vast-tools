@@ -1,6 +1,6 @@
 # Tools
 
-The `Tools` sub-package is a mish-mash of useful VAST-related functions that do not have a home elsewhere. It can be used for:
+The `Tools` sub-package is a mishmash of useful VAST-related functions that do not have a home elsewhere. It can be used for:
 
   * Filtering VAST data using gravitational wave skymaps and MOCs
   
