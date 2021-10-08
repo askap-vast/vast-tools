@@ -62,3 +62,41 @@ The arguments to this function are the epoch and the path to the repository.
     create_fields_csv(17, /path/to/askap_surveys/db/)
     ```
 
+#### add_obs_date
+:fontawesome-regular-file-alt: [Code reference](../../reference/tools/#vasttools.tools.add_obs_date).
+
+This function adds datetime data to all fits files in a given epoch.
+The arguments to this function are the epoch, the image directory and the path to the epoch directory. If the path to the epoch directory is not provided it is generated from the `VAST_DATA_DIR` environment variable and the requested epoch.
+
+!!! example "Example: Add datetime information to fits files"
+    Add datetime info to all TILE images in epoch 1
+    ```python
+    from vasttools.tools import add_obs_date
+    add_obs_date('01', 'TILES')
+    ```
+
+#### gen_mocs_field
+:fontawesome-regular-file-alt: [Code reference](../../reference/tools/#vasttools.tools.gen_mocs_field).
+
+This function creates a MOC and STMOC from a single fits image. It is unlikely that users would ever have to call this directly, and it should instead be called as part of [`gen_mocs_epoch`](./gen_mocs_epoch).
+The arguments to this function is the path to the fits file.
+
+!!! example "Example: Generate a MOC and STMOC for a single field"
+    Generate a MOC for VAST0012-06A epoch 1.
+    ```python
+    from vasttools.tools import gen_mocs_field
+    gen_mocs_field('/path/to/vast/data/EPOCH01/COMBINED/STOKESI_IMAGES/VAST_0012-06A.EPOCH01.I.fits')
+    ```
+    
+#### gen_mocs_epoch
+:fontawesome-regular-file-alt: [Code reference](../../reference/tools/#vasttools.tools.gen_mocs_epoch).
+
+This function creates a MOC and STMOC from a single fits image. It is unlikely that users would ever have to call this directly, and it should instead be called as part of [`gen_mocs_epoch`](./gen_mocs_epoch).
+The arguments to this function is the path to the fits file.
+
+!!! example "Example: Generate MOCs and STMOCs for a single epoch"
+    Generate all MOC data for epoch 17 tiles
+    ```python
+    from vasttools.tools import gen_mocs_epoch
+    gen_mocs_epoch('17', 'TILES')
+    ```
