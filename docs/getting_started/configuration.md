@@ -19,6 +19,10 @@ The path to the VAST Pipeline directory containing the pipeline runs.
 VAST Tools requires access to the observational data to fully function. 
 The sections below describe precisely what data is required for which area of VAST Tools.
 
+!!! warning "Warning: VAST Pilot Data Release Compatibility"
+    As of v2.0.0, the current supported VAST Pilot Data release version is v1.2.1.
+    The data release versions are detailed on the [VAST wiki](https://github.com/askap-vast/vast-project/wiki/Pilot-Survey-Status-&-Data#data-release-notes){:target="_blank"} (askap-vast GitHub membership required to access).
+
 ### Query: VAST Pilot Data
 
 The `Query` component of the VAST Tools, that queries the VAST Pilot survey directly, requires the data as released by the VAST team.
