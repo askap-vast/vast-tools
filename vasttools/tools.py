@@ -138,6 +138,9 @@ def create_fields_csv(epoch_num: str, db_path: str) -> None:
     Args:
         epoch_num: Epoch number of interest
         db_path: Path to the askap_surveys database
+        
+    Returns:
+        None
     """
 
     field_columns = ['FIELD_NAME', 'SBID', 'SCAN_START', 'SCAN_LEN']
@@ -232,7 +235,18 @@ def create_fields_csv(epoch_num: str, db_path: str) -> None:
         
 def add_obs_date(epoch: str, image_dir: str, epoch_path: str = None):
     """
+    Add datetime information to fits files.
     
+    Args:
+        epoch: The epoch of interest
+        image_dir: The name of the folder containing the images to be updated
+            E.g. `TILES`, `STOKES_I_COMBINED`
+        epoch_path: Full path to the folder containing the epoch.
+            Defaults to None, which will set the value based on the
+            `VAST_DATA_DIR` environment variable and `epoch`.
+    
+    Returns:
+        None
     """
     
     if epoch_path is None:
