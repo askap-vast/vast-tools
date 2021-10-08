@@ -284,7 +284,7 @@ def add_obs_date(epoch: str, image_dir: str, epoch_path: str = None):
         hdu.close()
 
 
-def gen_mocs_field(fits_file: str) -> (moc.MOC, moc.STMOC):
+def gen_mocs_field(fits_file: str) -> (MOC, STMOC):
     """
     Generate a MOC and STMOC for a single fits file
 
