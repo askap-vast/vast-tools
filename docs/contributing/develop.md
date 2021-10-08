@@ -47,8 +47,8 @@ When a new epoch is ready to be added to VAST Tools the following must be comple
     
     !!! tip "Tip: Creating the Files"
         These files were previously created manually during the processing of the VAST Pilot Survey.
-        This may no longer be the case, in which case it is advised to create from the [`ASKAP_SURVEYS`](https://bitbucket.csiro.au/projects/ASKAP_SURVEYS/repos/vast/browse){:target="_blank"} repository.
-        In future it is hoped VAST Tools will be directly compatible with `ASKAP_SURVEYS`.
+        This is no longer be the case, and we now create them from the [`ASKAP_SURVEYS`](https://bitbucket.csiro.au/projects/ASKAP_SURVEYS/repos/vast/browse){:target="_blank"} repository. To do so use [`vasttools.tools.create_fields_csv`](../../reference/tools/#vasttools.tools.create_fields_csv).
+        
 
 2. Generate new MOC files and updated existing STMOC file:
     

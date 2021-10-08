@@ -125,12 +125,12 @@ def add_credible_levels(
     ipix = hp.ang2pix(nside, theta, phi)
 
     df.loc[:, 'credible_level'] = credible_levels[ipix]
-    
-    
+
+
 def create_fields_csv(epoch_num: str, db_path: str) -> None:
     """
     Create the fields csv for a single epoch using the askap_surveys database
-    
+
     Args:
         epoch_num: Epoch number of interest
         db_path: Path to the askap_surveys database
@@ -148,23 +148,24 @@ def create_fields_csv(epoch_num: str, db_path: str) -> None:
     vast_db = Path(db_path)
     if type(epoch_num) is int:
         epoch_num = str(epoch_num)
-    epoch = vast_db / 'epoch_{}'.format(epoch_num.replace('x',''))
+    epoch = vast_db / 'epoch_{}'.format(epoch_num.replace('x', ''))
 
     beam_files = list(epoch.glob('beam_inf_*.csv'))
     field_data = epoch / 'field_data.csv'
-    
+
     field_df = pd.read_csv(field_data)
     field_df = field_df.loc[:, field_columns]
 
     for i, beam_file in enumerate(beam_files):
-        field = "VAST_" + beam_file.name.split('VAST_')[-1].split(beam_file.suffix)[0]
+        field = "VAST_" + \
+            beam_file.name.split('VAST_')[-1].split(beam_file.suffix)[0]
         sbid = int(beam_file.name.split('beam_inf_')[-1].split('-')[0])
 
         temp = pd.read_csv(beam_file)
         temp = temp.loc[:, beam_columns]
         temp['SBID'] = sbid
         temp['FIELD_NAME'] = field
-        
+
         if i == 0:
             beam_df = temp.copy()
         else:
@@ -190,16 +191,16 @@ def create_fields_csv(epoch_num: str, db_path: str) -> None:
                                                      precision=3,
                                                      alwayssign=True
                                                      )
-                                                     
+
     start_times = epoch_csv['SCAN_START'].to_numpy() / 86400.
     end_times = start_times + epoch_csv['SCAN_LEN'].to_numpy() / 86400.
     start_times = Time(start_times, format='mjd')
     end_times = Time(end_times, format='mjd')
-    
+
     epoch_csv['DATEOBS'] = start_times.iso
     epoch_csv['DATEEND'] = end_times.iso
     epoch_csv['NINT'] = np.around(epoch_csv['SCAN_LEN'] / 10.).astype(np.int64)
-    
+
     drop_cols = ['SCAN_START', 'SCAN_LEN', 'RA_DEG', 'DEC_DEG']
     epoch_csv = epoch_csv.drop(drop_cols, axis=1)
     epoch_csv = epoch_csv.rename(columns={'BEAM_NUM': 'BEAM',
@@ -219,23 +220,5 @@ def create_fields_csv(epoch_num: str, db_path: str) -> None:
         'BMIN',
         'BPA'
     ]]
-    
+
     epoch_csv.to_csv('vast_epoch{}_info.csv'.format(epoch_num), index=False)
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
