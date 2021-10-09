@@ -4,9 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), with an added `List of PRs` section and links to the relevant PRs on the individal updates. This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased](https://github.com/askap-vast/vast-tools/compare/v2.0.0-rc.5...HEAD)
+## [Unreleased](https://github.com/askap-vast/vast-tools/compare/v2.0.0...HEAD)
 
-## [Released](https://github.com/askap-vast/vast-tools/compare/release-v2.0.0)
+#### Added
+
+#### Changed
+
+#### Fixed
+
+#### Removed
+
+#### List of PRs
+
+## [2.0.0](https://github.com/askap-vast/vast-tools/releases/v2.0.0) (2021-10-09)
 
 **Note** Changelog started from PR[#273](https://github.com/askap-vast/vast-tools/pull/273) hence full notes are not available from before this point.
 

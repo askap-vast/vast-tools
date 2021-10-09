@@ -51,7 +51,7 @@ def dummy_fits_open() -> fits.HDUList:
     """
     data = np.zeros((100, 100), dtype=np.float32)
     for i in range(100):
-        data[i] = np.arange(100*i, 100*(i+1))
+        data[i] = np.arange(100 * i, 100 * (i + 1))
 
     hdu = fits.PrimaryHDU(data=data)
 
