@@ -26,12 +26,14 @@ tests
 │   ├── test_measurements.csv
 │   ├── test_measurements_vaex.csv
 │   ├── test_pairs_df_result.csv
+│   ├── test_skymap_gw190814.fits.gz
 │   └── test_sources.csv
 ├── test_moc.py
 ├── test_pipeline.py
 ├── test_query.py
 ├── test_source.py
 ├── test_survey.py
+├── test_tools.py
 └── test_utils.py
 ```
 
@@ -49,16 +51,17 @@ While some of this is small enough to be defined within the test files, some dat
 These are detailed in the table below.
 
  
-| data file                    | description                                                                               |      used in  |
-|:-----------------------------|:------------------------------------------------------------------------------------------|:--------------|
-|  psr-j2129-04-pipe-meas.csv  | A measurements dataframe attached to a source object created from a pipeline run.         | test_source   | 
-|  psr-j2129-04-query-meas.csv | A measurements dataframe attached to a source object created from a vast tools query.     | test_source   | 
-|  test_images.csv             | Images dataframe used by the dummy pipeline run.                                          | test_pipeline | 
-|  test_measurement_pairs.csv  | Measurement pairs dataframe used by the dummy pipeline run.                               | test_pipeline | 
-|  test_measurements.csv       | Measurements dataframe used by the dummy pipeline run.                                    | test_pipeline | 
-|  test_measurements_vaex.csv  | Measurements dataframe used by the dummy pipeline run, written by vaex instead of pandas. | test_pipeline | 
-|  test_pairs_df_result.csv    | Pairs dataframe used by the dummy pipeline run.                                           | test_pipeline | 
-|  test_sources.csv            | Sources dataframe used by the dummy pipeline run.                                         | test_pipeline | 
+| data file                      | description                                                                               |      used in  |
+|:-------------------------------|:------------------------------------------------------------------------------------------|:--------------|
+|  psr-j2129-04-pipe-meas.csv    | A measurements dataframe attached to a source object created from a pipeline run.         | test_source   | 
+|  psr-j2129-04-query-meas.csv   | A measurements dataframe attached to a source object created from a vast tools query.     | test_source   | 
+|  test_images.csv               | Images dataframe used by the dummy pipeline run.                                          | test_pipeline | 
+|  test_measurement_pairs.csv    | Measurement pairs dataframe used by the dummy pipeline run.                               | test_pipeline | 
+|  test_measurements.csv         | Measurements dataframe used by the dummy pipeline run.                                    | test_pipeline | 
+|  test_measurements_vaex.csv    | Measurements dataframe used by the dummy pipeline run, written by vaex instead of pandas. | test_pipeline | 
+|  test_pairs_df_result.csv      | Pairs dataframe used by the dummy pipeline run.                                           | test_pipeline | 
+|  test_skymap_gw190814.fits.gz  | A skymap file used for testing the skymap methods in tools.py.                            | test_tools    | 
+|  test_sources.csv              | Sources dataframe used by the dummy pipeline run.                                         | test_pipeline | 
  
 ### Dummy Pipeline Run
 
