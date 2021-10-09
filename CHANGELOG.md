@@ -25,6 +25,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Changed
 
+- Minor documentation edits [#289](https://github.com/askap-vast/vast-tools/pull/289).
 - Updated survey docs page to reflect previous refactoring [#294](https://github.com/askap-vast/vast-tools/pull/294).
 - Changed all former epoch 12 data files to epoch 13 [#293](https://github.com/askap-vast/vast-tools/pull/293).
 - Updated vaex-core version to 4.5.0 [#290](https://github.com/askap-vast/vast-tools/pull/290).
@@ -36,6 +37,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Fixed
 
+- Fixed docs announcement bar link [#289](https://github.com/askap-vast/vast-tools/pull/289).
 - Fixed test_query.py::TestQuery::test_init_failure_base_folder test [#291](https://github.com/askap-vast/vast-tools/pull/291).
 - Fixed jsmin dependancy install (2.2.2 -> 3.0.0) [#285](https://github.com/askap-vast/vast-tools/pull/285).
 - Remerged docs branch [#287](https://github.com/askap-vast/vast-tools/pull/287).
@@ -43,11 +45,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Removed
 
+- Removed MANIFEST.in file [#289](https://github.com/askap-vast/vast-tools/pull/289).
 - Removed deprecated information from the survey docs page [#294](https://github.com/askap-vast/vast-tools/pull/294).
 - Removed `EpochInfo` class from query as no longer used [#285](https://github.com/askap-vast/vast-tools/pull/285).
 
 #### List of PRs
 
+- [#289](https://github.com/askap-vast/vast-tools/pull/289): docs: Minor documentation edits.
 - [#277](https://github.com/askap-vast/vast-tools/pull/277): tests, docs, feat, dep: Add skymap utils
 - [#294](https://github.com/askap-vast/vast-tools/pull/294): docs, feat: Survey code tidy and docs correction.
 - [#293](https://github.com/askap-vast/vast-tools/pull/293): feat: Added EPOCH13 support.

@@ -97,9 +97,9 @@ nav:
     - Documentation: contributing/docsdev.md
   - Help and Acknowledgements: help_and_acknowledgements.md
   - Reference:
-    - Changelog: CHANGELOG.md
-    - Code of Conduct: CODE_OF_CONDUCT.md
-    - License: LICENSE.md
+    - Changelog: changelog.md
+    - Code of Conduct: code_of_conduct.md
+    - License: license.md
     - Code Reference:
       - vast_tools:
         - bin:
