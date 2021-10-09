@@ -20,9 +20,6 @@ The `Survey` component also contains two classes `Fields` and `Image` that may b
 
 :fontawesome-regular-file-alt: [Code reference](../../reference/survey).
 
-Unlike the other components, some tools and functions are directly imported from the `Survey` component.
-These are detailed in the section below.
-
 ### Survey Component Functions
 
 #### get_askap_observing_location
