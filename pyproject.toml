@@ -1,0 +1,61 @@
+[tool.poetry]
+name = "vasttools"
+version = "2.0.0"
+description = "Python module to interact with ASKAP VAST data."
+license = "MIT"
+homepage = "https://github.com/askap-vast/vasttools/"
+authors = ["Adam Stewart <adam.stewart@sydney.edu.au>", "Dougal Dobie <ddobie@swin.edu.au>"]
+include = ["vasttools/data", "example_notebooks"]
+
+[tool.poetry.dependencies]
+python = "^3.8.0"
+astropy = "^4.2"
+astroquery = "^0.4.1"
+bokeh = "^2.1.1"
+colorcet = "^2.0.2"
+colorlog = "^4.1.0"
+dask = {extras = ["dataframe"], version = "^2021.3.0"}
+forced-phot = { git = "https://github.com/askap-vast/forced_phot.git" }
+matplotlib = "^3.2.1"
+mocpy = "^0.8.4"
+multiprocessing-logging = "^0.3.1"
+numexpr = "^2.7.1"
+numpy = "^1.19.2"
+pandas = "^1.1.4"
+pyarrow = "^3.0.0"
+radio-beam = "^0.3.2"
+scipy = "^1.4.1"
+tables = "^3.6.1"
+tabulate = "^0.8.7"
+vaex-astro = "^0.8.0"
+vaex-core = "^4.5.0"
+vaex-hdf5 = "^0.7.0"
+healpy = "^1.15.0"
+
+[tool.poetry.dev-dependencies]
+ipdb = "^0.13.6"
+jupyterlab = "^3.1.0"
+jupyterlab-execute-time = "^2.0.2"
+jupyterlab-system-monitor = "^0.8.0"
+mkdocs-material = "^7.3.0"
+mkdocstrings = "^0.16.0"
+mkdocs-minify-plugin = "^0.4.1"
+mkdocs-material-extensions = "^1.0.3"
+mkdocs-gen-files = "^0.3.3"
+mknotebooks = "^0.7.1"
+Pygments = "^2.8.1"
+lightgallery = "^0.5"
+mkdocs-git-revision-date-localized-plugin = "^0.10.0"
+pytest = "^6.2.4"
+pytest-mock = "^3.6.1"
+autopep8 = "^1.5.7"
+pytest-cov = "^2.12.1"
+
+[tool.poetry.scripts]
+build_lightcurves = "vasttools.bin.build_lightcurves:main"
+find_sources = "vasttools.bin.find_sources:main"
+pilot_fields_info = "vasttools.bin.pilot_fields_info:main"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
