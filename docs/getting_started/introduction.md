@@ -1,6 +1,6 @@
 # Introduction
 
-VAST Tools is a python package written to streamline and enable the exploration of the VAST data products, including those produced by the VAST Pipeline.
+VAST Tools is a python package written to streamline and enable the exploration of the VAST data products, including those produced by the [VAST Pipeline](https://vast-survey.org/vast-pipeline/){:target="_blank"}.
 
 As of the current version, VAST Tools provides the following:
 
@@ -29,7 +29,7 @@ and most importantly, providing a method to interactively explore results from t
 
 ## VAST Tools Structure
 
-There are five main components to the package which users interact with. 
+There are six main components to the package which users interact with. 
 These are described in greater detail in the next sections of this documentation, along with examples of their use. 
 However, below is a brief summary of their function:
 
@@ -39,6 +39,7 @@ However, below is a brief summary of their function:
   * **query**: Query the VAST Pilot survey data directly (superseded by the VAST Pipeline).
   * **source**: A representation of a VAST 'source' (astronomical object).
   * **survey**: A representation of the survey itself, from field properties to epochs.
+  * **tools**: A collection of useful VAST-related tools to be used generally.
 
 ## Scripts
 

@@ -237,7 +237,7 @@ def fields_df_expected_result() -> pd.DataFrame:
                 'fields': {
                     0: np.array(
                         ['VAST_2118-06A', 'VAST_2143-06A'], dtype=object
-                        ),
+                    ),
                     1: np.array(
                         ['VAST_2118-06A', 'VAST_2143-06A'], dtype=object
                     )
@@ -441,6 +441,7 @@ class TestQuery:
     This class contains all the tests related to the Query object in VAST
     Tools.
     """
+
     def test_init_failure_no_inputs(self) -> None:
         """
         Tests the initialisation failure of a Query object.

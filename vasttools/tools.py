@@ -1,3 +1,6 @@
+"""Functions and classes related to VAST that have no specific category
+and can be used generically.
+"""
 import os
 import healpy as hp
 import numpy as np
@@ -6,7 +9,6 @@ import glob
 
 import scipy.ndimage as ndi
 
-from pathlib import Path
 from mocpy import MOC
 from mocpy import STMOC
 from astropy import units as u
@@ -18,8 +20,6 @@ from pathlib import Path
 
 from vasttools.survey import load_fields_file
 from vasttools.moc import VASTMOCS
-
-# Skymap tools
 
 
 def skymap2moc(filename: str, cutoff: float) -> MOC:

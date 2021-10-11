@@ -623,6 +623,7 @@ class TestPipeline:
     Class that contains all the tests for the Pipeline object from
     vasttools.Pipeline.
     """
+
     def test_init(self, mocker) -> None:
         """
         Tests the initialisation of a Pipeline instance.
@@ -934,6 +935,7 @@ class TestPipeAnalysis:
     This class contains tests for both the PipeRun and PipeAnalysis objects in
     the pipeline component.
     """
+
     def test_combine_with_run(
         self,
         dummy_PipeAnalysis: vtp.PipeAnalysis
@@ -1803,7 +1805,7 @@ class TestPipeAnalysis:
                 729: 327.6134309054469,
                 730: 5.842483557954741,
                 2251: 327.61343090548564
-             }
+            }
         })
 
         (

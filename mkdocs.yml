@@ -78,6 +78,7 @@ nav:
     - Query: components/query.md
     - Source: components/source.md
     - Survey: components/survey.md
+    - Tools: components/tools.md
     - Scripts:
       - build_lightcurves: scripts/build_lightcurves.md
       - find_sources: scripts/find_sources.md
@@ -96,9 +97,9 @@ nav:
     - Documentation: contributing/docsdev.md
   - Help and Acknowledgements: help_and_acknowledgements.md
   - Reference:
-    - Changelog: CHANGELOG.md
-    - Code of Conduct: CODE_OF_CONDUCT.md
-    - License: LICENSE.md
+    - Changelog: changelog.md
+    - Code of Conduct: code_of_conduct.md
+    - License: license.md
     - Code Reference:
       - vast_tools:
         - bin:
@@ -110,6 +111,7 @@ nav:
         - query.py: reference/query.md
         - source.py: reference/source.md
         - survey.py: reference/survey.md
+        - tools.py: reference/tools.md
         - utils.py: reference/utils.md
 
 plugins:

@@ -5,6 +5,11 @@ The `Tools` sub-package is a mish-mash of useful VAST-related functions that do 
   * Adding a new epoch of observations to the package
   * Filtering VAST data using gravitational wave skymaps and MOCs
   
+  
+## Using the Tools Component
+
+:fontawesome-regular-file-alt: [Code reference](../../reference/tools).  
+
 ### Skymaps and MOCs
 
 #### skymap2moc
@@ -27,6 +32,10 @@ This function the indices of sources that are contained within a given MOC
 The arguments to this function are the MOC, the source DataFrame and an optional bool flagging whether the dataframe is from the pipeline.
 The value returned is a numpy array.
 
+!!! note "Note: Coordinate Columns Names"
+    The function assumes that the coordinate columns are defined as `ra` and `dec`.
+    If the `pipe` flag is set to `True`, the function will assume the columns to be named `wavg_ra` and `wavg_dec`.
+
 !!! example "Example: Finding which sources are contained in a MOC"
     Build a MOC of the 90% credible region of GW170817
     ```python
@@ -37,11 +46,15 @@ The value returned is a numpy array.
 #### add_credible_levels
 :fontawesome-regular-file-alt: [Code reference](../../reference/tools/#vasttools.tools.add_credible_levels).
 
-This function calculates the smallest credible region a source is contained in and adds it as a column to the source dataframe in-place.
+This function calculates the smallest credible region a source is contained in and adds it as a column, named `credible_level`, to the source dataframe in-place.
 The arguments to this function are the path to the skymap file, the source DataFrame and an optional bool flagging whether the dataframe is from the pipeline.
 
-!!! example "Example: Finding which sources are contained in a MOC"
-    Build a MOC of the 90% credible region of GW170817
+!!! note "Note: Coordinate Columns Names"
+    The function assumes that the coordinate columns are defined as `ra` and `dec`.
+    If the `pipe` flag is set to `True`, the function will assume the columns to be named `wavg_ra` and `wavg_dec`.
+
+!!! example "Example: Adding the credible level to sources dataframe"
+    Add credible levels from the localisation of GW170817 to the sources dataframe
     ```python
     from vasttools.tools import add_credible_levels
     add_credible_levels('gw170817.fits.gz', source_df, pipe=False)
