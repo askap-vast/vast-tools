@@ -400,25 +400,20 @@ class Source:
             raise SourcePlottingError(msg)
 
         # remove empty values
-        measurements = self.measurements
+        measurements_df = self.measurements
         if not self.pipeline and not (
             use_forced_for_limits or use_forced_for_all
         ):
-            measurements = self.measurements[
+            measurements_df = self.measurements[
                 self.measurements['rms_image'] != -99
             ]
 
-        if measurements.empty:
+        if measurements_df.empty:
             msg = f"{self.name} has no measurements!"
             self.logger.error(msg)
             raise SourcePlottingError(msg)
-
-        plot_dates = measurements['dateobs']
-        if mjd:
-            plot_dates = Time(plot_dates.to_numpy()).mjd
-        elif start_date:
-            plot_dates = (plot_dates-start_date)/pd.Timedelta(1, unit='d')
-
+        
+        # Build figure and labels
         fig = plt.figure(figsize=figsize)
         ax = fig.add_subplot(111)
         plot_title = self.name
@@ -439,119 +434,130 @@ class Source:
 
         if self.stokes != "I":
             label = "Absolute " + label
-            measurements[flux_col] = measurements[flux_col].abs()
+            measurements_df[flux_col] = measurements_df[flux_col].abs()
 
         ax.set_ylabel(label)
+        
+        
+        for freq, measurements in measurements_df.groupby('obs_freq')
+        
+            plot_dates = measurements['dateobs']
+            if mjd:
+                plot_dates = Time(plot_dates.to_numpy()).mjd
+            elif start_date:
+                plot_dates = (plot_dates-start_date)/pd.Timedelta(1, unit='d')
 
-        self.logger.debug("Plotting upper limit")
-        if self.pipeline:
-            upper_lim_mask = measurements.forced
-        else:
-            upper_lim_mask = measurements.detection == False
-            if use_forced_for_all:
-                upper_lim_mask = np.array([False for i in upper_lim_mask])
-        upper_lims = measurements[
-            upper_lim_mask
-        ]
-        if self.pipeline:
-            if peak_flux:
-                value_col = 'flux_peak'
-                err_value_col = 'flux_peak_err'
+            
+
+            self.logger.debug("Plotting upper limit")
+            if self.pipeline:
+                upper_lim_mask = measurements.forced
             else:
-                value_col = 'flux_int'
-                err_value_col = 'flux_int_err'
-            marker = "D"
-            uplims = False
-            sigma_thresh = 1.0
-            label = 'Forced'
-            markerfacecolor = 'w'
-        else:
-            if use_forced_for_limits:
-                value_col = 'f_flux_peak'
-                err_value_col = 'f_flux_peak_err'
-                uplims = False
-                marker = "D"
-                sigma_thresh = 1.0
-                markerfacecolor = 'w'
-                label = "Forced"
-            else:
-                value_col = err_value_col = 'rms_image'
-                marker = "_"
-                uplims = True
-                markerfacecolor = 'k'
-                label = 'Upper limit'
-        if upper_lim_mask.any():
-            upperlim_points = ax.errorbar(
-                plot_dates[upper_lim_mask],
-                sigma_thresh *
-                upper_lims[value_col],
-                yerr=upper_lims[err_value_col],
-                uplims=uplims,
-                lolims=False,
-                marker=marker,
-                c='k',
-                linestyle="none",
-                markerfacecolor=markerfacecolor,
-                label=label
-            )
-
-        self.logger.debug("Plotting detection")
-
-        if use_forced_for_all:
-            detections = measurements
-        else:
-            detections = measurements[
-                ~upper_lim_mask
+                upper_lim_mask = measurements.detection == False
+                if use_forced_for_all:
+                    upper_lim_mask = np.array([False for i in upper_lim_mask])
+            upper_lims = measurements[
+                upper_lim_mask
             ]
-
-        if self.pipeline:
-            if peak_flux:
-                err_value_col = 'flux_peak_err'
+            if self.pipeline:
+                if peak_flux:
+                    value_col = 'flux_peak'
+                    err_value_col = 'flux_peak_err'
+                else:
+                    value_col = 'flux_int'
+                    err_value_col = 'flux_int_err'
+                marker = "D"
+                uplims = False
+                sigma_thresh = 1.0
+                label = 'Forced'
+                markerfacecolor = 'w'
             else:
-                err_value_col = 'flux_int_err'
-        else:
+                if use_forced_for_limits:
+                    value_col = 'f_flux_peak'
+                    err_value_col = 'f_flux_peak_err'
+                    uplims = False
+                    marker = "D"
+                    sigma_thresh = 1.0
+                    markerfacecolor = 'w'
+                    label = "Forced"
+                else:
+                    value_col = err_value_col = 'rms_image'
+                    marker = "_"
+                    uplims = True
+                    markerfacecolor = 'k'
+                    label = 'Upper limit'
+            if upper_lim_mask.any():
+                upperlim_points = ax.errorbar(
+                    plot_dates[upper_lim_mask],
+                    sigma_thresh *
+                    upper_lims[value_col],
+                    yerr=upper_lims[err_value_col],
+                    uplims=uplims,
+                    lolims=False,
+                    marker=marker,
+                    c='k',
+                    linestyle="none",
+                    markerfacecolor=markerfacecolor,
+                    label=label
+                )
+
+            self.logger.debug("Plotting detection")
+
             if use_forced_for_all:
-                err_value_col = flux_col + '_err'
+                detections = measurements
             else:
-                err_value_col = 'rms_image'
+                detections = measurements[
+                    ~upper_lim_mask
+                ]
 
-        if use_forced_for_all:
-            marker = "D"
-            markerfacecolor = 'w'
-            label = 'Forced'
-        else:
-            marker = 'o'
-            markerfacecolor = 'k'
-            label = 'Selavy'
-        if (~upper_lim_mask).any():
-            detection_points = ax.errorbar(
-                plot_dates[~upper_lim_mask],
-                detections[flux_col],
-                yerr=detections[err_value_col],
-                marker=marker,
-                c='k',
-                linestyle="none",
-                markerfacecolor=markerfacecolor,
-                label=label)
-
-        if yaxis_start == "0":
-            max_det = detections.loc[:, [flux_col, err_value_col]].sum(axis=1)
-            if use_forced_for_limits or self.pipeline:
-                max_y = np.nanmax(
-                    max_det.tolist() +
-                    upper_lims[value_col].tolist()
-                )
-            elif use_forced_for_all:
-                max_y = np.nanmax(max_det.tolist())
+            if self.pipeline:
+                if peak_flux:
+                    err_value_col = 'flux_peak_err'
+                else:
+                    err_value_col = 'flux_int_err'
             else:
-                max_y = np.nanmax(
-                    max_det.tolist() +
-                    (sigma_thresh * upper_lims[err_value_col]).tolist()
+                if use_forced_for_all:
+                    err_value_col = flux_col + '_err'
+                else:
+                    err_value_col = 'rms_image'
+
+            if use_forced_for_all:
+                marker = "D"
+                markerfacecolor = 'w'
+                label = 'Forced'
+            else:
+                marker = 'o'
+                markerfacecolor = 'k'
+                label = 'Selavy'
+            if (~upper_lim_mask).any():
+                detection_points = ax.errorbar(
+                    plot_dates[~upper_lim_mask],
+                    detections[flux_col],
+                    yerr=detections[err_value_col],
+                    marker=marker,
+                    c='k',
+                    linestyle="none",
+                    markerfacecolor=markerfacecolor,
+                    label=label)
+
+            if yaxis_start == "0":
+                max_det = detections.loc[:, [flux_col, err_value_col]].sum(axis=1)
+                if use_forced_for_limits or self.pipeline:
+                    max_y = np.nanmax(
+                        max_det.tolist() +
+                        upper_lims[value_col].tolist()
+                    )
+                elif use_forced_for_all:
+                    max_y = np.nanmax(max_det.tolist())
+                else:
+                    max_y = np.nanmax(
+                        max_det.tolist() +
+                        (sigma_thresh * upper_lims[err_value_col]).tolist()
+                    )
+                ax.set_ylim(
+                    bottom=0,
+                    top=max_y * 1.1
                 )
-            ax.set_ylim(
-                bottom=0,
-                top=max_y * 1.1
-            )
 
         if mjd:
             ax.set_xlabel('Date (MJD)')
