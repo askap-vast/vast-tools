@@ -58,17 +58,12 @@ When a new epoch is ready to be added to VAST Tools the following must be comple
     
     !!! tip "Tip: Creating the Files"
         These files were previously created manually during the processing of the VAST Pilot Survey.
-        This may no longer be the case, in which case it is advised to create from the [`ASKAP_SURVEYS`](https://bitbucket.csiro.au/projects/ASKAP_SURVEYS/repos/vast/browse){:target="_blank"} repository.
-        In future it is hoped VAST Tools will be directly compatible with `ASKAP_SURVEYS`.
+        This is no longer be the case, and we now create them from the [`ASKAP_SURVEYS`](https://bitbucket.csiro.au/projects/ASKAP_SURVEYS/repos/vast/browse){:target="_blank"} repository. To do so use [`vasttools.tools.create_fields_csv`](../../reference/tools/#vasttools.tools.create_fields_csv).
 
 2. Generate new MOC files and updated existing STMOC file:
     
     * A MOC of the entire epoch should be placed in `vastools/data/mocs/` with a name in the format of `VAST_PILOT_EPOCHXX.moc.fits`, replacing `XX` with the two digit zero padded epoch number.
-        This is created by creating a MOC for each individual tile image in the epoch and then combining them into one MOC file.
-
-        !!! tip "Tip: Creating a MOC from an FITS file"
-            Creating a MOC from a FITS file using the default process found in [`mocpy`](https://cds-astro.github.io/mocpy/){:target="_blank"} can be slow.
-            Refer to the method `vasttools.pipeline.PipeRun._create_moc_from_fits` for a slightly faster way to generate a MOC from a large FITS file.
+        This is created by creating a MOC for each individual tile image in the epoch and then combining them into one MOC file, which can be done using [`vasttools.tools.gen_mocs_epoch`](../../reference/tools/#vasttools.tools.gen_mocs_epoch). This *should not* be performed in the `vasttools/data/mocs` directory. Instead, users should run it in a separate directory, check the output and then manually copy the files across.
 
     * Update the `VAST_PILOT.stmoc.fits` which the tiles from the new epoch.
         An STMOC should be made for each tile and then added to the existing `VAST_PILOT.stmoc.fits`.
