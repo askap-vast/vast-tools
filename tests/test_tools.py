@@ -89,3 +89,19 @@ def test_add_credible_levels(source_df: pd.DataFrame) -> None:
 
     assert source_df['credible_level'].values == pytest.approx(
         credible_levels, rel=1e-1)
+        
+def test_create_fields_csv(tmp_path: Path):
+    """
+    Tests creating the fields csv for a single epoch.
+    
+    Args:
+    
+    Returns:
+        None
+    """
+    vtt.create_fields_csv('2', TEST_DATA_DIR / 'surveys_db', tmp_path)
+    
+    out_df = pd.read_csv(tmp_path / 'vast_epoch2_info.csv')
+    expected_df = pd.read_csv(TEST_DATA_DIR / 'vast_epoch2_info.csv')
+    
+    pd.testing.assert_frame_equal(out_df, expected_df)
