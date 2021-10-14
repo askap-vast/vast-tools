@@ -438,9 +438,9 @@ class Source:
 
         ax.set_ylabel(label)
         
-        
-        for freq, measurements in measurements_df.groupby('obs_freq')
-        
+        markers = ['o', 's', 'D', '*', 'X', 'd']
+        for i, (freq, measurements) in enumerate(measurements_df.groupby('obs_freq')):
+            marker = markers[i]
             plot_dates = measurements['dateobs']
             if mjd:
                 plot_dates = Time(plot_dates.to_numpy()).mjd
