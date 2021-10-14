@@ -1780,7 +1780,8 @@ class Query:
                 'epochs',
                 'field_per_epoch',
                 'sbids',
-                'dates'
+                'dates',
+                'freqs'
             ]] = (
                 dd.from_pandas(self.fields_df, self.ncpu)
                 .apply(
@@ -1807,7 +1808,7 @@ class Query:
             ).reset_index(drop=True)
 
             self.fields_df[
-                ['epoch', 'field', 'sbid', 'dateobs']
+                ['epoch', 'field', 'sbid', 'dateobs', 'obs_freq']
             ] = pd.DataFrame(
                 self.fields_df['field_per_epoch'].tolist(),
                 index=self.fields_df.index
@@ -1927,6 +1928,7 @@ class Query:
         field_per_epochs = []
         sbids = []
         dateobs = []
+        freqs = []
 
         for i in self.settings['epochs']:
 
@@ -1973,11 +1975,13 @@ class Query:
             epochs.append(i)
             sbid = self._epoch_fields.loc[i, field]["SBID"]
             date = self._epoch_fields.loc[i, field]["DATEOBS"]
+            freq = self._epoch_fields.loc[i, field]["OBS_FREQ"]
             sbids.append(sbid)
             dateobs.append(date)
-            field_per_epochs.append([i, field, sbid, date])
+            freqs.append(freq)
+            field_per_epochs.append([i, field, sbid, date, freq])
 
-        return fields, primary_field, epochs, field_per_epochs, sbids, dateobs
+        return fields, primary_field, epochs, field_per_epochs, sbids, dateobs, freqs
 
     def _get_planets_epoch_df_template(self) -> pd.DataFrame:
         """
