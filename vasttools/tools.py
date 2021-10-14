@@ -139,6 +139,7 @@ def add_credible_levels(
 
     df.loc[:, 'credible_level'] = credible_levels[ipix]
 
+
 def create_fields_csv(epoch_num: str, db_path: str) -> None:
     """
     Create the fields csv for a single epoch using the askap_surveys database
