@@ -65,7 +65,7 @@ The arguments to this function are the path to the skymap file, the source DataF
 :fontawesome-regular-file-alt: [Code reference](../../reference/tools/#vasttools.tools.create_fields_csv).
 
 This function creates a fields csv file for a given epoch using data from the [`ASKAP_SURVEYS`](https://bitbucket.csiro.au/projects/ASKAP_SURVEYS/repos/vast/browse){:target="_blank"} repository, which must be downloaded separately.
-The arguments to this function are the epoch and the path to the repository.
+The arguments to this function are the epoch, the path to the repository and the path to the output directory, which defaults to the current directory.
 
 !!! example "Example: Building a new fields csv"
     Build a new fields csv file for epoch 17

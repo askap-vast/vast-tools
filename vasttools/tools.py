@@ -140,12 +140,14 @@ def add_credible_levels(
     df.loc[:, 'credible_level'] = credible_levels[ipix]
 
 
-def create_fields_csv(epoch_num: str, db_path: str) -> None:
+# New epoch tools
+def create_fields_csv(epoch_num: str, db_path: str, outdir: str = '.') -> None:
     """
     Create the fields csv for a single epoch using the askap_surveys database
     Args:
         epoch_num: Epoch number of interest
         db_path: Path to the askap_surveys database
+        out_dir: Path to the output directory
     Returns:
         None
     """
@@ -234,10 +236,8 @@ def create_fields_csv(epoch_num: str, db_path: str) -> None:
         'BMIN',
         'BPA'
     ]]
-
-    epoch_csv.to_csv('vast_epoch{}_info.csv'.format(epoch_num), index=False)
-
-# New epoch tools
+    outfile = 'vast_epoch{}_info.csv'.format(epoch_num)
+    epoch_csv.to_csv(os.path.join(outdir, outfile), index=False)
 
 
 def add_obs_date(epoch: str, image_dir: str, epoch_path: str = None):
