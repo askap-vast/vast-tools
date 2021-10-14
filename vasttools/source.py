@@ -438,8 +438,9 @@ class Source:
 
         ax.set_ylabel(label)
         
-        markers = ['o', 's', 'D', '*', 'X', 'd']
-        for i, (freq, measurements) in enumerate(measurements_df.groupby('obs_freq')):
+        markers = ['o', 's', 'D', '*', 'X', 'd', 'p']
+        grouped_df = measurements_df.groupby('obs_freq')
+        for i, (freq, measurements) in enumerate(grouped_df):
             marker = markers[i]
             plot_dates = measurements['dateobs']
             if mjd:
@@ -447,7 +448,12 @@ class Source:
             elif start_date:
                 plot_dates = (plot_dates-start_date)/pd.Timedelta(1, unit='d')
 
-            
+            # dummy point for legend
+            ax.errorbar(np.nan,
+                        np.nan,
+                        yerr=np.nan,
+                        label='{} MHz'.format(freq)
+                       )
 
             self.logger.debug("Plotting upper limit")
             if self.pipeline:
@@ -466,7 +472,6 @@ class Source:
                 else:
                     value_col = 'flux_int'
                     err_value_col = 'flux_int_err'
-                marker = "D"
                 uplims = False
                 sigma_thresh = 1.0
                 label = 'Forced'
@@ -476,7 +481,6 @@ class Source:
                     value_col = 'f_flux_peak'
                     err_value_col = 'f_flux_peak_err'
                     uplims = False
-                    marker = "D"
                     sigma_thresh = 1.0
                     markerfacecolor = 'w'
                     label = "Forced"
@@ -497,8 +501,7 @@ class Source:
                     marker=marker,
                     c='k',
                     linestyle="none",
-                    markerfacecolor=markerfacecolor,
-                    label=label
+                    markerfacecolor=markerfacecolor
                 )
 
             self.logger.debug("Plotting detection")
@@ -522,7 +525,6 @@ class Source:
                     err_value_col = 'rms_image'
 
             if use_forced_for_all:
-                marker = "D"
                 markerfacecolor = 'w'
                 label = 'Forced'
             else:
@@ -537,8 +539,8 @@ class Source:
                     marker=marker,
                     c='k',
                     linestyle="none",
-                    markerfacecolor=markerfacecolor,
-                    label=label)
+                    markerfacecolor=markerfacecolor
+                    )
 
             if yaxis_start == "0":
                 max_det = detections.loc[:, [flux_col, err_value_col]].sum(axis=1)
