@@ -441,6 +441,7 @@ class Source:
         markers = ['o', 's', 'D', '*', 'X', 'd', 'p']
         grouped_df = measurements_df.groupby('obs_freq')
         for i, (freq, measurements) in enumerate(grouped_df):
+            self.logger.debug("Plotting {} MHz data".format(freq))
             marker = markers[i]
             plot_dates = measurements['dateobs']
             if mjd:
@@ -542,24 +543,30 @@ class Source:
                     markerfacecolor=markerfacecolor
                     )
 
-            if yaxis_start == "0":
-                max_det = detections.loc[:, [flux_col, err_value_col]].sum(axis=1)
-                if use_forced_for_limits or self.pipeline:
-                    max_y = np.nanmax(
-                        max_det.tolist() +
-                        upper_lims[value_col].tolist()
-                    )
-                elif use_forced_for_all:
-                    max_y = np.nanmax(max_det.tolist())
-                else:
-                    max_y = np.nanmax(
-                        max_det.tolist() +
-                        (sigma_thresh * upper_lims[err_value_col]).tolist()
-                    )
-                ax.set_ylim(
-                    bottom=0,
-                    top=max_y * 1.1
+        if use_forced_for_all:
+            detections = measurements_df
+        else:
+            detections = measurements_df[
+                ~upper_lim_mask
+            ]
+        if yaxis_start == "0":
+            max_det = detections.loc[:, [flux_col, err_value_col]].sum(axis=1)
+            if use_forced_for_limits or self.pipeline:
+                max_y = np.nanmax(
+                    max_det.tolist() +
+                    upper_lims[value_col].tolist()
                 )
+            elif use_forced_for_all:
+                max_y = np.nanmax(max_det.tolist())
+            else:
+                max_y = np.nanmax(
+                    max_det.tolist() +
+                    (sigma_thresh * upper_lims[err_value_col]).tolist()
+                )
+            ax.set_ylim(
+                bottom=0,
+                top=max_y * 1.1
+            )
 
         if mjd:
             ax.set_xlabel('Date (MJD)')
