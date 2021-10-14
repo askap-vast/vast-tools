@@ -138,8 +138,6 @@ def add_credible_levels(
     ipix = hp.ang2pix(nside, theta, phi)
 
     df.loc[:, 'credible_level'] = credible_levels[ipix]
-    
-
 
 def create_fields_csv(epoch_num: str, db_path: str) -> None:
     """
