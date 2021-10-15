@@ -331,6 +331,7 @@ def gen_mocs_epoch(epoch: str, image_dir: str, epoch_path: str = None):
     """
     Generate MOCs and STMOCs for all images in a single epoch, and create a new
     full pilot STMOC
+
     Args:
         epoch: The epoch of interest
         image_dir: The name of the folder containing the images to be updated
@@ -338,20 +339,18 @@ def gen_mocs_epoch(epoch: str, image_dir: str, epoch_path: str = None):
         epoch_path: Full path to the folder containing the epoch.
             Defaults to None, which will set the value based on the
             `VAST_DATA_DIR` environment variable and `epoch`.
+
     Returns:
         None
     """
-
-    full_STMOC = VASTMOCS.load_pilot_stmoc()
+    vtm = VASTMOCS()
+    full_STMOC = vtm.load_pilot_stmoc()
 
     if epoch_path is None:
         base_folder = Path(os.getenv('VAST_DATA_DIR'))
         epoch_path = base_folder / 'EPOCH{}'.format(epoch)
 
-    epoch_info = load_fields_file(epoch)
-
-    glob_str = os.path.join(epoch_path, image_dir, "*.fits")
-    raw_images = sorted(glob.glob(glob_str))
+    raw_images = _get_epoch_images(epoch_path, image_dir)
 
     for i, f in enumerate(raw_images):
         themoc, thestmoc = gen_mocs_field(f)
@@ -370,3 +369,24 @@ def gen_mocs_epoch(epoch: str, image_dir: str, epoch_path: str = None):
 
     full_STMOC = full_STMOC.union(masterstemoc)
     full_STMOC.write('VAST_PILOT.stmoc.fits', overwrite=True)
+
+
+def _get_epoch_images(epoch_path: str, image_dir: str) -> list:
+    """
+    Get all available images in a given epoch
+
+    Args:
+        epoch_path: Path to the epoch of interest
+        image_dir: The name of the folder containing the images to be updated
+            E.g. `TILES`, `STOKES_I_COMBINED`
+
+    Returns:
+        The list of images
+    """
+
+    epoch_info = load_fields_file(epoch)
+
+    glob_str = os.path.join(epoch_path, image_dir, "*.fits")
+    raw_images = sorted(glob.glob(glob_str))
+
+    return raw_images

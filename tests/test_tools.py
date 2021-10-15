@@ -117,4 +117,27 @@ def test_gen_mocs_field() -> None:
         None
     """
 
-    vtt.gen_mocs_field(str(TEST_DATA_DIR / 'VAST_0012-06A.EPOCH01.I.TEST.fits'))
+    test_img_path = str(TEST_DATA_DIR / 'VAST_0012-06A.EPOCH01.I.TEST.fits')
+    vtt.gen_mocs_field(test_img_path)
+
+
+def test_gen_mocs_epoch(mocker) -> None:
+    """
+    Tests the generation of all MOCs and STMOCs for a single epoch.
+    Also tests the update of the full STMOC.
+
+    Args:
+        mocker: The pytest mock mocker object.
+
+    Returns:
+        None
+    """
+
+    test_img_path = str(TEST_DATA_DIR / 'VAST_0012-06A.EPOCH01.I.TEST.fits')
+
+    mocker_get_epoch_images = mocker.patch(
+        'vasttools.tools._get_epoch_images',
+        return_value=[test_img_path]
+    )
+
+    vtt.gen_mocs_epoch('01', '', '')
