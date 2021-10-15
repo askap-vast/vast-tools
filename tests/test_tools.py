@@ -117,4 +117,4 @@ def test_gen_mocs_field() -> None:
         None
     """
 
-    vtt.gen_mocs_field(TEST_DATA_DIR / 'VAST_0012-06A.EPOCH01.I.TEST.fits')
+    vtt.gen_mocs_field(str(TEST_DATA_DIR / 'VAST_0012-06A.EPOCH01.I.TEST.fits'))
