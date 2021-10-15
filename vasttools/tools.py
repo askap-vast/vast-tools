@@ -254,23 +254,21 @@ def add_obs_date(epoch: str, image_dir: str, epoch_path: str = None):
         None
     """
 
+    epoch_info = load_fields_file(epoch)
+
     if epoch_path is None:
         base_folder = Path(os.getenv('VAST_DATA_DIR'))
         epoch_path = base_folder / 'EPOCH{}'.format(epoch)
 
-    epoch_info = load_fields_file(epoch)
-
-    glob_str = os.path.join(epoch_path, image_dir, "*.fits")
-    raw_images = sorted(glob.glob(glob_str))
-
+    raw_images = _get_epoch_images(epoch_path, image_dir)
     for filename in raw_images:
-        field = filename.split("/")[-1].split(".")[4]
+        field = filename.split("/")[-1].split(".")[0]
         field_info = epoch_info[epoch_info.FIELD_NAME == field].iloc[0]
         field_start = Time(field_info.DATEOBS)
         field_end = Time(field_info.DATEEND)
         duration = field_end - field_start
 
-        hdu = fits.open(i, mode="update")
+        hdu = fits.open(filename, mode="update")
         hdu[0].header["DATE-OBS"] = field_start.fits
         hdu[0].header["MJD-OBS"] = field_start.mjd
         hdu[0].header["DATE-BEG"] = field_start.fits
@@ -384,7 +382,7 @@ def _get_epoch_images(epoch_path: str, image_dir: str) -> list:
         The list of images
     """
 
-    epoch_info = load_fields_file(epoch)
+    #epoch_info = load_fields_file(epoch)
 
     glob_str = os.path.join(epoch_path, image_dir, "*.fits")
     raw_images = sorted(glob.glob(glob_str))
