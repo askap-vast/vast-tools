@@ -5,6 +5,7 @@ import pytest
 
 from astropy.coordinates import SkyCoord, Angle
 from astropy.table import Table
+from astropy.io import fits
 from pytest_mock import mocker
 from pathlib import Path
 
@@ -109,6 +110,35 @@ def test_create_fields_csv(tmp_path: Path) -> None:
     pd.testing.assert_frame_equal(out_df, expected_df)
 
 
+def test_add_obs_date(mocker):
+    """
+    Tests adding observation dates to fits images
+
+    Args:
+        mocker: The pytest mock mocker object.
+
+    Returns:
+        None
+    """
+
+    def fits_open_no_update(filename):
+        return fits.open(filename)
+
+    test_img_path = str(TEST_DATA_DIR / 'VAST_0012-06A.EPOCH01.I.TEST.fits')
+
+    mocker_get_epoch_images = mocker.patch(
+        'vasttools.tools._get_epoch_images',
+        return_value=[test_img_path]
+    )
+
+    mocker_fits_open = mocker.patch(
+        'vasttools.tools.fits.open',
+        return_value=fits_open_no_update(test_img_path)
+    )
+
+    vtt.add_obs_date('1', '', '')
+
+
 def test_gen_mocs_field() -> None:
     """
     Tests the generation of a MOC and STMOC for a single fits file
@@ -140,4 +170,4 @@ def test_gen_mocs_epoch(mocker) -> None:
         return_value=[test_img_path]
     )
 
-    vtt.gen_mocs_epoch('01', '', '')
+    vtt.gen_mocs_epoch('1', '', '')
