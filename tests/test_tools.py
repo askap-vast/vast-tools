@@ -91,7 +91,7 @@ def test_add_credible_levels(source_df: pd.DataFrame) -> None:
         credible_levels, rel=1e-1)
 
 
-def test_create_fields_csv(tmp_path: Path):
+def test_create_fields_csv(tmp_path: Path) -> None:
     """
     Tests creating the fields csv for a single epoch.
 
@@ -107,3 +107,14 @@ def test_create_fields_csv(tmp_path: Path):
     expected_df = pd.read_csv(TEST_DATA_DIR / 'vast_epoch2_info.csv')
 
     pd.testing.assert_frame_equal(out_df, expected_df)
+
+
+def test_gen_mocs_field() -> None:
+    """
+    Tests the generation of a MOC and STMOC for a single fits file
+
+    Returns:
+        None
+    """
+
+    vtt.gen_mocs_field(TEST_DATA_DIR / 'VAST_0012-06A.EPOCH01.I.TEST.fits')
