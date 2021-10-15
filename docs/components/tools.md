@@ -84,7 +84,7 @@ The arguments to this function are the epoch, the image directory and the path t
     Add datetime info to all TILE images in epoch 1
     ```python
     from vasttools.tools import add_obs_date
-    add_obs_date('01', 'TILES')
+    add_obs_date('01', 'TILES/STOKESI_IMAGES')
     ```
 
 #### gen_mocs_field
@@ -110,5 +110,5 @@ The arguments to this function is the path to the fits file.
     Generate all MOC data for epoch 17 tiles
     ```python
     from vasttools.tools import gen_mocs_epoch
-    gen_mocs_epoch('17', 'TILES')
+    gen_mocs_epoch('17', 'TILES/STOKESI_IMAGES')
     ```
