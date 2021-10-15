@@ -291,7 +291,9 @@ def gen_mocs_field(fits_file: str) -> (MOC, STMOC):
         The MOC and STMOC
     """
     with fits.open(fits_file) as vast_fits:
-        vast_data = vast_fits[0].data[0, 0, :, :]
+        vast_data = vast_fits[0].data
+        if vast_data.ndim == 4:
+            vast_data = vast_data[0, 0, :, :]
         vast_header = vast_fits[0].header
         vast_wcs = WCS(vast_header, naxis=2)
 
