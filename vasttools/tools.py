@@ -261,6 +261,7 @@ def add_obs_date(epoch: str, image_dir: str, epoch_path: str = None):
         epoch_path = base_folder / 'EPOCH{}'.format(epoch)
 
     raw_images = _get_epoch_images(epoch_path, image_dir)
+
     for filename in raw_images:
         field = filename.split("/")[-1].split(".")[0]
         field_info = epoch_info[epoch_info.FIELD_NAME == field].iloc[0]
@@ -333,7 +334,7 @@ def gen_mocs_epoch(epoch: str, image_dir: str, epoch_path: str = None):
     Args:
         epoch: The epoch of interest
         image_dir: The name of the folder containing the images to be updated
-            E.g. `TILES`, `STOKES_I_COMBINED`
+            E.g. `COMBINED/STOKESI_IMAGES`
         epoch_path: Full path to the folder containing the epoch.
             Defaults to None, which will set the value based on the
             `VAST_DATA_DIR` environment variable and `epoch`.
@@ -376,13 +377,11 @@ def _get_epoch_images(epoch_path: str, image_dir: str) -> list:
     Args:
         epoch_path: Path to the epoch of interest
         image_dir: The name of the folder containing the images to be updated
-            E.g. `TILES`, `STOKES_I_COMBINED`
+            E.g. `COMBINED/STOKESI_IMAGES`
 
     Returns:
         The list of images
     """
-
-    #epoch_info = load_fields_file(epoch)
 
     glob_str = os.path.join(epoch_path, image_dir, "*.fits")
     raw_images = sorted(glob.glob(glob_str))
