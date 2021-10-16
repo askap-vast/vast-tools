@@ -171,3 +171,45 @@ def test_gen_mocs_epoch(mocker) -> None:
     )
 
     vtt.gen_mocs_epoch('1', '', '')
+    
+def test_mocs_with_holes(tmp_path: Path) -> None:
+    border_width = 50
+    image_width = 1000
+    hole_width = 100
+
+    centre = int(image_width/2)
+    hole_rad = int(hole_width/2)
+    
+    test_img_path = str(TEST_DATA_DIR / 'VAST_0012-06A.EPOCH01.I.TEST.fits')
+
+    hdu = fits.open(test_img_path)[0]
+    header = hdu.header
+
+    data = np.ones((image_width, image_width))
+    data[:border_width, :] = np.nan
+    data[-border_width:, :] = np.nan
+    data[:,:border_width] = np.nan
+    data[:,-border_width:] = np.nan
+
+    hole_data = data.copy()
+    hole_data[centre-hole_rad:centre+hole_rad,
+              centre-hole_rad:centre+hole_rad
+              ] = np.nan
+
+    full_path = tmp_path / 'TESTFIELD.EPOCH01.I.fits'
+    hole_path = tmp_path / 'TESTFIELDHOLE.EPOCH01.I.fits'
+    
+    fits.writeto(full_path,
+                 data,
+                 header
+                 )
+    fits.writeto(hole_path,
+                 hole_data,
+                 header
+                 )
+                 
+    full_moc, full_stmoc = vtt.gen_mocs_field(full_path)
+    hole_moc, hole_stmoc = vtt.gen_mocs_field(hole_path)
+    
+    assert full_moc == hole_moc
+    assert full_stmoc == hole_stmoc
