@@ -374,15 +374,15 @@ def gen_mocs_epoch(epoch: str, image_dir: str, epoch_path: str = None):
 
 def _get_epoch_images(epoch_path: str, image_dir: str) -> list:
     """
-    Get all available images in a given epoch
+    Get all available images in a given epoch.
 
     Args:
-        epoch_path: Path to the epoch of interest
-        image_dir: The name of the folder containing the images to be updated
-            E.g. `COMBINED/STOKESI_IMAGES`
+        epoch_path: Path to the epoch of interest.
+        image_dir: The name of the folder containing the images to be updated.
+            E.g. `COMBINED/STOKESI_IMAGES`.
 
     Returns:
-        The list of images
+        The list of images.
     """
 
     glob_str = os.path.join(epoch_path, image_dir, "*.fits")
