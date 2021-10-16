@@ -180,6 +180,32 @@ def _create_beam_df(beam_files: list) -> pd.DataFrame:
     return beam_df
 
 
+def _set_epoch_path(epoch: str) -> Path:
+    """
+    Set the epoch_path from the VAST_DATA_DIR variable
+    
+    Args:
+        epoch: The epoch of interest
+        
+    Returns:
+        Path to the epoch of interest
+        
+    Raises:
+        Exception: Requested path could not be determined
+    """
+
+    base_folder = Path(os.getenv('VAST_DATA_DIR'))
+    if base_folder is None:
+        raise Exception(
+            "The path to the requested epoch could not be determined!"
+            " Either the system environment 'VAST_DATA_DIR' must be"
+            " defined or the 'epoch_path' provided."
+        )
+    epoch_path = base_folder / 'EPOCH{}'.format(epoch)
+        
+    return epoch_path
+
+
 def create_fields_csv(epoch_num: str,
                       db_path: str,
                       outdir: Union[str, Path] = '.'
@@ -291,8 +317,7 @@ def add_obs_date(epoch: str,
     epoch_info = load_fields_file(epoch)
 
     if epoch_path is None:
-        base_folder = Path(os.getenv('VAST_DATA_DIR'))
-        epoch_path = base_folder / 'EPOCH{}'.format(epoch)
+        epoch_path = _set_epoch_path(epoch)
 
     raw_images = _get_epoch_images(epoch_path, image_type, image_dir)
 
@@ -402,8 +427,7 @@ def gen_mocs_epoch(epoch: str,
     full_STMOC = vtm.load_pilot_stmoc()
 
     if epoch_path is None:
-        base_folder = Path(os.getenv('VAST_DATA_DIR'))
-        epoch_path = base_folder / 'EPOCH{}'.format(epoch)
+        epoch_path = _set_epoch_path(epoch)
 
     raw_images = _get_epoch_images(epoch_path, image_type, image_dir)
 
