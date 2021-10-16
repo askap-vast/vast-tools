@@ -149,7 +149,7 @@ def create_fields_csv(epoch_num: str, db_path: str, outdir: str = '.') -> None:
     Args:
         epoch_num: Epoch number of interest.
         db_path: Path to the askap_surveys database.
-        outdir: Path to the output directory.
+        outdir: Path to the output directory. Defaults to the current directory.
         
     Returns:
         None
@@ -246,13 +246,15 @@ def create_fields_csv(epoch_num: str, db_path: str, outdir: str = '.') -> None:
 def add_obs_date(epoch: str, image_dir: str, epoch_path: str = None) -> None:
     """
     Add datetime information to all fits files in a single epoch.
+    
     Args:
         epoch: The epoch of interest
         image_dir: The name of the folder containing the images to be updated
-            E.g. `TILES`, `STOKES_I_COMBINED`
+            E.g. `TILES`, `STOKES_I_COMBINED`.
         epoch_path: Full path to the folder containing the epoch.
             Defaults to None, which will set the value based on the
             `VAST_DATA_DIR` environment variable and `epoch`.
+    
     Returns:
         None
     """
@@ -286,11 +288,13 @@ def add_obs_date(epoch: str, image_dir: str, epoch_path: str = None) -> None:
 
 def gen_mocs_field(fits_file: str) -> Union[MOC, STMOC]:
     """
-    Generate a MOC and STMOC for a single fits file
+    Generate a MOC and STMOC for a single fits file.
+    
     Args:
-        fits_file: path to the fits file
+        fits_file: path to the fits file.
+    
     Returns:
-        The MOC and STMOC
+        The MOC and STMOC.
     """
     with fits.open(fits_file) as vast_fits:
         vast_data = vast_fits[0].data
@@ -332,12 +336,12 @@ def gen_mocs_field(fits_file: str) -> Union[MOC, STMOC]:
 def gen_mocs_epoch(epoch: str, image_dir: str, epoch_path: str = None) -> None:
     """
     Generate MOCs and STMOCs for all images in a single epoch, and create a new
-    full pilot STMOC
+    full pilot STMOC.
 
     Args:
-        epoch: The epoch of interest
+        epoch: The epoch of interest.
         image_dir: The name of the folder containing the images to be updated
-            E.g. `COMBINED/STOKESI_IMAGES`
+            E.g. `COMBINED/STOKESI_IMAGES`.
         epoch_path: Full path to the folder containing the epoch.
             Defaults to None, which will set the value based on the
             `VAST_DATA_DIR` environment variable and `epoch`.
