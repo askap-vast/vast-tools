@@ -345,13 +345,11 @@ def gen_mocs_field(fits_file: str) -> Union[MOC, STMOC]:
     )
     
     filename = os.path.split(fits_file)[1]
-    epoch = filename.split('.')[2]
-    field = filename.split('.')[1]
-
-    moc_name = "{}.{}.I.moc.fits".format(field, epoch)
+    moc_name = filename.replace(".fits", ".moc.fits")
+    stmoc_name = filename.replace(".fits", ".stmoc.fits")
 
     moc.write(moc_name, overwrite=True)
-    stmoc.write(moc_name.replace("moc", "stmoc"), overwrite=True)
+    stmoc.write(stmoc_name, overwrite=True)
 
     return moc, stmoc
 
