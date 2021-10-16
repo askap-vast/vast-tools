@@ -372,20 +372,21 @@ def gen_mocs_epoch(epoch: str, image_dir: str, epoch_path: str = None):
     full_STMOC.write('VAST_PILOT.stmoc.fits', overwrite=True)
 
 
-def _get_epoch_images(epoch_path: str, image_dir: str) -> list:
+def _get_epoch_images(epoch_path: str, image_type: str, image_dir: str) -> list:
     """
     Get all available images in a given epoch.
 
     Args:
         epoch_path: Path to the epoch of interest.
+        image_type: `COMBINED` or `TILES`
         image_dir: The name of the folder containing the images to be updated.
-            E.g. `COMBINED/STOKESI_IMAGES`.
+            E.g. `STOKESI_IMAGES`.
 
     Returns:
         The list of images.
     """
 
-    glob_str = os.path.join(epoch_path, image_dir, "*.fits")
-    raw_images = sorted(glob.glob(glob_str))
+    P = Path(epoch_path) / image_type / image_dir
+    raw_images = sorted(list(p.glob("*.fits")))
 
     return raw_images
