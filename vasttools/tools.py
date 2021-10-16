@@ -179,7 +179,10 @@ def _create_beam_df(beam_files: list) -> pd.DataFrame:
     
     return beam_df
 
-def create_fields_csv(epoch_num: str, db_path: str, outdir: str = '.') -> None:
+def create_fields_csv(epoch_num: str,
+                      db_path: str,
+                      outdir: Union[str, Path] = '.'
+                      ) -> None:
     """
     Create the fields csv for a single epoch using the askap_surveys database.
     
@@ -262,7 +265,11 @@ def create_fields_csv(epoch_num: str, db_path: str, outdir: str = '.') -> None:
     epoch_csv.to_csv(outdir / outfile, index=False)
 
 
-def add_obs_date(epoch: str, image_type: str, image_dir: str, epoch_path: str = None) -> None:
+def add_obs_date(epoch: str,
+                 image_type: str,
+                 image_dir: str,
+                 epoch_path: str = None
+                 ) -> None:
     """
     Add datetime information to all fits files in a single epoch.
     
@@ -306,7 +313,9 @@ def add_obs_date(epoch: str, image_type: str, image_dir: str, epoch_path: str = 
         hdu.close()
 
 
-def gen_mocs_field(fits_file: str, outdir: str = '.') -> Union[MOC, STMOC]:
+def gen_mocs_field(fits_file: str,
+                   outdir: Union[str, Path] = '.'
+                   ) -> Union[MOC, STMOC]:
     """
     Generate a MOC and STMOC for a single fits file.
     
@@ -359,7 +368,12 @@ def gen_mocs_field(fits_file: str, outdir: str = '.') -> Union[MOC, STMOC]:
     return moc, stmoc
 
 
-def gen_mocs_epoch(epoch: str, image_type: str, image_dir: str, epoch_path: str = None, outdir: str = '.') -> None:
+def gen_mocs_epoch(epoch: str,
+                   image_type: str,
+                   image_dir: str,
+                   epoch_path: str = None,
+                   outdir: Union[str, Path] = '.'
+                   ) -> None:
     """
     Generate MOCs and STMOCs for all images in a single epoch, and create a new
     full pilot STMOC.
@@ -409,7 +423,10 @@ def gen_mocs_epoch(epoch: str, image_type: str, image_dir: str, epoch_path: str 
     full_STMOC.write(outdir / 'VAST_PILOT.stmoc.fits', overwrite=True)
 
 
-def _get_epoch_images(epoch_path: str, image_type: str, image_dir: str) -> list:
+def _get_epoch_images(epoch_path: Union[str, Path],
+                      image_type: str,
+                      image_dir: str
+                      ) -> list:
     """
     Get all available images in a given epoch.
 
