@@ -243,14 +243,15 @@ def create_fields_csv(epoch_num: str, db_path: str, outdir: str = '.') -> None:
     epoch_csv.to_csv(os.path.join(outdir, outfile), index=False)
 
 
-def add_obs_date(epoch: str, image_dir: str, epoch_path: str = None) -> None:
+def add_obs_date(epoch: str, image_type: str, image_dir: str, epoch_path: str = None) -> None:
     """
     Add datetime information to all fits files in a single epoch.
     
     Args:
         epoch: The epoch of interest
-        image_dir: The name of the folder containing the images to be updated
-            E.g. `TILES`, `STOKES_I_COMBINED`.
+        image_type: `COMBINED` or `TILES`
+        image_dir: The name of the folder containing the images to be updated.
+            E.g. `STOKESI_IMAGES`.
         epoch_path: Full path to the folder containing the epoch.
             Defaults to None, which will set the value based on the
             `VAST_DATA_DIR` environment variable and `epoch`.
@@ -265,7 +266,7 @@ def add_obs_date(epoch: str, image_dir: str, epoch_path: str = None) -> None:
         base_folder = Path(os.getenv('VAST_DATA_DIR'))
         epoch_path = base_folder / 'EPOCH{}'.format(epoch)
 
-    raw_images = _get_epoch_images(epoch_path, image_dir)
+    raw_images = _get_epoch_images(epoch_path, image_type, image_dir)
 
     for filename in raw_images:
         field = filename.split("/")[-1].split(".")[0]
@@ -333,15 +334,16 @@ def gen_mocs_field(fits_file: str) -> Union[MOC, STMOC]:
     return moc, stmoc
 
 
-def gen_mocs_epoch(epoch: str, image_dir: str, epoch_path: str = None) -> None:
+def gen_mocs_epoch(epoch: str, image_type: str, image_dir: str, epoch_path: str = None) -> None:
     """
     Generate MOCs and STMOCs for all images in a single epoch, and create a new
     full pilot STMOC.
 
     Args:
         epoch: The epoch of interest.
-        image_dir: The name of the folder containing the images to be updated
-            E.g. `COMBINED/STOKESI_IMAGES`.
+        image_type: `COMBINED` or `TILES`
+        image_dir: The name of the folder containing the images to be updated.
+            E.g. `STOKESI_IMAGES`.
         epoch_path: Full path to the folder containing the epoch.
             Defaults to None, which will set the value based on the
             `VAST_DATA_DIR` environment variable and `epoch`.
@@ -356,7 +358,7 @@ def gen_mocs_epoch(epoch: str, image_dir: str, epoch_path: str = None) -> None:
         base_folder = Path(os.getenv('VAST_DATA_DIR'))
         epoch_path = base_folder / 'EPOCH{}'.format(epoch)
 
-    raw_images = _get_epoch_images(epoch_path, image_dir)
+    raw_images = _get_epoch_images(epoch_path, image_type, image_dir)
 
     for i, f in enumerate(raw_images):
         themoc, thestmoc = gen_mocs_field(f)
