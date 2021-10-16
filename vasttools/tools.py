@@ -143,6 +143,34 @@ def add_credible_levels(
 
 
 # New epoch tools
+def _create_beam_df(beam_files: list) -> pd.Dataframe:
+    """
+    Create the dataframe of all beam information from a list of beam files
+    
+    Args:
+        beam_files: the list of beam files
+    
+    Returns:
+        A dataframe of complete beam information
+    """
+
+    for i, beam_file in enumerate(beam_files):
+        field = "VAST_" + \
+            beam_file.name.split('VAST_')[-1].split(beam_file.suffix)[0]
+        sbid = int(beam_file.name.split('beam_inf_')[-1].split('-')[0])
+
+        temp = pd.read_csv(beam_file)
+        temp = temp.loc[:, beam_columns]
+        temp['SBID'] = sbid
+        temp['FIELD_NAME'] = field
+
+        if i == 0:
+            beam_df = temp.copy()
+        else:
+            beam_df = beam_df.append(temp)
+    
+    return beam_df
+
 def create_fields_csv(epoch_num: str, db_path: str, outdir: str = '.') -> None:
     """
     Create the fields csv for a single epoch using the askap_surveys database.
@@ -171,25 +199,12 @@ def create_fields_csv(epoch_num: str, db_path: str, outdir: str = '.') -> None:
     epoch = vast_db / 'epoch_{}'.format(epoch_num.replace('x', ''))
 
     beam_files = list(epoch.glob('beam_inf_*.csv'))
+    beam_df = _create_beam_df(beam_files)
+
     field_data = epoch / 'field_data.csv'
 
     field_df = pd.read_csv(field_data)
     field_df = field_df.loc[:, field_columns]
-
-    for i, beam_file in enumerate(beam_files):
-        field = "VAST_" + \
-            beam_file.name.split('VAST_')[-1].split(beam_file.suffix)[0]
-        sbid = int(beam_file.name.split('beam_inf_')[-1].split('-')[0])
-
-        temp = pd.read_csv(beam_file)
-        temp = temp.loc[:, beam_columns]
-        temp['SBID'] = sbid
-        temp['FIELD_NAME'] = field
-
-        if i == 0:
-            beam_df = temp.copy()
-        else:
-            beam_df = beam_df.append(temp)
 
     epoch_csv = beam_df.merge(field_df,
                               left_on=['SBID', 'FIELD_NAME'],
