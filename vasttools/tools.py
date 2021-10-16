@@ -191,7 +191,7 @@ def _set_epoch_path(epoch: str) -> Path:
         Path to the epoch of interest
         
     Raises:
-        Exception: Requested path could not be determined
+        OSError: Requested path could not be determined
     """
 
     base_folder = Path(os.getenv('VAST_DATA_DIR'))
@@ -353,6 +353,9 @@ def gen_mocs_field(fits_file: str,
 
     Returns:
         The MOC and STMOC.
+        
+    Raises:
+        FileNotFoundError: File does not exist
     """
 
     outdir = Path(outdir)
@@ -468,7 +471,7 @@ def _get_epoch_images(epoch_path: Union[str, Path],
         The list of images.
 
     Raises:
-            Exception: Directory path does not exist
+        OSError: Directory path does not exist
     """
 
     P = Path(epoch_path) / image_type / image_dir
