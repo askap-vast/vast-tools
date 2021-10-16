@@ -143,11 +143,13 @@ def add_credible_levels(
 # New epoch tools
 def create_fields_csv(epoch_num: str, db_path: str, outdir: str = '.') -> None:
     """
-    Create the fields csv for a single epoch using the askap_surveys database
+    Create the fields csv for a single epoch using the askap_surveys database.
+    
     Args:
-        epoch_num: Epoch number of interest
-        db_path: Path to the askap_surveys database
-        out_dir: Path to the output directory
+        epoch_num: Epoch number of interest.
+        db_path: Path to the askap_surveys database.
+        outdir: Path to the output directory.
+        
     Returns:
         None
     """
