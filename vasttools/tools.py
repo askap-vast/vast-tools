@@ -343,9 +343,10 @@ def gen_mocs_field(fits_file: str) -> Union[MOC, STMOC]:
     stmoc = STMOC.from_spatial_coverages(
         start, end, [moc]
     )
-
-    epoch = fits_file.split("/")[-4]
-    field = fits_file.split("/")[-1].split(".")[4]
+    
+    filename = os.path.split(fits_file)[1]
+    epoch = filename.split('.')[2]
+    field = filename.split('.')[1]
 
     moc_name = "{}.{}.I.moc.fits".format(field, epoch)
 
