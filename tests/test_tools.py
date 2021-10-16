@@ -136,7 +136,7 @@ def test_add_obs_date(mocker):
         return_value=fits_open_no_update(test_img_path)
     )
 
-    vtt.add_obs_date('1', '', '')
+    vtt.add_obs_date('1', '', '', '.')
 
 
 def test_gen_mocs_field(tmp_path: Path) -> None:
@@ -173,7 +173,7 @@ def test_gen_mocs_epoch(mocker, tmp_path: Path) -> None:
         return_value=[test_img_path]
     )
 
-    vtt.gen_mocs_epoch('1', '', '', outdir=tmp_path)
+    vtt.gen_mocs_epoch('1', '', '', epoch_path='.', outdir=tmp_path)
 
 
 def test_mocs_with_holes(tmp_path: Path) -> None:
