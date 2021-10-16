@@ -304,12 +304,13 @@ def add_obs_date(epoch: str, image_type: str, image_dir: str, epoch_path: str = 
         hdu.close()
 
 
-def gen_mocs_field(fits_file: str) -> Union[MOC, STMOC]:
+def gen_mocs_field(fits_file: str, outdir: str = '.') -> Union[MOC, STMOC]:
     """
     Generate a MOC and STMOC for a single fits file.
     
     Args:
         fits_file: path to the fits file.
+        outdir: Path to the output directory. Defaults to the current directory.
     
     Returns:
         The MOC and STMOC.
@@ -354,7 +355,7 @@ def gen_mocs_field(fits_file: str) -> Union[MOC, STMOC]:
     return moc, stmoc
 
 
-def gen_mocs_epoch(epoch: str, image_type: str, image_dir: str, epoch_path: str = None) -> None:
+def gen_mocs_epoch(epoch: str, image_type: str, image_dir: str, epoch_path: str = None, outdir: str = '.') -> None:
     """
     Generate MOCs and STMOCs for all images in a single epoch, and create a new
     full pilot STMOC.
@@ -367,6 +368,7 @@ def gen_mocs_epoch(epoch: str, image_type: str, image_dir: str, epoch_path: str 
         epoch_path: Full path to the folder containing the epoch.
             Defaults to None, which will set the value based on the
             `VAST_DATA_DIR` environment variable and `epoch`.
+        outdir: Path to the output directory. Defaults to the current directory.
 
     Returns:
         None
