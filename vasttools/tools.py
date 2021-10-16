@@ -183,13 +183,13 @@ def _create_beam_df(beam_files: list) -> pd.DataFrame:
 def _set_epoch_path(epoch: str) -> Path:
     """
     Set the epoch_path from the VAST_DATA_DIR variable
-    
+
     Args:
         epoch: The epoch of interest
-        
+
     Returns:
         Path to the epoch of interest
-        
+
     Raises:
         OSError: Requested path could not be determined
     """
@@ -202,7 +202,7 @@ def _set_epoch_path(epoch: str) -> Path:
             " defined or the 'epoch_path' provided."
         )
     epoch_path = base_folder / 'EPOCH{}'.format(epoch)
-        
+
     return epoch_path
 
 
@@ -353,7 +353,7 @@ def gen_mocs_field(fits_file: str,
 
     Returns:
         The MOC and STMOC.
-        
+
     Raises:
         FileNotFoundError: File does not exist
     """
