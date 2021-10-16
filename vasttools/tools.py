@@ -242,7 +242,7 @@ def create_fields_csv(epoch_num: str, db_path: str, outdir: str = '.') -> None:
     epoch_csv.to_csv(os.path.join(outdir, outfile), index=False)
 
 
-def add_obs_date(epoch: str, image_dir: str, epoch_path: str = None):
+def add_obs_date(epoch: str, image_dir: str, epoch_path: str = None) -> None:
     """
     Add datetime information to all fits files in a single epoch.
     Args:
@@ -328,7 +328,7 @@ def gen_mocs_field(fits_file: str) -> (MOC, STMOC):
     return moc, stmoc
 
 
-def gen_mocs_epoch(epoch: str, image_dir: str, epoch_path: str = None):
+def gen_mocs_epoch(epoch: str, image_dir: str, epoch_path: str = None) -> None:
     """
     Generate MOCs and STMOCs for all images in a single epoch, and create a new
     full pilot STMOC
