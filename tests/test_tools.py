@@ -142,7 +142,7 @@ def test_add_obs_date(mocker):
 def test_gen_mocs_field(tmp_path: Path) -> None:
     """
     Tests the generation of a MOC and STMOC for a single fits file
-    
+
     Args:
         tmp_path: The default pytest temporary path
     Returns:
@@ -174,15 +174,16 @@ def test_gen_mocs_epoch(mocker, tmp_path: Path) -> None:
     )
 
     vtt.gen_mocs_epoch('1', '', '', outdir=tmp_path)
-    
+
+
 def test_mocs_with_holes(tmp_path: Path) -> None:
     """
-    Tests that gen_mocs_field produces the same output regardless of whether 
+    Tests that gen_mocs_field produces the same output regardless of whether
     there are NaN holes within the image.
-    
+
     Args:
         tmp_path: The default pytest temporary path
-    
+
     Returns:
         None
     """
@@ -193,7 +194,7 @@ def test_mocs_with_holes(tmp_path: Path) -> None:
 
     centre = int(image_width/2)
     hole_rad = int(hole_width/2)
-    
+
     test_img_path = str(TEST_DATA_DIR / 'VAST_0012-06A.EPOCH01.I.TEST.fits')
 
     hdu = fits.open(test_img_path)[0]
@@ -202,8 +203,8 @@ def test_mocs_with_holes(tmp_path: Path) -> None:
     data = np.ones((image_width, image_width))
     data[:border_width, :] = np.nan
     data[-border_width:, :] = np.nan
-    data[:,:border_width] = np.nan
-    data[:,-border_width:] = np.nan
+    data[:, :border_width] = np.nan
+    data[:, -border_width:] = np.nan
 
     hole_data = data.copy()
     hole_data[centre-hole_rad:centre+hole_rad,
@@ -212,7 +213,7 @@ def test_mocs_with_holes(tmp_path: Path) -> None:
 
     full_path = tmp_path / 'TESTFIELD.EPOCH01.I.fits'
     hole_path = tmp_path / 'TESTFIELDHOLE.EPOCH01.I.fits'
-    
+
     fits.writeto(full_path,
                  data,
                  header
@@ -221,9 +222,9 @@ def test_mocs_with_holes(tmp_path: Path) -> None:
                  hole_data,
                  header
                  )
-                 
+
     full_moc, full_stmoc = vtt.gen_mocs_field(full_path, outdir=tmp_path)
     hole_moc, hole_stmoc = vtt.gen_mocs_field(hole_path, outdir=tmp_path)
-    
+
     assert full_moc == hole_moc
     assert full_stmoc == hole_stmoc

@@ -146,14 +146,14 @@ def add_credible_levels(
 def _create_beam_df(beam_files: list) -> pd.DataFrame:
     """
     Create the dataframe of all beam information from a list of beam files
-    
+
     Args:
         beam_files: the list of beam files
-    
+
     Returns:
         A dataframe of complete beam information
     """
-    
+
     beam_columns = ['BEAM_NUM',
                     'RA_DEG',
                     'DEC_DEG',
@@ -176,8 +176,9 @@ def _create_beam_df(beam_files: list) -> pd.DataFrame:
             beam_df = temp.copy()
         else:
             beam_df = beam_df.append(temp)
-    
+
     return beam_df
+
 
 def create_fields_csv(epoch_num: str,
                       db_path: str,
@@ -185,12 +186,13 @@ def create_fields_csv(epoch_num: str,
                       ) -> None:
     """
     Create the fields csv for a single epoch using the askap_surveys database.
-    
+
     Args:
         epoch_num: Epoch number of interest.
         db_path: Path to the askap_surveys database.
-        outdir: Path to the output directory. Defaults to the current directory.
-        
+        outdir: Path to the output directory.
+            Defaults to the current directory.
+
     Returns:
         None
     """
@@ -272,7 +274,7 @@ def add_obs_date(epoch: str,
                  ) -> None:
     """
     Add datetime information to all fits files in a single epoch.
-    
+
     Args:
         epoch: The epoch of interest
         image_type: `COMBINED` or `TILES`
@@ -281,7 +283,7 @@ def add_obs_date(epoch: str,
         epoch_path: Full path to the folder containing the epoch.
             Defaults to None, which will set the value based on the
             `VAST_DATA_DIR` environment variable and `epoch`.
-    
+
     Returns:
         None
     """
@@ -318,17 +320,18 @@ def gen_mocs_field(fits_file: str,
                    ) -> Union[MOC, STMOC]:
     """
     Generate a MOC and STMOC for a single fits file.
-    
+
     Args:
         fits_file: path to the fits file.
-        outdir: Path to the output directory. Defaults to the current directory.
-    
+        outdir: Path to the output directory.
+            Defaults to the current directory.
+
     Returns:
         The MOC and STMOC.
     """
-    
+
     outdir = Path(outdir)
-    
+
     if not os.path.isfile(fits_file):
         raise Exception("{} does not exist".format(fits_file))
 
@@ -357,7 +360,7 @@ def gen_mocs_field(fits_file: str,
     stmoc = STMOC.from_spatial_coverages(
         start, end, [moc]
     )
-    
+
     filename = os.path.split(fits_file)[1]
     moc_name = filename.replace(".fits", ".moc.fits")
     stmoc_name = filename.replace(".fits", ".stmoc.fits")
@@ -386,12 +389,13 @@ def gen_mocs_epoch(epoch: str,
         epoch_path: Full path to the folder containing the epoch.
             Defaults to None, which will set the value based on the
             `VAST_DATA_DIR` environment variable and `epoch`.
-        outdir: Path to the output directory. Defaults to the current directory.
+        outdir: Path to the output directory.
+            Defaults to the current directory.
 
     Returns:
         None
     """
-    
+
     outdir = Path(outdir)
 
     vtm = VASTMOCS()
@@ -438,7 +442,7 @@ def _get_epoch_images(epoch_path: Union[str, Path],
 
     Returns:
         The list of images.
-    
+
     Raises:
             Exception: Directory path does not exist
     """
