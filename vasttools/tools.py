@@ -298,6 +298,10 @@ def gen_mocs_field(fits_file: str) -> Union[MOC, STMOC]:
     Returns:
         The MOC and STMOC.
     """
+    
+    if not os.path.isfile(fits_file):
+        raise Exception("{} does not exist".format(fits_file))
+
     with fits.open(fits_file) as vast_fits:
         vast_data = vast_fits[0].data
         if vast_data.ndim == 4:
