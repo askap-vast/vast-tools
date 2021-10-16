@@ -139,25 +139,28 @@ def test_add_obs_date(mocker):
     vtt.add_obs_date('1', '', '')
 
 
-def test_gen_mocs_field() -> None:
+def test_gen_mocs_field(tmp_path: Path) -> None:
     """
     Tests the generation of a MOC and STMOC for a single fits file
-
+    
+    Args:
+        tmp_path: The default pytest temporary path
     Returns:
         None
     """
 
     test_img_path = str(TEST_DATA_DIR / 'VAST_0012-06A.EPOCH01.I.TEST.fits')
-    vtt.gen_mocs_field(test_img_path)
+    vtt.gen_mocs_field(test_img_path, outdir=tmp_path)
 
 
-def test_gen_mocs_epoch(mocker) -> None:
+def test_gen_mocs_epoch(mocker, tmp_path: Path) -> None:
     """
     Tests the generation of all MOCs and STMOCs for a single epoch.
     Also tests the update of the full STMOC.
 
     Args:
         mocker: The pytest mock mocker object.
+        tmp_path: The default pytest temporary path
 
     Returns:
         None
@@ -170,9 +173,20 @@ def test_gen_mocs_epoch(mocker) -> None:
         return_value=[test_img_path]
     )
 
-    vtt.gen_mocs_epoch('1', '', '')
+    vtt.gen_mocs_epoch('1', '', '', outdir=tmp_path)
     
 def test_mocs_with_holes(tmp_path: Path) -> None:
+    """
+    Tests that gen_mocs_field produces the same output regardless of whether 
+    there are NaN holes within the image.
+    
+    Args:
+        tmp_path: The default pytest temporary path
+    
+    Returns:
+        None
+    """
+
     border_width = 50
     image_width = 1000
     hole_width = 100
@@ -208,8 +222,8 @@ def test_mocs_with_holes(tmp_path: Path) -> None:
                  header
                  )
                  
-    full_moc, full_stmoc = vtt.gen_mocs_field(full_path)
-    hole_moc, hole_stmoc = vtt.gen_mocs_field(hole_path)
+    full_moc, full_stmoc = vtt.gen_mocs_field(full_path, outdir=tmp_path)
+    hole_moc, hole_stmoc = vtt.gen_mocs_field(hole_path, outdir=tmp_path)
     
     assert full_moc == hole_moc
     assert full_stmoc == hole_stmoc
