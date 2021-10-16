@@ -143,7 +143,7 @@ def add_credible_levels(
 
 
 # New epoch tools
-def _create_beam_df(beam_files: list) -> pd.Dataframe:
+def _create_beam_df(beam_files: list) -> pd.DataFrame:
     """
     Create the dataframe of all beam information from a list of beam files
     
@@ -153,6 +153,14 @@ def _create_beam_df(beam_files: list) -> pd.Dataframe:
     Returns:
         A dataframe of complete beam information
     """
+    
+    beam_columns = ['BEAM_NUM',
+                    'RA_DEG',
+                    'DEC_DEG',
+                    'PSF_MAJOR',
+                    'PSF_MINOR',
+                    'PSF_ANGLE'
+                    ]
 
     for i, beam_file in enumerate(beam_files):
         field = "VAST_" + \
@@ -185,13 +193,6 @@ def create_fields_csv(epoch_num: str, db_path: str, outdir: str = '.') -> None:
     """
 
     field_columns = ['FIELD_NAME', 'SBID', 'SCAN_START', 'SCAN_LEN']
-    beam_columns = ['BEAM_NUM',
-                    'RA_DEG',
-                    'DEC_DEG',
-                    'PSF_MAJOR',
-                    'PSF_MINOR',
-                    'PSF_ANGLE'
-                    ]
 
     vast_db = Path(db_path)
     if type(epoch_num) is int:
