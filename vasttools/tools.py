@@ -15,6 +15,7 @@ from mocpy import STMOC
 from astropy.io import fits
 from astropy.wcs import WCS
 from astropy.time import Time
+from typing import Union
 
 from astropy import units as u
 from astropy.coordinates import SkyCoord, Angle
@@ -283,7 +284,7 @@ def add_obs_date(epoch: str, image_dir: str, epoch_path: str = None) -> None:
         hdu.close()
 
 
-def gen_mocs_field(fits_file: str) -> (MOC, STMOC):
+def gen_mocs_field(fits_file: str) -> Union[MOC, STMOC]:
     """
     Generate a MOC and STMOC for a single fits file
     Args:
