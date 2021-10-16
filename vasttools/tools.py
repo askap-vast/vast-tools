@@ -3,6 +3,7 @@ and can be used generically.
 """
 import os
 import glob
+import logging
 
 import healpy as hp
 import numpy as np
@@ -391,9 +392,14 @@ def _get_epoch_images(epoch_path: str, image_type: str, image_dir: str) -> list:
 
     Returns:
         The list of images.
+    
+    Raises:
+            Exception: Directory path does not exist
     """
 
     P = Path(epoch_path) / image_type / image_dir
-    raw_images = sorted(list(p.glob("*.fits")))
+    if not P.exists():
+        raise Exception("{} does not exist!".format(P))
+    raw_images = sorted(list(P.glob("*.fits")))
 
     return raw_images
