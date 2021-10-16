@@ -192,6 +192,8 @@ def create_fields_csv(epoch_num: str, db_path: str, outdir: str = '.') -> None:
         None
     """
 
+    outdir = Path(outdir)
+
     field_columns = ['FIELD_NAME', 'SBID', 'SCAN_START', 'SCAN_LEN']
 
     vast_db = Path(db_path)
@@ -257,7 +259,7 @@ def create_fields_csv(epoch_num: str, db_path: str, outdir: str = '.') -> None:
         'BPA'
     ]]
     outfile = 'vast_epoch{}_info.csv'.format(epoch_num)
-    epoch_csv.to_csv(os.path.join(outdir, outfile), index=False)
+    epoch_csv.to_csv(outdir / outfile, index=False)
 
 
 def add_obs_date(epoch: str, image_type: str, image_dir: str, epoch_path: str = None) -> None:
@@ -316,6 +318,8 @@ def gen_mocs_field(fits_file: str, outdir: str = '.') -> Union[MOC, STMOC]:
         The MOC and STMOC.
     """
     
+    outdir = Path(outdir)
+    
     if not os.path.isfile(fits_file):
         raise Exception("{} does not exist".format(fits_file))
 
@@ -349,8 +353,8 @@ def gen_mocs_field(fits_file: str, outdir: str = '.') -> Union[MOC, STMOC]:
     moc_name = filename.replace(".fits", ".moc.fits")
     stmoc_name = filename.replace(".fits", ".stmoc.fits")
 
-    moc.write(moc_name, overwrite=True)
-    stmoc.write(stmoc_name, overwrite=True)
+    moc.write(outdir / moc_name, overwrite=True)
+    stmoc.write(outdir / stmoc_name, overwrite=True)
 
     return moc, stmoc
 
@@ -373,6 +377,9 @@ def gen_mocs_epoch(epoch: str, image_type: str, image_dir: str, epoch_path: str 
     Returns:
         None
     """
+    
+    outdir = Path(outdir)
+
     vtm = VASTMOCS()
     full_STMOC = vtm.load_pilot_stmoc()
 
@@ -393,12 +400,13 @@ def gen_mocs_epoch(epoch: str, image_type: str, image_dir: str, epoch_path: str 
             masterstemoc = masterstemoc.union(thestmoc)
 
     master_name = "VAST_PILOT_{}_moc.fits".format(epoch)
+    master_stmoc_name = master_name.replace("moc", "stmoc")
 
-    mastermoc.write(master_name, overwrite=True)
-    masterstemoc.write(master_name.replace("moc", "stmoc"), overwrite=True)
+    mastermoc.write(outdir / master_name, overwrite=True)
+    masterstemoc.write(outdir / master_stmoc_name, overwrite=True)
 
     full_STMOC = full_STMOC.union(masterstemoc)
-    full_STMOC.write('VAST_PILOT.stmoc.fits', overwrite=True)
+    full_STMOC.write(outdir / 'VAST_PILOT.stmoc.fits', overwrite=True)
 
 
 def _get_epoch_images(epoch_path: str, image_type: str, image_dir: str) -> list:
