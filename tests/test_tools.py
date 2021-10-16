@@ -228,3 +228,25 @@ def test_mocs_with_holes(tmp_path: Path) -> None:
 
     assert full_moc == hole_moc
     assert full_stmoc == hole_stmoc
+
+
+def test__set_epoch_path_failure(mocker) -> None:
+    """
+    Tests the set_epoch_path function when `VAST_DATA_DIR` has not been set.
+
+    Args:
+        mocker: The pytest-mock mocker object.
+
+    Returns:
+        None
+    """
+    mocker_getenv = mocker.patch(
+        'os.getenv', return_value=None
+    )
+
+    with pytest.raises(Exception) as excinfo:
+        vtt._set_epoch_path('1')
+    print(str(excinfo.value))
+    assert str(excinfo.value).startswith(
+        "The path to the requested epoch could not be determined!"
+    )

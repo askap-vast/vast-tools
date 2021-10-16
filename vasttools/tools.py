@@ -194,13 +194,16 @@ def _set_epoch_path(epoch: str) -> Path:
         OSError: Requested path could not be determined
     """
 
-    base_folder = Path(os.getenv('VAST_DATA_DIR'))
+    base_folder = os.getenv('VAST_DATA_DIR')
     if base_folder is None:
         raise Exception(
             "The path to the requested epoch could not be determined!"
             " Either the system environment 'VAST_DATA_DIR' must be"
             " defined or the 'epoch_path' provided."
         )
+
+    base_folder = Path(base_folder)
+
     epoch_path = base_folder / 'EPOCH{}'.format(epoch)
 
     return epoch_path
