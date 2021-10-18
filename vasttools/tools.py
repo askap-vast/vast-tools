@@ -411,7 +411,7 @@ def gen_mocs_epoch(epoch: str,
 
     Args:
         epoch: The epoch of interest.
-        image_type: `COMBINED` or `TILES`
+        image_type: `COMBINED` or `TILES`.
         image_dir: The name of the folder containing the images to be updated.
             E.g. `STOKESI_IMAGES`.
         epoch_path: Full path to the folder containing the epoch.
