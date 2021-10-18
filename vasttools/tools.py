@@ -183,13 +183,13 @@ def _create_beam_df(beam_files: list) -> pd.DataFrame:
 def _set_epoch_path(epoch: str) -> Path:
     """
     Set the epoch_path from the VAST_DATA_DIR variable
-    
+
     Args:
         epoch: The epoch of interest
-        
+
     Returns:
         Path to the epoch of interest
-        
+
     Raises:
         Exception: Requested path could not be determined
     """
@@ -202,7 +202,7 @@ def _set_epoch_path(epoch: str) -> Path:
             " defined or the 'epoch_path' provided."
         )
     epoch_path = base_folder / 'EPOCH{}'.format(epoch)
-        
+
     return epoch_path
 
 
@@ -312,8 +312,10 @@ def add_obs_date(epoch: str,
 
     Returns:
         None
-    """
 
+    Raises:
+        ValueError: When image_type is not 'TILES' or 'COMBINED'.
+    """
     epoch_info = load_fields_file(epoch)
 
     if epoch_path is None:
@@ -322,7 +324,17 @@ def add_obs_date(epoch: str,
     raw_images = _get_epoch_images(epoch_path, image_type, image_dir)
 
     for filename in raw_images:
-        field = filename.split("/")[-1].split(".")[0]
+        split_name = filename.split("/")[-1].split(".")
+        if image_type == 'TILES':
+            field = split_name[4]
+        elif image_type == 'COMBINED':
+            field = split_name[0]
+        else:
+            raise ValueError(
+                "Image type not recognised, "
+                "must be either 'TILES' or 'COMBINED'."
+            )
+
         field_info = epoch_info[epoch_info.FIELD_NAME == field].iloc[0]
         field_start = Time(field_info.DATEOBS)
         field_end = Time(field_info.DATEEND)

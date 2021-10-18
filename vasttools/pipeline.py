@@ -735,7 +735,8 @@ class PipeRun(object):
 
         return new_PipeRun
 
-    def _distance_from_edge(self, x: np.ndarray) -> np.ndarray:
+    @staticmethod
+    def _distance_from_edge(x: np.ndarray) -> np.ndarray:
         """
         Analyses the binary array x and determines the distance from
         the edge (0).
