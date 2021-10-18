@@ -353,6 +353,9 @@ def gen_mocs_field(fits_file: str,
 
     Returns:
         The MOC and STMOC.
+        
+    Raises:
+        Exception: When the FITS file cannot be found.
     """
 
     outdir = Path(outdir)
