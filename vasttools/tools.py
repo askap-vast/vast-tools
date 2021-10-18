@@ -182,16 +182,16 @@ def _create_beam_df(beam_files: list) -> pd.DataFrame:
 
 def _set_epoch_path(epoch: str) -> Path:
     """
-    Set the epoch_path from the VAST_DATA_DIR variable
+    Set the epoch_path from the VAST_DATA_DIR variable.
 
     Args:
-        epoch: The epoch of interest
+        epoch: The epoch of interest.
 
     Returns:
-        Path to the epoch of interest
+        Path to the epoch of interest.
 
     Raises:
-        Exception: Requested path could not be determined
+        Exception: Requested path could not be determined.
     """
 
     base_folder = Path(os.getenv('VAST_DATA_DIR'))
@@ -303,7 +303,7 @@ def add_obs_date(epoch: str,
 
     Args:
         epoch: The epoch of interest
-        image_type: `COMBINED` or `TILES`
+        image_type: `COMBINED` or `TILES`.
         image_dir: The name of the folder containing the images to be updated.
             E.g. `STOKESI_IMAGES`.
         epoch_path: Full path to the folder containing the epoch.
@@ -365,6 +365,9 @@ def gen_mocs_field(fits_file: str,
 
     Returns:
         The MOC and STMOC.
+
+    Raises:
+        Exception: When the FITS file cannot be found.
     """
 
     outdir = Path(outdir)
@@ -420,7 +423,7 @@ def gen_mocs_epoch(epoch: str,
 
     Args:
         epoch: The epoch of interest.
-        image_type: `COMBINED` or `TILES`
+        image_type: `COMBINED` or `TILES`.
         image_dir: The name of the folder containing the images to be updated.
             E.g. `STOKESI_IMAGES`.
         epoch_path: Full path to the folder containing the epoch.
