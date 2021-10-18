@@ -182,16 +182,16 @@ def _create_beam_df(beam_files: list) -> pd.DataFrame:
 
 def _set_epoch_path(epoch: str) -> Path:
     """
-    Set the epoch_path from the VAST_DATA_DIR variable
+    Set the epoch_path from the VAST_DATA_DIR variable.
     
     Args:
-        epoch: The epoch of interest
+        epoch: The epoch of interest.
         
     Returns:
-        Path to the epoch of interest
+        Path to the epoch of interest.
         
     Raises:
-        Exception: Requested path could not be determined
+        Exception: Requested path could not be determined.
     """
 
     base_folder = Path(os.getenv('VAST_DATA_DIR'))
