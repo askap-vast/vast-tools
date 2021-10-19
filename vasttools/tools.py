@@ -23,6 +23,7 @@ from astropy.coordinates import SkyCoord, Angle
 
 from vasttools.survey import load_fields_file
 from vasttools.moc import VASTMOCS
+from vasttools.utils import create_moc_from_fits
 
 
 def skymap2moc(filename: str, cutoff: float) -> MOC:
@@ -378,28 +379,11 @@ def gen_mocs_field(fits_file: str,
     if not os.path.isfile(fits_file):
         raise Exception("{} does not exist".format(fits_file))
 
-    with fits.open(fits_file) as vast_fits:
-        vast_data = vast_fits[0].data
-        if vast_data.ndim == 4:
-            vast_data = vast_data[0, 0, :, :]
-        vast_header = vast_fits[0].header
-        vast_wcs = WCS(vast_header, naxis=2)
+    moc = create_moc_from_fits(fits_file)
 
-    binary = (~np.isnan(vast_data)).astype(int)
-    binary = np.pad(binary, 1, mode='constant')
-    dist = ndi.distance_transform_cdt(binary, metric='taxicab')
-    mask = dist[1:-1, 1:-1]
-
-    x, y = np.where(mask == 1)
-    # need to know when to reverse by checking axis sizes.
-    pixels = np.column_stack((y, x))
-
-    coords = SkyCoord(vast_wcs.wcs_pix2world(
-        pixels, 0), unit="deg", frame="icrs")
-
-    moc = MOC.from_polygon_skycoord(coords, max_depth=10)
-    start = Time([vast_header['DATE-BEG']])
-    end = Time([vast_header['DATE-END']])
+    header = fits.getheader(fits_file, 0)
+    start = Time([header['DATE-BEG']])
+    end = Time([header['DATE-END']])
     stmoc = STMOC.from_spatial_coverages(
         start, end, [moc]
     )

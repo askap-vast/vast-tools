@@ -255,7 +255,11 @@ def test_add_obs_date(
     ])
 
 
-def test_gen_mocs_field(tmp_path: Path) -> None:
+def test_gen_mocs_field(
+    dummy_fits_open: fits.HDUList,
+    dummy_load_fields_file: pd.DataFrame,
+    tmp_path: Path,
+    mocker) -> None:
     """
     Tests the generation of a MOC and STMOC for a single fits file
 
@@ -270,14 +274,29 @@ def test_gen_mocs_field(tmp_path: Path) -> None:
         return_value=dummy_load_fields_file
     )
 
-    mocker_get_epoch_images = mocker.patch(
-        'vasttools.tools._get_epoch_images',
-        return_value=[image_name]
+    mocker_fits_open = mocker.patch(
+        'vasttools.utils.fits.open',
+        return_value=dummy_fits_open
     )
 
+    start = Time(dummy_load_fields_file['DATEOBS'].iloc[0])
+    end = Time(dummy_load_fields_file['DATEEND'].iloc[0])
+    duration = end - start
+
+    dummy_header = {
+        "DATE-OBS": start.fits,
+        "MJD-OBS": start.mjd,
+        "DATE-BEG": start.fits,
+        "DATE-END": end.fits,
+        "MJD-BEG": start.mjd,
+        "MJD-END": end.mjd,
+        "TELAPSE": duration.sec,
+        "TIMEUNIT": "s"
+    }
+    
     mocker_fits_open = mocker.patch(
-        'vasttools.tools.fits.open',
-        return_value=dummy_fits_open
+        'vasttools.tools.fits.getheader',
+        return_value=dummy_header
     )
     mocker_fits_open = mocker.patch(
         'os.path.isfile',

@@ -12,7 +12,9 @@ import matplotlib.markers
 import matplotlib.lines
 import numpy as np
 import pandas as pd
+import scipy.ndimage as ndi
 import warnings
+import gc
 
 from astropy import units as u
 from astropy.coordinates import SkyCoord, Angle
@@ -20,6 +22,8 @@ from astroquery.simbad import Simbad
 from astropy.time import Time
 from astropy.coordinates import solar_system_ephemeris
 from astropy.coordinates import get_body, get_moon
+from astropy.io import fits
+from astropy.wcs import WCS
 from multiprocessing_logging import install_mp_handler
 from typing import Optional, Union, Tuple, List
 from mocpy import MOC
@@ -626,18 +630,21 @@ def _distance_from_edge(x: np.ndarray) -> np.ndarray:
     return dist[1:-1, 1:-1]
 
 
-def create_moc_from_fits(fits_img: str, max_depth: int = 9) -> MOC:
+def create_moc_from_fits(fits_file: str, max_depth: int = 9) -> MOC:
     """
     Creates a MOC from (assuming) an ASKAP fits image
     using the cheat method of analysing the edge pixels of the image.
 
     Args:
-        fits_img: The path of the ASKAP FITS image to generate the MOC from.
+        fits_file: The path of the ASKAP FITS image to generate the MOC from.
         max_depth: Max depth parameter passed to the
             MOC.from_polygon_skycoord() function, defaults to 9.
 
     Returns:
         The MOC generated from the FITS file.
+
+    Raises:
+        Exception: When the FITS file cannot be found.
     """
     if not os.path.isfile(fits_file):
         raise Exception("{} does not exist".format(fits_file))
@@ -646,7 +653,7 @@ def create_moc_from_fits(fits_img: str, max_depth: int = 9) -> MOC:
         data = vast_fits[0].data
         if data.ndim == 4:
             data = data[0, 0, :, :]
-        header = fits[0].header
+        header = vast_fits[0].header
         wcs = WCS(header, naxis=2)
 
     binary = (~np.isnan(data)).astype(int)
@@ -656,7 +663,7 @@ def create_moc_from_fits(fits_img: str, max_depth: int = 9) -> MOC:
     # need to know when to reverse by checking axis sizes.
     pixels = np.column_stack((y, x))
 
-    coords = SkyCoord(vast_wcs.wcs_pix2world(
+    coords = SkyCoord(wcs.wcs_pix2world(
         pixels, 0), unit="deg", frame="icrs")
 
     moc = MOC.from_polygon_skycoord(coords, max_depth=max_depth)
