@@ -182,16 +182,16 @@ def _create_beam_df(beam_files: list) -> pd.DataFrame:
 
 def _set_epoch_path(epoch: str) -> Path:
     """
-    Set the epoch_path from the VAST_DATA_DIR variable
+    Set the epoch_path from the VAST_DATA_DIR variable.
 
     Args:
-        epoch: The epoch of interest
+        epoch: The epoch of interest.
 
     Returns:
-        Path to the epoch of interest
+        Path to the epoch of interest.
 
     Raises:
-        OSError: Requested path could not be determined
+        Exception: Requested path could not be determined.
     """
 
     base_folder = os.getenv('VAST_DATA_DIR')
@@ -306,7 +306,7 @@ def add_obs_date(epoch: str,
 
     Args:
         epoch: The epoch of interest
-        image_type: `COMBINED` or `TILES`
+        image_type: `COMBINED` or `TILES`.
         image_dir: The name of the folder containing the images to be updated.
             E.g. `STOKESI_IMAGES`.
         epoch_path: Full path to the folder containing the epoch.
@@ -315,8 +315,10 @@ def add_obs_date(epoch: str,
 
     Returns:
         None
-    """
 
+    Raises:
+        ValueError: When image_type is not 'TILES' or 'COMBINED'.
+    """
     epoch_info = load_fields_file(epoch)
 
     if epoch_path is None:
@@ -325,7 +327,17 @@ def add_obs_date(epoch: str,
     raw_images = _get_epoch_images(epoch_path, image_type, image_dir)
 
     for filename in raw_images:
-        field = filename.split("/")[-1].split(".")[0]
+        split_name = filename.split("/")[-1].split(".")
+        if image_type == 'TILES':
+            field = split_name[4]
+        elif image_type == 'COMBINED':
+            field = split_name[0]
+        else:
+            raise ValueError(
+                "Image type not recognised, "
+                "must be either 'TILES' or 'COMBINED'."
+            )
+
         field_info = epoch_info[epoch_info.FIELD_NAME == field].iloc[0]
         field_start = Time(field_info.DATEOBS)
         field_end = Time(field_info.DATEEND)
@@ -358,7 +370,7 @@ def gen_mocs_field(fits_file: str,
         The MOC and STMOC.
 
     Raises:
-        FileNotFoundError: File does not exist
+        Exception: When the FITS file cannot be found.
     """
 
     outdir = Path(outdir)
@@ -414,7 +426,7 @@ def gen_mocs_epoch(epoch: str,
 
     Args:
         epoch: The epoch of interest.
-        image_type: `COMBINED` or `TILES`
+        image_type: `COMBINED` or `TILES`.
         image_dir: The name of the folder containing the images to be updated.
             E.g. `STOKESI_IMAGES`.
         epoch_path: Full path to the folder containing the epoch.

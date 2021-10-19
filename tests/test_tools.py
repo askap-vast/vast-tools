@@ -5,6 +5,7 @@ import pytest
 
 from astropy.coordinates import SkyCoord, Angle
 from astropy.table import Table
+from astropy.time import Time
 from astropy.io import fits
 from pytest_mock import mocker
 from pathlib import Path
@@ -45,6 +46,76 @@ def source_df() -> pd.DataFrame:
     )
 
     return source_df
+
+
+@pytest.fixture
+def dummy_load_fields_file() -> pd.DataFrame:
+    """
+    Produces a dummy fields file.
+
+    Returns:
+        Dummy fields dataframe.
+    """
+    df = pd.DataFrame(
+        data={
+            'SBID': ['9876', '9876'],
+            'FIELD_NAME': ['VAST_1234+00A', 'VAST_1234+00A'],
+            'BEAM': [0, 1],
+            'RA_HMS': ["12:34:56", "12:34:12"],
+            'DEC_DMS': ["00:12:34", "-01:12:34"],
+            'DATEOBS': ['2019-10-29 12:34:02.450', '2019-10-29 12:34:02.450'],
+            'DATEEND': ['2019-10-29 12:45:02.450', '2019-10-29 12:45:02.450'],
+            'NINT': [100, 100],
+            'BMAJ': [15.0, 15.1],
+            'BMIN': [12.1, 12.2],
+            'BPA': [90., 90.]
+        }
+    )
+
+    return df
+
+
+@pytest.fixture
+def dummy_fits_open() -> fits.HDUList:
+    """
+    Produces a dummy fits file (hdulist).
+
+    Returns:
+        The fits file as an hdulist instance.
+    """
+    data = np.zeros((100, 100), dtype=np.float32)
+
+    hdu = fits.PrimaryHDU(data=data)
+
+    header = hdu.header
+
+    header['BMAJ'] = 0.00493462835125746
+    header['BMIN'] = 0.00300487516378073
+    header['BPA'] = -71.0711523845679
+    header['CDELT1'] = 1.0
+    header['CDELT2'] = 1.0
+    header['WCSAXES'] = 2
+    header['TELESCOP'] = "ASKAP"
+    header['RESTFREQ'] = 887491000.0
+    header['DATE-OBS'] = "2020-01-12T05:36:03.834"
+    header['TIMESYS'] = "UTC"
+    header['RADESYS'] = "ICRS"
+    header['CTYPE1'] = "RA---SIN"
+    header['CUNIT1'] = "deg"
+    header['CRVAL1'] = 319.6519091667
+    header['CRPIX1'] = 4059.5
+    header['CD1_1'] = -0.0006944444444444
+    header['CD1_2'] = 0.0
+    header['CTYPE2'] = "DEC--SIN"
+    header['CUNIT2'] = "deg"
+    header['CRVAL2'] = -6.2985525
+    header['CRPIX2'] = -2537.5
+    header['CD2_1'] = 0.0
+    header['CD2_2'] = 0.0006944444444444
+
+    hdul = fits.HDUList([hdu])
+
+    return hdul
 
 
 def test_find_in_moc(source_df: pd.DataFrame) -> None:
@@ -110,33 +181,78 @@ def test_create_fields_csv(tmp_path: Path) -> None:
     pd.testing.assert_frame_equal(out_df, expected_df)
 
 
-def test_add_obs_date(mocker):
+# TODO: Update name of images if standard changes.
+@pytest.mark.parametrize(
+    "image_type,image_name",
+    [
+        ('COMBINED', 'VAST_1234+00A.EPOCH01.I.TEST.fits'),
+        (
+            'TILES',
+            "image.i.SB9876.cont.VAST_1234+00A.linmos.taylor.0.restored.fits"
+        )
+    ]
+)
+def test_add_obs_date(
+    image_type: str,
+    image_name: str,
+    dummy_fits_open: fits.HDUList,
+    dummy_load_fields_file: pd.DataFrame,
+    mocker
+) -> None:
     """
-    Tests adding observation dates to fits images
+    Tests adding observation dates to fits images.
 
     Args:
+        image_type: The image_type argument passed to 'add_obs_date' from the
+            parametrize.
+        image_name: The dummy image name used for 'add_obs_date' from the
+            parametrize.
+        dummy_fits_open: The dummy HDUList object that represents an open
+            FITS file.
+        dummy_load_fields_file: The dummy fields file.
         mocker: The pytest mock mocker object.
 
     Returns:
         None
     """
-
-    def fits_open_no_update(filename):
-        return fits.open(filename)
-
-    test_img_path = str(TEST_DATA_DIR / 'VAST_0012-06A.EPOCH01.I.TEST.fits')
+    mocker_load_fields_file = mocker.patch(
+        'vasttools.tools.load_fields_file',
+        return_value=dummy_load_fields_file
+    )
 
     mocker_get_epoch_images = mocker.patch(
         'vasttools.tools._get_epoch_images',
-        return_value=[test_img_path]
+        return_value=[image_name]
     )
 
     mocker_fits_open = mocker.patch(
         'vasttools.tools.fits.open',
-        return_value=fits_open_no_update(test_img_path)
+        return_value=dummy_fits_open
     )
 
-    vtt.add_obs_date('1', '', '', '.')
+    start = Time(dummy_load_fields_file['DATEOBS'].iloc[0])
+    end = Time(dummy_load_fields_file['DATEEND'].iloc[0])
+    duration = end - start
+
+    expected_new_headers = {
+        "DATE-OBS": start.fits,
+        "MJD-OBS": start.mjd,
+        "DATE-BEG": start.fits,
+        "DATE-END": end.fits,
+        "MJD-BEG": start.mjd,
+        "MJD-END": end.mjd,
+        "TELAPSE": duration.sec,
+        "TIMEUNIT": "s"
+    }
+
+    vtt.add_obs_date('1', image_type, '', '.')
+
+    new_header = mocker_fits_open.return_value[0].header
+
+    mocker_fits_open.assert_called_once_with(image_name, mode='update')
+    assert np.all([
+        expected_new_headers[i] == new_header[i] for i in expected_new_headers
+    ])
 
 
 def test_gen_mocs_field(tmp_path: Path) -> None:
