@@ -9,6 +9,7 @@ from astropy.time import Time
 from astropy.io import fits
 from pytest_mock import mocker
 from pathlib import Path
+from mocpy import MOC
 
 import vasttools.tools as vtt
 
@@ -117,6 +118,18 @@ def dummy_fits_open() -> fits.HDUList:
 
     return hdul
 
+@pytest.fixture
+def dummy_moc() -> MOC:
+    """
+    Produces a MOC file.
+
+    Returns:
+        The MOC file
+    """
+    json = {'9': [1215087, 1215098]}
+    moc = MOC.from_json(json)
+
+    return moc
 
 def test_find_in_moc(source_df: pd.DataFrame) -> None:
     """
@@ -258,13 +271,19 @@ def test_add_obs_date(
 def test_gen_mocs_field(
     dummy_fits_open: fits.HDUList,
     dummy_load_fields_file: pd.DataFrame,
+    dummy_moc: MOC,
     tmp_path: Path,
     mocker) -> None:
     """
     Tests the generation of a MOC and STMOC for a single fits file
 
     Args:
+        dummy_fits_open: The dummy HDUList object that represents an open
+            FITS file.
+        dummy_load_fields_file: The dummy fields file.
         tmp_path: The default pytest temporary path
+        mocker: The pytest mock mocker object.
+
     Returns:
         None
     """
@@ -274,10 +293,10 @@ def test_gen_mocs_field(
         return_value=dummy_load_fields_file
     )
 
-    mocker_fits_open = mocker.patch(
-        'vasttools.utils.fits.open',
-        return_value=dummy_fits_open
-    )
+    mocker_create_moc_from_fits = mocker.patch(
+        'vasttools.tools.create_moc_from_fits',
+        return_value=dummy_moc
+        )
 
     start = Time(dummy_load_fields_file['DATEOBS'].iloc[0])
     end = Time(dummy_load_fields_file['DATEEND'].iloc[0])
@@ -327,60 +346,6 @@ def test_gen_mocs_epoch(mocker, tmp_path: Path) -> None:
     )
 
     vtt.gen_mocs_epoch('1', '', '', epoch_path='.', outdir=tmp_path)
-
-
-def test_mocs_with_holes(tmp_path: Path) -> None:
-    """
-    Tests that gen_mocs_field produces the same output regardless of whether
-    there are NaN holes within the image.
-
-    Args:
-        tmp_path: The default pytest temporary path
-
-    Returns:
-        None
-    """
-
-    border_width = 50
-    image_width = 1000
-    hole_width = 100
-
-    centre = int(image_width/2)
-    hole_rad = int(hole_width/2)
-
-    test_img_path = str(TEST_DATA_DIR / 'VAST_0012-06A.EPOCH01.I.TEST.fits')
-
-    hdu = fits.open(test_img_path)[0]
-    header = hdu.header
-
-    data = np.ones((image_width, image_width))
-    data[:border_width, :] = np.nan
-    data[-border_width:, :] = np.nan
-    data[:, :border_width] = np.nan
-    data[:, -border_width:] = np.nan
-
-    hole_data = data.copy()
-    hole_data[centre-hole_rad:centre+hole_rad,
-              centre-hole_rad:centre+hole_rad
-              ] = np.nan
-
-    full_path = tmp_path / 'TESTFIELD.EPOCH01.I.fits'
-    hole_path = tmp_path / 'TESTFIELDHOLE.EPOCH01.I.fits'
-
-    fits.writeto(full_path,
-                 data,
-                 header
-                 )
-    fits.writeto(hole_path,
-                 hole_data,
-                 header
-                 )
-
-    full_moc, full_stmoc = vtt.gen_mocs_field(full_path, outdir=tmp_path)
-    hole_moc, hole_stmoc = vtt.gen_mocs_field(hole_path, outdir=tmp_path)
-
-    assert full_moc == hole_moc
-    assert full_stmoc == hole_stmoc
 
 
 def test__set_epoch_path_failure(mocker) -> None:
