@@ -317,12 +317,32 @@ def test_gen_mocs_field(
         'vasttools.tools.fits.getheader',
         return_value=dummy_header
     )
-    mocker_fits_open = mocker.patch(
+    mocker_isfile = mocker.patch(
         'os.path.isfile',
         return_value=True
     )
+    mocker_moc_write = mocker.patch(
+        'vasttools.tools.MOC.write'
+    )
+    mocker_stmoc_write = mocker.patch(
+        'vasttools.tools.STMOC.write'
+    )
 
-    moc, stmoc = vtt.gen_mocs_field('test.fits', outdir=tmp_path)
+    fits_file = 'test.fits'
+    moc_file = fits_file.replace('.fits', '.moc.fits')
+    stmoc_file = fits_file.replace('.fits', '.stmoc.fits')
+
+    moc, stmoc = vtt.gen_mocs_field(fits_file, outdir=tmp_path)
+    
+    mocker_moc_write.assert_called_once_with(tmp_path / moc_file,
+                                             overwrite=True)
+
+    mocker_stmoc_write.assert_called_once_with(tmp_path / stmoc_file,
+                                               overwrite=True)
+
+    assert stmoc.max_time.jd == end.jd
+    assert stmoc.min_time.jd == start.jd
+    
 
 
 def test_gen_mocs_epoch(mocker, tmp_path: Path) -> None:
