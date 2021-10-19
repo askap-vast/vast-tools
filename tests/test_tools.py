@@ -265,8 +265,26 @@ def test_gen_mocs_field(tmp_path: Path) -> None:
         None
     """
 
-    test_img_path = str(TEST_DATA_DIR / 'VAST_0012-06A.EPOCH01.I.TEST.fits')
-    vtt.gen_mocs_field(test_img_path, outdir=tmp_path)
+    mocker_load_fields_file = mocker.patch(
+        'vasttools.tools.load_fields_file',
+        return_value=dummy_load_fields_file
+    )
+
+    mocker_get_epoch_images = mocker.patch(
+        'vasttools.tools._get_epoch_images',
+        return_value=[image_name]
+    )
+
+    mocker_fits_open = mocker.patch(
+        'vasttools.tools.fits.open',
+        return_value=dummy_fits_open
+    )
+    mocker_fits_open = mocker.patch(
+        'os.path.isfile',
+        return_value=True
+    )
+
+    moc, stmoc = vtt.gen_mocs_field('test.fits', outdir=tmp_path)
 
 
 def test_gen_mocs_epoch(mocker, tmp_path: Path) -> None:
