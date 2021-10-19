@@ -5,6 +5,7 @@ import pytest
 
 from astropy.coordinates import SkyCoord, Angle
 from astropy.table import Table
+from astropy.io import fits
 from pytest_mock import mocker
 
 import vasttools.utils as vtu
@@ -223,6 +224,48 @@ def source_df() -> pd.DataFrame:
 
     return source_df
 
+
+@pytest.fixture
+def dummy_fits_open() -> fits.HDUList:
+    """
+    Produces a dummy fits file (hdulist).
+
+    Returns:
+        The fits file as an hdulist instance.
+    """
+    data = np.zeros((100, 100), dtype=np.float32)
+
+    hdu = fits.PrimaryHDU(data=data)
+
+    header = hdu.header
+
+    header['BMAJ'] = 0.00493462835125746
+    header['BMIN'] = 0.00300487516378073
+    header['BPA'] = -71.0711523845679
+    header['CDELT1'] = 1.0
+    header['CDELT2'] = 1.0
+    header['WCSAXES'] = 2
+    header['TELESCOP'] = "ASKAP"
+    header['RESTFREQ'] = 887491000.0
+    header['DATE-OBS'] = "2020-01-12T05:36:03.834"
+    header['TIMESYS'] = "UTC"
+    header['RADESYS'] = "ICRS"
+    header['CTYPE1'] = "RA---SIN"
+    header['CUNIT1'] = "deg"
+    header['CRVAL1'] = 319.6519091667
+    header['CRPIX1'] = 4059.5
+    header['CD1_1'] = -0.0006944444444444
+    header['CD1_2'] = 0.0
+    header['CTYPE2'] = "DEC--SIN"
+    header['CUNIT2'] = "deg"
+    header['CRVAL2'] = -6.2985525
+    header['CRPIX2'] = -2537.5
+    header['CD2_1'] = 0.0
+    header['CD2_2'] = 0.0006944444444444
+
+    hdul = fits.HDUList([hdu])
+
+    return hdul
 
 def test_gen_skycoord_from_df(
     coords_df: pd.DataFrame,
@@ -700,3 +743,35 @@ def test_calculate_m_metric() -> None:
     result = vtu.calculate_m_metric(flux_a, flux_b)
 
     assert result == 2. / 3.
+    
+def test_create_moc_from_fits(
+    dummy_fits_open: fits.HDUList,
+    mocker
+    ) -> None:
+    """
+    Tests the generation of a MOC for a single fits file
+
+    Args:
+        dummy_fits_open: The dummy HDUList object that represents an open
+            FITS file.
+        mocker: The pytest mock mocker object.
+
+    Returns:
+        None
+    """
+
+    mocker_fits_open = mocker.patch(
+        'vasttools.utils.fits.open',
+        return_value=dummy_fits_open
+    )
+    mocker_fits_open = mocker.patch(
+        'os.path.isfile',
+        return_value=True
+    )
+    
+    moc_out_json = {'9': [1215087, 1215098]}
+    
+    moc = vtu.create_moc_from_fits('test.fits', 9)
+    moc_json = moc.serialize(format='json')
+    
+    assert moc_json == moc_out_json
