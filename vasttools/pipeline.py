@@ -57,7 +57,8 @@ from vasttools.utils import (
     pipeline_get_variable_metrics,
     gen_skycoord_from_df,
     calculate_vs_metric,
-    calculate_m_metric
+    calculate_m_metric,
+    create_moc_from_fits
 )
 from vasttools.survey import Image
 from vasttools.tools import add_credible_levels
@@ -826,14 +827,14 @@ class PipeRun(object):
             )
             return
 
-        moc = self._create_moc_from_fits(
+        moc = create_moc_from_fits(
             images_to_use[0],
             max_depth=max_depth
         )
 
         if images_to_use.shape[0] > 1:
             for img in images_to_use[1:]:
-                img_moc = self._create_moc_from_fits(
+                img_moc = create_moc_from_fits(
                     img,
                     max_depth
                 )

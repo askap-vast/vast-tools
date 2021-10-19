@@ -1546,66 +1546,6 @@ class TestPipeAnalysis:
 
         assert np.all(result == expected)
 
-    def test__create_moc_from_fits(
-        self,
-        dummy_PipeAnalysis: vtp.PipeAnalysis,
-        mocker
-    ) -> None:
-        """
-        Tests the create MOC from fits method.
-
-        As the actual create MOC function does not need to be tested here, the
-        calls are mocked and checks are made against the calls. And that the
-        return result is passed through. A FITS object is created in the test.
-
-        Args:
-            dummy_PipeAnalysis: The dummy PipeAnalysis object that is used
-                for testing.
-            mocker: The pytest mock mocker object.
-
-        Returns:
-            None
-        """
-        image_data = np.ones((4, 4), dtype=np.float32)
-        image_data = np.pad(
-            image_data, pad_width=1, mode='constant', constant_values=np.nan
-        )
-
-        hdu = fits.PrimaryHDU(data=image_data)
-
-        hdu.header['RADESYS'] = "ICRS"
-        hdu.header['CTYPE1'] = "RA---SIN"
-        hdu.header['CUNIT1'] = "deg"
-        hdu.header['CRVAL1'] = 0.0
-        hdu.header['CRPIX1'] = 2.0
-        hdu.header['CD1_1'] = 1.0
-        hdu.header['CD1_2'] = 0.0
-        hdu.header['CTYPE2'] = "DEC--SIN"
-        hdu.header['CUNIT2'] = "deg"
-        hdu.header['CRVAL2'] = 0.0
-        hdu.header['CRPIX2'] = 2.0
-        hdu.header['CD2_1'] = 0.0
-        hdu.header['CD2_2'] = 1.0
-
-        image_wcs = WCS(hdu.header)
-
-        image_mocker = mocker.patch('vasttools.pipeline.Image')
-        (image_mocker.return_value).data = image_data
-        (image_mocker.return_value).wcs = image_wcs
-
-        moc_from_polygon_skycoord_mocker = mocker.patch(
-            'mocpy.MOC.from_polygon_skycoord',
-            return_value=-99
-        )
-
-        result = dummy_PipeAnalysis._create_moc_from_fits('test.fits')
-        called_coords = moc_from_polygon_skycoord_mocker.call_args.args[0]
-        pixels = image_wcs.world_to_array_index(called_coords)
-
-        assert len(pixels[0]) == 12
-        assert np.all(pixels != 0)
-        assert result == -99
-
     def test_create_moc(
         self,
         dummy_PipeAnalysis: vtp.PipeAnalysis,
@@ -1625,11 +1565,10 @@ class TestPipeAnalysis:
             None
         """
         create_moc_from_fits_mocker = mocker.patch(
-            'vasttools.pipeline.PipeRun._create_moc_from_fits'
+            'vasttools.pipeline.create_moc_from_fits'
         )
 
         result = dummy_PipeAnalysis.create_moc()
-
         create_moc_from_fits_mocker.assert_called_once()
 
     def test_create_moc_multiple_regions(
@@ -1651,7 +1590,7 @@ class TestPipeAnalysis:
             None
         """
         create_moc_from_fits_mocker = mocker.patch(
-            'vasttools.pipeline.PipeRun._create_moc_from_fits'
+            'vasttools.pipeline.create_moc_from_fits'
         )
 
         moc_union_mocker = create_moc_from_fits_mocker.return_value.union
