@@ -1503,49 +1503,6 @@ class TestPipeAnalysis:
         assert result.sources.shape[0] == 2
         assert result.measurements.shape[0] == 10
 
-    def test__distance_from_edge(
-        self,
-        dummy_PipeAnalysis: vtp.PipeAnalysis
-    ) -> None:
-        """
-        Tests the distance from edge method.
-
-        The function works by calculating how far the pixel is from the edge
-        (i.e. zero pixels). The expected result is defined in the test.
-
-        Args:
-            dummy_PipeAnalysis: The dummy PipeAnalysis object that is used
-                for testing.
-
-        Returns:
-            None
-        """
-        input_array = np.array(
-            [
-                [0, 0, 0, 0, 0, 0],
-                [0, 1, 1, 1, 1, 0],
-                [0, 1, 1, 1, 1, 0],
-                [0, 1, 1, 1, 1, 0],
-                [0, 1, 1, 1, 1, 0],
-                [0, 0, 0, 0, 0, 0]
-            ]
-        )
-
-        expected = np.array(
-            [
-                [0, 0, 0, 0, 0, 0],
-                [0, 1, 1, 1, 1, 0],
-                [0, 1, 2, 2, 1, 0],
-                [0, 1, 2, 2, 1, 0],
-                [0, 1, 1, 1, 1, 0],
-                [0, 0, 0, 0, 0, 0]
-            ]
-        )
-
-        result = dummy_PipeAnalysis._distance_from_edge(input_array)
-
-        assert np.all(result == expected)
-
     def test_create_moc(
         self,
         dummy_PipeAnalysis: vtp.PipeAnalysis,

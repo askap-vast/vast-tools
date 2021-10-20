@@ -736,23 +736,6 @@ class PipeRun(object):
 
         return new_PipeRun
 
-    @staticmethod
-    def _distance_from_edge(x: np.ndarray) -> np.ndarray:
-        """
-        Analyses the binary array x and determines the distance from
-        the edge (0).
-
-        Args:
-            x: The binary array to analyse.
-
-        Returns:
-            Array each cell containing distance from the edge.
-        """
-        x = np.pad(x, 1, mode='constant')
-        dist = ndi.distance_transform_cdt(x, metric='taxicab')
-
-        return dist[1:-1, 1:-1]
-
     def _create_moc_from_fits(
         self, fits_img: str, max_depth: int = 9
     ) -> mocpy.moc.moc.MOC:

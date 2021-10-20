@@ -910,3 +910,44 @@ def test_mocs_with_holes(dummy_fits_open_large,
     hole_moc = vtu.create_moc_from_fits('test.fits')
 
     assert full_moc == hole_moc
+
+
+def test__distance_from_edge(dummy_PipeAnalysis: vtp.PipeAnalysis) -> None:
+    """
+    Tests the distance from edge method.
+
+    The function works by calculating how far the pixel is from the edge
+    (i.e. zero pixels). The expected result is defined in the test.
+
+    Args:
+        dummy_PipeAnalysis: The dummy PipeAnalysis object that is used
+            for testing.
+
+    Returns:
+        None
+    """
+    input_array = np.array(
+        [
+            [0, 0, 0, 0, 0, 0],
+            [0, 1, 1, 1, 1, 0],
+            [0, 1, 1, 1, 1, 0],
+            [0, 1, 1, 1, 1, 0],
+            [0, 1, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0, 0]
+        ]
+    )
+
+    expected = np.array(
+        [
+            [0, 0, 0, 0, 0, 0],
+            [0, 1, 1, 1, 1, 0],
+            [0, 1, 2, 2, 1, 0],
+            [0, 1, 2, 2, 1, 0],
+            [0, 1, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0, 0]
+        ]
+    )
+
+    result = dummy_PipeAnalysis._distance_from_edge(input_array)
+
+    assert np.all(result == expected)
