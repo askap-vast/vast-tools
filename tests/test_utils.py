@@ -912,7 +912,7 @@ def test_mocs_with_holes(dummy_fits_open_large,
     assert full_moc == hole_moc
 
 
-def test__distance_from_edge(dummy_PipeAnalysis: vtp.PipeAnalysis) -> None:
+def test__distance_from_edge() -> None:
     """
     Tests the distance from edge method.
 
@@ -920,8 +920,7 @@ def test__distance_from_edge(dummy_PipeAnalysis: vtp.PipeAnalysis) -> None:
     (i.e. zero pixels). The expected result is defined in the test.
 
     Args:
-        dummy_PipeAnalysis: The dummy PipeAnalysis object that is used
-            for testing.
+        None
 
     Returns:
         None
@@ -948,6 +947,6 @@ def test__distance_from_edge(dummy_PipeAnalysis: vtp.PipeAnalysis) -> None:
         ]
     )
 
-    result = dummy_PipeAnalysis._distance_from_edge(input_array)
+    result = vtu._distance_from_edge(input_array)
 
     assert np.all(result == expected)
