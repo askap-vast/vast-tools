@@ -39,7 +39,7 @@ def skymap2moc(filename: str, cutoff: float) -> MOC:
 
     Raises:
         ValueError: Credible level cutoff must be between 0 and 1
-        FileNotFoundError: File does not exist
+        Exception: Path does not exist
     """
     skymap = Path(filename)
 
@@ -114,7 +114,7 @@ def add_credible_levels(
         None
 
     Raises:
-        FileNotFoundError: File does not exist
+        Exception: Path does not exist
     """
 
     skymap = Path(filename)
@@ -225,7 +225,7 @@ def _create_fields_df(epoch_num: str,
         The fields DataFrame
 
     Raises:
-        OSError: Directory path or file does not exist
+        Exception: Path does not exist
     """
     field_columns = ['FIELD_NAME', 'SBID', 'SCAN_START', 'SCAN_LEN']
 
@@ -317,7 +317,7 @@ def create_fields_csv(epoch_num: str,
         None
 
     Raises:
-        OSError: Directory path or file does not exist
+        Exception: Path does not exist
     """
 
     outdir = Path(outdir)
@@ -404,12 +404,15 @@ def gen_mocs_field(fits_file: str,
         The MOC and STMOC.
 
     Raises:
-        Exception: When the FITS file cannot be found.
+        Exception: Path does not exist
     """
 
     outdir = Path(outdir)
 
-    if not os.path.isfile(fits_file):
+    if not outdir.exists():
+        raise Exception("{} does not exist".format(outdir))
+        
+    if not Path(fits_file).exists():
         raise Exception("{} does not exist".format(fits_file))
 
     moc = create_moc_from_fits(fits_file)
@@ -454,9 +457,15 @@ def gen_mocs_epoch(epoch: str,
 
     Returns:
         None
+
+    Raises:
+        Exception: Path does not exist
     """
 
     outdir = Path(outdir)
+
+    if not outdir.exists():
+        raise Exception("{} does not exist".format(outdir))
 
     vtm = VASTMOCS()
     full_STMOC = vtm.load_pilot_stmoc()
@@ -503,7 +512,7 @@ def _get_epoch_images(epoch_path: Union[str, Path],
         The list of images.
 
     Raises:
-        OSError: Directory path does not exist
+        Exception: Path does not exist
     """
 
     P = Path(epoch_path) / image_type / image_dir
