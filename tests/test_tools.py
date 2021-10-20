@@ -322,6 +322,11 @@ def test_gen_mocs_field(
         return_value=dummy_moc
     )
 
+    mocker_file_exists = mocker.patch(
+        'vasttools.tools.Path.exists',
+        return_value=True
+    )
+
     start = Time(dummy_load_fields_file['DATEOBS'].iloc[0])
     end = Time(dummy_load_fields_file['DATEEND'].iloc[0])
     duration = end - start
