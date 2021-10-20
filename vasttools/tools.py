@@ -327,7 +327,7 @@ def create_fields_csv(epoch_num: str,
 
     fields_df = _create_fields_df(epoch_num, db_path)
     outfile = 'vast_epoch{}_info.csv'.format(epoch_num)
-    epoch_csv.to_csv(outdir / outfile, index=False)
+    fields_df.to_csv(outdir / outfile, index=False)
 
 
 def add_obs_date(epoch: str,
