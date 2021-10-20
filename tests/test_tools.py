@@ -9,7 +9,8 @@ from astropy.time import Time
 from astropy.io import fits
 from pytest_mock import mocker
 from pathlib import Path
-from mocpy import MOC
+from mocpy import MOC, STMOC
+from typing import Union
 
 import vasttools.tools as vtt
 
@@ -121,15 +122,35 @@ def dummy_fits_open() -> fits.HDUList:
 @pytest.fixture
 def dummy_moc() -> MOC:
     """
-    Produces a MOC file.
+    Produces a MOC.
 
     Returns:
-        The MOC file
+        The MOC.
     """
     json = {'9': [1215087, 1215098]}
     moc = MOC.from_json(json)
 
     return moc
+
+@pytest.fixture
+def dummy_stmoc() -> Union[MOC, STMOC]:
+    """
+    Produces a MOC and corresponding STMOC.
+
+    Returns:
+        The STMOC.
+    """
+    json = {'9': [1215087, 1215098]}
+    moc = MOC.from_json(json)
+    
+    start = Time(['2019-10-29 12:34:02.450'])
+    end = Time(['2019-10-29 12:45:02.450'])
+    
+    stmoc = STMOC.from_spatial_coverages(
+        start, end, [moc]
+    )
+
+    return stmoc
 
 def test_find_in_moc(source_df: pd.DataFrame) -> None:
     """
@@ -344,8 +365,7 @@ def test_gen_mocs_field(
     assert stmoc.min_time.jd == start.jd
     
 
-
-def test_gen_mocs_epoch(mocker, tmp_path: Path) -> None:
+def test_gen_mocs_epoch(dummy_moc, dummy_stmoc, mocker, tmp_path: Path) -> None:
     """
     Tests the generation of all MOCs and STMOCs for a single epoch.
     Also tests the update of the full STMOC.
@@ -358,15 +378,33 @@ def test_gen_mocs_epoch(mocker, tmp_path: Path) -> None:
         None
     """
 
-    test_img_path = str(TEST_DATA_DIR / 'VAST_0012-06A.EPOCH01.I.TEST.fits')
-
     mocker_get_epoch_images = mocker.patch(
         'vasttools.tools._get_epoch_images',
-        return_value=[test_img_path]
+        return_value=['test.fits']
     )
-
-    vtt.gen_mocs_epoch('1', '', '', epoch_path='.', outdir=tmp_path)
-
+    mocker_gen_mocs_field = mocker.patch(
+        'vasttools.tools.gen_mocs_field',
+        return_value=(dummy_moc, dummy_stmoc)
+    )
+    mocker_moc_write = mocker.patch(
+        'vasttools.tools.MOC.write'
+    )
+    mocker_stmoc_write = mocker.patch(
+        'vasttools.tools.STMOC.write'
+    )
+    epoch = '1'
+    vtt.gen_mocs_epoch(epoch, '', '', epoch_path='.', outdir=tmp_path)
+    
+    master_name = "VAST_PILOT_{}_moc.fits".format(epoch)
+    master_stmoc_name = master_name.replace("moc", "stmoc")
+    pilot_stmoc_name = "VAST_PILOT.stmoc.fits"
+    
+    stmoc_calls = [mocker.call(tmp_path / master_stmoc_name, overwrite=True),
+                   mocker.call(tmp_path / pilot_stmoc_name, overwrite=True)]
+    
+    mocker_moc_write.assert_called_once_with(tmp_path / master_name,
+                                             overwrite=True)
+    mocker_stmoc_write.assert_has_calls(stmoc_calls)
 
 def test__set_epoch_path_failure(mocker) -> None:
     """
