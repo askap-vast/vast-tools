@@ -119,6 +119,7 @@ def dummy_fits_open() -> fits.HDUList:
 
     return hdul
 
+
 @pytest.fixture
 def dummy_moc() -> MOC:
     """
@@ -132,6 +133,7 @@ def dummy_moc() -> MOC:
 
     return moc
 
+
 @pytest.fixture
 def dummy_stmoc() -> Union[MOC, STMOC]:
     """
@@ -142,15 +144,16 @@ def dummy_stmoc() -> Union[MOC, STMOC]:
     """
     json = {'9': [1215087, 1215098]}
     moc = MOC.from_json(json)
-    
+
     start = Time(['2019-10-29 12:34:02.450'])
     end = Time(['2019-10-29 12:45:02.450'])
-    
+
     stmoc = STMOC.from_spatial_coverages(
         start, end, [moc]
     )
 
     return stmoc
+
 
 def test_find_in_moc(source_df: pd.DataFrame) -> None:
     """
@@ -290,11 +293,11 @@ def test_add_obs_date(
 
 
 def test_gen_mocs_field(
-    dummy_fits_open: fits.HDUList,
-    dummy_load_fields_file: pd.DataFrame,
-    dummy_moc: MOC,
-    tmp_path: Path,
-    mocker) -> None:
+        dummy_fits_open: fits.HDUList,
+        dummy_load_fields_file: pd.DataFrame,
+        dummy_moc: MOC,
+        tmp_path: Path,
+        mocker) -> None:
     """
     Tests the generation of a MOC and STMOC for a single fits file
 
@@ -317,7 +320,7 @@ def test_gen_mocs_field(
     mocker_create_moc_from_fits = mocker.patch(
         'vasttools.tools.create_moc_from_fits',
         return_value=dummy_moc
-        )
+    )
 
     start = Time(dummy_load_fields_file['DATEOBS'].iloc[0])
     end = Time(dummy_load_fields_file['DATEEND'].iloc[0])
@@ -333,7 +336,7 @@ def test_gen_mocs_field(
         "TELAPSE": duration.sec,
         "TIMEUNIT": "s"
     }
-    
+
     mocker_fits_open = mocker.patch(
         'vasttools.tools.fits.getheader',
         return_value=dummy_header
@@ -354,7 +357,7 @@ def test_gen_mocs_field(
     stmoc_file = fits_file.replace('.fits', '.stmoc.fits')
 
     moc, stmoc = vtt.gen_mocs_field(fits_file, outdir=tmp_path)
-    
+
     mocker_moc_write.assert_called_once_with(tmp_path / moc_file,
                                              overwrite=True)
 
@@ -363,9 +366,12 @@ def test_gen_mocs_field(
 
     assert stmoc.max_time.jd == end.jd
     assert stmoc.min_time.jd == start.jd
-    
 
-def test_gen_mocs_epoch(dummy_moc, dummy_stmoc, mocker, tmp_path: Path) -> None:
+
+def test_gen_mocs_epoch(dummy_moc: MOC,
+                        dummy_stmoc: STMOC,
+                        tmp_path: Path,
+                        mocker) -> None:
     """
     Tests the generation of all MOCs and STMOCs for a single epoch.
     Also tests the update of the full STMOC.
@@ -394,17 +400,18 @@ def test_gen_mocs_epoch(dummy_moc, dummy_stmoc, mocker, tmp_path: Path) -> None:
     )
     epoch = '1'
     vtt.gen_mocs_epoch(epoch, '', '', epoch_path='.', outdir=tmp_path)
-    
+
     master_name = "VAST_PILOT_{}_moc.fits".format(epoch)
     master_stmoc_name = master_name.replace("moc", "stmoc")
     pilot_stmoc_name = "VAST_PILOT.stmoc.fits"
-    
+
     stmoc_calls = [mocker.call(tmp_path / master_stmoc_name, overwrite=True),
                    mocker.call(tmp_path / pilot_stmoc_name, overwrite=True)]
-    
+
     mocker_moc_write.assert_called_once_with(tmp_path / master_name,
                                              overwrite=True)
     mocker_stmoc_write.assert_has_calls(stmoc_calls)
+
 
 def test__set_epoch_path_failure(mocker) -> None:
     """
