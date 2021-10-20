@@ -210,28 +210,29 @@ def _set_epoch_path(epoch: str) -> Path:
     return epoch_path
 
 
-def create_fields_csv(epoch_num: str,
+def _create_fields_df(epoch_num: str,
                       db_path: str,
-                      outdir: Union[str, Path] = '.'
-                      ) -> None:
+                      ) -> pd.DataFrame:
     """
-    Create the fields csv for a single epoch using the askap_surveys database.
+    Create the the fields DataFrame for a single epoch using the
+    askap_surveys database.
 
     Args:
         epoch_num: Epoch number of interest.
         db_path: Path to the askap_surveys database.
-        outdir: Path to the output directory.
-            Defaults to the current directory.
 
     Returns:
-        None
+        The fields DataFrame
+
+    Raises:
+        OSError: Directory path or file does not exist
     """
-
-    outdir = Path(outdir)
-
     field_columns = ['FIELD_NAME', 'SBID', 'SCAN_START', 'SCAN_LEN']
 
     vast_db = Path(db_path)
+    if not vast_db.exists():
+        raise Exception("{} does not exist!".format(vast_db))
+
     if type(epoch_num) is int:
         epoch_num = str(epoch_num)
     epoch = vast_db / 'epoch_{}'.format(epoch_num.replace('x', ''))
@@ -240,6 +241,9 @@ def create_fields_csv(epoch_num: str,
     beam_df = _create_beam_df(beam_files)
 
     field_data = epoch / 'field_data.csv'
+
+    if not field_data.exists():
+        raise Exception("{} does not exist!".format(field_data))
 
     field_df = pd.read_csv(field_data)
     field_df = field_df.loc[:, field_columns]
@@ -293,6 +297,35 @@ def create_fields_csv(epoch_num: str,
         'BMIN',
         'BPA'
     ]]
+    
+    return epoch_csv
+    
+def create_fields_csv(epoch_num: str,
+                      db_path: str,
+                      outdir: Union[str, Path] = '.'
+                      ) -> None:
+    """
+    Create and write the fields csv for a single epoch.
+
+    Args:
+        epoch_num: Epoch number of interest.
+        db_path: Path to the askap_surveys database.
+        outdir: Path to the output directory.
+            Defaults to the current directory.
+
+    Returns:
+        None
+
+    Raises:
+        OSError: Directory path or file does not exist
+    """
+
+    outdir = Path(outdir)
+    
+    if not outdir.exists():
+        raise Exception("{} does not exist!".format(outdir))
+
+    fields_df = _create_fields_df(epoch_num, db_path)
     outfile = 'vast_epoch{}_info.csv'.format(epoch_num)
     epoch_csv.to_csv(outdir / outfile, index=False)
 
