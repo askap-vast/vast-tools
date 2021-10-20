@@ -318,8 +318,8 @@ def dummy_fits_open_large_hole() -> fits.HDUList:
     image_width = 1000
     hole_width = 100
 
-    centre = int(image_width/2)
-    hole_rad = int(hole_width/2)
+    centre = int(image_width / 2)
+    hole_rad = int(hole_width / 2)
 
     data = np.ones((image_width, image_width))
     data[:border_width, :] = np.nan
@@ -327,8 +327,8 @@ def dummy_fits_open_large_hole() -> fits.HDUList:
     data[:, :border_width] = np.nan
     data[:, -border_width:] = np.nan
 
-    data[centre-hole_rad:centre+hole_rad,
-         centre-hole_rad:centre+hole_rad
+    data[centre - hole_rad:centre + hole_rad,
+         centre - hole_rad:centre + hole_rad
          ] = np.nan
 
     hdu = fits.PrimaryHDU(data=data)
