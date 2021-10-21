@@ -297,9 +297,10 @@ def _create_fields_df(epoch_num: str,
         'BMIN',
         'BPA'
     ]]
-    
+
     return epoch_csv
-    
+
+
 def create_fields_csv(epoch_num: str,
                       db_path: str,
                       outdir: Union[str, Path] = '.'
@@ -321,7 +322,7 @@ def create_fields_csv(epoch_num: str,
     """
 
     outdir = Path(outdir)
-    
+
     if not outdir.exists():
         raise Exception("{} does not exist!".format(outdir))
 
@@ -411,7 +412,7 @@ def gen_mocs_field(fits_file: str,
 
     if not outdir.exists():
         raise Exception("{} does not exist".format(outdir))
-        
+
     if not Path(fits_file).exists():
         raise Exception("{} does not exist".format(fits_file))
 

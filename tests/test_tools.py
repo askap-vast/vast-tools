@@ -200,19 +200,50 @@ def test_add_credible_levels(source_df: pd.DataFrame) -> None:
         credible_levels, rel=1e-1)
 
 
-def test_create_fields_csv(tmp_path: Path) -> None:
+def test_create_fields_csv(mocker) -> None:
     """
     Tests creating the fields csv for a single epoch.
 
     Args:
-        tmp_path: The default pytest temporary path
+        mocker: The pytest mock mocker object.
 
     Returns:
         None
     """
-    vtt.create_fields_csv('2', TEST_DATA_DIR / 'surveys_db', tmp_path)
 
-    out_df = pd.read_csv(tmp_path / 'vast_epoch2_info.csv')
+    mocker_file_exists = mocker.patch(
+        'vasttools.tools.Path.exists',
+        return_value=True
+    )
+    mocker_fields_df = mocker.patch(
+        'vasttools.tools._create_fields_df',
+        return_value=pd.DataFrame()
+    )
+    mocker_to_csv = mocker.patch(
+        'pandas.DataFrame.to_csv'
+    )
+
+    epoch_num = '2'
+    outfile = 'vast_epoch{}_info.csv'.format(epoch_num)
+
+    vtt.create_fields_csv(epoch_num, TEST_DATA_DIR / 'surveys_db')
+
+    mocker_to_csv.assert_called_once_with(Path(outfile), index=False)
+
+
+def test__create_fields_df() -> None:
+    """
+    Tests creating the fields csv for a single epoch.
+
+    Args:
+        None
+
+    Returns:
+        None
+    """
+
+    out_df = vtt._create_fields_df('2', TEST_DATA_DIR / 'surveys_db')
+
     expected_df = pd.read_csv(TEST_DATA_DIR / 'vast_epoch2_info.csv')
 
     pd.testing.assert_frame_equal(out_df, expected_df)
