@@ -336,6 +336,7 @@ def test_gen_mocs_field(
         dummy_fits_open: The dummy HDUList object that represents an open
             FITS file.
         dummy_load_fields_file: The dummy fields file.
+        dummy_moc: The dummy MOC object representing an open MOC.
         tmp_path: The default pytest temporary path
         mocker: The pytest mock mocker object.
 
@@ -412,8 +413,8 @@ def test_gen_mocs_epoch(dummy_moc: MOC,
     Also tests the update of the full STMOC.
 
     Args:
-        dummy_moc: The dummy MOC object representing an open MOC 
-        dummy_stmoc: The dummy STMOC object representing an open STMOC 
+        dummy_moc: The dummy MOC object representing an open MOC.
+        dummy_stmoc: The dummy STMOC object representing an open STMOC.
         mocker: The pytest mock mocker object.
 
     Returns:
