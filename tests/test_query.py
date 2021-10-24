@@ -943,7 +943,7 @@ class TestQuery:
         )
 
         mocker_selavy = mocker.patch(
-            'vasttools.query.pd.read_fwf',
+            'vasttools.query.read_selavy',
             return_value=selavy_cat(contain_pulsar=True)
         )
 
@@ -983,7 +983,7 @@ class TestQuery:
         )
 
         mocker_selavy = mocker.patch(
-            'vasttools.query.pd.read_fwf',
+            'vasttools.query.read_selavy',
             return_value=selavy_cat()
         )
 
