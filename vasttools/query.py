@@ -61,7 +61,7 @@ from vasttools.survey import (
 from vasttools.source import Source
 from vasttools.utils import (
     filter_selavy_components, simbad_search, match_planet_to_field,
-    check_racs_exists, epoch12_user_warning
+    check_racs_exists, epoch12_user_warning, read_selavy
 )
 from vasttools.moc import VASTMOCS
 from forced_phot import ForcedPhot
@@ -973,7 +973,7 @@ class Query:
             wcs=image.wcs
         )
 
-        selavy_components = pd.read_fwf(row.selavy, skiprows=[1, ], usecols=[
+        selavy_components = read_selavy(row.selavy, usecols=[
             'island_id',
             'ra_deg_cont',
             'dec_deg_cont',
@@ -1496,16 +1496,12 @@ class Query:
 
         master = pd.DataFrame()
 
-        selavy_df = pd.read_fwf(
-            selavy_file, skiprows=[1, ]
-        )
+        selavy_df = read_selavy(selavy_file)
 
         if self.settings['stokes'] != "I":
             head, tail = os.path.split(selavy_file)
             nselavy_file = os.path.join(head, 'n{}'.format(tail))
-            nselavy_df = pd.read_fwf(
-                nselavy_file, skiprows=[1, ]
-            )
+            nselavy_df = read_selavy(nselavy_file)
 
             nselavy_df[["flux_peak", "flux_int"]] *= -1.0
 
