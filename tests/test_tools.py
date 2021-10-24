@@ -406,15 +406,15 @@ def test_gen_mocs_field(
 
 def test_gen_mocs_epoch(dummy_moc: MOC,
                         dummy_stmoc: STMOC,
-                        tmp_path: Path,
                         mocker) -> None:
     """
     Tests the generation of all MOCs and STMOCs for a single epoch.
     Also tests the update of the full STMOC.
 
     Args:
+        dummy_moc: The dummy MOC object representing an open MOC 
+        dummy_stmoc: The dummy STMOC object representing an open STMOC 
         mocker: The pytest mock mocker object.
-        tmp_path: The default pytest temporary path
 
     Returns:
         None
@@ -435,16 +435,16 @@ def test_gen_mocs_epoch(dummy_moc: MOC,
         'vasttools.tools.STMOC.write'
     )
     epoch = '1'
-    vtt.gen_mocs_epoch(epoch, '', '', epoch_path='.', outdir=tmp_path)
+    vtt.gen_mocs_epoch(epoch, '', '', epoch_path='.')
 
     master_name = "VAST_PILOT_{}_moc.fits".format(epoch)
     master_stmoc_name = master_name.replace("moc", "stmoc")
     pilot_stmoc_name = "VAST_PILOT.stmoc.fits"
 
-    stmoc_calls = [mocker.call(tmp_path / master_stmoc_name, overwrite=True),
-                   mocker.call(tmp_path / pilot_stmoc_name, overwrite=True)]
+    stmoc_calls = [mocker.call(Path(master_stmoc_name), overwrite=True),
+                   mocker.call(Path(pilot_stmoc_name), overwrite=True)]
 
-    mocker_moc_write.assert_called_once_with(tmp_path / master_name,
+    mocker_moc_write.assert_called_once_with(Path(master_name),
                                              overwrite=True)
     mocker_stmoc_write.assert_has_calls(stmoc_calls)
 
