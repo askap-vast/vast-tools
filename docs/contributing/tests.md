@@ -32,7 +32,6 @@ tests
 │   ├── test_pairs_df_result.csv
 │   ├── test_skymap_gw190814.fits.gz
 │   ├── test_sources.csv
-│   ├── VAST_0012-06A.EPOCH01.I.TEST.fits
 │   └── vast_epoch2_info.csv
 ├── test_moc.py
 ├── test_pipeline.py
@@ -68,8 +67,7 @@ This is detailed in the table below.
 |  test_pairs_df_result.csv           | Pairs dataframe used by the dummy pipeline run.                                           | test_pipeline | 
 |  test_skymap_gw190814.fits.gz       | A skymap file used for testing the skymap methods in tools.py.                            | test_tools    | 
 |  test_sources.csv                   | Sources dataframe used by the dummy pipeline run.                                         | test_pipeline | 
-|  test_sources.csv                   | Sources dataframe used by the dummy pipeline run.                                         | test_pipeline | 
-|  VAST_0012-06A.EPOCH01.I.TEST.fits  | Example fits image                                                                        | test_pipeline | 
+|  test_sources.csv                   | Sources dataframe used by the dummy pipeline run.                                         | test_pipeline |
 |  vast_epoch2_info.csv               | Example beam information csv file                                                         | test_pipeline |
  
 ### Dummy Pipeline Run
