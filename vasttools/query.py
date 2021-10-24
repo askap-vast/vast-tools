@@ -973,7 +973,7 @@ class Query:
             wcs=image.wcs
         )
 
-        selavy_components = read_selavy(row.selavy, usecols=[
+        selavy_components = read_selavy(row.selavy, cols=[
             'island_id',
             'ra_deg_cont',
             'dec_deg_cont',
