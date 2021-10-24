@@ -310,6 +310,34 @@ def build_SkyCoord(catalog: pd.DataFrame) -> SkyCoord:
     return src_coords
 
 
+def read_selavy(selavy_path: str, cols: list = None) -> pd.DataFrame:
+    """
+    Load a selavy catalogue from file. Can handle VOTables and csv files.
+    
+    Args:
+        selavy_path: Path to the file
+        cols: Columns to use. Defaults to None, which returns all columns
+
+    Returns:
+        Dataframe containing the catalogue
+    """
+
+    if selavy_path.endswith(".xml") or selavy_path.endswith(".vot"):
+        df = Table.read(
+            selavy_path, format="votable", use_names_over_ids=True
+        ).to_pandas()
+        df = df[df.columns.intersection(cols)]
+    elif selavy_path.endswith(".csv"):
+        # CSVs from CASDA have all lowercase column names
+        df = pd.read_csv(selavy_path, usecols=cols).rename(
+            columns={"spectral_index_from_tt": "spectral_index_from_TT"}
+        )
+    else:
+        df = pd.read_fwf(selavy_path, skiprows=[1], usecols=cols)
+
+    return df
+
+
 def filter_selavy_components(
     selavy_df: pd.DataFrame,
     selavy_sc: SkyCoord,
