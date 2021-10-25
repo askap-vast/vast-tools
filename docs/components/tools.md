@@ -91,8 +91,8 @@ The arguments to this function are the epoch, the image directory and the path t
     add_obs_date('01', 'TILES/STOKESI_IMAGES')
     ```
 
-#### gen_mocs_field
-:fontawesome-regular-file-alt: [Code reference](../../reference/tools/#vasttools.tools.gen_mocs_field).
+#### gen_mocs_image
+:fontawesome-regular-file-alt: [Code reference](../../reference/tools/#vasttools.tools.gen_mocs_image).
 
 This function creates a MOC and STMOC from a single fits image. It is unlikely that users would ever have to call this directly, and it should instead be called as part of [`gen_mocs_epoch`](./gen_mocs_epoch).
 The arguments to this function is the path to the fits file.
@@ -100,8 +100,8 @@ The arguments to this function is the path to the fits file.
 !!! example "Example: Generate a MOC and STMOC for a single field"
     Generate a MOC for VAST0012-06A epoch 1.
     ```python
-    from vasttools.tools import gen_mocs_field
-    gen_mocs_field('/path/to/vast/data/EPOCH01/COMBINED/STOKESI_IMAGES/VAST_0012-06A.EPOCH01.I.fits')
+    from vasttools.tools import gen_mocs_image
+    gen_mocs_image('/path/to/vast/data/EPOCH01/COMBINED/STOKESI_IMAGES/VAST_0012-06A.EPOCH01.I.fits')
     ```
 
 #### gen_mocs_epoch

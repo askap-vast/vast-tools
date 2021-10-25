@@ -391,7 +391,7 @@ def add_obs_date(epoch: str,
         hdu.close()
 
 
-def gen_mocs_field(fits_file: str,
+def gen_mocs_image(fits_file: str,
                    outdir: Union[str, Path] = '.'
                    ) -> Union[MOC, STMOC]:
     """
@@ -480,7 +480,7 @@ def gen_mocs_epoch(epoch: str,
     raw_images = _get_epoch_images(epoch_path, image_type, image_dir)
 
     for i, f in enumerate(raw_images):
-        themoc, thestmoc = gen_mocs_field(f)
+        themoc, thestmoc = gen_mocs_image(f)
 
         if i == 0:
             mastermoc = themoc

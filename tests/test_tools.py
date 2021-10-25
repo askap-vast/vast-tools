@@ -323,7 +323,7 @@ def test_add_obs_date(
     ])
 
 
-def test_gen_mocs_field(
+def test_gen_mocs_image(
         dummy_fits_open: fits.HDUList,
         dummy_load_fields_file: pd.DataFrame,
         dummy_moc: MOC,
@@ -393,7 +393,7 @@ def test_gen_mocs_field(
     moc_file = fits_file.replace('.fits', '.moc.fits')
     stmoc_file = fits_file.replace('.fits', '.stmoc.fits')
 
-    moc, stmoc = vtt.gen_mocs_field(fits_file, outdir=tmp_path)
+    moc, stmoc = vtt.gen_mocs_image(fits_file, outdir=tmp_path)
 
     mocker_moc_write.assert_called_once_with(tmp_path / moc_file,
                                              overwrite=True)
@@ -425,8 +425,8 @@ def test_gen_mocs_epoch(dummy_moc: MOC,
         'vasttools.tools._get_epoch_images',
         return_value=['test.fits']
     )
-    mocker_gen_mocs_field = mocker.patch(
-        'vasttools.tools.gen_mocs_field',
+    mocker_gen_mocs_image = mocker.patch(
+        'vasttools.tools.gen_mocs_image',
         return_value=(dummy_moc, dummy_stmoc)
     )
     mocker_moc_write = mocker.patch(
