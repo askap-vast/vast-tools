@@ -66,9 +66,11 @@ This is detailed in the table below.
 |  test_measurements_vaex.csv         | Measurements dataframe used by the dummy pipeline run, written by vaex instead of pandas. | test_pipeline | 
 |  test_pairs_df_result.csv           | Pairs dataframe used by the dummy pipeline run.                                           | test_pipeline | 
 |  test_skymap_gw190814.fits.gz       | A skymap file used for testing the skymap methods in tools.py.                            | test_tools    | 
-|  test_sources.csv                   | Sources dataframe used by the dummy pipeline run.                                         | test_pipeline | 
 |  test_sources.csv                   | Sources dataframe used by the dummy pipeline run.                                         | test_pipeline |
-|  vast_epoch2_info.csv               | Example beam information csv file                                                         | test_pipeline |
+|  beam_inf_10342-VAST_2253-43A.csv   | Example beam information csv file used by the dummy `ASKAP_SURVEYS` repo                  | test_tools    |
+|  field_data.csv                     | Example field information csv file used by the dummy `ASKAP_SURVEYS` repo                 | test_tools    |
+|  vast_epoch2_info.csv               | Field information file, the expected output from `_create_fields_df`                      | test_tools    |
+
  
 ### Dummy Pipeline Run
 
