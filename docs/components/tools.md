@@ -27,8 +27,8 @@ The arguments to this function are the path to the skymap file and the requested
 #### find_in_moc
 :fontawesome-regular-file-alt: [Code reference](../../reference/tools/#vasttools.tools.find_in_moc).
 
-This function the indices of sources that are contained within a given MOC
-The arguments to this function are the MOC, the source DataFrame and an optional bool flagging whether the dataframe is from the pipeline.
+This function returns the indices of sources that are contained within a given MOC, so that source catalogues can be filtered by sky region.
+The arguments to this function are the MOC, the source DataFrame and an optional bool flagging whether the source dataframe is from the pipeline.
 The value returned is a numpy array.
 
 !!! note "Note: Coordinate Columns Names"
