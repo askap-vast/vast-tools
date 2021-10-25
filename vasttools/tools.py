@@ -321,7 +321,8 @@ def create_fields_csv(epoch_num: str,
         Exception: Path does not exist.
     """
 
-    outdir = Path(outdir)
+    if isinstance(outdir, str):
+        outdir = Path(outdir)
 
     if not outdir.exists():
         raise Exception("{} does not exist!".format(outdir))
@@ -408,7 +409,8 @@ def gen_mocs_field(fits_file: str,
         Exception: Path does not exist.
     """
 
-    outdir = Path(outdir)
+    if isinstance(outdir, str):
+        outdir = Path(outdir)
 
     if not outdir.exists():
         raise Exception("{} does not exist".format(outdir))
@@ -463,7 +465,8 @@ def gen_mocs_epoch(epoch: str,
         Exception: Path does not exist.
     """
 
-    outdir = Path(outdir)
+    if isinstance(outdir, str):
+        outdir = Path(outdir)
 
     if not outdir.exists():
         raise Exception("{} does not exist".format(outdir))
