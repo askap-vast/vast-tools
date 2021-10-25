@@ -45,16 +45,18 @@ Information about the survey coverage is stored as multi-order coverage maps (MO
 However, adding observations with different footprints (e.g. the Phase II survey high frequency observations) will require new footprint MOCs to be created. This will also require new field MOCs (e.g. `vasttools/data/mocs/VAST_PILOT_FIELD_1.fits`) to be generated, although no automated process for this exists yet.
 
 ## Epoch Addition Steps
-1. Generate the epoch metadata using the methods described above.
+1. Ensure that you have access to the necessary data, i.e. the `ASKAP_SURVEYS` repo and all images from the epoch and image type of interest.
 
-2. Place the epoch information csv file in `vasttools/data/csvs/`, named `vast_epochXX_info.csv`, where `XX` is the two digit zero padded epoch number.
+2. Generate the epoch metadata using the methods described above.
 
-3. Place the full-epoch MOC in `vasttools/data/mocs/`, named `VAST_PILOT_EPOCHXX.moc.fits`, where `XX` is the two digit zero padded epoch number.
+3. Place the epoch information csv file in `vasttools/data/csvs/`, named `vast_epochXX_info.csv`, where `XX` is the two digit zero padded epoch number.
 
-4. Replace the current version of `VAST_PILOT.stmoc.fits` in `vasttools/data/mocs/` with the updated version containing the observations from the new epoch.
+4. Place the full-epoch MOC in `vasttools/data/mocs/`, named `VAST_PILOT_EPOCHXX.moc.fits`, where `XX` is the two digit zero padded epoch number.
 
-3. Add the new epoch to the `RELEASED_EPOCHS` variable found in [`vasttools.survey`](../../reference/survey).
+5. Replace the current version of `VAST_PILOT.stmoc.fits` in `vasttools/data/mocs/` with the updated version containing the observations from the new epoch.
 
-4. Add the new epoch to the `FIELD_FILES` variable found in [`vasttools.survey`](../../reference/survey).
+6. Add the new epoch to the `RELEASED_EPOCHS` variable found in [`vasttools.survey`](../../reference/survey).
 
-5. Make sure the new epoch data is present in the standard release format if the instance of VAST Tools has access to the survey data. 
+7. Add the new epoch to the `FIELD_FILES` variable found in [`vasttools.survey`](../../reference/survey).
+
+8. Make sure the new epoch data is present in the standard release format if the instance of VAST Tools has access to the survey data. 
