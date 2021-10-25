@@ -38,8 +38,8 @@ def skymap2moc(filename: str, cutoff: float) -> MOC:
         A MOC containing the credible region.
 
     Raises:
-        ValueError: Credible level cutoff must be between 0 and 1
-        Exception: Path does not exist
+        ValueError: Credible level cutoff must be between 0 and 1.
+        Exception: Path does not exist.
     """
     skymap = Path(filename)
 
@@ -114,7 +114,7 @@ def add_credible_levels(
         None
 
     Raises:
-        Exception: Path does not exist
+        Exception: Path does not exist.
     """
 
     skymap = Path(filename)
@@ -146,13 +146,13 @@ def add_credible_levels(
 # New epoch tools
 def _create_beam_df(beam_files: list) -> pd.DataFrame:
     """
-    Create the dataframe of all beam information from a list of beam files
+    Create the dataframe of all beam information from a list of beam files.
 
     Args:
-        beam_files: the list of beam files
+        beam_files: the list of beam files.
 
     Returns:
-        A dataframe of complete beam information
+        A dataframe of complete beam information.
     """
 
     beam_columns = ['BEAM_NUM',
@@ -222,10 +222,10 @@ def _create_fields_df(epoch_num: str,
         db_path: Path to the askap_surveys database.
 
     Returns:
-        The fields DataFrame
+        The fields DataFrame.
 
     Raises:
-        Exception: Path does not exist
+        Exception: Path does not exist.
     """
     field_columns = ['FIELD_NAME', 'SBID', 'SCAN_START', 'SCAN_LEN']
 
@@ -318,7 +318,7 @@ def create_fields_csv(epoch_num: str,
         None
 
     Raises:
-        Exception: Path does not exist
+        Exception: Path does not exist.
     """
 
     outdir = Path(outdir)
@@ -340,7 +340,7 @@ def add_obs_date(epoch: str,
     Add datetime information to all fits files in a single epoch.
 
     Args:
-        epoch: The epoch of interest
+        epoch: The epoch of interest.
         image_type: `COMBINED` or `TILES`.
         image_dir: The name of the folder containing the images to be updated.
             E.g. `STOKESI_IMAGES`.
@@ -405,7 +405,7 @@ def gen_mocs_field(fits_file: str,
         The MOC and STMOC.
 
     Raises:
-        Exception: Path does not exist
+        Exception: Path does not exist.
     """
 
     outdir = Path(outdir)
@@ -460,7 +460,7 @@ def gen_mocs_epoch(epoch: str,
         None
 
     Raises:
-        Exception: Path does not exist
+        Exception: Path does not exist.
     """
 
     outdir = Path(outdir)
@@ -505,7 +505,7 @@ def _get_epoch_images(epoch_path: Union[str, Path],
 
     Args:
         epoch_path: Path to the epoch of interest.
-        image_type: `COMBINED` or `TILES`
+        image_type: `COMBINED` or `TILES`.
         image_dir: The name of the folder containing the images to be updated.
             E.g. `STOKESI_IMAGES`.
 
@@ -513,7 +513,7 @@ def _get_epoch_images(epoch_path: Union[str, Path],
         The list of images.
 
     Raises:
-        Exception: Path does not exist
+        Exception: Path does not exist.
     """
 
     P = Path(epoch_path) / image_type / image_dir
