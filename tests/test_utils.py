@@ -264,7 +264,6 @@ def dummy_selavy_components_astropy() -> Table:
         'flux_peak_err': {0: 0.5, 1: 0.2, 2: 0.1, 3: 0.2, 4: 0.3}
     })
 
-    
     return Table.from_pandas(df)
 
 
@@ -558,16 +557,16 @@ def test_build_SkyCoord_string_hms(
 def test_read_selavy_xml(mocker):
     """
     Tests read_selavy for a file with xml formatting.
-    
+
     Args:
         mocker: Pytest mock mocker object.
-    
+
     Returns:
         None.
     """
     mock_table_read = mocker.patch(
         'vasttools.utils.Table.read')
-    
+
     test_filename = 'test.xml'
     vtu.read_selavy(test_filename)
     mock_table_read.assert_called_once_with(test_filename,
@@ -580,20 +579,20 @@ def test_read_selavy_xml_usecols(dummy_selavy_components_astropy, mocker):
     """
     Tests read_selavy for a file with xml formatting, requesting a subset
     of the available columns.
-    
+
     Args:
         dummy_selavy_components_astropy: A dummy astropy Table containing
             the necessary selavy columns
         mocker: Pytest mock mocker object.
-    
+
     Returns:
         None.
     """
     mock_table_read = mocker.patch(
         'vasttools.utils.Table.read',
         return_value=dummy_selavy_components_astropy
-        )
-    
+    )
+
     test_filename = 'test.xml'
     usecols = ['island_id',
                'ra_deg_cont',
@@ -606,22 +605,21 @@ def test_read_selavy_xml_usecols(dummy_selavy_components_astropy, mocker):
     df = vtu.read_selavy(test_filename, cols=usecols)
 
     assert list(df.columns) == usecols
-    
 
 
 def test_read_selavy_fwf(mocker):
     """
     Tests read_selavy for a file with standard fixed-width formatting.
-    
+
     Args:
         mocker: Pytest mock mocker object.
-    
+
     Returns:
         None.
     """
     mock_table_read = mocker.patch(
         'vasttools.utils.pd.read_fwf')
-    
+
     test_filename = 'test.txt'
     vtu.read_selavy(test_filename)
     mock_table_read.assert_called_once_with(test_filename,
@@ -633,21 +631,23 @@ def test_read_selavy_fwf(mocker):
 def test_read_selavy_csv(mocker):
     """
     Tests read_selavy for a file with csv formatting.
-    
+
     Args:
         mocker: Pytest mock mocker object.
-    
+
     Returns:
         None.
     """
     mock_table_read = mocker.patch(
         'vasttools.utils.pd.read_csv')
-    
+
     test_filename = 'test.csv'
     vtu.read_selavy(test_filename)
     mock_table_read.assert_called_once_with(test_filename,
                                             usecols=None
                                             )
+
+
 def test_simbad_search(mocker) -> None:
     """
     Test the SIMBAD search.
