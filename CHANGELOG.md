@@ -7,8 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased](https://github.com/askap-vast/vast-tools/compare/v2.0.0...HEAD)
 
 #### Added
+- Added `read_selavy` function to read selavy catalogues of any format [#302](https://github.com/askap-vast/vast-tools/pull/302)
 
 #### Changed
+- Updated entire package to use `read_selavy` function in place of existing one-off calls [#302](https://github.com/askap-vast/vast-tools/pull/302)
 
 #### Fixed
 
