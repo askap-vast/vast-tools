@@ -23,6 +23,7 @@ import logging.handlers
 import logging.config
 import matplotlib.pyplot as plt
 import matplotlib.axes as maxes
+from pathlib import Path
 
 from astropy.coordinates import Angle
 from astropy.coordinates import SkyCoord
@@ -1585,6 +1586,68 @@ class Query:
 
         return master
 
+    def _get_selavy_path(self, epoch_string, row):
+        """
+        """
+
+        if self.settings['tiles']:
+            dir_name = "TILES"
+            selavy_folder = Path(os.path.join(
+                self.base_folder,
+                epoch_string,
+                dir_name,
+                "STOKES{}_SELAVY".format(self.settings['stokes'])
+            ))
+
+            # VAST-P1 format
+            selavy_file_fmt = (
+                "selavy-image.i.SB{}.cont.{}."
+                "linmos.taylor.0.restored.components.txt".format(
+                    row.sbid, row.field
+                )
+            )
+            selavy_path = selavy_folder / selavy_file_fmt
+            
+            if not selavy_path.is_file():
+                # VAST-P2 format
+                selavy_file_fmt = (
+                    "selavy-image.i.{}.SB{}.cont."
+                    "taylor.0.restored.conv.components.txt".format(
+                        row.field, row.sbid
+                    )
+                )
+                selavy_path = selavy_folder / selavy_file_fmt
+
+                if not selavy_path.is_file():
+                    # VAST-P2 but unconvolved
+                    selavy_path = Path(str(selavy_path).replace('.conv',''))
+
+        else:
+            dir_name = "COMBINED"
+            selavy_folder = Path(os.path.join(
+                self.base_folder,
+                epoch_string,
+                dir_name,
+                "STOKES{}_SELAVY".format(self.settings['stokes'])
+            ))
+
+            if self.settings['islands']:
+                cat_type = 'islands'
+            else:
+                cat_type = 'components'
+            
+            selavy_file_fmt = "{}.EPOCH{}.{}.selavy.{}.txt".format(
+                row.field,
+                RELEASED_EPOCHS[row.epoch],
+                self.settings['stokes'],
+                cat_type
+            )
+
+            selavy_path = selavy_folder / selavy_file_fmt
+
+        return str(selavy_path)
+
+
     def _add_files(self, row: pd.Series) -> Tuple[str, str, str]:
         """
         Adds the file paths for the image, selavy catalogues and
@@ -1601,21 +1664,8 @@ class Query:
             RELEASED_EPOCHS[row.epoch]
         )
 
-        if self.settings['islands']:
-            cat_type = 'islands'
-        else:
-            cat_type = 'components'
-
         if self.settings['tiles']:
-
             dir_name = "TILES"
-
-            selavy_file_fmt = (
-                "selavy-image.i.SB{}.cont.{}."
-                "linmos.taylor.0.restored.components.txt".format(
-                    row.sbid, row.field
-                )
-            )
 
             image_file_fmt = (
                 "image.i.SB{}.cont.{}"
@@ -1625,15 +1675,7 @@ class Query:
             )
 
         else:
-
             dir_name = "COMBINED"
-
-            selavy_file_fmt = "{}.EPOCH{}.{}.selavy.{}.txt".format(
-                row.field,
-                RELEASED_EPOCHS[row.epoch],
-                self.settings['stokes'],
-                cat_type
-            )
 
             image_file_fmt = "{}.EPOCH{}.{}.fits".format(
                 row.field,
@@ -1647,13 +1689,7 @@ class Query:
                 self.settings['stokes'],
             )
 
-        selavy_file = os.path.join(
-            self.base_folder,
-            epoch_string,
-            dir_name,
-            "STOKES{}_SELAVY".format(self.settings['stokes']),
-            selavy_file_fmt
-        )
+        selavy_file = self._get_selavy_path(epoch_string, row)
 
         image_file = os.path.join(
             self.base_folder,

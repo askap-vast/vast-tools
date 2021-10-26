@@ -860,14 +860,6 @@ class TestQuery:
         Returns:
             None
         """
-        test_query = vast_query_psrj2129_fields
-
-        test_query.settings['tiles'] = True
-
-        results = test_query._add_files(
-            test_query.fields_df.loc[0]
-        )
-
         expected_results = (
             '/testing/folder/EPOCH01/TILES/STOKESI_SELAVY'
             '/selavy-image.i.SB9668.cont.VAST_2118-06A.linmos'
@@ -877,6 +869,20 @@ class TestQuery:
             '.taylor.0.restored.fits',
             'N/A'
         )
+        
+        test_query = vast_query_psrj2129_fields
+
+        test_query.settings['tiles'] = True
+
+        mock_isfile = mocker.patch('vasttools.query.Query._get_selavy_path',
+                                   return_value=expected_results[0])
+        results = test_query._add_files(
+            test_query.fields_df.loc[0]
+        )
+
+        
+
+        
 
         assert results == expected_results
 
