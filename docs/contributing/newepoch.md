@@ -45,18 +45,71 @@ Information about the survey coverage is stored as multi-order coverage maps (MO
 However, adding observations with different footprints (e.g. the Phase II survey high frequency observations) will require new footprint MOCs to be created. This will also require new field MOCs (e.g. `vasttools/data/mocs/VAST_PILOT_FIELD_1.fits`) to be generated, although no automated process for this exists yet.
 
 ## Epoch Addition Steps
-1. Ensure that you have access to the necessary data, i.e. the `ASKAP_SURVEYS` repo and all images from the epoch and image type of interest.
+To add a new epoch, users should take the below actions.
 
-2. Generate the epoch metadata using the methods described above.
+* Ensure that you have access to the necessary data, i.e. the `ASKAP_SURVEYS` repo and all images from the epoch and image type of interest.
 
-3. Place the epoch information csv file in `vasttools/data/csvs/`, named `vast_epochXX_info.csv`, where `XX` is the two digit zero padded epoch number.
+* Generate the epoch metadata using the methods described above.
 
-4. Place the full-epoch MOC in `vasttools/data/mocs/`, named `VAST_PILOT_EPOCHXX.moc.fits`, where `XX` is the two digit zero padded epoch number.
+* Place the epoch information csv file in `vasttools/data/csvs/`, named `vast_epochXX_info.csv`, where `XX` is the two digit zero padded epoch number.
 
-5. Replace the current version of `VAST_PILOT.stmoc.fits` in `vasttools/data/mocs/` with the updated version containing the observations from the new epoch.
+* Place the full-epoch MOC in `vasttools/data/mocs/`, named `VAST_PILOT_EPOCHXX.moc.fits`, where `XX` is the two digit zero padded epoch number.
 
-6. Add the new epoch to the `RELEASED_EPOCHS` variable found in [`vasttools.survey`](../../reference/survey).
+* Replace the current version of `VAST_PILOT.stmoc.fits` in `vasttools/data/mocs/` with the updated version containing the observations from the new epoch.
 
-7. Add the new epoch to the `FIELD_FILES` variable found in [`vasttools.survey`](../../reference/survey).
+* Add the new epoch to the `RELEASED_EPOCHS` variable found in [`vasttools.survey`](../../reference/survey).
 
-8. Make sure the new epoch data is present in the standard release format if the instance of VAST Tools has access to the survey data. 
+* Add the new epoch to the `path` variable found in [`vasttools.survey.load_fields_file`](../../reference/survey/load_fields_file).
+
+* Make sure the new epoch data is present in the standard release format if the instance of VAST Tools has access to the survey data.
+
+### Example Epoch Addition
+The following steps will allow users to add epoch 99 to the package, from start to finish assuming absolutely no pre-processing. In the future these steps may be simplified, for example if observations datetime data is already added to the fits images.
+
+1. Download the `ASKAP_SURVEYS` repo to `/path/to/surveys/db/` and specify the base data directory with environment variable `VAST_DATA_DIR`. This assumes that the images of interest have already had the observation date added to them. If not, that can be done using [`vasttools.tools.add_obs_date`](../../reference/tools/#vasttools.tools.add_obs_date).
+
+2. Run the following code to generate the fields info csv files.
+!!! example "Example: Generate epoch metadata"
+    Generate all epoch metadata for epoch 99
+    ```python
+    from vasttools.tools import create_fields_csv
+    create_fields_csv('99', '/path/to/surveys_db/')
+    ```
+
+3. Move the resulting info csv, `vast_epoch99_info.csv` files into `vasttools/data/csvs/`
+
+4. Update the `RELEASED_EPOCHS` variable in `vasttools.__init__.py`, appending `"99": "99"` to the existing dictionary.
+
+5. Update the `paths` variable in `vasttools.survey.load_fields_file`, appending `"99": importlib.resources.path('vasttools.data.csvs', 'vast_epoch99_info.csv')` to the existing dictionary.
+
+6. If the fits files don't contain datetime information, add it with the following code. This should be done for all image types and polarisations, but only one is necessary for the following steps.
+!!! example "Example: Add datetime information to fits images"
+    Add observation datetime information to stokes I combined images from epoch 99
+    ```python
+    from vasttools.tools import add_obs_date
+    add_obs_date('99', 'COMBINED', 'STOKESI_IMAGES')
+    ```
+
+7. Run the following code to generate all MOCs and STMOCs.
+!!! example "Example: Generate MOCs and STMOCs"
+    Generate all MOCs and STMOCs for epoch 99
+    ```python
+    from vasttools.tools import gen_mocs_epoch
+    gen_mocs_epoch('99', 'COMBINED', 'STOKESI_IMAGES')
+    ```
+
+8. Move the full-epoch MOC, `VAST_PILOT_EPOCH99.moc.fits`, to `vasttools/data/mocs/`.
+
+9. Move the updated full-survey STMOC, `VAST_PILOT.stmoc.fits`, to `vasttools/data/mocs/`.
+
+10. Create a new git branch for this epoch with `git checkout -b add-epoch-99`.
+
+11. Commit all of the new changes, and push to the github repository with
+!!! example "Example: Push new epoch to git"
+    Commit changes required for the addition of epoch 99
+    ```git add vasttools/data/csvs/vast_epoch99_info.csv
+    git add __init__.py
+    git add vasttools/survey.py
+    git add vasttools/data/mocs/VAST_PILOT_EPOCH99.moc.fits
+    git add vasttools/data/mocs/VAST_PILOT.stmoc.fits
+    ```
