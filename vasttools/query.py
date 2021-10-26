@@ -388,7 +388,6 @@ class Query:
         else:
             self.query_df = None
 
-
         self.fields_found = False
 
         # TODO: Remove warning in future release.
@@ -1586,8 +1585,16 @@ class Query:
 
         return master
 
-    def _get_selavy_path(self, epoch_string, row):
+    def _get_selavy_path(self, epoch_string: str, row: pd.Series) -> str:
         """
+        Get the path to the selavy file for a specific row of the dataframe.
+
+        Args:
+            epoch_string: The name of the epoch in the form of 'EPOCHXX'.
+            row: row: The input row of the dataframe.
+
+        Returns:
+            The path to the selavy file of interest
         """
 
         if self.settings['tiles']:
@@ -1607,7 +1614,7 @@ class Query:
                 )
             )
             selavy_path = selavy_folder / selavy_file_fmt
-            
+
             if not selavy_path.is_file():
                 # VAST-P2 format
                 selavy_file_fmt = (
@@ -1620,7 +1627,7 @@ class Query:
 
                 if not selavy_path.is_file():
                     # VAST-P2 but unconvolved
-                    selavy_path = Path(str(selavy_path).replace('.conv',''))
+                    selavy_path = Path(str(selavy_path).replace('.conv', ''))
 
         else:
             dir_name = "COMBINED"
@@ -1635,7 +1642,7 @@ class Query:
                 cat_type = 'islands'
             else:
                 cat_type = 'components'
-            
+
             selavy_file_fmt = "{}.EPOCH{}.{}.selavy.{}.txt".format(
                 row.field,
                 RELEASED_EPOCHS[row.epoch],
@@ -1646,7 +1653,6 @@ class Query:
             selavy_path = selavy_folder / selavy_file_fmt
 
         return str(selavy_path)
-
 
     def _add_files(self, row: pd.Series) -> Tuple[str, str, str]:
         """

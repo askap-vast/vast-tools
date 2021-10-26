@@ -828,9 +828,6 @@ class TestQuery:
         Returns:
             None
         """
-        test_query = vast_query_psrj2129_fields
-        results = test_query._add_files(test_query.fields_df.loc[0])
-
         expected_results = (
             '/testing/folder/EPOCH01/COMBINED/STOKESI_SELAVY'
             '/VAST_2118-06A.EPOCH01.I.selavy.components.txt',
@@ -839,6 +836,14 @@ class TestQuery:
             '/testing/folder/EPOCH01/COMBINED/STOKESI_RMSMAPS'
             '/VAST_2118-06A.EPOCH01.I_rms.fits'
         )
+        test_query = vast_query_psrj2129_fields
+
+        mock_selavy_path = mocker.patch(
+                                   'vasttools.query.Query._get_selavy_path',
+                                   return_value=expected_results[0]
+                                   )
+
+        results = test_query._add_files(test_query.fields_df.loc[0])
 
         assert results == expected_results
 
@@ -869,20 +874,18 @@ class TestQuery:
             '.taylor.0.restored.fits',
             'N/A'
         )
-        
+
         test_query = vast_query_psrj2129_fields
 
         test_query.settings['tiles'] = True
 
-        mock_isfile = mocker.patch('vasttools.query.Query._get_selavy_path',
-                                   return_value=expected_results[0])
+        mock_selavy_path = mocker.patch(
+                                   'vasttools.query.Query._get_selavy_path',
+                                   return_value=expected_results[0]
+                                   )
         results = test_query._add_files(
             test_query.fields_df.loc[0]
         )
-
-        
-
-        
 
         assert results == expected_results
 
@@ -904,11 +907,6 @@ class TestQuery:
         Returns:
             None
         """
-        test_query = vast_query_psrj2129_fields
-        test_query.settings['stokes'] = 'V'
-        test_query.fields_df['stokes'] = 'V'
-        results = test_query._add_files(test_query.fields_df.loc[0])
-
         expected_results = (
             '/testing/folder/EPOCH01/COMBINED/STOKESV_SELAVY'
             '/VAST_2118-06A.EPOCH01.V.selavy.components.txt',
@@ -917,6 +915,17 @@ class TestQuery:
             '/testing/folder/EPOCH01/COMBINED/STOKESV_RMSMAPS'
             '/VAST_2118-06A.EPOCH01.V_rms.fits'
         )
+
+        test_query = vast_query_psrj2129_fields
+        test_query.settings['stokes'] = 'V'
+        test_query.fields_df['stokes'] = 'V'
+
+        mock_selavy_path = mocker.patch(
+                                   'vasttools.query.Query._get_selavy_path',
+                                   return_value=expected_results[0]
+                                   )
+
+        results = test_query._add_files(test_query.fields_df.loc[0])
 
         assert results == expected_results
 
