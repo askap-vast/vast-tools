@@ -438,7 +438,7 @@ def test_gen_mocs_epoch(dummy_moc: MOC,
     epoch = '1'
     vtt.gen_mocs_epoch(epoch, '', '', epoch_path='.')
 
-    master_name = "VAST_PILOT_{}_moc.fits".format(epoch)
+    master_name = "VAST_PILOT_EPOCH{}.moc.fits".format(epoch)
     master_stmoc_name = master_name.replace("moc", "stmoc")
     pilot_stmoc_name = "VAST_PILOT.stmoc.fits"
 
