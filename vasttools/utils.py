@@ -18,6 +18,7 @@ from astropy import units as u
 from astropy.coordinates import SkyCoord, Angle
 from astroquery.simbad import Simbad
 from astropy.time import Time
+from astropy.table import Table
 from astropy.coordinates import solar_system_ephemeris
 from astropy.coordinates import get_body, get_moon
 from multiprocessing_logging import install_mp_handler
