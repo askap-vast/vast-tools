@@ -224,6 +224,50 @@ def source_df() -> pd.DataFrame:
     return source_df
 
 
+@pytest.fixture
+def dummy_selavy_components_astropy() -> Table:
+    """
+    Provides a dummy set of selavy components containing only the columns
+    required for testing.
+
+    Returned as a pandas dataframe.
+
+    Returns:
+        The dataframe containing the dummy selavy components.
+    """
+    df = pd.DataFrame(data={
+        'island_id': {
+            0: 'SB9667_island_1000',
+            1: 'SB9667_island_1001',
+            2: 'SB9667_island_1002',
+            3: 'SB9667_island_1003',
+            4: 'SB9667_island_1004'
+        },
+        'ra_deg_cont': {
+            0: 321.972731,
+            1: 317.111595,
+            2: 322.974588,
+            3: 315.077869,
+            4: 315.56781
+        },
+        'dec_deg_cont': {
+            0: 0.699851,
+            1: 0.53981,
+            2: 1.790072,
+            3: 3.011253,
+            4: -0.299919
+        },
+        'maj_axis': {0: 15.6, 1: 18.48, 2: 21.92, 3: 16.77, 4: 14.67},
+        'min_axis': {0: 14.23, 1: 16.03, 2: 16.67, 3: 12.4, 4: 13.64},
+        'pos_ang': {0: 111.96, 1: 43.18, 2: 22.71, 3: 57.89, 4: 63.43},
+        'flux_peak': {0: 1.0, 1: 2.0, 2: 3.0, 3: 4.0, 4: 5.0},
+        'flux_peak_err': {0: 0.5, 1: 0.2, 2: 0.1, 3: 0.2, 4: 0.3}
+    })
+
+    
+    return Table.from_pandas(df)
+
+
 def test_gen_skycoord_from_df(
     coords_df: pd.DataFrame,
     coords_skycoord: SkyCoord
@@ -511,6 +555,99 @@ def test_build_SkyCoord_string_hms(
     assert np.all(result == catalog_skycoord_hms)
 
 
+def test_read_selavy_xml(mocker):
+    """
+    Tests read_selavy for a file with xml formatting.
+    
+    Args:
+        mocker: Pytest mock mocker object.
+    
+    Returns:
+        None.
+    """
+    mock_table_read = mocker.patch(
+        'vasttools.utils.Table.read')
+    
+    test_filename = 'test.xml'
+    vtu.read_selavy(test_filename)
+    mock_table_read.assert_called_once_with(test_filename,
+                                            format="votable",
+                                            use_names_over_ids=True
+                                            )
+
+
+def test_read_selavy_xml_usecols(dummy_selavy_components_astropy, mocker):
+    """
+    Tests read_selavy for a file with xml formatting, requesting a subset
+    of the available columns.
+    
+    Args:
+        dummy_selavy_components_astropy: A dummy astropy Table containing
+            the necessary selavy columns
+        mocker: Pytest mock mocker object.
+    
+    Returns:
+        None.
+    """
+    mock_table_read = mocker.patch(
+        'vasttools.utils.Table.read',
+        return_value=dummy_selavy_components_astropy
+        )
+    
+    test_filename = 'test.xml'
+    usecols = ['island_id',
+               'ra_deg_cont',
+               'dec_deg_cont',
+               'maj_axis',
+               'min_axis',
+               'pos_ang'
+               ]
+
+    df = vtu.read_selavy(test_filename, cols=usecols)
+
+    assert list(df.columns) == usecols
+    
+
+
+def test_read_selavy_fwf(mocker):
+    """
+    Tests read_selavy for a file with standard fixed-width formatting.
+    
+    Args:
+        mocker: Pytest mock mocker object.
+    
+    Returns:
+        None.
+    """
+    mock_table_read = mocker.patch(
+        'vasttools.utils.pd.read_fwf')
+    
+    test_filename = 'test.txt'
+    vtu.read_selavy(test_filename)
+    mock_table_read.assert_called_once_with(test_filename,
+                                            skiprows=[1],
+                                            usecols=None
+                                            )
+
+
+def test_read_selavy_csv(mocker):
+    """
+    Tests read_selavy for a file with csv formatting.
+    
+    Args:
+        mocker: Pytest mock mocker object.
+    
+    Returns:
+        None.
+    """
+    mock_table_read = mocker.patch(
+        'vasttools.utils.pd.read_csv')
+    
+    test_filename = 'test.csv'
+    vtu.read_selavy(test_filename)
+    mock_table_read.assert_called_once_with(test_filename,
+                                            usecols=None
+                                            )
 def test_simbad_search(mocker) -> None:
     """
     Test the SIMBAD search.
