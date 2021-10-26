@@ -489,7 +489,7 @@ def gen_mocs_epoch(epoch: str,
             mastermoc = mastermoc.union(themoc)
             masterstemoc = masterstemoc.union(thestmoc)
 
-    master_name = "VAST_PILOT_EPOCH{}_moc.fits".format(epoch)
+    master_name = "VAST_PILOT_EPOCH{}.moc.fits".format(epoch)
     master_stmoc_name = master_name.replace("moc", "stmoc")
 
     mastermoc.write(outdir / master_name, overwrite=True)
