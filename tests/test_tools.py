@@ -337,7 +337,7 @@ def test_gen_mocs_image(
             FITS file.
         dummy_load_fields_file: The dummy fields file.
         dummy_moc: The dummy MOC object representing an open MOC.
-        tmp_path: The default pytest temporary path
+        tmp_path: The default pytest temporary path.
         mocker: The pytest mock mocker object.
 
     Returns:

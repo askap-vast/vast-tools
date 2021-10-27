@@ -847,7 +847,7 @@ def test_create_moc_from_fits(
     mocker
 ) -> None:
     """
-    Tests the generation of a MOC for a single fits file
+    Tests the generation of a MOC for a single fits file.
 
     Args:
         dummy_fits_open: The dummy HDUList object that represents an open
