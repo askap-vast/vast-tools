@@ -327,7 +327,6 @@ def test_gen_mocs_image(
         dummy_fits_open: fits.HDUList,
         dummy_load_fields_file: pd.DataFrame,
         dummy_moc: MOC,
-        tmp_path: Path,
         mocker) -> None:
     """
     Tests the generation of a MOC and STMOC for a single fits file
@@ -337,7 +336,6 @@ def test_gen_mocs_image(
             FITS file.
         dummy_load_fields_file: The dummy fields file.
         dummy_moc: The dummy MOC object representing an open MOC.
-        tmp_path: The default pytest temporary path.
         mocker: The pytest mock mocker object.
 
     Returns:
@@ -393,12 +391,12 @@ def test_gen_mocs_image(
     moc_file = fits_file.replace('.fits', '.moc.fits')
     stmoc_file = fits_file.replace('.fits', '.stmoc.fits')
 
-    moc, stmoc = vtt.gen_mocs_image(fits_file, outdir=tmp_path)
+    moc, stmoc = vtt.gen_mocs_image(fits_file)
 
-    mocker_moc_write.assert_called_once_with(tmp_path / moc_file,
+    mocker_moc_write.assert_called_once_with(Path(moc_file),
                                              overwrite=True)
 
-    mocker_stmoc_write.assert_called_once_with(tmp_path / stmoc_file,
+    mocker_stmoc_write.assert_called_once_with(Path(stmoc_file),
                                                overwrite=True)
 
     assert stmoc.max_time.jd == end.jd
