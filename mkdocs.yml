@@ -95,7 +95,7 @@ nav:
     - GitHub Platform: contributing/github.md
     - Tests: contributing/tests.md
     - Documentation: contributing/docsdev.md
-    - New epochs: contributing/newepoch.md
+    - Adding a New Epoch: contributing/newepoch.md
   - Help and Acknowledgements: help_and_acknowledgements.md
   - Reference:
     - Changelog: changelog.md
