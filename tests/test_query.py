@@ -810,6 +810,89 @@ class TestQuery:
             fields_df_expected_result()
         )
 
+    @pytest.mark.parametrize("tiles, is_file_returns, islands, expected_file",
+                             [(True,
+                               [False, False],
+                               None,
+                               'selavy-image.i.VAST_2118-06A.SB9668.cont'
+                               '.taylor.0.restored.components.txt'
+                               ),
+                              (True,
+                               [False, True],
+                               None,
+                               'selavy-image.i.VAST_2118-06A.SB9668.cont'
+                               '.taylor.0.restored.conv.components.txt'
+                               ),
+                              (True,
+                               [True, True],
+                               None,
+                               'selavy-image.i.SB9668.cont.VAST_2118-06A'
+                               '.linmos.taylor.0.restored.components.txt'
+                               ),
+                              (False,
+                               None,
+                               True,
+                               'VAST_2118-06A.EPOCH01.I.selavy.islands.txt'
+                               ),
+                              (False,
+                               None,
+                               False,
+                               'VAST_2118-06A.EPOCH01.I.selavy.components.txt'
+                               )
+                              ],
+                             ids=('tiles-p2-noconv',
+                                  'tiles-p2-conv',
+                                  'tiles-p1',
+                                  'comb-p1-islands',
+                                  'comb-p1-noislands'
+                                  )
+                             )
+    def test__get_selavy_path(
+        self,
+        vast_query_psrj2129_fields: vtq.Query,
+        tiles: bool,
+        is_file_returns: list,
+        islands: bool,
+        expected_file: str,
+        mocker
+    ) -> None:
+        """
+        Tests adding the paths to the combined data in the query.
+
+        Assumes the standard VAST Pilot directory and file structure.
+
+        Args:
+            vast_query_psrj2129_fields: The dummy Query instance that includes
+                a search for PSR J2129-04 with the included found fields data.
+            tiles: Whether to query the TILES or COMBINED data.
+            is_file_returns: A list of booleans containing the mocked return
+                values of Path.is_file(). This argument is only relevant
+                if tiles is True
+            islands: Whether to return the islands or components catalogue.
+                This argument is only relevant if tiles is False.
+            expected_file: The expected filename to be returned.
+            mocker: The pytest-mock mocker object.
+
+        Returns:
+            None
+        """
+        epoch_string = 'EPOCH01'
+        test_query = vast_query_psrj2129_fields
+
+        test_query.settings['tiles'] = tiles
+        test_query.settings['islands'] = islands
+
+        row = test_query.fields_df.loc[0]
+
+        mock_selavy_path = mocker.patch(
+            'vasttools.query.Path.is_file',
+            side_effect=is_file_returns
+        )
+
+        path = test_query._get_selavy_path(epoch_string, row)
+
+        assert os.path.split(path)[1] == expected_file
+
     def test__add_files_combined(
         self,
         vast_query_psrj2129_fields: vtq.Query,
@@ -839,9 +922,9 @@ class TestQuery:
         test_query = vast_query_psrj2129_fields
 
         mock_selavy_path = mocker.patch(
-                                   'vasttools.query.Query._get_selavy_path',
-                                   return_value=expected_results[0]
-                                   )
+            'vasttools.query.Query._get_selavy_path',
+            return_value=expected_results[0]
+        )
 
         results = test_query._add_files(test_query.fields_df.loc[0])
 
@@ -880,9 +963,9 @@ class TestQuery:
         test_query.settings['tiles'] = True
 
         mock_selavy_path = mocker.patch(
-                                   'vasttools.query.Query._get_selavy_path',
-                                   return_value=expected_results[0]
-                                   )
+            'vasttools.query.Query._get_selavy_path',
+            return_value=expected_results[0]
+        )
         results = test_query._add_files(
             test_query.fields_df.loc[0]
         )
@@ -921,9 +1004,9 @@ class TestQuery:
         test_query.fields_df['stokes'] = 'V'
 
         mock_selavy_path = mocker.patch(
-                                   'vasttools.query.Query._get_selavy_path',
-                                   return_value=expected_results[0]
-                                   )
+            'vasttools.query.Query._get_selavy_path',
+            return_value=expected_results[0]
+        )
 
         results = test_query._add_files(test_query.fields_df.loc[0])
 
