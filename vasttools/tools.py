@@ -1,14 +1,29 @@
 """Functions and classes related to VAST that have no specific category
 and can be used generically.
 """
+import os
+import glob
+import logging
+
 import healpy as hp
 import numpy as np
 import pandas as pd
+import scipy.ndimage as ndi
 
 from pathlib import Path
 from mocpy import MOC
+from mocpy import STMOC
+from astropy.io import fits
+from astropy.wcs import WCS
+from astropy.time import Time
+from typing import Union
+
 from astropy import units as u
 from astropy.coordinates import SkyCoord, Angle
+
+from vasttools.survey import load_fields_file
+from vasttools.moc import VASTMOCS
+from vasttools.utils import create_moc_from_fits
 
 
 def skymap2moc(filename: str, cutoff: float) -> MOC:
@@ -23,8 +38,8 @@ def skymap2moc(filename: str, cutoff: float) -> MOC:
         A MOC containing the credible region.
 
     Raises:
-        ValueError: Credible level cutoff must be between 0 and 1
-        FileNotFoundError: File does not exist
+        ValueError: Credible level cutoff must be between 0 and 1.
+        Exception: Path does not exist.
     """
     skymap = Path(filename)
 
@@ -99,7 +114,7 @@ def add_credible_levels(
         None
 
     Raises:
-        FileNotFoundError: File does not exist
+        Exception: Path does not exist.
     """
 
     skymap = Path(filename)
@@ -126,3 +141,387 @@ def add_credible_levels(
     ipix = hp.ang2pix(nside, theta, phi)
 
     df.loc[:, 'credible_level'] = credible_levels[ipix]
+
+
+# New epoch tools
+def _create_beam_df(beam_files: list) -> pd.DataFrame:
+    """
+    Create the dataframe of all beam information from a list of beam files.
+
+    Args:
+        beam_files: the list of beam files.
+
+    Returns:
+        A dataframe of complete beam information.
+    """
+
+    beam_columns = ['BEAM_NUM',
+                    'RA_DEG',
+                    'DEC_DEG',
+                    'PSF_MAJOR',
+                    'PSF_MINOR',
+                    'PSF_ANGLE'
+                    ]
+
+    for i, beam_file in enumerate(beam_files):
+        field = "VAST_" + \
+            beam_file.name.split('VAST_')[-1].split(beam_file.suffix)[0]
+        sbid = int(beam_file.name.split('beam_inf_')[-1].split('-')[0])
+
+        temp = pd.read_csv(beam_file)
+        temp = temp.loc[:, beam_columns]
+        temp['SBID'] = sbid
+        temp['FIELD_NAME'] = field
+
+        if i == 0:
+            beam_df = temp.copy()
+        else:
+            beam_df = beam_df.append(temp)
+
+    return beam_df
+
+
+def _set_epoch_path(epoch: str) -> Path:
+    """
+    Set the epoch_path from the VAST_DATA_DIR variable.
+
+    Args:
+        epoch: The epoch of interest.
+
+    Returns:
+        Path to the epoch of interest.
+
+    Raises:
+        Exception: Requested path could not be determined.
+    """
+
+    base_folder = os.getenv('VAST_DATA_DIR')
+    if base_folder is None:
+        raise Exception(
+            "The path to the requested epoch could not be determined!"
+            " Either the system environment 'VAST_DATA_DIR' must be"
+            " defined or the 'epoch_path' provided."
+        )
+
+    base_folder = Path(base_folder)
+
+    epoch_path = base_folder / 'EPOCH{}'.format(epoch)
+
+    return epoch_path
+
+
+def _create_fields_df(epoch_num: str,
+                      db_path: str,
+                      ) -> pd.DataFrame:
+    """
+    Create the the fields DataFrame for a single epoch using the
+    askap_surveys database.
+
+    Args:
+        epoch_num: Epoch number of interest.
+        db_path: Path to the askap_surveys database.
+
+    Returns:
+        The fields DataFrame.
+
+    Raises:
+        Exception: Path does not exist.
+    """
+    field_columns = ['FIELD_NAME', 'SBID', 'SCAN_START', 'SCAN_LEN']
+
+    vast_db = Path(db_path)
+    if not vast_db.exists():
+        raise Exception("{} does not exist!".format(vast_db))
+
+    if type(epoch_num) is int:
+        epoch_num = str(epoch_num)
+    epoch = vast_db / 'epoch_{}'.format(epoch_num.replace('x', ''))
+
+    beam_files = list(epoch.glob('beam_inf_*.csv'))
+    beam_df = _create_beam_df(beam_files)
+
+    field_data = epoch / 'field_data.csv'
+
+    if not field_data.exists():
+        raise Exception("{} does not exist!".format(field_data))
+
+    field_df = pd.read_csv(field_data)
+    field_df = field_df.loc[:, field_columns]
+
+    epoch_csv = beam_df.merge(field_df,
+                              left_on=['SBID', 'FIELD_NAME'],
+                              right_on=['SBID', 'FIELD_NAME']
+                              )
+
+    # convert the coordinates to match format in tools v2.0.0
+    coordinates = SkyCoord(
+        ra=epoch_csv['RA_DEG'].to_numpy(),
+        dec=epoch_csv['DEC_DEG'].to_numpy(),
+        unit=(u.deg, u.deg)
+    )
+
+    epoch_csv['RA_HMS'] = coordinates.ra.to_string(u.hour,
+                                                   sep=":",
+                                                   precision=3
+                                                   )
+    epoch_csv['DEC_DMS'] = coordinates.dec.to_string(sep=":",
+                                                     precision=3,
+                                                     alwayssign=True
+                                                     )
+
+    start_times = epoch_csv['SCAN_START'].to_numpy() / 86400.
+    end_times = start_times + epoch_csv['SCAN_LEN'].to_numpy() / 86400.
+    start_times = Time(start_times, format='mjd')
+    end_times = Time(end_times, format='mjd')
+
+    epoch_csv['DATEOBS'] = start_times.iso
+    epoch_csv['DATEEND'] = end_times.iso
+    epoch_csv['NINT'] = np.around(epoch_csv['SCAN_LEN'] / 10.).astype(np.int64)
+
+    drop_cols = ['SCAN_START', 'SCAN_LEN', 'RA_DEG', 'DEC_DEG']
+    epoch_csv = epoch_csv.drop(drop_cols, axis=1)
+    epoch_csv = epoch_csv.rename(columns={'BEAM_NUM': 'BEAM',
+                                          'PSF_MAJOR': 'BMAJ',
+                                          'PSF_MINOR': 'BMIN',
+                                          'PSF_ANGLE': 'BPA'})
+    epoch_csv = epoch_csv.loc[:, [
+        'SBID',
+        'FIELD_NAME',
+        'BEAM',
+        'RA_HMS',
+        'DEC_DMS',
+        'DATEOBS',
+        'DATEEND',
+        'NINT',
+        'BMAJ',
+        'BMIN',
+        'BPA'
+    ]]
+
+    return epoch_csv
+
+
+def create_fields_csv(epoch_num: str,
+                      db_path: str,
+                      outdir: Union[str, Path] = '.'
+                      ) -> None:
+    """
+    Create and write the fields csv for a single epoch.
+
+    Args:
+        epoch_num: Epoch number of interest.
+        db_path: Path to the askap_surveys database.
+        outdir: Path to the output directory.
+            Defaults to the current directory.
+
+    Returns:
+        None
+
+    Raises:
+        Exception: Path does not exist.
+    """
+
+    if isinstance(outdir, str):
+        outdir = Path(outdir)
+
+    if not outdir.exists():
+        raise Exception("{} does not exist!".format(outdir))
+
+    fields_df = _create_fields_df(epoch_num, db_path)
+    outfile = 'vast_epoch{}_info.csv'.format(epoch_num)
+    fields_df.to_csv(outdir / outfile, index=False)
+
+
+def add_obs_date(epoch: str,
+                 image_type: str,
+                 image_dir: str,
+                 epoch_path: str = None
+                 ) -> None:
+    """
+    Add datetime information to all fits files in a single epoch.
+
+    Args:
+        epoch: The epoch of interest.
+        image_type: `COMBINED` or `TILES`.
+        image_dir: The name of the folder containing the images to be updated.
+            E.g. `STOKESI_IMAGES`.
+        epoch_path: Full path to the folder containing the epoch.
+            Defaults to None, which will set the value based on the
+            `VAST_DATA_DIR` environment variable and `epoch`.
+
+    Returns:
+        None
+
+    Raises:
+        ValueError: When image_type is not 'TILES' or 'COMBINED'.
+    """
+    epoch_info = load_fields_file(epoch)
+
+    if epoch_path is None:
+        epoch_path = _set_epoch_path(epoch)
+
+    raw_images = _get_epoch_images(epoch_path, image_type, image_dir)
+
+    for filename in raw_images:
+        split_name = filename.split("/")[-1].split(".")
+        if image_type == 'TILES':
+            field = split_name[4]
+        elif image_type == 'COMBINED':
+            field = split_name[0]
+        else:
+            raise ValueError(
+                "Image type not recognised, "
+                "must be either 'TILES' or 'COMBINED'."
+            )
+
+        field_info = epoch_info[epoch_info.FIELD_NAME == field].iloc[0]
+        field_start = Time(field_info.DATEOBS)
+        field_end = Time(field_info.DATEEND)
+        duration = field_end - field_start
+
+        hdu = fits.open(filename, mode="update")
+        hdu[0].header["DATE-OBS"] = field_start.fits
+        hdu[0].header["MJD-OBS"] = field_start.mjd
+        hdu[0].header["DATE-BEG"] = field_start.fits
+        hdu[0].header["DATE-END"] = field_end.fits
+        hdu[0].header["MJD-BEG"] = field_start.mjd
+        hdu[0].header["MJD-END"] = field_end.mjd
+        hdu[0].header["TELAPSE"] = duration.sec
+        hdu[0].header["TIMEUNIT"] = "s"
+        hdu.close()
+
+
+def gen_mocs_image(fits_file: str,
+                   outdir: Union[str, Path] = '.'
+                   ) -> Union[MOC, STMOC]:
+    """
+    Generate a MOC and STMOC for a single fits file.
+
+    Args:
+        fits_file: path to the fits file.
+        outdir: Path to the output directory.
+            Defaults to the current directory.
+
+    Returns:
+        The MOC and STMOC.
+
+    Raises:
+        Exception: Path does not exist.
+    """
+
+    if isinstance(outdir, str):
+        outdir = Path(outdir)
+
+    if not outdir.exists():
+        raise Exception("{} does not exist".format(outdir))
+
+    if not Path(fits_file).exists():
+        raise Exception("{} does not exist".format(fits_file))
+
+    moc = create_moc_from_fits(fits_file)
+
+    header = fits.getheader(fits_file, 0)
+    start = Time([header['DATE-BEG']])
+    end = Time([header['DATE-END']])
+    stmoc = STMOC.from_spatial_coverages(
+        start, end, [moc]
+    )
+
+    filename = os.path.split(fits_file)[1]
+    moc_name = filename.replace(".fits", ".moc.fits")
+    stmoc_name = filename.replace(".fits", ".stmoc.fits")
+
+    moc.write(outdir / moc_name, overwrite=True)
+    stmoc.write(outdir / stmoc_name, overwrite=True)
+
+    return moc, stmoc
+
+
+def gen_mocs_epoch(epoch: str,
+                   image_type: str,
+                   image_dir: str,
+                   epoch_path: str = None,
+                   outdir: Union[str, Path] = '.'
+                   ) -> None:
+    """
+    Generate MOCs and STMOCs for all images in a single epoch, and create a new
+    full pilot STMOC.
+
+    Args:
+        epoch: The epoch of interest.
+        image_type: `COMBINED` or `TILES`.
+        image_dir: The name of the folder containing the images to be updated.
+            E.g. `STOKESI_IMAGES`.
+        epoch_path: Full path to the folder containing the epoch.
+            Defaults to None, which will set the value based on the
+            `VAST_DATA_DIR` environment variable and `epoch`.
+        outdir: Path to the output directory.
+            Defaults to the current directory.
+
+    Returns:
+        None
+
+    Raises:
+        Exception: Path does not exist.
+    """
+
+    if isinstance(outdir, str):
+        outdir = Path(outdir)
+
+    if not outdir.exists():
+        raise Exception("{} does not exist".format(outdir))
+
+    vtm = VASTMOCS()
+    full_STMOC = vtm.load_pilot_stmoc()
+
+    if epoch_path is None:
+        epoch_path = _set_epoch_path(epoch)
+
+    raw_images = _get_epoch_images(epoch_path, image_type, image_dir)
+
+    for i, f in enumerate(raw_images):
+        themoc, thestmoc = gen_mocs_image(f)
+
+        if i == 0:
+            mastermoc = themoc
+            masterstemoc = thestmoc
+        else:
+            mastermoc = mastermoc.union(themoc)
+            masterstemoc = masterstemoc.union(thestmoc)
+
+    master_name = "VAST_PILOT_EPOCH{}.moc.fits".format(epoch)
+    master_stmoc_name = master_name.replace("moc", "stmoc")
+
+    mastermoc.write(outdir / master_name, overwrite=True)
+    masterstemoc.write(outdir / master_stmoc_name, overwrite=True)
+
+    full_STMOC = full_STMOC.union(masterstemoc)
+    full_STMOC.write(outdir / 'VAST_PILOT.stmoc.fits', overwrite=True)
+
+
+def _get_epoch_images(epoch_path: Union[str, Path],
+                      image_type: str,
+                      image_dir: str
+                      ) -> list:
+    """
+    Get all available images in a given epoch.
+
+    Args:
+        epoch_path: Path to the epoch of interest.
+        image_type: `COMBINED` or `TILES`.
+        image_dir: The name of the folder containing the images to be updated.
+            E.g. `STOKESI_IMAGES`.
+
+    Returns:
+        The list of images.
+
+    Raises:
+        Exception: Path does not exist.
+    """
+
+    P = Path(epoch_path) / image_type / image_dir
+    if not P.exists():
+        raise Exception("{} does not exist!".format(P))
+    raw_images = sorted(list(P.glob("*.fits")))
+
+    return raw_images
