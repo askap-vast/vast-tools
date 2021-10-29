@@ -57,7 +57,8 @@ from vasttools.utils import (
     pipeline_get_variable_metrics,
     gen_skycoord_from_df,
     calculate_vs_metric,
-    calculate_m_metric
+    calculate_m_metric,
+    create_moc_from_fits
 )
 from vasttools.survey import Image
 from vasttools.tools import add_credible_levels
@@ -735,64 +736,6 @@ class PipeRun(object):
 
         return new_PipeRun
 
-    def _distance_from_edge(self, x: np.ndarray) -> np.ndarray:
-        """
-        Analyses the binary array x and determines the distance from
-        the edge (0).
-
-        Args:
-            x: The binary array to analyse.
-
-        Returns:
-            Array each cell containing distance from the edge.
-        """
-        x = np.pad(x, 1, mode='constant')
-        dist = ndi.distance_transform_cdt(x, metric='taxicab')
-
-        return dist[1:-1, 1:-1]
-
-    def _create_moc_from_fits(
-        self, fits_img: str, max_depth: int = 9
-    ) -> mocpy.moc.moc.MOC:
-        """
-        Creates a MOC from (assuming) an ASKAP fits image
-        using the cheat method of analysing the edge pixels of the image.
-
-        Args:
-            fits_img: The path of the ASKAP FITS image to generate the MOC
-                from.
-            max_depth: Max depth parameter passed to the
-                MOC.from_polygon_skycoord() function, defaults to 9.
-
-        Returns:
-            The MOC generated from the FITS file.
-        """
-        image = Image(
-            'field', '1', 'I', 'None',
-            path=fits_img
-        )
-
-        image.get_img_data()
-
-        binary = (~np.isnan(image.data)).astype(int)
-        mask = self._distance_from_edge(binary)
-        x, y = np.where(mask == 1)
-
-        array_coords = np.column_stack((x, y))
-        coords = image.wcs.array_index_to_world_values(array_coords)
-        # need to know when to reverse by checking axis sizes.
-        coords = np.column_stack(coords)
-        coords = SkyCoord(coords[0], coords[1], unit=(u.deg, u.deg))
-
-        moc = MOC.from_polygon_skycoord(coords, max_depth=max_depth)
-
-        del image
-        del binary
-        del array_coords
-        gc.collect()
-
-        return moc
-
     def create_moc(
         self, max_depth: int = 9, ignore_large_run_warning: bool = False
     ) -> mocpy.MOC:
@@ -825,14 +768,14 @@ class PipeRun(object):
             )
             return
 
-        moc = self._create_moc_from_fits(
+        moc = create_moc_from_fits(
             images_to_use[0],
             max_depth=max_depth
         )
 
         if images_to_use.shape[0] > 1:
             for img in images_to_use[1:]:
-                img_moc = self._create_moc_from_fits(
+                img_moc = create_moc_from_fits(
                     img,
                     max_depth
                 )
