@@ -8,15 +8,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Added
 - Added `read_selavy` function to read selavy catalogues of any format [#302](https://github.com/askap-vast/vast-tools/pull/302)
+- Added tools for new epoch addition: add datetimes to fits images create fields csv files, create and update MOCs [#298](https://github.com/askap-vast/vast-tools/pull/298)
 
 #### Changed
 - Updated entire package to use `read_selavy` function in place of existing one-off calls [#302](https://github.com/askap-vast/vast-tools/pull/302)
+
+#### Changed
+- Minor documentation edits [#298](https://github.com/askap-vast/vast-tools/pull/298)
 
 #### Fixed
 
 #### Removed
 
 #### List of PRs
+- [#298](https://github.com/askap-vast/vast-tools/pull/298): tests, docs, feat: Added tools for new epoch addition
 
 ## [2.0.0](https://github.com/askap-vast/vast-tools/releases/v2.0.0) (2021-10-09)
 
