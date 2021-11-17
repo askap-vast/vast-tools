@@ -387,7 +387,6 @@ class Query:
         else:
             self.query_df = None
 
-
         self.fields_found = False
 
         # TODO: Remove warning in future release.
@@ -1981,7 +1980,15 @@ class Query:
             freqs.append(freq)
             field_per_epochs.append([i, field, sbid, date, freq])
 
-        return fields, primary_field, epochs, field_per_epochs, sbids, dateobs, freqs
+        return_vals = (fields,
+                       primary_field,
+                       epochs,
+                       field_per_epochs,
+                       sbids,
+                       dateobs,
+                       freqs
+                       )
+        return
 
     def _get_planets_epoch_df_template(self) -> pd.DataFrame:
         """

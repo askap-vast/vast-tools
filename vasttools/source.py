@@ -412,7 +412,7 @@ class Source:
             msg = f"{self.name} has no measurements!"
             self.logger.error(msg)
             raise SourcePlottingError(msg)
-        
+
         # Build figure and labels
         fig = plt.figure(figsize=figsize)
         ax = fig.add_subplot(111)
@@ -437,7 +437,7 @@ class Source:
             measurements_df[flux_col] = measurements_df[flux_col].abs()
 
         ax.set_ylabel(label)
-        
+
         markers = ['o', 's', 'D', '*', 'X', 'd', 'p']
         grouped_df = measurements_df.groupby('obs_freq')
         for i, (freq, measurements) in enumerate(grouped_df):
@@ -454,7 +454,7 @@ class Source:
                         np.nan,
                         yerr=np.nan,
                         label='{} MHz'.format(freq)
-                       )
+                        )
 
             self.logger.debug("Plotting upper limit")
             if self.pipeline:
@@ -541,7 +541,7 @@ class Source:
                     c='k',
                     linestyle="none",
                     markerfacecolor=markerfacecolor
-                    )
+                )
 
         if use_forced_for_all:
             detections = measurements_df
