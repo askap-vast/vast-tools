@@ -440,6 +440,7 @@ class Source:
 
         markers = ['o', 's', 'D', '*', 'X', 'd', 'p']
         grouped_df = measurements_df.groupby('obs_freq')
+        self.logger.debug("Frequencies: {}".format(grouped_df.groups.keys()))
         for i, (freq, measurements) in enumerate(grouped_df):
             self.logger.debug("Plotting {} MHz data".format(freq))
             marker = markers[i]
@@ -453,7 +454,9 @@ class Source:
             ax.errorbar(np.nan,
                         np.nan,
                         yerr=np.nan,
-                        label='{} MHz'.format(freq)
+                        label='{} MHz'.format(freq),
+                        c='k',
+                        marker=marker
                         )
 
             self.logger.debug("Plotting upper limit")
@@ -510,6 +513,7 @@ class Source:
             if use_forced_for_all:
                 detections = measurements
             else:
+                print(upper_lim_mask)
                 detections = measurements[
                     ~upper_lim_mask
                 ]
@@ -542,6 +546,12 @@ class Source:
                     linestyle="none",
                     markerfacecolor=markerfacecolor
                 )
+
+        self.logger.debug("Plotting finished.")
+        if self.pipeline:
+            upper_lim_mask = measurements_df.forced
+        else:
+            upper_lim_mask = measurements_df.detection == False
 
         if use_forced_for_all:
             detections = measurements_df
