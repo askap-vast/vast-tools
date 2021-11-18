@@ -450,12 +450,12 @@ class Source:
         sm._A = []
         
         #Markers for each frequency
-        markers = ['o', 's', 'D', '*', 'X', 'd', 'p']
+        markers = ['o', 'D', '*', 'X', 's', 'd', 'p']
         
         self.logger.debug("Frequencies: {}".format(freqs))
         for i, (freq, measurements) in enumerate(grouped_df):
             self.logger.debug("Plotting {} MHz data".format(freq))
-            marker = markers[i]
+            marker = markers[i % len(markers)]
             marker_colour = sm.to_rgba(freq)
             plot_dates = measurements['dateobs']
             self.logger.debug(plot_dates)
@@ -463,15 +463,6 @@ class Source:
                 plot_dates = Time(plot_dates.to_numpy()).mjd
             elif start_date:
                 plot_dates = (plot_dates-start_date)/pd.Timedelta(1, unit='d')
-
-            # dummy point for legend
-            ax.errorbar(np.nan,
-                        np.nan,
-                        yerr=np.nan,
-                        label='{} MHz'.format(freq),
-                        c=marker_colour,
-                        marker=marker
-                        )
 
             self.logger.debug("Plotting upper limit")
             if self.pipeline:
@@ -547,7 +538,6 @@ class Source:
                 markerfacecolor = 'w'
                 label = 'Forced'
             else:
-                #marker = 'o'
                 markerfacecolor = marker_colour
                 label = 'Selavy'
             if (~upper_lim_mask).any():
@@ -603,6 +593,20 @@ class Source:
             date_form = mdates.DateFormatter("%Y-%m-%d")
             ax.xaxis.set_major_formatter(date_form)
             ax.xaxis.set_major_locator(mdates.AutoDateLocator(maxticks=15))
+        
+        # dummy points for legend - needs to be after fig.autofmt_xdate() call
+        for i, freq in enumerate(freqs):
+            marker = markers[i]
+            marker_colour = sm.to_rgba(freq)
+            
+            ax.errorbar(np.nan,
+                        np.nan,
+                        yerr=np.nan,
+                        ls='',
+                        label='{} MHz'.format(freq),
+                        c=marker_colour,
+                        marker=marker
+                        )
 
         ax.grid(grid)
 
