@@ -1029,6 +1029,7 @@ class Query:
             by=['name', 'dateobs']
         ).reset_index(drop=True)
 
+        self.logger.debug("Adding files...")
         self.sources_df[
             ['selavy', 'image', 'rms']
         ] = self.sources_df[['epoch', 'field', 'sbid']].apply(
@@ -1122,13 +1123,14 @@ class Query:
         if self.settings['search_around']:
             meta['index'] = 'i'
 
+        self.logger.debug("Getting components...")
         results = (
             dd.from_pandas(self.sources_df, self.ncpu)
             .groupby('selavy')
             .apply(
                 self._get_components,
                 meta=meta,
-            ).compute(num_workers=self.ncpu, scheduler='processes')
+            ).compute(num_workers=self.ncpu, scheduler='single-threaded')
         )
 
         if not results.empty:

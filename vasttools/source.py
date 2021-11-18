@@ -438,13 +438,27 @@ class Source:
 
         ax.set_ylabel(label)
 
-        markers = ['o', 's', 'D', '*', 'X', 'd', 'p']
+        
         grouped_df = measurements_df.groupby('obs_freq')
-        self.logger.debug("Frequencies: {}".format(grouped_df.groups.keys()))
+        freqs = list(grouped_df.groups.keys())
+        
+        #Colours for each frequency
+        freq_cmap = plt.cm.get_cmap('viridis')
+        cNorm  = matplotlib.colors.Normalize(vmin=min(freqs), vmax=max(freqs)*1.1)
+        scalarMap = matplotlib.cm.ScalarMappable(norm=cNorm, cmap=freq_cmap)
+        sm = scalarMap
+        sm._A = []
+        
+        #Markers for each frequency
+        markers = ['o', 's', 'D', '*', 'X', 'd', 'p']
+        
+        self.logger.debug("Frequencies: {}".format(freqs))
         for i, (freq, measurements) in enumerate(grouped_df):
             self.logger.debug("Plotting {} MHz data".format(freq))
             marker = markers[i]
+            marker_colour = sm.to_rgba(freq)
             plot_dates = measurements['dateobs']
+            self.logger.debug(plot_dates)
             if mjd:
                 plot_dates = Time(plot_dates.to_numpy()).mjd
             elif start_date:
@@ -455,7 +469,7 @@ class Source:
                         np.nan,
                         yerr=np.nan,
                         label='{} MHz'.format(freq),
-                        c='k',
+                        c=marker_colour,
                         marker=marker
                         )
 
@@ -490,9 +504,9 @@ class Source:
                     label = "Forced"
                 else:
                     value_col = err_value_col = 'rms_image'
-                    marker = "_"
+                    #marker = "_"
                     uplims = True
-                    markerfacecolor = 'k'
+                    markerfacecolor = marker_colour
                     label = 'Upper limit'
             if upper_lim_mask.any():
                 upperlim_points = ax.errorbar(
@@ -503,7 +517,7 @@ class Source:
                     uplims=uplims,
                     lolims=False,
                     marker=marker,
-                    c='k',
+                    c=marker_colour,
                     linestyle="none",
                     markerfacecolor=markerfacecolor
                 )
@@ -533,8 +547,8 @@ class Source:
                 markerfacecolor = 'w'
                 label = 'Forced'
             else:
-                marker = 'o'
-                markerfacecolor = 'k'
+                #marker = 'o'
+                markerfacecolor = marker_colour
                 label = 'Selavy'
             if (~upper_lim_mask).any():
                 detection_points = ax.errorbar(
@@ -542,7 +556,7 @@ class Source:
                     detections[flux_col],
                     yerr=detections[err_value_col],
                     marker=marker,
-                    c='k',
+                    c=marker_colour,
                     linestyle="none",
                     markerfacecolor=markerfacecolor
                 )
