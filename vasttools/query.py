@@ -73,7 +73,6 @@ warnings.filterwarnings('ignore',
 HOST_NCPU = cpu_count()
 numexpr.set_num_threads(int(HOST_NCPU / 4))
 
-
 class QueryInitError(Exception):
     """
     A defined error for a problem encountered in the initialisation.
@@ -1771,8 +1770,9 @@ class Query:
                 3: 'O',
                 4: 'O',
                 5: 'O',
+                6: 'O',
             }
-
+            self.logger.debug("Running field matching...")
             self.fields_df[[
                 'fields',
                 'primary_field',
@@ -1796,7 +1796,7 @@ class Query:
                     result_type='expand'
                 ).compute(num_workers=self.ncpu, scheduler='processes')
             )
-
+            self.logger.debug("Finished field matching.")
             self.fields_df = self.fields_df.dropna()
             if self.fields_df.empty:
                 raise Exception(
@@ -1988,7 +1988,7 @@ class Query:
                        dateobs,
                        freqs
                        )
-        return
+        return return_vals
 
     def _get_planets_epoch_df_template(self) -> pd.DataFrame:
         """
