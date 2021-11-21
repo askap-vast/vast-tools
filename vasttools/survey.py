@@ -44,9 +44,14 @@ def load_field_centres() -> pd.DataFrame:
         Dataframe containing the field centres.
     """
     with importlib.resources.path(
-        "vasttools.data.csvs", "vast_field_centres.csv"
+        "vasttools.data.csvs", "low_field_centres.csv"
     ) as field_centres_csv:
         field_centres = pd.read_csv(field_centres_csv)
+
+    with importlib.resources.path(
+        "vasttools.data.csvs", "mid_field_centres.csv"
+    ) as field_centres_csv:
+        field_centres.append(pd.read_csv(field_centres_csv))
 
     return field_centres
 
@@ -104,6 +109,14 @@ def load_fields_file(epoch: str) -> pd.DataFrame:
             'vasttools.data.csvs', 'vast_epoch12_info.csv'),
         "13": importlib.resources.path(
             'vasttools.data.csvs', 'vast_epoch13_info.csv'),
+        "17": importlib.resources.path(
+            'vasttools.data.csvs', 'vast_epoch17_info.csv'),
+        "18": importlib.resources.path(
+            'vasttools.data.csvs', 'vast_epoch18_info.csv'),
+        "19": importlib.resources.path(
+            'vasttools.data.csvs', 'vast_epoch19_info.csv'),
+        "20": importlib.resources.path(
+            'vasttools.data.csvs', 'vast_epoch20_info.csv'),
     }
 
     with paths[epoch] as fields_csv:
@@ -167,7 +180,7 @@ def get_supported_epochs() -> List[str]:
 
 class Fields:
     """
-    Class to represent the VAST Pilot survey fields of a given epoch.
+    Class to represent the VAST Pilot survey fields of a given epoch(s).
 
     Attributes:
         fields (pandas.core.frame.DataFrame):
@@ -178,12 +191,12 @@ class Fields:
             make up each field in the epoch.
     """
 
-    def __init__(self, epoch: str) -> None:
+    def __init__(self, epochs: Union[str, list]) -> None:
         """
         Constructor method.
 
         Args:
-            epoch: The epoch number of fields to collect.
+            epochs: The epoch number(s) of fields to collect.
 
         Returns:
             None
@@ -191,7 +204,14 @@ class Fields:
         self.logger = logging.getLogger('vasttools.survey.Fields')
         self.logger.debug('Created Fields instance')
 
-        self.fields = load_fields_file(epoch)
+        if type(epochs) == str:
+            epochs = list(epochs)
+
+        field_dfs = []
+        for i, epoch in epochs:
+            field_dfs.append(load_fields_file(epoch))
+
+        self.fields = pd.concat(field_dfs)
         # Epoch 99 has some empty beam directions (processing failures)
         # Drop them and any issue rows in the future.
         self.fields.dropna(inplace=True)
