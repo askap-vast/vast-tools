@@ -226,6 +226,7 @@ def _create_fields_df(epoch_num: str,
 
     Raises:
         Exception: Path does not exist.
+        Exception: No data available for epoch.
     """
     field_columns = ['FIELD_NAME', 'SBID', 'SCAN_START', 'SCAN_LEN']
 
@@ -233,9 +234,16 @@ def _create_fields_df(epoch_num: str,
     if not vast_db.exists():
         raise Exception("{} does not exist!".format(vast_db))
 
-    if type(epoch_num) is int:
-        epoch_num = str(epoch_num)
-    epoch = vast_db / 'epoch_{}'.format(epoch_num.replace('x', ''))
+    if type(epoch_num) is str:
+        epoch_num = int(epoch_num.replace('x', ''))#.lstrip('0')
+    
+    descrip_df = pd.read_csv(vast_db / 'description.csv', index_col='EPOCH')
+    
+    if epoch_num not in descrip_df.index:
+        raise Exception("No data available for epoch {}".format(epoch_num))
+    obs_freq = descrip_df.OBS_FREQ.loc[epoch_num]
+
+    epoch = vast_db / 'epoch_{}'.format(epoch_num)
 
     beam_files = list(epoch.glob('beam_inf_*.csv'))
     beam_df = _create_beam_df(beam_files)
@@ -284,8 +292,10 @@ def _create_fields_df(epoch_num: str,
                                           'PSF_MAJOR': 'BMAJ',
                                           'PSF_MINOR': 'BMIN',
                                           'PSF_ANGLE': 'BPA'})
+    epoch_csv['OBS_FREQ'] = [obs_freq]*len(epoch_csv)
     epoch_csv = epoch_csv.loc[:, [
         'SBID',
+        'OBS_FREQ',
         'FIELD_NAME',
         'BEAM',
         'RA_HMS',
