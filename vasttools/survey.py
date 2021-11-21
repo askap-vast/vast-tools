@@ -207,7 +207,7 @@ class Fields:
             field_dfs.append(load_fields_file(epoch))
 
         self.fields = pd.concat(field_dfs)
-        self.fields = load_fields_file(epoch)
+        print(self.fields)
         # Epoch 99 has some empty beam directions (processing failures)
         # Drop them and any issue rows in the future.
         self.fields.dropna(inplace=True)

@@ -1738,7 +1738,7 @@ class Query:
             base_epoch = '0'
             base_fc = 'RACS'
         else:
-            base_epoch = '1'
+            base_epoch = ['1','18']
             base_fc = 'VAST'
 
         fields = Fields(base_epoch)
@@ -1764,6 +1764,7 @@ class Query:
 
         if self.query_df is not None:
             self.fields_df = self.query_df.copy()
+            print(self.fields_df)
 
             meta = {
                 0: 'O',
@@ -1807,6 +1808,8 @@ class Query:
             self.fields_df = self.fields_df.explode(
                 'field_per_epoch'
             ).reset_index(drop=True)
+
+            print(self.fields_df)
 
             self.fields_df[
                 ['epoch', 'field', 'sbid', 'dateobs', 'obs_freq']
@@ -1990,6 +1993,7 @@ class Query:
                        dateobs,
                        freqs
                        )
+        print(return_vals)
         return return_vals
 
     def _get_planets_epoch_df_template(self) -> pd.DataFrame:
