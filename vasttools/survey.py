@@ -21,7 +21,7 @@ from astropy.wcs import WCS
 from astropy.wcs.utils import skycoord_to_pixel
 from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
 from radio_beam import Beam
-from typing import Tuple, Optional, List
+from typing import Tuple, Optional, List, Union
 
 from vasttools import RELEASED_EPOCHS
 
@@ -186,12 +186,12 @@ class Fields:
             make up each field in the epoch.
     """
 
-    def __init__(self, epoch: str) -> None:
+    def __init__(self, epochs: Union[str,list]) -> None:
         """
         Constructor method.
 
         Args:
-            epoch: The epoch number of fields to collect.
+            epochs: The epoch number(s) of fields to collect.
 
         Returns:
             None
