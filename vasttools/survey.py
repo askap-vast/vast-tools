@@ -104,6 +104,14 @@ def load_fields_file(epoch: str) -> pd.DataFrame:
             'vasttools.data.csvs', 'vast_epoch12_info.csv'),
         "13": importlib.resources.path(
             'vasttools.data.csvs', 'vast_epoch13_info.csv'),
+        "17": importlib.resources.path(
+            'vasttools.data.csvs', 'vast_epoch17_info.csv'),
+        "18": importlib.resources.path(
+            'vasttools.data.csvs', 'vast_epoch18_info.csv'),
+        "19": importlib.resources.path(
+            'vasttools.data.csvs', 'vast_epoch19_info.csv'),
+        "20": importlib.resources.path(
+            'vasttools.data.csvs', 'vast_epoch20_info.csv'),
     }
 
     with paths[epoch] as fields_csv:
@@ -191,6 +199,14 @@ class Fields:
         self.logger = logging.getLogger('vasttools.survey.Fields')
         self.logger.debug('Created Fields instance')
 
+        if type(epochs) == str:
+            epochs = list(epochs)
+
+        field_dfs = []
+        for epoch in epochs:
+            field_dfs.append(load_fields_file(epoch))
+
+        self.fields = pd.concat(field_dfs)
         self.fields = load_fields_file(epoch)
         # Epoch 99 has some empty beam directions (processing failures)
         # Drop them and any issue rows in the future.
