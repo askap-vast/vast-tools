@@ -35,7 +35,7 @@ warnings.filterwarnings(
 
 def load_field_centres() -> pd.DataFrame:
     """
-    Loads the field centres csv file as a dataframe for use.
+    Loads the field centres csv files as a dataframe for use.
 
     Columns present are, 'field', 'centre-ra' and 'centre-dec'.
     The coordinates are in units of degrees.
@@ -44,9 +44,16 @@ def load_field_centres() -> pd.DataFrame:
         Dataframe containing the field centres.
     """
     with importlib.resources.path(
-        "vasttools.data.csvs", "vast_field_centres.csv"
+        "vasttools.data.csvs", "low_field_centres.csv"
     ) as field_centres_csv:
-        field_centres = pd.read_csv(field_centres_csv)
+        low_centres = pd.read_csv(field_centres_csv)
+
+    with importlib.resources.path(
+        "vasttools.data.csvs", "mid_field_centres.csv"
+    ) as field_centres_csv:
+        mid_centres = pd.read_csv(field_centres_csv)
+
+    field_centres = pd.concat([low_centres, mid_centres])
 
     return field_centres
 
