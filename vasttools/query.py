@@ -1735,7 +1735,7 @@ class Query:
         )
 
         if self.racs:
-            base_epoch = '0'
+            base_epoch = ['0','14']
             base_fc = 'RACS'
         else:
             base_epoch = ['1','18']
@@ -1743,6 +1743,7 @@ class Query:
 
         fields = Fields(base_epoch)
         field_centres = load_field_centres()
+        print(field_centres)
         field_centres = field_centres.loc[
             field_centres['field'].str.contains(base_fc)
         ].reset_index()
@@ -1799,6 +1800,7 @@ class Query:
                     result_type='expand'
                 ).compute(num_workers=self.ncpu, scheduler='processes')
             )
+
             self.logger.debug("Finished field matching.")
             self.fields_df = self.fields_df.dropna()
             if self.fields_df.empty:
@@ -1822,7 +1824,8 @@ class Query:
                 'field_per_epoch',
                 'epochs',
                 'sbids',
-                'dates'
+                'dates',
+                'freqs'
             ]
 
             self.fields_df = self.fields_df.drop(
@@ -1993,7 +1996,7 @@ class Query:
                        dateobs,
                        freqs
                        )
-        print(return_vals)
+        #print(return_vals)
         return return_vals
 
     def _get_planets_epoch_df_template(self) -> pd.DataFrame:
