@@ -36,7 +36,7 @@ def get_measurements() -> pd.DataFrame:
         The dataframe containing the source measurements.
     """
     def _get_measurements(pipeline: bool = False,
-                          multi_freq: bool = False
+                          multi_freq: bool = True
                           ) -> pd.DataFrame:
         """
         The workhorse function to load the measurements.
@@ -597,14 +597,14 @@ class TestSource:
         Returns:
             None
         """
-        source = source_instance()
+        source = source_instance(multi_freq=False)
 
         lightcurve = source.plot_lightcurve(
             use_forced_for_limits=use_forced_for_limits,
             use_forced_for_all=use_forced_for_all
         )
 
-        meas_df = get_measurements()
+        meas_df = get_measurements(multi_freq=False)
         expected_values = {}
 
         if use_forced_for_limits:
