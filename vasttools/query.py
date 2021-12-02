@@ -1744,7 +1744,7 @@ class Query:
 
         fields = Fields(base_epoch)
         field_centres = load_field_centres()
-        print(field_centres)
+
         field_centres = field_centres.loc[
             field_centres['field'].str.contains(base_fc)
         ].reset_index()
@@ -1766,8 +1766,6 @@ class Query:
 
         if self.query_df is not None:
             self.fields_df = self.query_df.copy()
-            print(self.fields_df)
-
             meta = {
                 0: 'O',
                 1: 'U',
@@ -1811,8 +1809,6 @@ class Query:
             self.fields_df = self.fields_df.explode(
                 'field_per_epoch'
             ).reset_index(drop=True)
-
-            print(self.fields_df)
 
             self.fields_df[
                 ['epoch', 'field', 'sbid', 'dateobs', 'obs_freq']
@@ -1997,7 +1993,6 @@ class Query:
                        dateobs,
                        freqs
                        )
-        # print(return_vals)
         return return_vals
 
     def _get_planets_epoch_df_template(self) -> pd.DataFrame:
