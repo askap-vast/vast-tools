@@ -23,7 +23,7 @@ from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
 from radio_beam import Beam
 from typing import Tuple, Optional, List, Union
 
-from vasttools import RELEASED_EPOCHS
+from vasttools import RELEASED_EPOCHS, OBSERVED_EPOCHS
 
 warnings.filterwarnings('ignore', category=AstropyWarning, append=True)
 warnings.filterwarnings(
@@ -79,9 +79,10 @@ def load_fields_file(epoch: str) -> pd.DataFrame:
         if len(str(epoch)) > 2 and epoch.startswith('0'):
             epoch = epoch[1:]
         if epoch not in RELEASED_EPOCHS:
-            raise ValueError(
-                f'Epoch {epoch} is not available or is not a valid epoch.'
-            )
+            if epoch not in OBSERVED_EPOCHS:
+                raise ValueError(
+                    f'Epoch {epoch} is not available or is not a valid epoch.'
+                )
 
     paths = {
         "0": importlib.resources.path(
@@ -217,7 +218,7 @@ class Fields:
             field_dfs.append(load_fields_file(epoch))
 
         self.fields = pd.concat(field_dfs)
-        print(self.fields)
+
         # Epoch 99 has some empty beam directions (processing failures)
         # Drop them and any issue rows in the future.
         self.fields.dropna(inplace=True)
