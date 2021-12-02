@@ -299,7 +299,7 @@ def _create_fields_df(epoch_num: str,
                                           'PSF_MINOR': 'BMIN',
                                           'PSF_ANGLE': 'BPA'})
 
-    epoch_csv['OBS_FREQ'] = [obs_freq]*len(epoch_csv)
+    epoch_csv['OBS_FREQ'] = [obs_freq] * len(epoch_csv)
     epoch_csv = epoch_csv.loc[:, [
         'SBID',
         'OBS_FREQ',

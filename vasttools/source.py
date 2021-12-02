@@ -444,7 +444,7 @@ class Source:
         # Colours for each frequency
         freq_cmap = plt.cm.get_cmap('viridis')
         cNorm = matplotlib.colors.Normalize(
-            vmin=min(freqs), vmax=max(freqs)*1.1)
+            vmin=min(freqs), vmax=max(freqs) * 1.1)
         scalarMap = matplotlib.cm.ScalarMappable(norm=cNorm, cmap=freq_cmap)
         sm = scalarMap
         sm._A = []
@@ -462,7 +462,7 @@ class Source:
             if mjd:
                 plot_dates = Time(plot_dates.to_numpy()).mjd
             elif start_date:
-                plot_dates = (plot_dates-start_date)/pd.Timedelta(1, unit='d')
+                plot_dates = (plot_dates - start_date) / pd.Timedelta(1, unit='d')
 
             self.logger.debug("Plotting upper limit")
             if self.pipeline:
