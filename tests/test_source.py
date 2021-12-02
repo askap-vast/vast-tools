@@ -479,6 +479,9 @@ class TestSource:
         )
 
         meas_df = get_measurements(pipeline=pipeline)
+        freqs = meas_df.obs_freq
+        num_freqs = len(set(freqs))
+        
         expected_values = {}
 
         if peak_flux:
@@ -502,10 +505,16 @@ class TestSource:
             temp_meas_df = meas_df[meas_df['detection'] == True]
             expected_values['2_x'] = temp_meas_df['dateobs'].to_numpy()
             expected_values['2_y'] = temp_meas_df[flux_col].to_numpy()
-
+        
         for i, line in enumerate(lightcurve.axes[0].lines):
             # skip the extra upper limit symbol on the lines
             if not pipeline and i == 1:
+                continue
+                
+            # skip the dummy points
+            if not pipeline and i > 2:
+                continue
+            elif pipeline and i > 1:
                 continue
             x_data = line.get_xdata()
             y_data = line.get_ydata()
@@ -577,10 +586,10 @@ class TestSource:
         else:
             expected_values['0_x'] = meas_df['dateobs'].to_numpy()
             expected_values['0_y'] = meas_df['f_flux_peak'].to_numpy()
-
+            
         for i, line in enumerate(lightcurve.axes[0].lines):
-            # skip the extra upper limit symbol on the lines
-            if use_forced_for_limits and i == 1:
+            # skip dummy points
+            if i > 0:
                 continue
             x_data = line.get_xdata()
             y_data = line.get_ydata()
