@@ -263,10 +263,7 @@ def _create_fields_df(epoch_num: str,
                               left_on=['SBID', 'FIELD_NAME'],
                               right_on=['SBID', 'FIELD_NAME']
                               )
-    print(field_df)
-    print(beam_df)
-    print(vast_db)
-    print(epoch)
+
     # convert the coordinates to match format in tools v2.0.0
     coordinates = SkyCoord(
         ra=epoch_csv['RA_DEG'].to_numpy(),
