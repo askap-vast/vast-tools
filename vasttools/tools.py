@@ -164,8 +164,11 @@ def _create_beam_df(beam_files: list) -> pd.DataFrame:
                     ]
 
     for i, beam_file in enumerate(beam_files):
-        field = "VAST_" + \
-            beam_file.name.split('VAST_')[-1].split(beam_file.suffix)[0]
+        survey_str = "VAST_"
+        if "RACS" in beam_file.name:
+            survey_str = "RACS_"
+        field = survey_str + \
+            beam_file.name.split(survey_str)[-1].split(beam_file.suffix)[0]
         sbid = int(beam_file.name.split('beam_inf_')[-1].split('-')[0])
 
         temp = pd.read_csv(beam_file)
@@ -242,9 +245,9 @@ def _create_fields_df(epoch_num: str,
     if epoch_num not in descrip_df.index:
         raise Exception("No data available for epoch {}".format(epoch_num))
     obs_freq = descrip_df.OBS_FREQ.loc[epoch_num]
-
+    
     epoch = vast_db / 'epoch_{}'.format(epoch_num)
-
+    
     beam_files = list(epoch.glob('beam_inf_*.csv'))
     beam_df = _create_beam_df(beam_files)
 
@@ -255,12 +258,15 @@ def _create_fields_df(epoch_num: str,
 
     field_df = pd.read_csv(field_data)
     field_df = field_df.loc[:, field_columns]
-
+    
     epoch_csv = beam_df.merge(field_df,
                               left_on=['SBID', 'FIELD_NAME'],
                               right_on=['SBID', 'FIELD_NAME']
                               )
-
+    print(field_df)
+    print(beam_df)
+    print(vast_db)
+    print(epoch)
     # convert the coordinates to match format in tools v2.0.0
     coordinates = SkyCoord(
         ra=epoch_csv['RA_DEG'].to_numpy(),
@@ -292,6 +298,7 @@ def _create_fields_df(epoch_num: str,
                                           'PSF_MAJOR': 'BMAJ',
                                           'PSF_MINOR': 'BMIN',
                                           'PSF_ANGLE': 'BPA'})
+    
     epoch_csv['OBS_FREQ'] = [obs_freq]*len(epoch_csv)
     epoch_csv = epoch_csv.loc[:, [
         'SBID',

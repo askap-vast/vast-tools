@@ -245,6 +245,10 @@ def test__create_fields_df() -> None:
     out_df = vtt._create_fields_df('2', TEST_DATA_DIR / 'surveys_db')
 
     expected_df = pd.read_csv(TEST_DATA_DIR / 'vast_epoch2_info.csv')
+    
+    #print(out_df)
+    print(out_df.columns)
+    print(expected_df.columns)
 
     pd.testing.assert_frame_equal(out_df, expected_df)
 
