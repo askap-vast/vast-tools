@@ -154,14 +154,14 @@ def test_load_field_centres(mocker) -> None:
     assumed_path = "vasttools.data.csvs"
     low_filename = "low_field_centres.csv"
     mid_filename = "mid_field_centres.csv"
-    
+
     importlib_calls = [mocker.call(assumed_path, low_filename),
                        mocker.call(assumed_path, mid_filename)
-                      ]
-    
+                       ]
+
     side_effect = [pathlib.Path(assumed_path, low_filename),
                    pathlib.Path(assumed_path, mid_filename)
-                  ]
+                   ]
     read_csv_calls = [mocker.call(effect) for effect in side_effect]
 
     importlib_mocker = mocker.patch(

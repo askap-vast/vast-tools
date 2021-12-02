@@ -113,7 +113,7 @@ def load_fields_file(epoch: str) -> pd.DataFrame:
         "13": importlib.resources.path(
             'vasttools.data.csvs', 'vast_epoch13_info.csv'),
         "14": importlib.resources.path('vasttools.data.csvs',
-            'racs_mid_info.csv'),
+                                       'racs_mid_info.csv'),
         "17": importlib.resources.path(
             'vasttools.data.csvs', 'vast_epoch17_info.csv'),
         "18": importlib.resources.path(
@@ -196,7 +196,7 @@ class Fields:
             make up each field in the epoch.
     """
 
-    def __init__(self, epochs: Union[str,list]) -> None:
+    def __init__(self, epochs: Union[str, list]) -> None:
         """
         Constructor method.
 

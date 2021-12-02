@@ -238,16 +238,16 @@ def _create_fields_df(epoch_num: str,
         raise Exception("{} does not exist!".format(vast_db))
 
     if type(epoch_num) is str:
-        epoch_num = int(epoch_num.replace('x', ''))#.lstrip('0')
-    
+        epoch_num = int(epoch_num.replace('x', ''))  # .lstrip('0')
+
     descrip_df = pd.read_csv(vast_db / 'description.csv', index_col='EPOCH')
-    
+
     if epoch_num not in descrip_df.index:
         raise Exception("No data available for epoch {}".format(epoch_num))
     obs_freq = descrip_df.OBS_FREQ.loc[epoch_num]
-    
+
     epoch = vast_db / 'epoch_{}'.format(epoch_num)
-    
+
     beam_files = list(epoch.glob('beam_inf_*.csv'))
     beam_df = _create_beam_df(beam_files)
 
@@ -258,7 +258,7 @@ def _create_fields_df(epoch_num: str,
 
     field_df = pd.read_csv(field_data)
     field_df = field_df.loc[:, field_columns]
-    
+
     epoch_csv = beam_df.merge(field_df,
                               left_on=['SBID', 'FIELD_NAME'],
                               right_on=['SBID', 'FIELD_NAME']
@@ -298,7 +298,7 @@ def _create_fields_df(epoch_num: str,
                                           'PSF_MAJOR': 'BMAJ',
                                           'PSF_MINOR': 'BMIN',
                                           'PSF_ANGLE': 'BPA'})
-    
+
     epoch_csv['OBS_FREQ'] = [obs_freq]*len(epoch_csv)
     epoch_csv = epoch_csv.loc[:, [
         'SBID',

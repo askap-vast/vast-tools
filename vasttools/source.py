@@ -438,20 +438,20 @@ class Source:
 
         ax.set_ylabel(label)
 
-        
         grouped_df = measurements_df.groupby('obs_freq')
         freqs = list(grouped_df.groups.keys())
-        
-        #Colours for each frequency
+
+        # Colours for each frequency
         freq_cmap = plt.cm.get_cmap('viridis')
-        cNorm  = matplotlib.colors.Normalize(vmin=min(freqs), vmax=max(freqs)*1.1)
+        cNorm = matplotlib.colors.Normalize(
+            vmin=min(freqs), vmax=max(freqs)*1.1)
         scalarMap = matplotlib.cm.ScalarMappable(norm=cNorm, cmap=freq_cmap)
         sm = scalarMap
         sm._A = []
-        
-        #Markers for each frequency
+
+        # Markers for each frequency
         markers = ['o', 'D', '*', 'X', 's', 'd', 'p']
-        
+
         self.logger.debug("Frequencies: {}".format(freqs))
         for i, (freq, measurements) in enumerate(grouped_df):
             self.logger.debug("Plotting {} MHz data".format(freq))
@@ -495,7 +495,6 @@ class Source:
                     label = "Forced"
                 else:
                     value_col = err_value_col = 'rms_image'
-                    #marker = "_"
                     uplims = True
                     markerfacecolor = marker_colour
                     label = 'Upper limit'
@@ -593,12 +592,12 @@ class Source:
             date_form = mdates.DateFormatter("%Y-%m-%d")
             ax.xaxis.set_major_formatter(date_form)
             ax.xaxis.set_major_locator(mdates.AutoDateLocator(maxticks=15))
-        
+
         # dummy points for legend - needs to be after fig.autofmt_xdate() call
         for i, freq in enumerate(freqs):
             marker = markers[i]
             marker_colour = sm.to_rgba(freq)
-            
+
             ax.errorbar(np.nan,
                         np.nan,
                         yerr=np.nan,

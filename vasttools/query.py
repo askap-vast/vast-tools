@@ -73,6 +73,7 @@ warnings.filterwarnings('ignore',
 HOST_NCPU = cpu_count()
 numexpr.set_num_threads(int(HOST_NCPU / 4))
 
+
 class QueryInitError(Exception):
     """
     A defined error for a problem encountered in the initialisation.
@@ -1735,10 +1736,10 @@ class Query:
         )
 
         if self.racs:
-            base_epoch = ['0','14']
+            base_epoch = ['0', '14']
             base_fc = 'RACS'
         else:
-            base_epoch = ['1','18']
+            base_epoch = ['1', '18']
             base_fc = 'VAST'
 
         fields = Fields(base_epoch)
@@ -1996,7 +1997,7 @@ class Query:
                        dateobs,
                        freqs
                        )
-        #print(return_vals)
+        # print(return_vals)
         return return_vals
 
     def _get_planets_epoch_df_template(self) -> pd.DataFrame:
