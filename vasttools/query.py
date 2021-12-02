@@ -2136,7 +2136,10 @@ class Query:
 
         return catalog
 
-    def _get_epochs(self, req_epochs: str, incl_observed: bool = False) -> List[str]:
+    def _get_epochs(self,
+                    req_epochs: str,
+                    incl_observed: bool = False
+                    ) -> List[str]:
         """
         Parse the list of epochs to query.
 

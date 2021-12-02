@@ -462,7 +462,8 @@ class Source:
             if mjd:
                 plot_dates = Time(plot_dates.to_numpy()).mjd
             elif start_date:
-                plot_dates = (plot_dates - start_date) / pd.Timedelta(1, unit='d')
+                plot_dates -= start_date
+                plot_dates /= pd.Timedelta(1, unit='d')
 
             self.logger.debug("Plotting upper limit")
             if self.pipeline:
