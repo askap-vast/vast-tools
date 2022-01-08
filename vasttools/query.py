@@ -1610,6 +1610,12 @@ class Query:
                 dir_name,
                 "STOKES{}_SELAVY".format(self.settings['stokes'])
             ))
+            
+            corrected_folder = Path(
+                str(selavy_folder).replace("_SELAVY","_SELAVY_CORRECTED")
+                )
+            if corrected_folder.exists():
+                selavy_folder = corrected_folder
 
             # VAST-P1 format
             selavy_file_fmt = (
