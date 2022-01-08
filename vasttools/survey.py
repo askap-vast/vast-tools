@@ -21,7 +21,7 @@ from astropy.wcs import WCS
 from astropy.wcs.utils import skycoord_to_pixel
 from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
 from radio_beam import Beam
-from typing import Tuple, Optional, List
+from typing import Tuple, Optional, List, Union
 
 from vasttools import RELEASED_EPOCHS
 
@@ -208,7 +208,7 @@ class Fields:
             epochs = list(epochs)
 
         field_dfs = []
-        for i, epoch in epochs:
+        for epoch in epochs:
             field_dfs.append(load_fields_file(epoch))
 
         self.fields = pd.concat(field_dfs)
@@ -336,7 +336,7 @@ class Image:
                 "COMBINED",
                 "STOKES{}_IMAGES".format(self.stokes.upper())
             )
-            self.imgname = '{}.EPOCH{}.{}.fits'.format(
+            self.imgname = '{}.EPOCH{}.{}.conv.fits'.format(
                 self.field,
                 RELEASED_EPOCHS[self.epoch],
                 self.stokes.upper()
@@ -389,10 +389,11 @@ class Image:
             None
         """
         if self.rmspath is None:
-            self.rmsname = self.imgname.replace('image.', 'noiseMap.image.')
+            print("No rmspath")
+            self.rmsname = "noiseMap.{}".format(self.imgname)
             self.rmspath = self.imgpath.replace(
                 "_IMAGES", "_RMSMAPS"
-            ).replace('image.', 'noiseMap.image.')
+            ).replace(self.imgname, self.rmsname)
 
         if os.path.isfile(self.rmspath):
             self.rms_fail = False
@@ -469,3 +470,4 @@ class Image:
         ]
 
         return values
+

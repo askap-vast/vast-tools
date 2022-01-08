@@ -1079,7 +1079,6 @@ class Query:
             self.logger.info("Done.")
 
         meta = {
-            '#': 'f',
             'island_id': 'U',
             'component_id': 'U',
             'component_name': 'U',
@@ -1330,12 +1329,8 @@ class Query:
         else:
             source_image_type = "COMBINED"
         source_islands = self.settings['islands']
-
-        source_df = group.drop(
-            columns=[
-                '#'
-            ]
-        )
+        
+        source_df = group
 
         source_df = source_df.sort_values('dateobs').reset_index(drop=True)
 
@@ -1614,7 +1609,7 @@ class Query:
             # VAST-P1 format
             selavy_file_fmt = (
                 "selavy-image.i.{}.SB{}.cont."
-                "taylor.0.restored.{}.xml".format(
+                "taylor.0.restored.{}.corrected.xml".format(
                     row.field, row.sbid, cat_type
                 )
             )
@@ -1624,7 +1619,7 @@ class Query:
                 # VAST-P2 format
                 selavy_file_fmt = (
                     "selavy-image.i.{}.SB{}.cont."
-                    "taylor.0.restored.conv.{}.xml".format(
+                    "taylor.0.restored.conv.{}.corrected.xml".format(
                         row.field, row.sbid, cat_type
                     )
                 )
@@ -1645,7 +1640,7 @@ class Query:
 
             
 
-            selavy_file_fmt = "selavy-{}.EPOCH{}.{}.selavy.{}.xml".format(
+            selavy_file_fmt = "selavy-{}.EPOCH{}.{}.conv.{}.xml".format(
                 row.field,
                 RELEASED_EPOCHS[row.epoch],
                 self.settings['stokes'],
@@ -2513,3 +2508,4 @@ class FieldQuery:
             savename = "{}_field_info.csv".format(self.field)
             self.field_info.to_csv(savename, index=False)
             self.logger.info("Saved output to {}.".format(savename))
+
