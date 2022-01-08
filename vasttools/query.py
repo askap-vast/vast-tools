@@ -1596,6 +1596,11 @@ class Query:
         Returns:
             The path to the selavy file of interest
         """
+        
+        if self.settings['islands']:
+            cat_type = 'islands'
+        else:
+            cat_type = 'components'
 
         if self.settings['tiles']:
             dir_name = "TILES"
@@ -1608,9 +1613,9 @@ class Query:
 
             # VAST-P1 format
             selavy_file_fmt = (
-                "selavy-image.i.SB{}.cont.{}."
-                "linmos.taylor.0.restored.components.txt".format(
-                    row.sbid, row.field
+                "selavy-image.i.{}.SB{}.cont."
+                "taylor.0.restored.{}.xml".format(
+                    row.field, row.sbid, cat_type
                 )
             )
             selavy_path = selavy_folder / selavy_file_fmt
@@ -1619,8 +1624,8 @@ class Query:
                 # VAST-P2 format
                 selavy_file_fmt = (
                     "selavy-image.i.{}.SB{}.cont."
-                    "taylor.0.restored.conv.components.txt".format(
-                        row.field, row.sbid
+                    "taylor.0.restored.conv.{}.xml".format(
+                        row.field, row.sbid, cat_type
                     )
                 )
                 selavy_path = selavy_folder / selavy_file_fmt
@@ -1638,12 +1643,9 @@ class Query:
                 "STOKES{}_SELAVY".format(self.settings['stokes'])
             ))
 
-            if self.settings['islands']:
-                cat_type = 'islands'
-            else:
-                cat_type = 'components'
+            
 
-            selavy_file_fmt = "{}.EPOCH{}.{}.selavy.{}.txt".format(
+            selavy_file_fmt = "selavy-{}.EPOCH{}.{}.selavy.{}.xml".format(
                 row.field,
                 RELEASED_EPOCHS[row.epoch],
                 self.settings['stokes'],
