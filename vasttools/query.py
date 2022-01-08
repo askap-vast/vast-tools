@@ -1608,15 +1608,9 @@ class Query:
                 self.base_folder,
                 epoch_string,
                 dir_name,
-                "STOKES{}_SELAVY".format(self.settings['stokes'])
+                "STOKES{}_SELAVY_CORRECTED".format(self.settings['stokes'])
             ))
             
-            corrected_folder = Path(
-                str(selavy_folder).replace("_SELAVY","_SELAVY_CORRECTED")
-                )
-            if corrected_folder.exists():
-                selavy_folder = corrected_folder
-
             # VAST-P1 format
             selavy_file_fmt = (
                 "selavy-image.i.{}.SB{}.cont."
