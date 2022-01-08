@@ -392,7 +392,7 @@ class Image:
             self.rmsname = self.imgname.replace('image.', 'noiseMap.image.')
             self.rmspath = self.imgpath.replace(
                 "_IMAGES", "_RMSMAPS"
-            ).replace('.fits', '_rms.fits')
+            ).replace('image.', 'noiseMap.image.')
 
         if os.path.isfile(self.rmspath):
             self.rms_fail = False
