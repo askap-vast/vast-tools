@@ -1667,26 +1667,31 @@ class Query:
             RELEASED_EPOCHS[row.epoch]
         )
 
+        img_dir = "STOKES{}_IMAGES".format(self.settings['stokes'])
+        rms_dir = "STOKES{}_RMSMAPS".format(self.settings['stokes'])
+
         if self.settings['tiles']:
             dir_name = "TILES"
 
             image_file_fmt = (
-                "image.i.SB{}.cont.{}"
-                ".linmos.taylor.0.restored.fits".format(
-                    row.sbid, row.field
+                "image.i.{}.SB{}.cont"
+                ".taylor.0.restored.corrected.fits".format(
+                    row.field, row.sbid
                 )
             )
+            img_dir += "_CORRECTED"
+            rms_dir += "_CORRECTED"
 
         else:
             dir_name = "COMBINED"
 
-            image_file_fmt = "{}.EPOCH{}.{}.fits".format(
+            image_file_fmt = "{}.EPOCH{}.{}.conv.fits".format(
                 row.field,
                 RELEASED_EPOCHS[row.epoch],
                 self.settings['stokes'],
             )
 
-            rms_file_fmt = "{}.EPOCH{}.{}_rms.fits".format(
+            rms_file_fmt = "noiseMap.{}.EPOCH{}.{}.conv.fits".format(
                 row.field,
                 RELEASED_EPOCHS[row.epoch],
                 self.settings['stokes'],
@@ -1698,7 +1703,7 @@ class Query:
             self.base_folder,
             epoch_string,
             dir_name,
-            "STOKES{}_IMAGES".format(self.settings['stokes']),
+            img_dir,
             image_file_fmt
         )
 
@@ -1709,7 +1714,7 @@ class Query:
                 self.base_folder,
                 epoch_string,
                 dir_name,
-                "STOKES{}_RMSMAPS".format(self.settings['stokes']),
+                rms_dir,
                 rms_file_fmt
             )
 

@@ -385,7 +385,6 @@ class Image:
             None
         """
         if self.rmspath is None:
-            print("No rmspath")
             self.rmsname = "noiseMap.{}".format(self.imgname)
             self.rmspath = self.imgpath.replace(
                 "_IMAGES", "_RMSMAPS"
