@@ -1387,7 +1387,7 @@ class Query:
         m = group.iloc[0]
         image_name = image.split("/")[-1]
         rms = m['rms']
-        bkg = rms.replace('rms', 'bkg')
+        bkg = rms.replace('noiseMap', 'meanMap')
 
         field = m['field']
         epoch = m['epoch']
