@@ -387,7 +387,6 @@ class Query:
         else:
             self.query_df = None
 
-
         self.fields_found = False
 
         # TODO: Remove warning in future release.
@@ -1598,7 +1597,7 @@ class Query:
         Returns:
             The path to the selavy file of interest
         """
-        
+
         if self.settings['islands']:
             cat_type = 'islands'
         else:
@@ -1612,16 +1611,16 @@ class Query:
                 dir_name,
                 "STOKES{}_SELAVY_CORRECTED".format(self.settings['stokes'])
             ))
-            
+
             selavy_file_fmt = (
                 "selavy-image.i.{}.SB{}.cont."
                 "taylor.0.restored.{}.corrected.xml".format(
                     row.field, row.sbid, cat_type
                 )
             )
-            
+
             selavy_path = selavy_folder / selavy_file_fmt
-            
+
             # Some epochs don't have .conv.
             if not selavy_path.is_file():
                 selavy_path = Path(str(selavy_path).replace('.conv', ''))
@@ -1634,8 +1633,6 @@ class Query:
                 dir_name,
                 "STOKES{}_SELAVY".format(self.settings['stokes'])
             ))
-
-            
 
             selavy_file_fmt = "selavy-{}.EPOCH{}.{}.conv.{}.xml".format(
                 row.field,
