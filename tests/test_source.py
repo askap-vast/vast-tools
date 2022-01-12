@@ -631,8 +631,8 @@ class TestSource:
             'vasttools.source.Cutout2D'
         )
 
-        pandas_read_fwf_mocker = mocker.patch(
-            'vasttools.source.pd.read_fwf',
+        pandas_read_selavy_mocker = mocker.patch(
+            'vasttools.source.read_selavy',
             return_value=dummy_selavy_components
         )
 
