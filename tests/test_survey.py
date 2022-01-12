@@ -379,7 +379,7 @@ class TestImage:
         image = init_Image()
 
         # Use the defaults on the init_Image fixture.
-        expected_filename = "VAST_0012+00.EPOCH01.I.fits"
+        expected_filename = "VAST_0012+00.EPOCH01.I.conv.fits"
         expected_path = (
             "/mocked/basefolder/EPOCH01/COMBINED/"
             f"STOKESI_IMAGES/{expected_filename}"
@@ -413,11 +413,11 @@ class TestImage:
 
         # Use the defaults on the init_Image fixture.
         expected_filename = (
-            "image.i.SB9667.cont.VAST_0012+00.linmos.taylor.0.restored.fits"
+            "image.i.VAST_0012+00.SB9667.cont.taylor.0.restored.fits"
         )
         expected_path = (
             "/mocked/basefolder/EPOCH01/TILES/"
-            f"STOKESI_IMAGES/{expected_filename}"
+            f"STOKESI_IMAGES_CORRECTED/{expected_filename}"
         )
 
         assert image.imgpath == expected_path
@@ -447,7 +447,7 @@ class TestImage:
         image = init_Image(stokes='V')
 
         # Use the defaults on the init_Image fixture.
-        expected_filename = "VAST_0012+00.EPOCH01.V.fits"
+        expected_filename = "VAST_0012+00.EPOCH01.V.conv.fits"
         expected_path = (
             "/mocked/basefolder/EPOCH01/COMBINED/"
             f"STOKESV_IMAGES/{expected_filename}"
@@ -480,11 +480,11 @@ class TestImage:
 
         # Use the defaults on the init_Image fixture.
         expected_filename = (
-            "image.v.SB9667.cont.VAST_0012+00.linmos.taylor.0.restored.fits"
+            "image.v.VAST_0012+00.SB9667.cont.taylor.0.restored.fits"
         )
         expected_path = (
             "/mocked/basefolder/EPOCH01/TILES/"
-            f"STOKESV_IMAGES/{expected_filename}"
+            f"STOKESV_IMAGES_CORRECTED/{expected_filename}"
         )
 
         assert image.imgpath == expected_path
@@ -569,7 +569,7 @@ class TestImage:
 
         image = init_Image()
 
-        expected_filename = "VAST_0012+00.EPOCH01.I.fits"
+        expected_filename = "VAST_0012+00.EPOCH01.I.conv.fits"
         expected_path = (
             "/mocked/basefolder/EPOCH01/COMBINED/"
             f"STOKESI_IMAGES/{expected_filename}"
@@ -608,7 +608,7 @@ class TestImage:
         )
 
         # Use the defaults on the init_Image fixture.
-        expected_filename = "VAST_0012+00.EPOCH01.I_rms.fits"
+        expected_filename = "noiseMap.VAST_0012+00.EPOCH01.I.conv.fits"
         expected_path = (
             "/mocked/basefolder/EPOCH01/COMBINED/"
             f"STOKESI_RMSMAPS/{expected_filename}"
