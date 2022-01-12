@@ -53,9 +53,8 @@ from typing import List, Tuple, Optional, Union
 from radio_beam import Beam
 
 from vasttools import RELEASED_EPOCHS
-from vasttools.utils import crosshair
 from vasttools.survey import Image
-from vasttools.utils import filter_selavy_components
+from vasttools.utils import crosshair, filter_selavy_components, read_selavy
 
 # run crosshair to set up the marker.
 crosshair()
@@ -758,8 +757,7 @@ class Source:
                 }
             )
         else:
-            selavy_components = pd.read_fwf(
-                row.selavy, skiprows=[1, ], usecols=[
+            selavy_components = read_selavy(row.selavy, cols=[
                     'island_id',
                     'ra_deg_cont',
                     'dec_deg_cont',
