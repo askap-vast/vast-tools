@@ -53,6 +53,8 @@ from tabulate import tabulate
 
 from typing import Optional, List, Tuple, Dict
 
+from pathlib import Path
+
 from vasttools import RELEASED_EPOCHS, ALLOWED_PLANETS
 from vasttools.survey import Fields, Image
 from vasttools.survey import (
