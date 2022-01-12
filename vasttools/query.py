@@ -1589,15 +1589,72 @@ class Query:
 
         return master
 
+    def _get_selavy_path(self, epoch_string: str, row: pd.Series) -> str:
+        """
+        Get the path to the selavy file for a specific row of the dataframe.
+        Args:
+            epoch_string: The name of the epoch in the form of 'EPOCHXX'.
+            row: row: The input row of the dataframe.
+        Returns:
+            The path to the selavy file of interest
+        """
+        
+        if self.settings['islands']:
+            cat_type = 'islands'
+        else:
+            cat_type = 'components'
+
+        if self.settings['tiles']:
+            dir_name = "TILES"
+            selavy_folder = Path(os.path.join(
+                self.base_folder,
+                epoch_string,
+                dir_name,
+                "STOKES{}_SELAVY_CORRECTED".format(self.settings['stokes'])
+            ))
+            
+            selavy_file_fmt = (
+                "selavy-image.i.{}.SB{}.cont."
+                "taylor.0.restored.{}.corrected.xml".format(
+                    row.field, row.sbid, cat_type
+                )
+            )
+            
+            selavy_path = selavy_folder / selavy_file_fmt
+            
+            # Some epochs don't have .conv.
+            if not selavy_path.is_file():
+                selavy_path = Path(str(selavy_path).replace('.conv', ''))
+
+        else:
+            dir_name = "COMBINED"
+            selavy_folder = Path(os.path.join(
+                self.base_folder,
+                epoch_string,
+                dir_name,
+                "STOKES{}_SELAVY".format(self.settings['stokes'])
+            ))
+
+            
+
+            selavy_file_fmt = "selavy-{}.EPOCH{}.{}.conv.{}.xml".format(
+                row.field,
+                RELEASED_EPOCHS[row.epoch],
+                self.settings['stokes'],
+                cat_type
+            )
+
+            selavy_path = selavy_folder / selavy_file_fmt
+
+        return str(selavy_path)
+
     def _add_files(self, row: pd.Series) -> Tuple[str, str, str]:
         """
         Adds the file paths for the image, selavy catalogues and
         rms images for each source to be queried.
-
         Args:
             row: The input row of the dataframe (this function is called with
                 a .apply())
-
         Returns:
             The paths of the image, selavy catalogue and rms image.
         """
@@ -1605,65 +1662,43 @@ class Query:
             RELEASED_EPOCHS[row.epoch]
         )
 
-        if self.settings['islands']:
-            cat_type = 'islands'
-        else:
-            cat_type = 'components'
+        img_dir = "STOKES{}_IMAGES".format(self.settings['stokes'])
+        rms_dir = "STOKES{}_RMSMAPS".format(self.settings['stokes'])
 
         if self.settings['tiles']:
-
             dir_name = "TILES"
 
-            selavy_file_fmt = (
-                "selavy-image.i.SB{}.cont.{}."
-                "linmos.taylor.0.restored.components.txt".format(
-                    row.sbid, row.field
-                )
-            )
-
             image_file_fmt = (
-                "image.i.SB{}.cont.{}"
-                ".linmos.taylor.0.restored.fits".format(
-                    row.sbid, row.field
+                "image.i.{}.SB{}.cont"
+                ".taylor.0.restored.corrected.fits".format(
+                    row.field, row.sbid
                 )
             )
+            img_dir += "_CORRECTED"
+            rms_dir += "_CORRECTED"
 
         else:
-
             dir_name = "COMBINED"
 
-            selavy_file_fmt = "{}.EPOCH{}.{}.selavy.{}.txt".format(
-                row.field,
-                RELEASED_EPOCHS[row.epoch],
-                self.settings['stokes'],
-                cat_type
-            )
-
-            image_file_fmt = "{}.EPOCH{}.{}.fits".format(
+            image_file_fmt = "{}.EPOCH{}.{}.conv.fits".format(
                 row.field,
                 RELEASED_EPOCHS[row.epoch],
                 self.settings['stokes'],
             )
 
-            rms_file_fmt = "{}.EPOCH{}.{}_rms.fits".format(
+            rms_file_fmt = "noiseMap.{}.EPOCH{}.{}.conv.fits".format(
                 row.field,
                 RELEASED_EPOCHS[row.epoch],
                 self.settings['stokes'],
             )
 
-        selavy_file = os.path.join(
-            self.base_folder,
-            epoch_string,
-            dir_name,
-            "STOKES{}_SELAVY".format(self.settings['stokes']),
-            selavy_file_fmt
-        )
+        selavy_file = self._get_selavy_path(epoch_string, row)
 
         image_file = os.path.join(
             self.base_folder,
             epoch_string,
             dir_name,
-            "STOKES{}_IMAGES".format(self.settings['stokes']),
+            img_dir,
             image_file_fmt
         )
 
@@ -1674,7 +1709,7 @@ class Query:
                 self.base_folder,
                 epoch_string,
                 dir_name,
-                "STOKES{}_RMSMAPS".format(self.settings['stokes']),
+                rms_dir,
                 rms_file_fmt
             )
 
