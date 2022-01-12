@@ -1616,9 +1616,10 @@ class Query:
                     row.field, row.sbid, cat_type
                 )
             )
-            
+
             selavy_path = selavy_folder / selavy_file_fmt
-             # Some epochs don't have .conv.
+
+            # Some epochs don't have .conv.
             if not selavy_path.is_file():
                 selavy_path = Path(str(selavy_path).replace('.conv', ''))
 
@@ -1637,7 +1638,7 @@ class Query:
                 self.settings['stokes'],
                 cat_type
             )
-        
+
             selavy_path = selavy_folder / selavy_file_fmt
 
         return str(selavy_path)

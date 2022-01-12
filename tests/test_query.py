@@ -810,6 +810,84 @@ class TestQuery:
             fields_df_expected_result()
         )
 
+    
+    @pytest.mark.parametrize("tiles, conv, islands, expected_file",
+                             [(True,
+                               False,
+                               None,
+                               'selavy-image.i.VAST_2118-06A.SB9668.cont'
+                               '.taylor.0.restored.components.corrected.xml'
+                               ),
+                              (True,
+                               True,
+                               None,
+                               'selavy-image.i.VAST_2118-06A.SB9668.cont'
+                               '.taylor.0.restored.conv.components.corrected'
+                               '.xml'
+                               ),
+                              (False,
+                               None,
+                               True,
+                               'selavy-VAST_2118-06A.EPOCH01.I.conv'
+                               '.islands.xml'
+                               ),
+                              (False,
+                               None,
+                               False,
+                               'selavy-VAST_2118-06A.EPOCH01.I.conv'
+                               '.components.xml'
+                               )
+                              ],
+                             ids=('tiles-noconv',
+                                  'tiles-conv',
+                                  'comb-islands',
+                                  'comb-noislands'
+                                  )
+                             )
+    def test__get_selavy_path(
+        self,
+        vast_query_psrj2129_fields: vtq.Query,
+        tiles: bool,
+        conv: list,
+        islands: bool,
+        expected_file: str,
+        mocker
+    ) -> None:
+        """
+        Tests adding the paths to the combined data in the query.
+        Assumes the standard VAST Pilot directory and file structure.
+        Args:
+            vast_query_psrj2129_fields: The dummy Query instance that includes
+                a search for PSR J2129-04 with the included found fields data.
+            tiles: Whether to query the TILES or COMBINED data.
+            conv: Whether `.conv` is present in the filename.
+                This argument is only relevant if tiles is True
+            islands: Whether to return the islands or components catalogue.
+                This argument is only relevant if tiles is False.
+            expected_file: The expected filename to be returned.
+            mocker: The pytest-mock mocker object.
+        Returns:
+            None
+        """
+        epoch_string = 'EPOCH01'
+        test_query = vast_query_psrj2129_fields
+
+        test_query.settings['tiles'] = tiles
+        test_query.settings['islands'] = islands
+
+        row = test_query.fields_df.loc[0]
+        
+        if conv is not None:
+            mock_selavy_isfile = mocker.patch(
+                'vasttools.query.Path.is_file',
+                return_value=conv
+            )
+
+        path = test_query._get_selavy_path(epoch_string, row)
+
+        assert os.path.split(path)[1] == expected_file
+
+
     def test__add_files_combined(
         self,
         vast_query_psrj2129_fields: vtq.Query,
