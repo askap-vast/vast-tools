@@ -365,10 +365,10 @@ class Image:
             None
         """
         if self.rmspath is None:
-            self.rmsname = self.imgname.replace('.fits', '_rms.fits')
+            self.rmsname = "noiseMap.{}".format(self.imgname)
             self.rmspath = self.imgpath.replace(
                 "_IMAGES", "_RMSMAPS"
-            ).replace('.fits', '_rms.fits')
+            ).replace(self.imgname, self.rmsname)
 
         if os.path.isfile(self.rmspath):
             self.rms_fail = False
