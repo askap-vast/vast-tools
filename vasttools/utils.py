@@ -20,6 +20,7 @@ from astropy import units as u
 from astropy.coordinates import SkyCoord, Angle
 from astroquery.simbad import Simbad
 from astropy.time import Time
+from astropy.table import Table
 from astropy.coordinates import solar_system_ephemeris
 from astropy.coordinates import get_body, get_moon
 from astropy.io import fits
@@ -315,6 +316,24 @@ def build_SkyCoord(catalog: pd.DataFrame) -> SkyCoord:
     return src_coords
 
 
+def read_selavy(selavy_path: str, cols: list = None) -> pd.DataFrame:
+    """
+    Load a selavy catalogue from file. Can handle VOTables and csv files.
+    Args:
+        selavy_path: Path to the file
+        cols: Columns to use. Defaults to None, which returns all columns
+    Returns:
+        Dataframe containing the catalogue
+    """
+
+    df = Table.read(
+        selavy_path, format="votable", use_names_over_ids=True
+    ).to_pandas()
+    if cols is not None:
+        df = df[df.columns.intersection(cols)]
+
+    return df
+    
 def filter_selavy_components(
     selavy_df: pd.DataFrame,
     selavy_sc: SkyCoord,
