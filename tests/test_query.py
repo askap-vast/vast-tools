@@ -833,11 +833,11 @@ class TestQuery:
 
         expected_results = (
             '/testing/folder/EPOCH01/COMBINED/STOKESI_SELAVY'
-            '/VAST_2118-06A.EPOCH01.I.selavy.components.txt',
+            '/selavy-VAST_2118-06A.EPOCH01.I.conv.components.xml',
             '/testing/folder/EPOCH01/COMBINED/STOKESI_IMAGES'
-            '/VAST_2118-06A.EPOCH01.I.fits',
+            '/VAST_2118-06A.EPOCH01.I.conv.fits',
             '/testing/folder/EPOCH01/COMBINED/STOKESI_RMSMAPS'
-            '/VAST_2118-06A.EPOCH01.I_rms.fits'
+            '/noiseMap.VAST_2118-06A.EPOCH01.I.conv.fits'
         )
 
         assert results == expected_results
@@ -869,12 +869,12 @@ class TestQuery:
         )
 
         expected_results = (
-            '/testing/folder/EPOCH01/TILES/STOKESI_SELAVY'
-            '/selavy-image.i.SB9668.cont.VAST_2118-06A.linmos'
-            '.taylor.0.restored.components.txt',
-            '/testing/folder/EPOCH01/TILES/STOKESI_IMAGES'
-            '/image.i.SB9668.cont.VAST_2118-06A.linmos'
-            '.taylor.0.restored.fits',
+            '/testing/folder/EPOCH01/TILES/STOKESI_SELAVY_CORRECTED'
+            '/selavy-image.i.VAST_2118-06A.SB9668.cont.taylor.0'
+            '.restored.components.corrected.xml',
+            '/testing/folder/EPOCH01/TILES/STOKESI_IMAGES_CORRECTED'
+            '/image.i.VAST_2118-06A.SB9668.cont.taylor.0.'
+            'restored.corrected.fits',
             'N/A'
         )
 
@@ -905,11 +905,11 @@ class TestQuery:
 
         expected_results = (
             '/testing/folder/EPOCH01/COMBINED/STOKESV_SELAVY'
-            '/VAST_2118-06A.EPOCH01.V.selavy.components.txt',
+            '/selavy-VAST_2118-06A.EPOCH01.V.conv.components.xml',
             '/testing/folder/EPOCH01/COMBINED/STOKESV_IMAGES'
-            '/VAST_2118-06A.EPOCH01.V.fits',
+            '/VAST_2118-06A.EPOCH01.V.conv.fits',
             '/testing/folder/EPOCH01/COMBINED/STOKESV_RMSMAPS'
-            '/VAST_2118-06A.EPOCH01.V_rms.fits'
+            '/noiseMap.VAST_2118-06A.EPOCH01.V.conv.fits'
         )
 
         assert results == expected_results
