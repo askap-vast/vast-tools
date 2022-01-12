@@ -294,14 +294,19 @@ class Image:
                 self.base_folder,
                 "EPOCH{}".format(RELEASED_EPOCHS[self.epoch]),
                 "TILES",
-                "STOKES{}_IMAGES".format(self.stokes.upper())
+                "STOKES{}_IMAGES_CORRECTED".format(self.stokes.upper())
             )
             img_template = (
-                'image.{}.SB{}.cont.{}.linmos.taylor.0.restored.fits'
+                'image.{}.{}.SB{}.cont.taylor.0.restored.fits'
             )
             self.imgname = img_template.format(
-                self.stokes.lower(), self.sbid, self.field
+                self.stokes.lower(), self.field, self.sbid
             )
+
+            if not os.path.exists(os.path.join(img_folder, self.imgname)):
+                self.imgname = self.imgname.replace(".corrected,",
+                                                    ".conv.corrected."
+                                                    )
         else:
             img_folder = os.path.join(
                 self.base_folder,
@@ -309,7 +314,7 @@ class Image:
                 "COMBINED",
                 "STOKES{}_IMAGES".format(self.stokes.upper())
             )
-            self.imgname = '{}.EPOCH{}.{}.fits'.format(
+            self.imgname = '{}.EPOCH{}.{}.conv.fits'.format(
                 self.field,
                 RELEASED_EPOCHS[self.epoch],
                 self.stokes.upper()
