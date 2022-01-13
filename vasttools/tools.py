@@ -244,7 +244,15 @@ def _create_fields_df(epoch_num: str,
 
     if epoch_num not in descrip_df.index:
         raise Exception("No data available for epoch {}".format(epoch_num))
-    obs_freq = descrip_df.OBS_FREQ.loc[epoch_num]
+
+    sky_freq = descrip_df.OBS_FREQ.loc[epoch_num]
+
+    if sky_freq == 864.5:
+        obs_freq = 887.5
+    elif sky_freq == 1272.5:
+        obs_freq = 1367.5
+    else:
+        raise Exception("Sky frequency is not in a recognised VAST band")
 
     epoch = vast_db / 'epoch_{}'.format(epoch_num)
 
