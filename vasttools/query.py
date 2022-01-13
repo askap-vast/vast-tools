@@ -55,7 +55,7 @@ from typing import Optional, List, Tuple, Dict
 
 from pathlib import Path
 
-from vasttools import RELEASED_EPOCHS, ALLOWED_PLANETS
+from vasttools import RELEASED_EPOCHS, OBSERVED_EPOCHS, ALLOWED_PLANETS
 from vasttools.survey import Fields, Image
 from vasttools.survey import (
     load_fields_file, load_field_centres, get_fields_per_epoch_info
@@ -135,7 +135,8 @@ class Query:
         sort_output: bool = False,
         forced_fits: bool = False,
         forced_cluster_threshold: float = 1.5,
-        forced_allow_nan: bool = False
+        forced_allow_nan: bool = False,
+        incl_observed: bool = False
     ) -> None:
         """
         Constructor method.
@@ -178,6 +179,9 @@ class Query:
             forced_allow_nan: `allow_nan` value passed to the
                 forced photometry. If False then any cluster containing a
                 NaN is ignored. Defaults to False.
+            incl_observed: Include epochs that have been observed, but not
+                released, in the query. This should only be used when finding
+                fields, not querying data. Defaults to False.
 
         Returns:
             None
@@ -332,7 +336,9 @@ class Query:
 
         self.base_folder = the_base_folder
 
-        self.settings['epochs'] = self._get_epochs(epochs)
+        self.settings['epochs'] = self._get_epochs(epochs,
+                                                   incl_observed=incl_observed
+                                                   )
         self.settings['stokes'] = self._get_stokes(stokes)
 
         self.settings['crossmatch_radius'] = Angle(
@@ -1032,6 +1038,7 @@ class Query:
             by=['name', 'dateobs']
         ).reset_index(drop=True)
 
+        self.logger.debug("Adding files...")
         self.sources_df[
             ['selavy', 'image', 'rms']
         ] = self.sources_df[['epoch', 'field', 'sbid']].apply(
@@ -1125,6 +1132,7 @@ class Query:
         if self.settings['search_around']:
             meta['index'] = 'i'
 
+        self.logger.debug("Getting components...")
         results = (
             dd.from_pandas(self.sources_df, self.ncpu)
             .groupby('selavy')
@@ -1765,14 +1773,15 @@ class Query:
         )
 
         if self.racs:
-            base_epoch = '0'
+            base_epoch = ['0', '14']
             base_fc = 'RACS'
         else:
-            base_epoch = '1'
+            base_epoch = ['1', '18']
             base_fc = 'VAST'
 
         fields = Fields(base_epoch)
         field_centres = load_field_centres()
+
         field_centres = field_centres.loc[
             field_centres['field'].str.contains(base_fc)
         ].reset_index()
@@ -1794,7 +1803,6 @@ class Query:
 
         if self.query_df is not None:
             self.fields_df = self.query_df.copy()
-
             meta = {
                 0: 'O',
                 1: 'U',
@@ -1802,15 +1810,17 @@ class Query:
                 3: 'O',
                 4: 'O',
                 5: 'O',
+                6: 'O',
             }
-
+            self.logger.debug("Running field matching...")
             self.fields_df[[
                 'fields',
                 'primary_field',
                 'epochs',
                 'field_per_epoch',
                 'sbids',
-                'dates'
+                'dates',
+                'freqs'
             ]] = (
                 dd.from_pandas(self.fields_df, self.ncpu)
                 .apply(
@@ -1827,6 +1837,7 @@ class Query:
                 ).compute(num_workers=self.ncpu, scheduler='processes')
             )
 
+            self.logger.debug("Finished field matching.")
             self.fields_df = self.fields_df.dropna()
             if self.fields_df.empty:
                 raise Exception(
@@ -1837,7 +1848,7 @@ class Query:
             ).reset_index(drop=True)
 
             self.fields_df[
-                ['epoch', 'field', 'sbid', 'dateobs']
+                ['epoch', 'field', 'sbid', 'dateobs', 'obs_freq']
             ] = pd.DataFrame(
                 self.fields_df['field_per_epoch'].tolist(),
                 index=self.fields_df.index
@@ -1847,7 +1858,8 @@ class Query:
                 'field_per_epoch',
                 'epochs',
                 'sbids',
-                'dates'
+                'dates',
+                'freqs'
             ]
 
             self.fields_df = self.fields_df.drop(
@@ -1957,6 +1969,7 @@ class Query:
         field_per_epochs = []
         sbids = []
         dateobs = []
+        freqs = []
 
         for i in self.settings['epochs']:
 
@@ -2003,11 +2016,21 @@ class Query:
             epochs.append(i)
             sbid = self._epoch_fields.loc[i, field]["SBID"]
             date = self._epoch_fields.loc[i, field]["DATEOBS"]
+            freq = self._epoch_fields.loc[i, field]["OBS_FREQ"]
             sbids.append(sbid)
             dateobs.append(date)
-            field_per_epochs.append([i, field, sbid, date])
+            freqs.append(freq)
+            field_per_epochs.append([i, field, sbid, date, freq])
 
-        return fields, primary_field, epochs, field_per_epochs, sbids, dateobs
+        return_vals = (fields,
+                       primary_field,
+                       epochs,
+                       field_per_epochs,
+                       sbids,
+                       dateobs,
+                       freqs
+                       )
+        return return_vals
 
     def _get_planets_epoch_df_template(self) -> pd.DataFrame:
         """
@@ -2144,18 +2167,27 @@ class Query:
 
         return catalog
 
-    def _get_epochs(self, req_epochs: str) -> List[str]:
+    def _get_epochs(self,
+                    req_epochs: str,
+                    incl_observed: bool = False
+                    ) -> List[str]:
         """
         Parse the list of epochs to query.
 
         Args:
             req_epochs: Requested epochs to query.
+            incl_observed: Include epochs that have been observed,
+                but not released. Defaults to False.
 
         Returns:
             Epochs to query, as a list of strings.
         """
 
-        available_epochs = sorted(RELEASED_EPOCHS, key=RELEASED_EPOCHS.get)
+        epoch_dict = RELEASED_EPOCHS.copy()
+
+        if incl_observed:
+            epoch_dict.update(OBSERVED_EPOCHS)
+        available_epochs = sorted(epoch_dict, key=epoch_dict.get)
         self.logger.debug("Available epochs: " + str(available_epochs))
 
         if req_epochs == 'all':
@@ -2269,15 +2301,18 @@ class FieldQuery:
         """
         Check that the field is a valid pilot survey field.
 
-        Epoch 1 is checked against as it is a complete observation.
+        We check against epochs 1 and 18 which are the first complete
+        low- and mid-band epochs respectively.
 
         Returns:
             Bool representing if field is valid.
         """
 
         epoch_01 = load_fields_file("1")
+        epoch_18 = load_fields_file("18")
+        base_fields = pd.concat(epoch_01, epoch_18)
         self.logger.debug("Field name: {}".format(self.field))
-        result = epoch_01['FIELD_NAME'].str.contains(
+        result = base_fields['FIELD_NAME'].str.contains(
             re.escape(self.field)
         ).any()
         self.logger.debug("Field found: {}".format(result))
@@ -2285,7 +2320,7 @@ class FieldQuery:
             self.logger.error(
                 "Field {} is not a valid field name!".format(self.field)
             )
-        del epoch_01
+        del epoch_01, epoch_18, base_fields
         return result
 
     def _get_beams(self) -> Dict[str, Beams]:
@@ -2341,13 +2376,15 @@ class FieldQuery:
             self.pilot_info = _pilot_info
         else:
             self.logger.debug("Building pilot info file.")
-            for i, val in enumerate(sorted(RELEASED_EPOCHS)):
+            epochs_dict = RELEASED_EPOCHS.copy()
+            epochs_dict.update(OBSERVED_EPOCHS)
+            for i, val in enumerate(sorted(epochs_dict)):
                 if i == 0:
                     self.pilot_info = load_fields_file(val)
-                    self.pilot_info["EPOCH"] = RELEASED_EPOCHS[val]
+                    self.pilot_info["EPOCH"] = epochs_dict[val]
                 else:
                     to_append = load_fields_file(val)
-                    to_append["EPOCH"] = RELEASED_EPOCHS[val]
+                    to_append["EPOCH"] = epochs_dict[val]
                     self.pilot_info = self.pilot_info.append(
                         to_append, sort=False
                     )
@@ -2362,6 +2399,7 @@ class FieldQuery:
             "EPOCH",
             "FIELD_NAME",
             "SBID",
+            "OBS_FREQ",
             "BEAM",
             "RA_HMS",
             "DEC_DMS",

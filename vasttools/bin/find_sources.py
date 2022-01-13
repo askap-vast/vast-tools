@@ -488,7 +488,8 @@ def main() -> None:
         sort_output=args.sort_output,
         forced_fits=args.forced_fits,
         forced_cluster_threshold=args.forced_cluster_threshold,
-        forced_allow_nan=args.forced_allow_nan
+        forced_allow_nan=args.forced_allow_nan,
+        incl_observed=args.find_fields
     )
 
     if args.find_fields:

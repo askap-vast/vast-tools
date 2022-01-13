@@ -21,9 +21,9 @@ from astropy.wcs import WCS
 from astropy.wcs.utils import skycoord_to_pixel
 from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
 from radio_beam import Beam
-from typing import Tuple, Optional, List
+from typing import Tuple, Optional, List, Union
 
-from vasttools import RELEASED_EPOCHS
+from vasttools import RELEASED_EPOCHS, OBSERVED_EPOCHS
 
 warnings.filterwarnings('ignore', category=AstropyWarning, append=True)
 warnings.filterwarnings(
@@ -35,7 +35,7 @@ warnings.filterwarnings(
 
 def load_field_centres() -> pd.DataFrame:
     """
-    Loads the field centres csv file as a dataframe for use.
+    Loads the field centres csv files as a dataframe for use.
 
     Columns present are, 'field', 'centre-ra' and 'centre-dec'.
     The coordinates are in units of degrees.
@@ -44,9 +44,16 @@ def load_field_centres() -> pd.DataFrame:
         Dataframe containing the field centres.
     """
     with importlib.resources.path(
-        "vasttools.data.csvs", "vast_field_centres.csv"
+        "vasttools.data.csvs", "low_field_centres.csv"
     ) as field_centres_csv:
-        field_centres = pd.read_csv(field_centres_csv)
+        low_centres = pd.read_csv(field_centres_csv)
+
+    with importlib.resources.path(
+        "vasttools.data.csvs", "mid_field_centres.csv"
+    ) as field_centres_csv:
+        mid_centres = pd.read_csv(field_centres_csv)
+
+    field_centres = pd.concat([low_centres, mid_centres])
 
     return field_centres
 
@@ -72,12 +79,14 @@ def load_fields_file(epoch: str) -> pd.DataFrame:
         if len(str(epoch)) > 2 and epoch.startswith('0'):
             epoch = epoch[1:]
         if epoch not in RELEASED_EPOCHS:
-            raise ValueError(
-                f'Epoch {epoch} is not available or is not a valid epoch.'
-            )
+            if epoch not in OBSERVED_EPOCHS:
+                raise ValueError(
+                    f'Epoch {epoch} is not available or is not a valid epoch.'
+                )
 
     paths = {
-        "0": importlib.resources.path('vasttools.data.csvs', 'racs_info.csv'),
+        "0": importlib.resources.path(
+            'vasttools.data.csvs', 'racs_low_info.csv'),
         "1": importlib.resources.path(
             'vasttools.data.csvs', 'vast_epoch01_info.csv'),
         "2": importlib.resources.path(
@@ -104,6 +113,16 @@ def load_fields_file(epoch: str) -> pd.DataFrame:
             'vasttools.data.csvs', 'vast_epoch12_info.csv'),
         "13": importlib.resources.path(
             'vasttools.data.csvs', 'vast_epoch13_info.csv'),
+        "14": importlib.resources.path('vasttools.data.csvs',
+                                       'racs_mid_info.csv'),
+        "17": importlib.resources.path(
+            'vasttools.data.csvs', 'vast_epoch17_info.csv'),
+        "18": importlib.resources.path(
+            'vasttools.data.csvs', 'vast_epoch18_info.csv'),
+        "19": importlib.resources.path(
+            'vasttools.data.csvs', 'vast_epoch19_info.csv'),
+        "20": importlib.resources.path(
+            'vasttools.data.csvs', 'vast_epoch20_info.csv'),
     }
 
     with paths[epoch] as fields_csv:
@@ -178,12 +197,12 @@ class Fields:
             make up each field in the epoch.
     """
 
-    def __init__(self, epoch: str) -> None:
+    def __init__(self, epochs: Union[str, list]) -> None:
         """
         Constructor method.
 
         Args:
-            epoch: The epoch number of fields to collect.
+            epochs: The epoch number(s) of fields to collect.
 
         Returns:
             None
@@ -191,7 +210,15 @@ class Fields:
         self.logger = logging.getLogger('vasttools.survey.Fields')
         self.logger.debug('Created Fields instance')
 
-        self.fields = load_fields_file(epoch)
+        if type(epochs) == str:
+            epochs = list(epochs)
+
+        field_dfs = []
+        for epoch in epochs:
+            field_dfs.append(load_fields_file(epoch))
+
+        self.fields = pd.concat(field_dfs)
+
         # Epoch 99 has some empty beam directions (processing failures)
         # Drop them and any issue rows in the future.
         self.fields.dropna(inplace=True)

@@ -35,13 +35,16 @@ def get_measurements() -> pd.DataFrame:
     Returns:
         The dataframe containing the source measurements.
     """
-    def _get_measurements(pipeline: bool = False) -> pd.DataFrame:
+    def _get_measurements(pipeline: bool = False,
+                          multi_freq: bool = True
+                          ) -> pd.DataFrame:
         """
         The workhorse function to load the measurements.
 
         Args:
             pipeline: If 'True' the pipeline version of measurements are
                 loaded in-place of the query version.
+            multi_freq: Include multifrequency data
 
         Returns:
             The dataframe containing the measurements.
@@ -52,6 +55,12 @@ def get_measurements() -> pd.DataFrame:
             filepath = TEST_DATA_DIR / 'psr-j2129-04-query-meas.csv'
         meas_df = pd.read_csv(filepath)
         meas_df['dateobs'] = pd.to_datetime(meas_df['dateobs'])
+
+        if multi_freq:
+            temp_df = meas_df.copy()
+            temp_df['obs_freq'] = 1272.5
+            meas_df = pd.concat([meas_df, temp_df], ignore_index=True)
+            del temp_df
 
         if not pipeline:
             meas_df['skycoord'] = meas_df[['ra', 'dec']].apply(
@@ -198,7 +207,8 @@ def source_instance(
     """
     def _get_source_instance(
         pipeline: bool = False,
-        add_cutout_data: bool = False
+        add_cutout_data: bool = False,
+        multi_freq: bool = False
     ):
         """
         The workhorse function that actually generates the source.
@@ -208,6 +218,7 @@ def source_instance(
                 the query measurements.
             add_cutout_data: If 'True' the cutout data is added to the
                 source instance before returning.
+            multi_freq: Include multifrequency data
 
         Returns:
             The vast tools Source instance for testing.
@@ -218,7 +229,7 @@ def source_instance(
             unit=(u.deg, u.deg)
         )
         name = 'PSR J2129-04'
-        meas_df = get_measurements(pipeline=pipeline)
+        meas_df = get_measurements(pipeline=pipeline, multi_freq=multi_freq)
 
         if pipeline:
             epochs = ['1', '2', '3', '4', '5', '6']
@@ -363,7 +374,9 @@ class TestSource:
             (10, 2, False, False, None),
             (2, 10, False, False, None),
             (2, 2, True, False, None),
-            (2, 2, False, True, pd.Timestamp('2019-10-30T10:11:56.9130'))
+            (2, 2, False, True, pd.Timestamp('2019-10-30T10:11:56.9130')),
+            (2, 2, True, False, None),
+            (2, 2, True, False, None),
         ]
     )
     def test_plot_lightcurve_errors(
@@ -425,20 +438,22 @@ class TestSource:
             )
 
     @pytest.mark.parametrize(
-        "pipeline,mjd,peak_flux,start_date",
+        "pipeline,mjd,peak_flux,start_date,multi_freq",
         [
-            (False, False, True, None),
-            (False, True, True, None),
-            (False, False, False, None),
+            (False, False, True, None, False),
+            (False, True, True, None, False),
+            (False, False, False, None, False),
             (False, False, True, pd.Timestamp(
                 '2019-10-30T10:11:56.9130'
-            )),
-            (True, False, True, None),
-            (True, True, True, None),
-            (True, False, False, None),
+            ), False),
+            (True, False, True, None, False),
+            (True, True, True, None, False),
+            (True, False, False, None, False),
             (True, False, True, pd.Timestamp(
                 '2019-10-30T10:11:56.9130', tz='utc'
-            )),
+            ), False),
+            (False, False, True, None, True),
+            (True, False, True, None, True),
         ]
     )
     def test_plot_lightcurve(
@@ -447,6 +462,7 @@ class TestSource:
         mjd: bool,
         peak_flux: bool,
         start_date: Optional[pd.Timestamp],
+        multi_freq: bool,
         source_instance: vts.Source,
         get_measurements: pd.DataFrame
     ) -> None:
@@ -464,13 +480,14 @@ class TestSource:
                 plot_lightcurve method.
             start_date: The start_date argument to be passed to the
                 plot_lightcurve method.
+            multi_freq: If `True` then multiple frequencies are plotted.
             source_instance: The pytest source_instance fixture.
             get_measurements: The pytest fixture that loads the measurements.
 
         Returns:
             None
         """
-        source = source_instance(pipeline=pipeline)
+        source = source_instance(pipeline=pipeline, multi_freq=multi_freq)
 
         lightcurve = source.plot_lightcurve(
             mjd=mjd,
@@ -478,7 +495,13 @@ class TestSource:
             start_date=start_date
         )
 
-        meas_df = get_measurements(pipeline=pipeline)
+        measurements_df = get_measurements(pipeline=pipeline,
+                                           multi_freq=multi_freq
+                                           )
+
+        grouped_df = measurements_df.groupby('obs_freq')
+        freqs = list(grouped_df.groups.keys())
+
         expected_values = {}
 
         if peak_flux:
@@ -486,32 +509,46 @@ class TestSource:
         else:
             flux_col = 'flux_int'
 
-        if pipeline:
-            temp_meas_df = meas_df[meas_df['forced'] == True]
-            expected_values['0_x'] = temp_meas_df['dateobs'].to_numpy()
-            expected_values['0_y'] = temp_meas_df[flux_col].to_numpy()
+        for i, (freq, meas_df) in enumerate(grouped_df):
+            expected_values[freq] = {}
+            if pipeline:
+                temp_df = meas_df[meas_df['forced'] == True]
+                expected_values[freq]['0_x'] = temp_df['dateobs'].to_numpy()
+                expected_values[freq]['0_y'] = temp_df[flux_col].to_numpy()
 
-            temp_meas_df = meas_df[meas_df['forced'] == False]
-            expected_values['1_x'] = temp_meas_df['dateobs'].to_numpy()
-            expected_values['1_y'] = temp_meas_df[flux_col].to_numpy()
-        else:
-            temp_meas_df = meas_df[meas_df['detection'] == False]
-            expected_values['0_x'] = temp_meas_df['dateobs'].to_numpy()
-            expected_values['0_y'] = temp_meas_df['rms_image'].to_numpy() * 5.
+                temp_df = meas_df[meas_df['forced'] == False]
+                expected_values[freq]['1_x'] = temp_df['dateobs'].to_numpy()
+                expected_values[freq]['1_y'] = temp_df[flux_col].to_numpy()
+            else:
+                temp_df = meas_df[meas_df['detection'] == False]
+                expected_values[freq]['0_x'] = temp_df['dateobs'].to_numpy()
+                upper_lims = temp_df['rms_image'].to_numpy() * 5.
+                expected_values[freq]['0_y'] = upper_lims
 
-            temp_meas_df = meas_df[meas_df['detection'] == True]
-            expected_values['2_x'] = temp_meas_df['dateobs'].to_numpy()
-            expected_values['2_y'] = temp_meas_df[flux_col].to_numpy()
+                temp_df = meas_df[meas_df['detection'] == True]
+                expected_values[freq]['2_x'] = temp_df['dateobs'].to_numpy()
+                expected_values[freq]['2_y'] = temp_df[flux_col].to_numpy()
 
+        freq_counter = 0
+        line_counter = 0
+        num_lines = len(lightcurve.axes[0].lines)
         for i, line in enumerate(lightcurve.axes[0].lines):
+            # skip the dummy points
+            if i == num_lines - len(freqs):
+                break
+
             # skip the extra upper limit symbol on the lines
-            if not pipeline and i == 1:
+            if not pipeline and line_counter == 1:
+                line_counter += 1
                 continue
+
             x_data = line.get_xdata()
             y_data = line.get_ydata()
 
-            expected_x = expected_values[f'{i}_x']
-            expected_y = expected_values[f'{i}_y']
+            freq = freqs[freq_counter]
+
+            expected_x = expected_values[freq][f'{line_counter}_x']
+            expected_y = expected_values[freq][f'{line_counter}_y']
 
             if mjd:
                 expected_x = Time(expected_x).mjd
@@ -522,9 +559,13 @@ class TestSource:
                     (expected_x - start_date)
                     / pd.Timedelta(1, unit='d')
                 )
-
             assert np.all(expected_x == x_data)
             assert np.all(expected_y == y_data)
+
+            line_counter += 1
+            if line_counter >= 2:
+                line_counter = 0
+                freq_counter += 1
 
         plt.close(lightcurve)
 
@@ -556,31 +597,31 @@ class TestSource:
         Returns:
             None
         """
-        source = source_instance()
+        source = source_instance(multi_freq=False)
 
         lightcurve = source.plot_lightcurve(
             use_forced_for_limits=use_forced_for_limits,
             use_forced_for_all=use_forced_for_all
         )
 
-        meas_df = get_measurements()
+        meas_df = get_measurements(multi_freq=False)
         expected_values = {}
 
         if use_forced_for_limits:
-            temp_meas_df = meas_df[meas_df['detection'] == False]
-            expected_values['0_x'] = temp_meas_df['dateobs'].to_numpy()
-            expected_values['0_y'] = temp_meas_df['f_flux_peak'].to_numpy()
+            temp_df = meas_df[meas_df['detection'] == False]
+            expected_values['0_x'] = temp_df['dateobs'].to_numpy()
+            expected_values['0_y'] = temp_df['f_flux_peak'].to_numpy()
 
-            temp_meas_df = meas_df[meas_df['detection'] == True]
-            expected_values['2_x'] = temp_meas_df['dateobs'].to_numpy()
-            expected_values['2_y'] = temp_meas_df['flux_peak'].to_numpy()
+            temp_df = meas_df[meas_df['detection'] == True]
+            expected_values['2_x'] = temp_df['dateobs'].to_numpy()
+            expected_values['2_y'] = temp_df['flux_peak'].to_numpy()
         else:
             expected_values['0_x'] = meas_df['dateobs'].to_numpy()
             expected_values['0_y'] = meas_df['f_flux_peak'].to_numpy()
 
         for i, line in enumerate(lightcurve.axes[0].lines):
-            # skip the extra upper limit symbol on the lines
-            if use_forced_for_limits and i == 1:
+            # skip dummy points
+            if i > 0:
                 continue
             x_data = line.get_xdata()
             y_data = line.get_ydata()

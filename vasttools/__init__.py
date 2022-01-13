@@ -29,6 +29,13 @@ RELEASED_EPOCHS = {
     "13": "13",
 }
 
+OBSERVED_EPOCHS = {
+    "14": "14",
+    "17": "17",
+    "18": "18",
+    "19": "19"
+}
+
 
 ALLOWED_PLANETS = [
     'mercury',
