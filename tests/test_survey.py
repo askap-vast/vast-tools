@@ -152,20 +152,34 @@ def test_load_field_centres(mocker) -> None:
         None
     """
     assumed_path = "vasttools.data.csvs"
-    assumed_filename = "vast_field_centres.csv"
+    low_filename = "low_field_centres.csv"
+    mid_filename = "mid_field_centres.csv"
+
+    importlib_calls = [mocker.call(assumed_path, low_filename),
+                       mocker.call(assumed_path, mid_filename)
+                       ]
+
+    side_effect = [pathlib.Path(assumed_path, low_filename),
+                   pathlib.Path(assumed_path, mid_filename)
+                   ]
+    read_csv_calls = [mocker.call(effect) for effect in side_effect]
 
     importlib_mocker = mocker.patch(
         'importlib.resources.path',
-        return_value=pathlib.Path(assumed_filename)
+        side_effect=side_effect
     )
     pandas_mocker = mocker.patch(
-        'vasttools.survey.pd.read_csv', return_value=-99
+        'vasttools.survey.pd.read_csv'
+    )
+    concat_mocker = mocker.patch(
+        'vasttools.survey.pd.concat', return_value=-99
     )
 
     result = vts.load_field_centres()
 
-    importlib_mocker.assert_called_once_with(assumed_path, assumed_filename)
-    pandas_mocker.assert_called_once_with(importlib_mocker.return_value)
+    importlib_mocker.assert_has_calls(importlib_calls)
+    pandas_mocker.assert_has_calls(read_csv_calls)
+
     assert result == -99
 
 
