@@ -36,6 +36,10 @@ OBSERVED_EPOCHS = {
     "14": "14",
 }
 
+RACS_EPOCHS = [
+    '0',
+    '14',
+]
 
 ALLOWED_PLANETS = [
     'mercury',

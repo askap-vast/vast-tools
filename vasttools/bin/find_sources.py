@@ -82,7 +82,7 @@ def parse_args() -> argparse.Namespace:
               "'all' or all VAST Epochs using 'all-vast'. Otherwise"
               " enter as a comma separated list with no spaces, e.g."
               " '1,2,3x,4x'."),
-        default="1")
+        default="all")
     parser.add_argument(
         '--imsize',
         type=float,
