@@ -2216,21 +2216,27 @@ class Query:
                         )
 
         # RACS check
-        if '0' in epochs:
-            if not check_racs_exists(self.base_folder):
-                self.logger.warning('RACS EPOCH00 directory not found!')
-                self.logger.warning('Removing RACS from requested epochs.')
-                epochs.remove('0')
-                self.racs = False
-            else:
-                self.logger.warning('RACS data selected!')
-                self.logger.warning(
-                    'Remember RACS data supplied by VAST is not final '
-                    'and results may vary.'
-                )
-                self.racs = True
-        else:
-            self.racs = False
+        self.racs = False
+        for racs_epoch in ['0', '14']
+            if racs_epoch in epochs:
+                epoch_str = "EPOCH{}".format(racs_epoch)
+                exists = os.path.isdir(os.path.join(base_dir,epoch_str))
+                if not exists:
+                    self.logger.warning(
+                        'RACS {} directory not found!'.format(epoch_str)
+                    )
+                    self.logger.warning(
+                        'Removing from requested epochs.'
+                    )
+                    epochs.remove(racs_epoch)
+                    self.racs = False
+                else:
+                    self.logger.warning('RACS data selected!')
+                    self.logger.warning(
+                        'Remember RACS data supplied by VAST is not final '
+                        'and results may vary.'
+                    )
+                    self.racs = True
 
         if len(epochs) == 0:
             self.logger.critical("No requested epochs are available")
