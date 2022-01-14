@@ -8,9 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Added
 - Added tools for new epoch addition: add datetimes to fits images create fields csv files, create and update MOCs [#298](https://github.com/askap-vast/vast-tools/pull/298)
+- Added observing frequency to all fields csv files
+- Added OBSERVED_EPOCHS variable for epochs that have been observed but not yet released
+- Added access to epochs up to 17, 18, 19
 
 #### Changed
 - Minor documentation edits [#298](https://github.com/askap-vast/vast-tools/pull/298)
+- Changed plot legend to show frequency rather than selavy/forced
+- General changes throughout to allow observing frequency to propagate through a query
+- Updated access to field centres csvs to distinguish between low/mid bands
 
 #### Fixed
 
