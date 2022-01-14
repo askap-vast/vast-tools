@@ -2195,7 +2195,8 @@ class Query:
         elif req_epochs == 'all-vast':
             epochs = available_epochs
             epochs.remove('0')
-            epochs.remove('14')
+            if '14' in epochs:
+                epochs.remove('14')
         else:
             epochs = []
             for epoch in req_epochs.split(','):
@@ -2217,7 +2218,7 @@ class Query:
 
         # RACS check
         self.racs = False
-        for racs_epoch in ['0', '14']
+        for racs_epoch in ['0', '14']:
             if racs_epoch in epochs:
                 epoch_str = "EPOCH{}".format(racs_epoch)
                 exists = os.path.isdir(os.path.join(base_dir,epoch_str))
