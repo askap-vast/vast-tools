@@ -2195,6 +2195,7 @@ class Query:
         elif req_epochs == 'all-vast':
             epochs = available_epochs
             epochs.remove('0')
+            epochs.remove('14')
         else:
             epochs = []
             for epoch in req_epochs.split(','):
