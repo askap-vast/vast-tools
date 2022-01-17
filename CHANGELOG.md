@@ -22,6 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Updated handling of RACS epochs
 
 #### Fixed
+- Updated missing values in RACS beam info csv file
 
 #### Removed
 
