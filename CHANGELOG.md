@@ -7,19 +7,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased](https://github.com/askap-vast/vast-tools/compare/v2.0.0...HEAD)
 
 #### Added
-- Added tools for new epoch addition: add datetimes to fits images create fields csv files, create and update MOCs [#298](https://github.com/askap-vast/vast-tools/pull/298)
 - Added observing frequency to all fields csv files
 - Added OBSERVED_EPOCHS variable for epochs that have been observed but not yet released
 - Added access to epochs up to 17, 18, 19
 - Added RACS_EPOCHS variable
+- Added tools for new epoch addition: add datetimes to fits images create fields csv files, create and update MOCs [#298](https://github.com/askap-vast/vast-tools/pull/298)
 
 #### Changed
-- Minor documentation edits [#298](https://github.com/askap-vast/vast-tools/pull/298)
 - Changed plot legend to show frequency rather than selavy/forced
 - General changes throughout to allow observing frequency to propagate through a query
 - Updated access to field centres csvs to distinguish between low/mid bands
 - Updated find_sources.py to automatically query all epochs
 - Updated handling of RACS epochs
+- Minor documentation edits [#298](https://github.com/askap-vast/vast-tools/pull/298)
 
 #### Fixed
 - Updated missing values in RACS beam info csv file
