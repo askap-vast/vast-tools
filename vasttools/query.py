@@ -1597,6 +1597,8 @@ class Query:
         else:
             cat_type = 'components'
 
+        field = row.field.str.replace('RACS', 'VAST')
+        
         if self.settings['tiles']:
             dir_name = "TILES"
             selavy_folder = Path(os.path.join(
