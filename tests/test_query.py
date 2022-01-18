@@ -671,6 +671,7 @@ class TestQuery:
         forced_allow_nan = True
         forced_cluster_threshold = 7.5
         output_dir = '/output/here'
+        incl_observed = False
 
         expected_settings = {
             'epochs': ["1", "2", "3x"],
@@ -686,7 +687,8 @@ class TestQuery:
             'forced_cluster_threshold': forced_cluster_threshold,
             'output_dir': output_dir,
             'search_around': False,
-            'tiles': use_tiles
+            'tiles': use_tiles,
+            'incl_observed': False
         }
 
         query = vtq.Query(
@@ -704,7 +706,8 @@ class TestQuery:
             forced_fits=forced_fits,
             forced_allow_nan=forced_allow_nan,
             forced_cluster_threshold=forced_cluster_threshold,
-            output_dir=output_dir
+            output_dir=output_dir,
+            incl_observed=incl_observed
         )
 
         assert query.settings == expected_settings
