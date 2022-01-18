@@ -338,9 +338,8 @@ class Query:
 
         self.base_folder = the_base_folder
 
-        self.settings['epochs'] = self._get_epochs(epochs,
-                                                   incl_observed=incl_observed
-                                                   )
+        self.settings['incl_observed'] = incl_observed
+        self.settings['epochs'] = self._get_epochs(epochs)
         self.settings['stokes'] = self._get_stokes(stokes)
 
         self.settings['crossmatch_radius'] = Angle(
@@ -1028,7 +1027,16 @@ class Query:
 
         Returns:
             None
+
+        Raises:
+            Exception: find_sources cannot be run with the incl_observed option
         """
+        
+        if self.settings['incl_observed']:
+            raise Exception(
+                'find_sources cannot be run with the incl_observed option'
+            )
+
         self.logger.debug('Running find_sources...')
 
         if self.fields_found is False:
@@ -2170,16 +2178,13 @@ class Query:
         return catalog
 
     def _get_epochs(self,
-                    req_epochs: str,
-                    incl_observed: bool = False
+                    req_epochs: str
                     ) -> List[str]:
         """
         Parse the list of epochs to query.
 
         Args:
             req_epochs: Requested epochs to query.
-            incl_observed: Include epochs that have been observed,
-                but not released. Defaults to False.
 
         Returns:
             Epochs to query, as a list of strings.
@@ -2187,7 +2192,7 @@ class Query:
 
         epoch_dict = RELEASED_EPOCHS.copy()
 
-        if incl_observed:
+        if self.settings['incl_observed']:
             epoch_dict.update(OBSERVED_EPOCHS)
         available_epochs = sorted(epoch_dict, key=epoch_dict.get)
         self.logger.debug("Available epochs: " + str(available_epochs))
