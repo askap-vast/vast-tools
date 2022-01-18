@@ -24,6 +24,7 @@ from astropy.coordinates import SkyCoord, Angle
 from vasttools.survey import load_fields_file
 from vasttools.moc import VASTMOCS
 from vasttools.utils import create_moc_from_fits
+from vasttools import FREQ_CONVERSION
 
 
 def skymap2moc(filename: str, cutoff: float) -> MOC:
@@ -247,12 +248,10 @@ def _create_fields_df(epoch_num: str,
 
     sky_freq = descrip_df.OBS_FREQ.loc[epoch_num]
 
-    if sky_freq == 864.5:
-        obs_freq = 887.5
-    elif sky_freq == 1272.5:
-        obs_freq = 1367.5
-    else:
+    if sky_freq not in FREQ_CONVERSION.keys():
         raise Exception("Sky frequency is not in a recognised VAST band")
+    else:
+        obs_freq = FREQ_CONVERSION[sky_freq]
 
     epoch = vast_db / 'epoch_{}'.format(epoch_num)
 

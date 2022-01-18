@@ -52,3 +52,8 @@ ALLOWED_PLANETS = [
     'sun',
     'moon'
 ]
+
+FREQ_CONVERSION = {
+    864.5: 887.5,
+    1272.5: 1367.5
+}
