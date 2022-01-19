@@ -56,9 +56,14 @@ def get_measurements() -> pd.DataFrame:
         meas_df = pd.read_csv(filepath)
         meas_df['dateobs'] = pd.to_datetime(meas_df['dateobs'])
 
+        if pipeline:
+            freq_col = 'frequency'
+        else:
+            freq_col = 'obs_freq'
+
         if multi_freq:
             temp_df = meas_df.copy()
-            temp_df['obs_freq'] = 1272.5
+            temp_df[freq_col] = 1272.5
             meas_df = pd.concat([meas_df, temp_df], ignore_index=True)
             del temp_df
 
@@ -498,8 +503,12 @@ class TestSource:
         measurements_df = get_measurements(pipeline=pipeline,
                                            multi_freq=multi_freq
                                            )
+        if pipeline:
+            freq_col = 'frequency'
+        else:
+            freq_col = 'obs_freq'
 
-        grouped_df = measurements_df.groupby('obs_freq')
+        grouped_df = measurements_df.groupby(freq_col)
         freqs = list(grouped_df.groups.keys())
 
         expected_values = {}

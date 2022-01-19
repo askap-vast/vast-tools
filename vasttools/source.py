@@ -437,7 +437,12 @@ class Source:
 
         ax.set_ylabel(label)
 
-        grouped_df = measurements_df.groupby('obs_freq')
+        if self.pipeline:
+            freq_col = 'frequency'
+        else:
+            freq_col = 'obs_freq'
+
+        grouped_df = measurements_df.groupby(freq_col)
         freqs = list(grouped_df.groups.keys())
 
         # Colours for each frequency
