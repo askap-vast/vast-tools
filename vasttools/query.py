@@ -1621,12 +1621,12 @@ class Query:
 
         if self.settings['tiles']:
             dir_name = "TILES"
-            selavy_folder = Path(os.path.join(
+            selavy_folder = Path(
                 self.base_folder,
                 epoch_string,
                 dir_name,
-                "STOKES{}_SELAVY_CORRECTED".format(self.settings['stokes'])
-            ))
+                f"STOKES{self.settings['stokes']}_SELAVY_CORRECTED"
+            )
 
             selavy_file_fmt = (
                 "selavy-image.i.{}.SB{}.cont."
@@ -1643,12 +1643,12 @@ class Query:
 
         else:
             dir_name = "COMBINED"
-            selavy_folder = Path(os.path.join(
+            selavy_folder = Path(
                 self.base_folder,
                 epoch_string,
                 dir_name,
-                "STOKES{}_SELAVY".format(self.settings['stokes'])
-            ))
+                f"STOKES{self.settings['stokes']}_SELAVY"
+            )
 
             selavy_file_fmt = "selavy-{}.EPOCH{}.{}.conv.{}.xml".format(
                 row.field,
