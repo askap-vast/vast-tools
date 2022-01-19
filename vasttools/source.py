@@ -1924,14 +1924,14 @@ class Source:
             xlims = ax.get_xlim()
             ylims = ax.get_ylim()
 
-            xsize = sx*(xlims[1]-xlims[0])
-            ysize = sy*(ylims[1]-ylims[0])
-            size = max([xsize, ysize])*u.deg
+            xsize = sx * (xlims[1] - xlims[0])
+            ysize = sy * (ylims[1] - ylims[0])
+            size = max([xsize, ysize]) * u.deg
 
         if size is not None:
-            if size < 2*u.arcmin:
+            if size < 2 * u.arcmin:
                 axis_units = u.arcsec
-            elif size > 2*u.deg:
+            elif size > 2 * u.deg:
                 axis_units = u.deg
 
         offset_postagestamp_axes(ax,
