@@ -162,7 +162,7 @@ def dummy_ax(dummy_fits_open):
     hdu = dummy_fits_open[0]
     wcs = WCS(hdu.header)
     ax = plt.subplot(projection=wcs)
-    
+
     return ax
 
 
@@ -480,59 +480,61 @@ def test__set_epoch_path_failure(mocker) -> None:
         "The path to the requested epoch could not be determined!"
     )
 
+
 @pytest.mark.parametrize(
-        "ra_units,dec_units",
-        [
-            (u.m, u.arcsec),
-            (u.arcsec, u.m),
-            (u.m, u.m)
-        ],
-        ids=('bad-ra',
-             'bad-dec',
-             'bad-both',
-             )
-    )
+    "ra_units,dec_units",
+    [
+        (u.m, u.arcsec),
+        (u.arcsec, u.m),
+        (u.m, u.m)
+    ],
+    ids=('bad-ra',
+         'bad-dec',
+         'bad-both',
+         )
+)
 def test_offset_postagestamp_axes_errors(dummy_ax: plt.Axes,
                                          ra_units: u.core.Unit,
                                          dec_units: u.core.Unit
                                          ):
     """
     Tests the failures when using offset_postagestamp_axes.
-    
+
     Args:
         dummy_ax: The dummy axis object to be updated.
         ra_units: The units to use for the Right Ascension axis
         dec_units: The units to use for the Declination axis
-    
+
     Returns:
         None
     """
 
     coord = SkyCoord(319.6519091667, -6.2985525, unit=u.deg)
-    
+
     with pytest.raises(Exception) as excinfo:
         vtt.offset_postagestamp_axes(dummy_axes,
                                      coord,
-                                     ra_units = ra_units,
-                                     dec_units = dec_units
+                                     ra_units=ra_units,
+                                     dec_units=dec_units
                                      )
     assert str(excinfo.value) == "R.A. and Dec. units must be angles."
 
 
 @pytest.mark.parametrize(
-        "ra_units,dec_units,ra_label,dec_label,major_tick_length,minor_tick_length",
-        [
-            (u.arcsec, u.arcsec, 'R.A. Offset', 'Dec. Offset', 6, 3),
-            (u.deg, u.deg, 'R.A. Offset', 'Dec. Offset', 6, 3),
-            (u.arcmin, u.arcmin, 'R.A. Offset', 'Dec. Offset', 6, 3),
-            (u.arcsec, u.arcsec, '$\\Delta$ R.A.', '$\\Delta$ Dec.', 6, 3),
-        ],
-        ids=('base',
-             'units_deg',
-             'units_arcsec',
-             'latex_labels'
-            )
-    )
+    "ra_units,dec_units,ra_label,dec_label,"
+    "major_tick_length,minor_tick_length",
+    [
+        (u.arcsec, u.arcsec, 'R.A. Offset', 'Dec. Offset', 6, 3),
+        (u.deg, u.deg, 'R.A. Offset', 'Dec. Offset', 6, 3),
+        (u.arcmin, u.arcmin, 'R.A. Offset', 'Dec. Offset', 6, 3),
+        (u.arcsec, u.arcsec, '$\\Delta$ R.A.', '$\\Delta$ Dec.', 6, 3),
+    ],
+    ids=('base',
+         'units_deg',
+         'units_arcsec',
+         'latex_labels'
+         )
+)
 def test_offset_postagestamp_axes(dummy_ax: plt.Axes,
                                   ra_units: u.core.Unit,
                                   dec_units: u.core.Unit,
@@ -540,10 +542,10 @@ def test_offset_postagestamp_axes(dummy_ax: plt.Axes,
                                   dec_label: str,
                                   major_tick_length: Union[int, float],
                                   minor_tick_length: Union[int, float],
-                                 ):
+                                  ):
     """
     Tests the offset_postagestamp_axes function.
-    
+
     Args:
         dummy_ax: The dummy axis object to be updated.
         ra_units: The units to use for the Right Ascension axis
@@ -552,7 +554,7 @@ def test_offset_postagestamp_axes(dummy_ax: plt.Axes,
         dec_label: The label to use for the Declination axis
         major_tick_length: Major tick length in points
         minor_tick_length: Minor tick length in points
-    
+
     Returns:
         None
     """
@@ -573,6 +575,6 @@ def test_offset_postagestamp_axes(dummy_ax: plt.Axes,
 
     assert ra_off.get_axislabel() == ra_label
     assert dec_off.get_axislabel() == dec_label
-    
+
     assert ra_off.get_format_unit() == ra_units
     assert dec_off.get_format_unit() == dec_units
