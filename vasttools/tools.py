@@ -9,6 +9,7 @@ import healpy as hp
 import numpy as np
 import pandas as pd
 import scipy.ndimage as ndi
+import matplotlib.pyplot as plt
 
 from pathlib import Path
 from mocpy import MOC
@@ -529,17 +530,17 @@ def _get_epoch_images(epoch_path: Union[str, Path],
 
 def offset_postagestamp_axes(ax: plt.Axes,
                              centre_sc: SkyCoord,
-                             ra_units: astropy.units.core.Unit = u.arcsec,
-                             dec_units: astropy.units.core.Unit = u.arcsec,
-                             ra_label: str ='R.A. Offset',
-                             dec_label: str ='Dec. Offset',
-                             major_tick_length: Union[int, float] = 6
-                             minor_tick_length: Union[int, float] = 3
-                             ): -> None
+                             ra_units: u.core.Unit = u.arcsec,
+                             dec_units: u.core.Unit = u.arcsec,
+                             ra_label: str = 'R.A. Offset',
+                             dec_label: str = 'Dec. Offset',
+                             major_tick_length: Union[int, float] = 6,
+                             minor_tick_length: Union[int, float] = 3,
+                             ) -> None:
     """
     Display axis ticks and labels as offsets from a given coordinate,
     rather than in absolute coordinates.
-    
+
     Args:
         ax: The axis of interest
         centre_sc: SkyCoord to calculate offsets from
@@ -549,29 +550,29 @@ def offset_postagestamp_axes(ax: plt.Axes,
         dec_label: Declination axis label
         major_tick_length: Major tick length in points
         minor_tick_length: Minor tick length in points
-    
+
     Returns:
         None
-    
+
     Raises:
         Exception: R.A. and Dec. units must be angles.
     """
-    
+
     if ra_units.physical_type != 'angle' or dec_units.physical_type != 'angle':
         raise Exception("R.A. and Dec. units must be angles.")
 
     ra_offs, dec_offs = ax.get_coords_overlay(centre_sc.skyoffset_frame())
     plt.minorticks_on()
     ra_offs.set_coord_type('longitude', 180)
-    ra_offs.set_format_unit(ra_units, decimal = True)
-    dec_offs.set_format_unit(dec_units, decimal = True)
-    ra_offs.tick_params(direction = 'in', color = 'black')
-    ra_offs.tick_params(which = 'major', length = major_tick_length)
-    ra_offs.tick_params(which = 'minor', length = minor_tick_length)
+    ra_offs.set_format_unit(ra_units, decimal=True)
+    dec_offs.set_format_unit(dec_units, decimal=True)
+    ra_offs.tick_params(direction='in', color='black')
+    ra_offs.tick_params(which='major', length=major_tick_length)
+    ra_offs.tick_params(which='minor', length=minor_tick_length)
 
-    dec_offs.tick_params(direction = 'in', color = 'black')
-    dec_offs.tick_params(which = 'major', length = major_tick_length)
-    dec_offs.tick_params(which = 'minor', length = minor_tick_length)
+    dec_offs.tick_params(direction='in', color='black')
+    dec_offs.tick_params(which='major', length=major_tick_length)
+    dec_offs.tick_params(which='minor', length=minor_tick_length)
 
     ra, dec = ax.coords
 
@@ -582,7 +583,6 @@ def offset_postagestamp_axes(ax: plt.Axes,
     ra_offs.display_minor_ticks(True)
     dec_offs.display_minor_ticks(True)
 
-
     dec_offs.set_ticks_position('lr')
     dec_offs.set_ticklabel_position('l')
     dec_offs.set_axislabel_position('l')
@@ -592,5 +592,5 @@ def offset_postagestamp_axes(ax: plt.Axes,
     ra_offs.set_ticklabel_position('b')
     ra_offs.set_axislabel_position('b')
     ra_offs.set_axislabel(ra_label)
-    
+
     return

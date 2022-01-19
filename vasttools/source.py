@@ -56,6 +56,7 @@ from vasttools import RELEASED_EPOCHS
 from vasttools.utils import crosshair
 from vasttools.survey import Image
 from vasttools.utils import filter_selavy_components
+from vasttools.tools import offset_postagestamp_axes
 
 # run crosshair to set up the marker.
 crosshair()
@@ -1911,6 +1912,33 @@ class Source:
                 ax.add_artist(png_beam)
         else:
             self.logger.debug("Hiding beam.")
+
+        axis_units = u.arcmin
+
+        if size is None and cutout_row.wcs.is_celestial:
+            pix_scale = proj_plane_pixel_scales(
+                cutout_row.wcs
+            )
+            sx = pix_scale[0]
+            sy = pix_scale[1]
+            xlims = ax.get_xlim()
+            ylims = ax.get_ylim()
+
+            xsize = sx*(xlims[1]-xlims[0])
+            ysize = sy*(ylims[1]-ylims[0])
+            size = max([xsize, ysize])*u.deg
+
+        if size is not None:
+            if size < 2*u.arcmin:
+                axis_units = u.arcsec
+            elif size > 2*u.deg:
+                axis_units = u.deg
+
+        offset_postagestamp_axes(ax,
+                                 self.coord,
+                                 ra_units=axis_units,
+                                 dec_units=axis_units
+                                 )
 
         if save:
             plt.savefig(outfile, bbox_inches="tight", dpi=plot_dpi)
