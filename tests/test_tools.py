@@ -512,7 +512,7 @@ def test_offset_postagestamp_axes_errors(dummy_ax: plt.Axes,
     coord = SkyCoord(319.6519091667, -6.2985525, unit=u.deg)
 
     with pytest.raises(Exception) as excinfo:
-        vtt.offset_postagestamp_axes(dummy_axes,
+        vtt.offset_postagestamp_axes(dummy_ax,
                                      coord,
                                      ra_units=ra_units,
                                      dec_units=dec_units
