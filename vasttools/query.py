@@ -1031,7 +1031,7 @@ class Query:
         Raises:
             Exception: find_sources cannot be run with the incl_observed option
         """
-        
+
         if self.settings['incl_observed']:
             raise Exception(
                 'find_sources cannot be run with the incl_observed option'
