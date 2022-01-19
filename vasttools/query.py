@@ -56,7 +56,7 @@ from typing import Optional, List, Tuple, Dict
 from pathlib import Path
 
 from vasttools import (
-    RELEASED_EPOCHS, OBSERVED_EPOCHS, ALLOWED_PLANETS, RACS_EPOCHS
+    RELEASED_EPOCHS, OBSERVED_EPOCHS, ALLOWED_PLANETS, BASE_EPOCHS
 )
 from vasttools.survey import Fields, Image
 from vasttools.survey import (
@@ -1783,11 +1783,11 @@ class Query:
         )
 
         if self.racs:
-            base_epoch = ['0', '14']
             base_fc = 'RACS'
         else:
-            base_epoch = ['1', '18']
             base_fc = 'VAST'
+        
+        base_epoch = BASE_EPOCHS[base_fc]
 
         fields = Fields(base_epoch)
         field_centres = load_field_centres()
@@ -2201,7 +2201,7 @@ class Query:
             epochs = available_epochs
         elif req_epochs == 'all-vast':
             epochs = available_epochs
-            for racs_epoch in RACS_EPOCHS:
+            for racs_epoch in BASE_EPOCHS['RACS']:
                 if racs_epoch in epochs:
                     epochs.remove(racs_epoch)
         else:
@@ -2225,7 +2225,7 @@ class Query:
 
         # RACS check
         self.racs = False
-        for racs_epoch in RACS_EPOCHS:
+        for racs_epoch in BASE_EPOCHS['RACS']:
             if racs_epoch in epochs:
                 epoch_str = "EPOCH{}".format(racs_epoch)
                 exists = os.path.isdir(os.path.join(base_dir, epoch_str))

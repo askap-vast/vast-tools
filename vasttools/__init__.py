@@ -36,10 +36,10 @@ OBSERVED_EPOCHS = {
     "14": "14",
 }
 
-RACS_EPOCHS = [
-    '0',
-    '14',
-]
+BASE_EPOCHS = {
+    "RACS": ['0', '14']
+    "VAST": ['1', '18']
+}
 
 ALLOWED_PLANETS = [
     'mercury',

@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added observing frequency to all fields csv files
 - Added OBSERVED_EPOCHS variable for epochs that have been observed but not yet released
 - Added access to epochs up to 17, 18, 19
-- Added RACS_EPOCHS variable
+- Added BASE_EPOCHS variable
 - Added tools for new epoch addition: add datetimes to fits images create fields csv files, create and update MOCs [#298](https://github.com/askap-vast/vast-tools/pull/298)
 
 #### Changed
