@@ -37,7 +37,7 @@ OBSERVED_EPOCHS = {
 }
 
 BASE_EPOCHS = {
-    "RACS": ['0', '14']
+    "RACS": ['0', '14'],
     "VAST": ['1', '18']
 }
 
