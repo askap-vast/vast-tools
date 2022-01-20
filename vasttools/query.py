@@ -1858,7 +1858,7 @@ class Query:
             ).reset_index(drop=True)
 
             self.fields_df[
-                ['epoch', 'field', 'sbid', 'dateobs', 'obs_freq']
+                ['epoch', 'field', 'sbid', 'dateobs', 'frequency']
             ] = pd.DataFrame(
                 self.fields_df['field_per_epoch'].tolist(),
                 index=self.fields_df.index
