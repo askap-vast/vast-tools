@@ -1786,7 +1786,7 @@ class Query:
             base_fc = 'RACS'
         else:
             base_fc = 'VAST'
-        
+
         base_epoch = BASE_EPOCHS[base_fc]
 
         fields = Fields(base_epoch)
