@@ -121,7 +121,7 @@ class Query:
         self,
         coords: Optional[SkyCoord] = None,
         source_names: Optional[List[str]] = None,
-        epochs: str = "all",
+        epochs: str = "1",
         stokes: str = "I",
         crossmatch_radius: float = 5.0,
         max_sep: float = 1.0,

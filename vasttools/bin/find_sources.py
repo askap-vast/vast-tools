@@ -82,12 +82,12 @@ def parse_args() -> argparse.Namespace:
               "'all' or all VAST Epochs using 'all-vast'. Otherwise"
               " enter as a comma separated list with no spaces, e.g."
               " '1,2,3x,4x'."),
-        default="all")
+        default="1")
     parser.add_argument(
         '--imsize',
         type=float,
         help='Edge size of the postagestamp in arcmin',
-        default=30.)
+        default=5.)
     parser.add_argument(
         '--maxsep',
         type=float,
@@ -103,7 +103,7 @@ def parse_args() -> argparse.Namespace:
         '--crossmatch-radius',
         type=float,
         help='Crossmatch radius in arcseconds',
-        default=15.0)
+        default=10.0)
     parser.add_argument(
         '--use-tiles',
         action="store_true",

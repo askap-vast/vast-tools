@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 #### Added
 - Added observing frequency to all fields csv files
 - Added OBSERVED_EPOCHS variable for epochs that have been observed but not yet released
-- Added access to epochs up to 17, 18, 19
+- Added access to epochs up 17, 18, 19
 - Added BASE_EPOCHS variable
 - Added tools for new epoch addition: add datetimes to fits images create fields csv files, create and update MOCs [#298](https://github.com/askap-vast/vast-tools/pull/298)
 
@@ -19,6 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Updated access to field centres csvs to distinguish between low/mid bands
 - Updated find_sources.py to automatically query all epochs
 - Updated handling of RACS epochs
+- Updated default values of query epochs and imsize
 - Minor documentation edits [#298](https://github.com/askap-vast/vast-tools/pull/298)
 
 #### Fixed
