@@ -437,10 +437,7 @@ class Source:
 
         ax.set_ylabel(label)
 
-        if self.pipeline:
-            freq_col = 'frequency'
-        else:
-            freq_col = 'obs_freq'
+        freq_col = 'frequency'
 
         grouped_df = measurements_df.groupby(freq_col)
         freqs = list(grouped_df.groups.keys())

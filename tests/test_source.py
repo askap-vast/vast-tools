@@ -56,10 +56,7 @@ def get_measurements() -> pd.DataFrame:
         meas_df = pd.read_csv(filepath)
         meas_df['dateobs'] = pd.to_datetime(meas_df['dateobs'])
 
-        if pipeline:
-            freq_col = 'frequency'
-        else:
-            freq_col = 'obs_freq'
+        freq_col = 'frequency'
 
         if multi_freq:
             temp_df = meas_df.copy()
@@ -503,10 +500,7 @@ class TestSource:
         measurements_df = get_measurements(pipeline=pipeline,
                                            multi_freq=multi_freq
                                            )
-        if pipeline:
-            freq_col = 'frequency'
-        else:
-            freq_col = 'obs_freq'
+        freq_col = 'frequency'
 
         grouped_df = measurements_df.groupby(freq_col)
         freqs = list(grouped_df.groups.keys())
