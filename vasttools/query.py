@@ -1788,7 +1788,7 @@ class Query:
             base_fc = 'VAST'
 
         base_epoch = BASE_EPOCHS[base_fc]
-        
+
         fields = Fields(base_epoch)
         field_centres = load_field_centres()
 
@@ -1823,6 +1823,7 @@ class Query:
                 6: 'O',
             }
             self.logger.debug("Running field matching...")
+
             self.fields_df[[
                 'fields',
                 'primary_field',
@@ -1844,7 +1845,7 @@ class Query:
                     meta=meta,
                     axis=1,
                     result_type='expand'
-                ).compute(num_workers=self.ncpu, scheduler='single-threaded')
+                ).compute(num_workers=self.ncpu, scheduler='processes')
             )
 
             self.logger.debug("Finished field matching.")
@@ -1952,6 +1953,7 @@ class Query:
         Returns:
             Tuple containing the field information.
         """
+
         seps = row.skycoord.separation(fields_coords)
         accept = seps.deg < self.settings['max_sep']
         fields = np.unique(fields_names[accept])
@@ -1986,13 +1988,13 @@ class Query:
                 the_fields = vast_fields
             else:
                 the_fields = fields
-         
+
             available_fields = [
                 f for f in the_fields if f in self._epoch_fields.loc[
                     i
                 ].index.to_list()
             ]
-            
+
             if i == '0':
                 available_fields = [
                     j.replace("RACS", "VAST") for j in available_fields
@@ -2030,7 +2032,7 @@ class Query:
             dateobs.append(date)
             freqs.append(freq)
             field_per_epochs.append([i, field, sbid, date, freq])
-            
+
         return_vals = (fields,
                        primary_field,
                        epochs,
