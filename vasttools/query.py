@@ -1659,7 +1659,7 @@ class Query:
             )
 
             selavy_path = selavy_folder / selavy_file_fmt
-        
+
         if not selavy_path.exists():
             selavy_path = str(selavy_path).replace("RACS", "VAST")
 
@@ -2564,4 +2564,3 @@ class FieldQuery:
             savename = "{}_field_info.csv".format(self.field)
             self.field_info.to_csv(savename, index=False)
             self.logger.info("Saved output to {}.".format(savename))
-

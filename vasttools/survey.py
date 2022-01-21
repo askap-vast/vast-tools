@@ -219,19 +219,19 @@ class Fields:
             field_dfs.append(load_fields_file(epoch))
 
         self.fields = pd.concat(field_dfs)
-        
+
         self.logger.debug(f"Frequencies: {self.fields.OBS_FREQ.unique()}")
 
         # Epoch 99 has some empty beam directions (processing failures)
         # Drop them and any issue rows in the future.
         self.fields.dropna(inplace=True)
         self.fields.reset_index(drop=True, inplace=True)
-        
+
         self.direction = SkyCoord(
             Angle(self.fields["RA_HMS"], unit=u.hourangle),
             Angle(self.fields["DEC_DMS"], unit=u.deg)
         )
-        
+
 
 class Image:
     """
