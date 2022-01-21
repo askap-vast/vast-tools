@@ -330,7 +330,8 @@ def read_selavy(selavy_path: str, cols: list = None) -> pd.DataFrame:
         df = Table.read(
             selavy_path, format="votable", use_names_over_ids=True
         ).to_pandas()
-        df = df[df.columns.intersection(cols)]
+        if cols is not None:
+            df = df[df.columns.intersection(cols)]
     elif selavy_path.endswith(".csv"):
         # CSVs from CASDA have all lowercase column names
         df = pd.read_csv(selavy_path, usecols=cols).rename(
