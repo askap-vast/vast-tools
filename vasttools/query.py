@@ -1601,7 +1601,8 @@ class Query:
                 rms_df.index = group[~mask].index.values
 
                 master = master.append(rms_df, sort=False)
-
+        if '#' not in master.columns:
+            master.insert(0, "#", '')
         return master
 
     def _get_selavy_path(self, epoch_string: str, row: pd.Series) -> str:
@@ -1658,6 +1659,9 @@ class Query:
             )
 
             selavy_path = selavy_folder / selavy_file_fmt
+        
+        if not selavy_path.exists():
+            selavy_path = str(selavy_path).replace("RACS", "VAST")
 
         return str(selavy_path)
 
@@ -2560,3 +2564,4 @@ class FieldQuery:
             savename = "{}_field_info.csv".format(self.field)
             self.field_info.to_csv(savename, index=False)
             self.logger.info("Saved output to {}.".format(savename))
+
