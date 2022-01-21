@@ -37,8 +37,8 @@ OBSERVED_EPOCHS = {
 }
 
 BASE_EPOCHS = {
-    "RACS": ['00', '14'],
-    "VAST": ['01', '18']
+    "RACS": ['0', '14'],
+    "VAST": ['1', '18']
 }
 
 ALLOWED_PLANETS = [
