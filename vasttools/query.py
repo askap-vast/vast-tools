@@ -2228,7 +2228,9 @@ class Query:
         for racs_epoch in BASE_EPOCHS['RACS']:
             if racs_epoch in epochs:
                 epoch_str = "EPOCH{}".format(racs_epoch.zfill(2))
-                exists = os.path.isdir(os.path.join(self.base_folder, epoch_str))
+                exists = os.path.isdir(os.path.join(self.base_folder,
+                                                    epoch_str)
+                                       )
                 if not exists:
                     self.logger.warning(
                         'RACS {} directory not found!'.format(epoch_str)
