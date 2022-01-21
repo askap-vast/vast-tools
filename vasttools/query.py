@@ -1788,7 +1788,7 @@ class Query:
             base_fc = 'VAST'
 
         base_epoch = BASE_EPOCHS[base_fc]
-
+        
         fields = Fields(base_epoch)
         field_centres = load_field_centres()
 
@@ -1844,7 +1844,7 @@ class Query:
                     meta=meta,
                     axis=1,
                     result_type='expand'
-                ).compute(num_workers=self.ncpu, scheduler='processes')
+                ).compute(num_workers=self.ncpu, scheduler='single-threaded')
             )
 
             self.logger.debug("Finished field matching.")
@@ -1982,18 +1982,17 @@ class Query:
         freqs = []
 
         for i in self.settings['epochs']:
-
             if i != '0' and self.racs:
                 the_fields = vast_fields
             else:
                 the_fields = fields
-
+         
             available_fields = [
                 f for f in the_fields if f in self._epoch_fields.loc[
                     i
                 ].index.to_list()
             ]
-
+            
             if i == '0':
                 available_fields = [
                     j.replace("RACS", "VAST") for j in available_fields
@@ -2031,7 +2030,7 @@ class Query:
             dateobs.append(date)
             freqs.append(freq)
             field_per_epochs.append([i, field, sbid, date, freq])
-
+            
         return_vals = (fields,
                        primary_field,
                        epochs,
@@ -2040,6 +2039,7 @@ class Query:
                        dateobs,
                        freqs
                        )
+
         return return_vals
 
     def _get_planets_epoch_df_template(self) -> pd.DataFrame:

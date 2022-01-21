@@ -127,6 +127,8 @@ def load_fields_file(epoch: str) -> pd.DataFrame:
 
     with paths[epoch] as fields_csv:
         fields_df = pd.read_csv(fields_csv, comment='#')
+    if 'NINT' not in fields_df.columns:
+        fields_df['NINT']=0
 
     return fields_df
 
@@ -215,20 +217,23 @@ class Fields:
 
         field_dfs = []
         for epoch in epochs:
+            self.logger.debug(f"Loading epoch {epoch}")
             field_dfs.append(load_fields_file(epoch))
 
         self.fields = pd.concat(field_dfs)
+        
+        self.logger.debug(f"Frequencies: {self.fields.OBS_FREQ.unique()}")
 
         # Epoch 99 has some empty beam directions (processing failures)
         # Drop them and any issue rows in the future.
         self.fields.dropna(inplace=True)
         self.fields.reset_index(drop=True, inplace=True)
-
+        
         self.direction = SkyCoord(
             Angle(self.fields["RA_HMS"], unit=u.hourangle),
             Angle(self.fields["DEC_DMS"], unit=u.deg)
         )
-
+        
 
 class Image:
     """
