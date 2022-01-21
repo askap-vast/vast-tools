@@ -34,7 +34,8 @@ def dummy_load_fields_file() -> pd.DataFrame:
             'NINT': [100, 100],
             'BMAJ': [15.0, 15.1],
             'BMIN': [12.1, 12.2],
-            'BPA': [90., 90.]
+            'BPA': [90., 90.],
+            'OBS_FREQ': [887.5, 887.5]
         }
     )
 

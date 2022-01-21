@@ -127,8 +127,6 @@ def load_fields_file(epoch: str) -> pd.DataFrame:
 
     with paths[epoch] as fields_csv:
         fields_df = pd.read_csv(fields_csv, comment='#')
-    if 'NINT' not in fields_df.columns:
-        fields_df['NINT']=0
 
     return fields_df
 
