@@ -55,6 +55,17 @@ A `Query` instance can be imported from `vasttools.query`:
     from vasttools.query import Query
     ```
 
+!!!warning "Warning: Running a Query inside a script"
+    The main `Query` functions use multiprocessing to speed up large queries. Users who attempt to call a query from their own scripts may encounter Dask RuntimeError which, due to the nature of the error, cannot be nicely caught with the `vasttools` module. The solution is to ensure that all calls to `Query` functions are protected within a `if __name__ == '__main__'` statement, i.e.
+    ```python
+    from vasttools.query import Query
+    
+    if __name__ == '__main__':
+        my_query = Query(source_names=["PSR J2129-04"])
+        my_query.find_sources()
+    ```
+        
+
 ### Constructing a Query
 
 The `Query` is defined on the initialisation of the instance. 
