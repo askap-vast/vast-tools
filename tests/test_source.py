@@ -60,7 +60,7 @@ def get_measurements() -> pd.DataFrame:
 
         if multi_freq:
             temp_df = meas_df.copy()
-            temp_df[freq_col] = 1272.5
+            temp_df[freq_col] = 1367.5
             meas_df = pd.concat([meas_df, temp_df], ignore_index=True)
             del temp_df
 
