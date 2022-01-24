@@ -1650,7 +1650,9 @@ class Query:
             )
 
             if self.corrected_data:
-                selavy_file_fmt.replace(".xml", ".corrected.xml")
+                selavy_file_fmt = selavy_file_fmt.replace(".xml",
+                                                          ".corrected.xml"
+                                                          )
 
             selavy_path = selavy_folder / selavy_file_fmt
 
@@ -1710,7 +1712,9 @@ class Query:
             if self.corrected_data:
                 img_dir += "_CORRECTED"
                 rms_dir += "_CORRECTED"
-                img_file_fmt.replace(".fits", ".corrected.fits")
+                image_file_fmt = image_file_fmt.replace(".fits",
+                                                        ".corrected.fits"
+                                                        )
 
         else:
             dir_name = "COMBINED"
