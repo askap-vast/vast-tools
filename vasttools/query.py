@@ -138,7 +138,8 @@ class Query:
         forced_fits: bool = False,
         forced_cluster_threshold: float = 1.5,
         forced_allow_nan: bool = False,
-        incl_observed: bool = False
+        incl_observed: bool = False,
+        corrected_data: Optional[bool] = False
     ) -> None:
         """
         Constructor method.
@@ -184,6 +185,8 @@ class Query:
             incl_observed: Include epochs that have been observed, but not
                 released, in the query. This should only be used when finding
                 fields, not querying data. Defaults to False.
+            corrected_data: Access the corrected data. Only relevant if 
+                `tiles` is `True`. Defaults to `True`.
 
         Returns:
             None
@@ -212,6 +215,8 @@ class Query:
 
         self.source_names = np.array(source_names)
         self.simbad_names = None
+
+        self.corrected_data = corrected_data
 
         if coords is None:
             self.coords = coords
@@ -1622,19 +1627,25 @@ class Query:
 
         if self.settings['tiles']:
             dir_name = "TILES"
+            data_folder = f"STOKES{self.settings['stokes']}_SELAVY"
+            if self.corrected_data:
+                data_folder += "_CORRECTED"
             selavy_folder = Path(
                 self.base_folder,
                 epoch_string,
                 dir_name,
-                f"STOKES{self.settings['stokes']}_SELAVY_CORRECTED"
+                data_folder
             )
 
             selavy_file_fmt = (
                 "selavy-image.i.{}.SB{}.cont."
-                "taylor.0.restored.conv.{}.corrected.xml".format(
+                "taylor.0.restored.conv.{}.xml".format(
                     row.field, row.sbid, cat_type
                 )
             )
+            
+            if self.corrected_data:
+                selavy_file_fmt.replace(".xml", ".corrected.xml")
 
             selavy_path = selavy_folder / selavy_file_fmt
 
@@ -1691,8 +1702,9 @@ class Query:
                     row.field, row.sbid
                 )
             )
-            img_dir += "_CORRECTED"
-            rms_dir += "_CORRECTED"
+            if not self.corrected_data:
+                img_dir += "_CORRECTED"
+                rms_dir += "_CORRECTED"
 
         else:
             dir_name = "COMBINED"
