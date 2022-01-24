@@ -266,7 +266,8 @@ class Image:
         sbid: Optional[str] = None,
         path: Optional[str] = None,
         rmspath: Optional[str] = None,
-        rms_header: Optional[fits.Header] = None
+        rms_header: Optional[fits.Header] = None,
+        corrected_data: Optional[bool] = False
     ) -> None:
         """
         Constructor method.
@@ -286,6 +287,8 @@ class Image:
                 defaults to None.
             rms_header: Header of rms FITS image if already obtained,
                 defaults to None.
+            corrected_data: Access the corrected data. Only relevant if 
+                `tiles` is `True`. Defaults to `True`.
 
         Returns:
             None
@@ -302,6 +305,7 @@ class Image:
         self.rmspath = rmspath
         self.tiles = tiles
         self.base_folder = base_folder
+        self.corrected_data = corrected_data
 
         if self.path is None:
             self.get_paths_and_names()
@@ -315,6 +319,9 @@ class Image:
     def get_paths_and_names(self) -> None:
         """
         Configure the file names if they have no been provided.
+        
+        Args:
+            None
 
         Returns:
             None
@@ -326,17 +333,24 @@ class Image:
                 "TILES",
                 "STOKES{}_IMAGES_CORRECTED".format(self.stokes.upper())
             )
+            if not self.corrected_data:
+                img_folder.replace("_CORRECTED","")
             img_template = (
                 'image.{}.{}.SB{}.cont.taylor.0.restored.fits'
             )
             self.imgname = img_template.format(
                 self.stokes.lower(), self.field, self.sbid
             )
-
-            if not os.path.exists(os.path.join(img_folder, self.imgname)):
-                self.imgname = self.imgname.replace(".corrected,",
-                                                    ".conv.corrected."
-                                                    )
+            img_path = os.path.join(img_folder, self.imgname)
+            if not os.path.exists(img_path):
+                if self.corrected_data:
+                    self.imgname = self.imgname.replace(".corrected.",
+                                                        ".conv.corrected."
+                                                        )
+                else:
+                    self.imgname = self.imgname.replace(".fits",
+                                                        ".conv.fits"
+                                                        )
         else:
             img_folder = os.path.join(
                 self.base_folder,
