@@ -267,7 +267,7 @@ class Image:
         path: Optional[str] = None,
         rmspath: Optional[str] = None,
         rms_header: Optional[fits.Header] = None,
-        corrected_data: Optional[bool] = False
+        corrected_data: Optional[bool] = True
     ) -> None:
         """
         Constructor method.
@@ -287,7 +287,7 @@ class Image:
                 defaults to None.
             rms_header: Header of rms FITS image if already obtained,
                 defaults to None.
-            corrected_data: Access the corrected data. Only relevant if 
+            corrected_data: Access the corrected data. Only relevant if
                 `tiles` is `True`. Defaults to `True`.
 
         Returns:
@@ -319,7 +319,7 @@ class Image:
     def get_paths_and_names(self) -> None:
         """
         Configure the file names if they have no been provided.
-        
+
         Args:
             None
 
@@ -334,7 +334,7 @@ class Image:
                 "STOKES{}_IMAGES_CORRECTED".format(self.stokes.upper())
             )
             if not self.corrected_data:
-                img_folder.replace("_CORRECTED","")
+                img_folder.replace("_CORRECTED", "")
             img_template = (
                 'image.{}.{}.SB{}.cont.taylor.0.restored.fits'
             )

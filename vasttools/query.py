@@ -139,7 +139,7 @@ class Query:
         forced_cluster_threshold: float = 1.5,
         forced_allow_nan: bool = False,
         incl_observed: bool = False,
-        corrected_data: Optional[bool] = False
+        corrected_data: Optional[bool] = True
     ) -> None:
         """
         Constructor method.
@@ -185,7 +185,7 @@ class Query:
             incl_observed: Include epochs that have been observed, but not
                 released, in the query. This should only be used when finding
                 fields, not querying data. Defaults to False.
-            corrected_data: Access the corrected data. Only relevant if 
+            corrected_data: Access the corrected data. Only relevant if
                 `tiles` is `True`. Defaults to `True`.
 
         Returns:
@@ -926,7 +926,8 @@ class Query:
                 self.settings['stokes'],
                 self.base_folder,
                 sbid=group.iloc[0].sbid,
-                tiles=self.settings['tiles']
+                tiles=self.settings['tiles'],
+                corrected_data=self.corrected_data
             )
 
             image.get_img_data()
@@ -1422,7 +1423,8 @@ class Query:
                 field,
                 epoch,
                 stokes,
-                self.base_folder
+                self.base_folder,
+                corrected_data=self.corrected_data
             )
             img_beam.get_img_data()
             img_beam = img_beam.beam
@@ -1579,7 +1581,8 @@ class Query:
                             self.settings['stokes'],
                             self.base_folder,
                             sbid=group.iloc[0].sbid,
-                            tiles=self.settings['tiles']
+                            tiles=self.settings['tiles'],
+                            corrected_data=self.corrected_data
                         )
                         image.get_img_data()
                         rms_values = image.measure_coord_pixel_values(
@@ -1627,9 +1630,11 @@ class Query:
 
         if self.settings['tiles']:
             dir_name = "TILES"
+
             data_folder = f"STOKES{self.settings['stokes']}_SELAVY"
             if self.corrected_data:
                 data_folder += "_CORRECTED"
+
             selavy_folder = Path(
                 self.base_folder,
                 epoch_string,
@@ -1643,7 +1648,7 @@ class Query:
                     row.field, row.sbid, cat_type
                 )
             )
-            
+
             if self.corrected_data:
                 selavy_file_fmt.replace(".xml", ".corrected.xml")
 
@@ -1698,13 +1703,14 @@ class Query:
 
             image_file_fmt = (
                 "image.i.{}.SB{}.cont"
-                ".taylor.0.restored.corrected.fits".format(
+                ".taylor.0.restored.fits".format(
                     row.field, row.sbid
                 )
             )
-            if not self.corrected_data:
+            if self.corrected_data:
                 img_dir += "_CORRECTED"
                 rms_dir += "_CORRECTED"
+                img_file_fmt.replace(".fits", ".corrected.fits")
 
         else:
             dir_name = "COMBINED"
