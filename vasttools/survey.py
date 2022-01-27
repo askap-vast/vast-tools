@@ -333,15 +333,19 @@ class Image:
                 "TILES",
                 "STOKES{}_IMAGES_CORRECTED".format(self.stokes.upper())
             )
-            if not self.corrected_data:
-                img_folder.replace("_CORRECTED", "")
             img_template = (
-                'image.{}.{}.SB{}.cont.taylor.0.restored.fits'
+                'image.{}.{}.SB{}.cont.taylor.0.restored.corrected.fits'
             )
+
+            if not self.corrected_data:
+                img_folder = img_folder.replace("_CORRECTED", "")
+                img_template = img_template.replace(".corrected", "")
+
             self.imgname = img_template.format(
                 self.stokes.lower(), self.field, self.sbid
             )
             img_path = os.path.join(img_folder, self.imgname)
+
             if not os.path.exists(img_path):
                 if self.corrected_data:
                     self.imgname = self.imgname.replace(".corrected.",

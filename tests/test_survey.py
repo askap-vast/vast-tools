@@ -109,7 +109,8 @@ def init_Image() -> vts.Image:
         path: Optional[str] = None,
         tiles: bool = False,
         base_folder: str = '/mocked/basefolder/',
-        rmspath: Optional[str] = None
+        rmspath: Optional[str] = None,
+        corrected_data: Optional[bool] = True
     ) -> vts.Image:
         """
         Returns the Image instance.
@@ -122,6 +123,8 @@ def init_Image() -> vts.Image:
             tiles: Whether the image is tiles or combined.
             base_folder: Base folder of data.
             rmspath: Path of the rms image.
+            corrected_data: Access the corrected data. Only relevant if
+                `tiles` is `True`. Defaults to `True`.
 
         Returns:
             The image instance.
@@ -134,7 +137,8 @@ def init_Image() -> vts.Image:
             tiles=tiles,
             sbid=9667,
             path=path,
-            rmspath=rmspath
+            rmspath=rmspath,
+            corrected_data=corrected_data
         )
 
         return img
@@ -404,9 +408,36 @@ class TestImage:
         assert image.imgname == expected_filename
         assert image.image_fail is False
 
+    @pytest.mark.parametrize("corrected, conv, expected_suffix",
+                             [(True,
+                               True,
+                               'restored.conv.corrected.fits'
+                               ),
+                              (False,
+                               True,
+                               'restored.conv.fits'
+                               ),
+                              (True,
+                               False,
+                               'restored.corrected.fits'
+                               ),
+                              (False,
+                               False,
+                               'restored.fits'
+                               )
+                              ],
+                             ids=("corrected-conv",
+                                  "uncorrected-conv",
+                                  "corrected-noconv",
+                                  "uncorrected-noconv",
+                                  )
+                             )
     def test_image_init_tiles_nopath(
         self,
         init_Image: vts.Image,
+        corrected,
+        conv,
+        expected_suffix,
         mocker
     ) -> None:
         """
@@ -417,24 +448,32 @@ class TestImage:
 
         Args:
             init_Image: The Image pytest fixture.
+            corrected: Test the "corrected" path.
+            conv: Test the "convolved" path.
+            expected_suffix: The suffix of the expected file path.
             mocker: Pytest mock mocker object.
 
         Returns:
             None
         """
-        mock_isfile = mocker.patch('os.path.isfile', return_value=True)
+        mock_ospath = mocker.patch('os.path.exists', return_value=not conv)
+        mock_check_exists = mocker.patch('os.path.isfile', return_value=True)
 
-        image = init_Image(tiles=True)
+        image = init_Image(tiles=True, corrected_data=corrected)
 
         # Use the defaults on the init_Image fixture.
         expected_filename = (
-            "image.i.VAST_0012+00.SB9667.cont.taylor.0.restored.fits"
+            f"image.i.VAST_0012+00.SB9667.cont.taylor.0.{expected_suffix}"
         )
+        
         expected_path = (
             "/mocked/basefolder/EPOCH01/TILES/"
             f"STOKESI_IMAGES_CORRECTED/{expected_filename}"
         )
 
+        if not corrected:
+            expected_path = expected_path.replace("_CORRECTED", "")
+        
         assert image.imgpath == expected_path
         assert image.imgname == expected_filename
         assert image.image_fail is False
@@ -495,7 +534,8 @@ class TestImage:
 
         # Use the defaults on the init_Image fixture.
         expected_filename = (
-            "image.v.VAST_0012+00.SB9667.cont.taylor.0.restored.fits"
+            "image.v.VAST_0012+00.SB9667.cont.taylor."
+            "0.restored.conv.corrected.fits"
         )
         expected_path = (
             "/mocked/basefolder/EPOCH01/TILES/"
