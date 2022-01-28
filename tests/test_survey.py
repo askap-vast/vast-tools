@@ -465,7 +465,7 @@ class TestImage:
         expected_filename = (
             f"image.i.VAST_0012+00.SB9667.cont.taylor.0.{expected_suffix}"
         )
-        
+
         expected_path = (
             "/mocked/basefolder/EPOCH01/TILES/"
             f"STOKESI_IMAGES_CORRECTED/{expected_filename}"
@@ -473,7 +473,7 @@ class TestImage:
 
         if not corrected:
             expected_path = expected_path.replace("_CORRECTED", "")
-        
+
         assert image.imgpath == expected_path
         assert image.imgname == expected_filename
         assert image.image_fail is False
