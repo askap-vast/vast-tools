@@ -444,7 +444,8 @@ def gen_mocs_epoch(epoch: str,
                    image_type: str,
                    image_dir: str,
                    epoch_path: str = None,
-                   outdir: Union[str, Path] = '.'
+                   outdir: Union[str, Path] = '.',
+                   base_stmoc: Union[str, Path] = None
                    ) -> None:
     """
     Generate MOCs and STMOCs for all images in a single epoch, and create a new
@@ -474,8 +475,17 @@ def gen_mocs_epoch(epoch: str,
     if not outdir.exists():
         raise Exception("{} does not exist".format(outdir))
 
-    vtm = VASTMOCS()
-    full_STMOC = vtm.load_pilot_stmoc()
+    if base_stmoc is None:
+        vtm = VASTMOCS()
+        full_STMOC = vtm.load_pilot_stmoc()
+    else:
+        if isinstance(base_stmoc, str):
+            base_stmoc = Path(base_stmoc)
+
+        if not base_stmoc.exists():
+            raise Exception("{} does not exist".format(base_stmoc))
+
+        full_STMOC = STMOC.from_fits(base_stmoc)
 
     if epoch_path is None:
         epoch_path = _set_epoch_path(epoch)
