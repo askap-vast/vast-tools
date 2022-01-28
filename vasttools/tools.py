@@ -465,7 +465,7 @@ def gen_mocs_epoch(epoch: str,
                    image_type: str,
                    image_dir: str,
                    epoch_path: str = None,
-                   outdir: Union[str, Path] = '.'
+                   outdir: Union[str, Path] = '.',
                    base_stmoc: Union[str, Path] = None
                    ) -> None:
     """
