@@ -274,7 +274,7 @@ There are a wide variety of options that can style the output plot, please refer
     ```
 
 ??? example "Example png output"
-    ![!png output example.](../img/png_output_example.png){: loading=lazy }
+    ![!png output example.](../img/png_output_offset_example.png){: loading=lazy }
 
 #### ned_search
 
