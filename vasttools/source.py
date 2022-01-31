@@ -857,7 +857,8 @@ class Source:
             crossmatch_overlay=crossmatch_overlay,
             hide_beam=hide_beam,
             size=size,
-            force=force
+            force=force,
+            offset_axes=offset_axes
         )
 
         return fig
@@ -929,7 +930,8 @@ class Source:
             force=force,
             outfile=outfile,
             save=True,
-            plot_dpi=plot_dpi
+            plot_dpi=plot_dpi,
+            offset_axes=offset_axes
         )
 
         return
@@ -1200,7 +1202,8 @@ class Source:
                 disable_autoscaling,
                 cutout_data,
                 norms,
-                plot_dpi
+                plot_dpi,
+                offset_axes
             )
         )
 
