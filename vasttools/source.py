@@ -1124,7 +1124,8 @@ class Source:
         disable_autoscaling: bool = False,
         cutout_data: Optional[pd.DataFrame] = None,
         calc_script_norms: bool = False,
-        plot_dpi: int = 150
+        plot_dpi: int = 150,
+        offset_axes: bool = True
     ) -> None:
         """
         Wrapper function to save all the png cutouts
@@ -1153,7 +1154,8 @@ class Source:
             calc_script_norms: When passing cutout data this parameter
                 can be set to True to pass this cutout data to the analyse
                 norms function, defaults to False.
-            plot_dpi: Specify the DPI of saved figures, defaults to 150
+            plot_dpi: Specify the DPI of saved figures, defaults to 150.
+            offset_axes: Use offset, rather than absolute, axis labels.
 
         Returns:
             None
@@ -1216,7 +1218,8 @@ class Source:
         no_selavy: bool = False,
         disable_autoscaling: bool = False,
         hide_epoch_labels: bool = False,
-        plot_dpi: int = 150
+        plot_dpi: int = 150,
+        offset_axes: bool = True
     ) -> Union[None, plt.figure]:
         """
         Creates a grid plot showing the source in each epoch.
@@ -1247,6 +1250,7 @@ class Source:
             hide_epoch_labels: Turn off the epoch number label (found in
                 top left corner of image).
             plot_dpi: Specify the DPI of saved figures, defaults to 150.
+            offset_axes: Use offset, rather than absolute, axis labels.
 
         Returns:
             None is save is `True` or the Figure if `False`.
