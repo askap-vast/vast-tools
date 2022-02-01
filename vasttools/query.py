@@ -387,7 +387,6 @@ class Query:
         else:
             self.query_df = None
 
-
         self.fields_found = False
 
         # TODO: Remove warning in future release.
