@@ -139,7 +139,7 @@ The required arguments to this function are the axis and the central coordinate.
     offset_postagestamp_axes(ax, sc)
     ```
 
-??? example "Example png output"
+??? example "Absolute and offset coordinate axis labels"
     === "Absolute coordinates"
         ![!png output example.](../img/png_output_example.png){: loading=lazy }
     === "Offset coordinates"
