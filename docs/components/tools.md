@@ -118,11 +118,6 @@ The arguments to this function is the path to the fits file.
     gen_mocs_epoch('17', 'TILES/STOKESI_IMAGES')
     ```
 
-=== Absolute coordinates
-    ![!png output example.](../img/png_output_example.png){: loading=lazy }
-=== Offset coordinates
-    ![!png output example.](../img/png_output_offset_example.png){: loading=lazy }
-
 ### Plotting niceties
 
 #### offset_postagestamp_axes
@@ -145,4 +140,7 @@ The required arguments to this function are the axis and the central coordinate.
     ```
 
 ??? example "Example png output"
-    ![!png output example.](../img/png_output_example.png){: loading=lazy }
+    === "Absolute coordinates"
+        ![!png output example.](../img/png_output_example.png){: loading=lazy }
+    === "Offset coordinates"
+        ![!png output example.](../img/png_output_offset_example.png){: loading=lazy }
