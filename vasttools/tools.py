@@ -461,6 +461,9 @@ def gen_mocs_epoch(epoch: str,
             `VAST_DATA_DIR` environment variable and `epoch`.
         outdir: Path to the output directory.
             Defaults to the current directory.
+        base_stmoc: Path to the STMOC to use as the base. Defaults to `None`,
+            in which case the VAST STMOC installed with vast-tools will
+            be used.
 
     Returns:
         None
