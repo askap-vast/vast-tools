@@ -456,6 +456,66 @@ def test_gen_mocs_epoch(dummy_moc: MOC,
     mocker_stmoc_write.assert_has_calls(stmoc_calls)
 
 
+def test_gen_mocs_epoch_outdir_failure(mocker) -> None:
+    """
+    Tests the generation of all MOCs and STMOCs for a single epoch.
+    Also tests the update of the full STMOC.
+
+    Args:
+        mocker: The pytest mock mocker object.
+
+    Returns:
+        None
+    """
+
+    outdir = '/path/to/outdir'
+
+    mocker_exists = mocker.patch('vasttools.tools.Path.exists',
+                                 return_value=False
+                                 )
+
+    with pytest.raises(Exception) as excinfo:
+        vtt.gen_mocs_epoch('1',
+                           '',
+                           '',
+                           outdir=outdir
+                           )
+
+    exc_str = "{} does not exist".format(outdir)
+
+    assert str(excinfo.value) == exc_str
+
+
+def test_gen_mocs_epoch_stmoc_failure(mocker) -> None:
+    """
+    Tests the generation of all MOCs and STMOCs for a single epoch.
+    Also tests the update of the full STMOC.
+
+    Args:
+        mocker: The pytest mock mocker object.
+
+    Returns:
+        None
+    """
+
+    base_stmoc = '/path/to/stmoc.fits'
+
+    mocker_exists = mocker.patch('vasttools.tools.Path.exists',
+                                 side_effect=[True, False]
+                                 )
+
+    with pytest.raises(Exception) as excinfo:
+        vtt.gen_mocs_epoch('1',
+                           '',
+                           '',
+                           epoch_path='.',
+                           base_stmoc=base_stmoc
+                           )
+
+    exc_str = "{} does not exist".format(base_stmoc)
+    assert str(excinfo.value) == exc_str
+
+
 def test__set_epoch_path_failure(mocker) -> None:
     """
     Tests the set_epoch_path function when `VAST_DATA_DIR` has not been set.
@@ -472,7 +532,7 @@ def test__set_epoch_path_failure(mocker) -> None:
 
     with pytest.raises(Exception) as excinfo:
         vtt._set_epoch_path('1')
-    print(str(excinfo.value))
+
     assert str(excinfo.value).startswith(
         "The path to the requested epoch could not be determined!"
     )
