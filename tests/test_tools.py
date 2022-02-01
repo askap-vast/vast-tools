@@ -342,7 +342,7 @@ def test_gen_mocs_image(
             FITS file.
         dummy_load_fields_file: The dummy fields file.
         dummy_moc: The dummy MOC object representing an open MOC.
-        write: Whether to test the write to file or not
+        write: Whether to test the write to file or not.
         mocker: The pytest mock mocker object.
 
     Returns:
