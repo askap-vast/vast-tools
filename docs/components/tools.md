@@ -4,6 +4,7 @@ The `Tools` sub-package is a mishmash of useful VAST-related functions that do n
 
   * Filtering VAST data using gravitational wave skymaps and MOCs.
   * Adding a new epoch of observations to the package.
+  * Plotting niceties
   
 ## Using the Tools Component
 
@@ -116,3 +117,30 @@ The arguments to this function is the path to the fits file.
     from vasttools.tools import gen_mocs_epoch
     gen_mocs_epoch('17', 'TILES/STOKESI_IMAGES')
     ```
+
+### Plotting niceties
+
+#### offset_postagestamp_axes
+:fontawesome-regular-file-alt: [Code reference](../../reference/tools/#vasttools.tools.offset_postagestamp_axes).
+
+This function updates a figure to display the axis labels as offsets from a central coordinate, rather than in absolute Right Ascension and Declination.
+The required arguments to this function are the axis and the central coordinate. Refer to the Code Reference for information on all other the arguments.
+
+!!! example "Example: Update a figure axis to use offset coordinates"
+    Update an existing matplotlib axis (`ax`) to display axes as offset from `00:00:00, 00:00:00`.
+    ```python
+    from vasttools.tools import offset_postagestamp_axes
+    from astropy.coordinates import SkyCoord
+    import astropy.units as u
+    import matplotlib.pyplot as plt
+    
+    fig, ax = plt.subplots()
+    sc = SkyCoord("00:00:00", "00:00:00", unit=(u.hourangle, u.deg))
+    offset_postagestamp_axes(ax, sc)
+    ```
+
+??? example "Absolute and offset coordinate axis labels"
+    === "Absolute coordinates"
+        ![!png output example.](../img/png_output_example.png){: loading=lazy }
+    === "Offset coordinates"
+        ![!png output example.](../img/png_output_offset_example.png){: loading=lazy }
