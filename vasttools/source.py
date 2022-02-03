@@ -55,6 +55,7 @@ from radio_beam import Beam
 from vasttools import RELEASED_EPOCHS
 from vasttools.survey import Image
 from vasttools.utils import crosshair, filter_selavy_components, read_selavy
+from vasttools.tools import offset_postagestamp_axes
 
 # run crosshair to set up the marker.
 crosshair()
@@ -854,6 +855,7 @@ class Source:
         hide_beam: bool = False,
         size: Optional[Angle] = None,
         force: bool = False,
+        offset_axes: bool = True,
     ) -> plt.Figure:
         """
         Wrapper for make_png to make nicer interactive function.
@@ -878,7 +880,8 @@ class Source:
             hide_beam: Hide the beam on the plot, defaults to `False`.
             size: Size of the cutout, defaults to None.
             force: Whether to force the re-fetching of the cutout data,
-                defaults to `False`
+                defaults to `False`.
+            offset_axes: Use offset, rather than absolute, axis labels.
 
         Returns:
             Figure object.
@@ -897,7 +900,8 @@ class Source:
             crossmatch_overlay=crossmatch_overlay,
             hide_beam=hide_beam,
             size=size,
-            force=force
+            force=force,
+            offset_axes=offset_axes
         )
 
         return fig
@@ -918,7 +922,8 @@ class Source:
         size: Optional[Angle] = None,
         force: bool = False,
         outfile: Optional[str] = None,
-        plot_dpi: int = 150
+        plot_dpi: int = 150,
+        offset_axes: bool = True
     ) -> None:
         """
         Wrapper for make_png to make nicer interactive function.
@@ -947,6 +952,7 @@ class Source:
             outfile: Name to give the file, if None then the name is
                 automatically generated, defaults to None.
             plot_dpi: Specify the DPI of saved figures, defaults to 150.
+            offset_axes: Use offset, rather than absolute, axis labels.
 
         Returns:
             None
@@ -967,7 +973,8 @@ class Source:
             force=force,
             outfile=outfile,
             save=True,
-            plot_dpi=plot_dpi
+            plot_dpi=plot_dpi,
+            offset_axes=offset_axes
         )
 
         return
@@ -1162,7 +1169,8 @@ class Source:
         disable_autoscaling: bool = False,
         cutout_data: Optional[pd.DataFrame] = None,
         calc_script_norms: bool = False,
-        plot_dpi: int = 150
+        plot_dpi: int = 150,
+        offset_axes: bool = True
     ) -> None:
         """
         Wrapper function to save all the png cutouts
@@ -1191,7 +1199,8 @@ class Source:
             calc_script_norms: When passing cutout data this parameter
                 can be set to True to pass this cutout data to the analyse
                 norms function, defaults to False.
-            plot_dpi: Specify the DPI of saved figures, defaults to 150
+            plot_dpi: Specify the DPI of saved figures, defaults to 150.
+            offset_axes: Use offset, rather than absolute, axis labels.
 
         Returns:
             None
@@ -1236,7 +1245,8 @@ class Source:
                 disable_autoscaling,
                 cutout_data,
                 norms,
-                plot_dpi
+                plot_dpi,
+                offset_axes
             )
         )
 
@@ -1254,7 +1264,8 @@ class Source:
         no_selavy: bool = False,
         disable_autoscaling: bool = False,
         hide_epoch_labels: bool = False,
-        plot_dpi: int = 150
+        plot_dpi: int = 150,
+        offset_axes: bool = True
     ) -> Union[None, plt.figure]:
         """
         Creates a grid plot showing the source in each epoch.
@@ -1285,6 +1296,7 @@ class Source:
             hide_epoch_labels: Turn off the epoch number label (found in
                 top left corner of image).
             plot_dpi: Specify the DPI of saved figures, defaults to 150.
+            offset_axes: Use offset, rather than absolute, axis labels.
 
         Returns:
             None is save is `True` or the Figure if `False`.
@@ -1672,7 +1684,8 @@ class Source:
         disable_autoscaling: bool = False,
         cutout_data: Optional[pd.DataFrame] = None,
         norms: Optional[ImageNormalize] = None,
-        plot_dpi: int = 150
+        plot_dpi: int = 150,
+        offset_axes: bool = True
     ) -> Union[None, plt.figure]:
         """
         Save a PNG of the image postagestamp.
@@ -1713,6 +1726,7 @@ class Source:
             norms: Pass external normalization to be used
                 instead of internal calculations.
             plot_dpi: Specify the DPI of saved figures, defaults to 150.
+            offset_axes: Use offset, rather than absolute, axis labels.
 
         Returns:
             None if save is `True` or the figure object if `False`
@@ -1954,6 +1968,34 @@ class Source:
                 ax.add_artist(png_beam)
         else:
             self.logger.debug("Hiding beam.")
+
+        if offset_axes:
+            axis_units = u.arcmin
+
+            if size is None and cutout_row.wcs.is_celestial:
+                pix_scale = proj_plane_pixel_scales(
+                    cutout_row.wcs
+                )
+                sx = pix_scale[0]
+                sy = pix_scale[1]
+                xlims = ax.get_xlim()
+                ylims = ax.get_ylim()
+
+                xsize = sx * (xlims[1] - xlims[0])
+                ysize = sy * (ylims[1] - ylims[0])
+                size = max([xsize, ysize]) * u.deg
+
+            if size is not None:
+                if size < 2 * u.arcmin:
+                    axis_units = u.arcsec
+                elif size > 2 * u.deg:
+                    axis_units = u.deg
+
+            offset_postagestamp_axes(ax,
+                                     self.coord,
+                                     ra_units=axis_units,
+                                     dec_units=axis_units
+                                     )
 
         if save:
             plt.savefig(outfile, bbox_inches="tight", dpi=plot_dpi)

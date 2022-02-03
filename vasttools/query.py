@@ -503,6 +503,7 @@ class Query:
         png_crossmatch_overlay: bool = False,
         png_hide_beam: bool = False,
         png_disable_autoscaling: bool = False,
+        png_offset_axes: bool = True,
         ann_crossmatch_overlay: bool = False,
         reg_crossmatch_overlay: bool = False,
         lc_sigma_thresh: int = 5,
@@ -552,6 +553,8 @@ class Query:
                 postagestamps, defaults to `False`.
             png_hide_beam: Do not show the beam shape on png postagestamps,
                 defaults to `False`.
+            png_disable_autoscaling: Disable autoscaling.
+            png_offset_axes: Use offset, rather than absolute, axis labels.
             ann_crossmatch_overlay: Include crossmatch radius in ann,
                 defaults to `False`.
             reg_crossmatch_overlay: Include crossmatch radius in reg,
@@ -639,6 +642,7 @@ class Query:
             png_crossmatch_overlay=png_crossmatch_overlay,
             png_hide_beam=png_hide_beam,
             png_disable_autoscaling=png_disable_autoscaling,
+            png_offset_axes=png_offset_axes,
             ann_crossmatch_overlay=ann_crossmatch_overlay,
             reg_crossmatch_overlay=reg_crossmatch_overlay,
             lc_sigma_thresh=lc_sigma_thresh,
@@ -711,6 +715,7 @@ class Query:
         png_crossmatch_overlay: bool = False,
         png_hide_beam: bool = False,
         png_disable_autoscaling: bool = False,
+        png_offset_axes: bool = True,
         ann_crossmatch_overlay: bool = False,
         reg_crossmatch_overlay: bool = False,
         lc_sigma_thresh: int = 5,
@@ -759,6 +764,8 @@ class Query:
                 postagestamps, defaults to `False`.
             png_hide_beam: Do not show the beam shape on png postagestamps,\
                 defaults to `False`.
+            png_disable_autoscaling: Disable autoscaling.
+            png_offset_axes: Use offset, rather than absolute, axis labels.
             ann_crossmatch_overlay: Include crossmatch radius in ann,
                 defaults to `False`.
             reg_crossmatch_overlay: Include crossmatch radius in reg,
@@ -810,7 +817,8 @@ class Query:
                 disable_autoscaling=png_disable_autoscaling,
                 cutout_data=cutout_data,
                 calc_script_norms=calc_script_norms,
-                plot_dpi=plot_dpi
+                plot_dpi=plot_dpi,
+                offset_axes=png_offset_axes
             )
 
         if ann:

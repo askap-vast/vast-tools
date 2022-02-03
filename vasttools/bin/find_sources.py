@@ -268,6 +268,13 @@ def parse_args() -> argparse.Namespace:
             ' scale settings to each epoch individually.'
         ))
     parser.add_argument(
+        '--png-absolute-axes',
+        action="store_true",
+        help=(
+            'Create PNGs with axis labels in absolute coordinates,'
+            ' rather than offsets from the central position.'
+        ))
+    parser.add_argument(
         '--ann',
         action="store_true",
         help='Create a kvis annotation file of the components.')
@@ -565,6 +572,7 @@ def main() -> None:
                 png_crossmatch_overlay=args.crossmatch_radius_overlay,
                 png_hide_beam=args.png_hide_beam,
                 png_disable_autoscaling=args.png_disable_autoscaling,
+                png_offset_axes=(not args.png_absolute_axes),
                 ann_crossmatch_overlay=args.crossmatch_radius_overlay,
                 reg_crossmatch_overlay=args.crossmatch_radius_overlay,
                 lc_sigma_thresh=5,
