@@ -270,11 +270,22 @@ There are a wide variety of options that can style the output plot, please refer
 !!! example
     Creating a `png` plot for the epoch labelled as `'1'`.
     ```python
-    my_source.get_cutout_data('1')
+    my_source.make_png('1')
     ```
 
+By default the axis labels will measure the offset from the central coordinate. However users can instead choose to use absolute coordinates by setting the `offset_axes` argument to `False`.
+    
+!!! example
+    Creating a `png` plot for the epoch labelled as `'1'` using absolute coordinates.
+    ```python
+    my_source.make_png('1', offset_axes=False)
+    ```
 ??? example "Example png output"
-    ![!png output example.](../img/png_output_example.png){: loading=lazy }
+    === "Offset coordinates"
+        ![!png output example.](../img/png_output_offset_example.png){: loading=lazy }
+    === "Absolute coordinates"
+        ![!png output example.](../img/png_output_example.png){: loading=lazy }
+
 
 #### ned_search
 
