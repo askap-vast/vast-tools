@@ -21,7 +21,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 #### Removed
 
 #### List of PRs
-- [#322](https://github.com/askap-vast/vast-tools/pull/323): feat, tests: New options for MOC generation
+- [#323](https://github.com/askap-vast/vast-tools/pull/323): feat, tests: New options for MOC generation
 - [#315](https://github.com/askap-vast/vast-tools/pull/315): tests, docs, feat: Use offset, rather than absolute, coordinates for postagestamps
 - [#317](https://github.com/askap-vast/vast-tools/pull/317): docs: Added warning to docs
 - [#298](https://github.com/askap-vast/vast-tools/pull/298): tests, docs, feat: Added tools for new epoch addition
