@@ -95,7 +95,7 @@ The arguments to this function are the epoch, the image directory and the path t
 :fontawesome-regular-file-alt: [Code reference](../../reference/tools/#vasttools.tools.gen_mocs_image).
 
 This function creates a MOC and STMOC from a single fits image. It is unlikely that users would ever have to call this directly, and it should instead be called as part of [`gen_mocs_epoch`](./gen_mocs_epoch).
-The arguments to this function is the path to the fits file.
+The arguments to this function are the path to the fits file, whether to write the MOC/STMOC to file or simply return them, and the directory to write them to.
 
 !!! example "Example: Generate a MOC and STMOC for a single field"
     Generate a MOC for VAST0012-06A epoch 1.
