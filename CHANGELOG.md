@@ -12,7 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added tools for new epoch addition: add datetimes to fits images create fields csv files, create and update MOCs [#298](https://github.com/askap-vast/vast-tools/pull/298)
 
 #### Changed
-- Allow users to specify whether to write generated MOCs, and to use arbitrary STMOC [#322](https://github.com/askap-vast/vast-tools/pull/323)
+- Allow users to specify whether to write generated MOCs, and to use arbitrary STMOC [#323](https://github.com/askap-vast/vast-tools/pull/323)
 - Changed source.Source.make_png to create postagestamps using coordinate offsets [#315](https://github.com/askap-vast/vast-tools/pull/315)
 - Minor documentation edits [#298](https://github.com/askap-vast/vast-tools/pull/298)
 
