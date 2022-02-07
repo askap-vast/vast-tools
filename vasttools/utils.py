@@ -320,10 +320,10 @@ def read_selavy(selavy_path: str, cols: list = None) -> pd.DataFrame:
     """
     Load a selavy catalogue from file. Can handle VOTables and csv files.
     Args:
-        selavy_path: Path to the file
-        cols: Columns to use. Defaults to None, which returns all columns
+        selavy_path: Path to the file.
+        cols: Columns to use. Defaults to None, which returns all columns.
     Returns:
-        Dataframe containing the catalogue
+        Dataframe containing the catalogue.
     """
 
     if selavy_path.endswith(".xml") or selavy_path.endswith(".vot"):
