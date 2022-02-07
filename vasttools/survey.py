@@ -222,8 +222,6 @@ class Fields:
 
         self.logger.debug(f"Frequencies: {self.fields.OBS_FREQ.unique()}")
 
-        # Epoch 99 has some empty beam directions (processing failures)
-        # Drop them and any issue rows in the future.
         self.fields.dropna(inplace=True)
         self.fields.reset_index(drop=True, inplace=True)
 
