@@ -14,10 +14,5 @@ def test_epoch_dicts():
         None
     """
 
-    intersection = []
-
-    for epoch in RELEASED_EPOCHS.keys():
-        if epoch in OBSERVED_EPOCHS.keys():
-            intersection.append(epoch)
-
-    assert intersection == []
+    # check intersection result is an empty set.
+    assert RELEASED_EPOCHS.keys() & OBSERVED_EPOCHS.keys() == set()
