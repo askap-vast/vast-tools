@@ -267,7 +267,7 @@ class Image:
         path: Optional[str] = None,
         rmspath: Optional[str] = None,
         rms_header: Optional[fits.Header] = None,
-        corrected_data: Optional[bool] = True
+        corrected_data: bool = True
     ) -> None:
         """
         Constructor method.
