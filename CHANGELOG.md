@@ -12,7 +12,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added access to epochs up 17, 18, 19 [#311](https://github.com/askap-vast/vast-tools/pull/311)
 - Added BASE_EPOCHS variable [#311](https://github.com/askap-vast/vast-tools/pull/311)
 - Added tools.offset_postagestamp_axes which allows users to display postagestamps with offset (rather than absolute) coordinates [#315](https://github.com/askap-vast/vast-tools/pull/315)
->>>>>>> dev
 - Added Dask RuntimeError warning to query.md docs [#317](https://github.com/askap-vast/vast-tools/pull/317)
 - Added tools for new epoch addition: add datetimes to fits images create fields csv files, create and update MOCs [#298](https://github.com/askap-vast/vast-tools/pull/298)
 
