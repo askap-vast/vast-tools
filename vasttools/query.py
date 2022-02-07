@@ -1847,6 +1847,9 @@ class Query:
 
         if self.query_df is not None:
             self.fields_df = self.query_df.copy()
+            
+            # _field_matching returns 7 arguments. This dict specifies types,
+            # O for object (in this case, lists) and U for unicode string.
             meta = {
                 0: 'O',
                 1: 'U',
