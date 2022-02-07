@@ -316,7 +316,10 @@ def build_SkyCoord(catalog: pd.DataFrame) -> SkyCoord:
     return src_coords
 
 
-def read_selavy(selavy_path: str, cols: list = None) -> pd.DataFrame:
+def read_selavy(
+        selavy_path: str,
+        cols: Optional[List[str]] = None
+        ) -> pd.DataFrame:
     """
     Load a selavy catalogue from file. Can handle VOTables and csv files.
     Args:
