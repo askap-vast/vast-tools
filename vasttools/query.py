@@ -139,7 +139,7 @@ class Query:
         forced_cluster_threshold: float = 1.5,
         forced_allow_nan: bool = False,
         incl_observed: bool = False,
-        corrected_data: Optional[bool] = True
+        corrected_data: bool = True
     ) -> None:
         """
         Constructor method.
