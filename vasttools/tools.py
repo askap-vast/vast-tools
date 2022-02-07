@@ -240,7 +240,7 @@ def _create_fields_df(epoch_num: str,
         raise Exception("{} does not exist!".format(vast_db))
 
     if type(epoch_num) is str:
-        epoch_num = int(epoch_num.replace('x', ''))  # .lstrip('0')
+        epoch_num = int(epoch_num.replace('x', ''))
 
     descrip_df = pd.read_csv(vast_db / 'description.csv', index_col='EPOCH')
 
