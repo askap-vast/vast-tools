@@ -28,7 +28,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Fixed
 - Updated missing values in RACS beam info csv file [#311](https://github.com/askap-vast/vast-tools/pull/311)
-- Implemented correct central observing frequencies [#311](https://github.com/askap-vast/vast-tools/pull/311)
 
 #### Removed
 
