@@ -414,7 +414,8 @@ def add_obs_date(epoch: str,
 
 
 def gen_mocs_image(fits_file: str,
-                   outdir: Union[str, Path] = '.'
+                   outdir: Union[str, Path] = '.',
+                   write: bool = False
                    ) -> Union[MOC, STMOC]:
     """
     Generate a MOC and STMOC for a single fits file.
@@ -423,6 +424,7 @@ def gen_mocs_image(fits_file: str,
         fits_file: path to the fits file.
         outdir: Path to the output directory.
             Defaults to the current directory.
+        write: Write the MOC/STMOC to file.
 
     Returns:
         The MOC and STMOC.
@@ -449,12 +451,13 @@ def gen_mocs_image(fits_file: str,
         start, end, [moc]
     )
 
-    filename = os.path.split(fits_file)[1]
-    moc_name = filename.replace(".fits", ".moc.fits")
-    stmoc_name = filename.replace(".fits", ".stmoc.fits")
+    if write:
+        filename = os.path.split(fits_file)[1]
+        moc_name = filename.replace(".fits", ".moc.fits")
+        stmoc_name = filename.replace(".fits", ".stmoc.fits")
 
-    moc.write(outdir / moc_name, overwrite=True)
-    stmoc.write(outdir / stmoc_name, overwrite=True)
+        moc.write(outdir / moc_name, overwrite=True)
+        stmoc.write(outdir / stmoc_name, overwrite=True)
 
     return moc, stmoc
 
@@ -463,7 +466,8 @@ def gen_mocs_epoch(epoch: str,
                    image_type: str,
                    image_dir: str,
                    epoch_path: str = None,
-                   outdir: Union[str, Path] = '.'
+                   outdir: Union[str, Path] = '.',
+                   base_stmoc: Union[str, Path] = None
                    ) -> None:
     """
     Generate MOCs and STMOCs for all images in a single epoch, and create a new
@@ -479,6 +483,9 @@ def gen_mocs_epoch(epoch: str,
             `VAST_DATA_DIR` environment variable and `epoch`.
         outdir: Path to the output directory.
             Defaults to the current directory.
+        base_stmoc: Path to the STMOC to use as the base. Defaults to `None`,
+            in which case the VAST STMOC installed with vast-tools will
+            be used.
 
     Returns:
         None
@@ -493,8 +500,17 @@ def gen_mocs_epoch(epoch: str,
     if not outdir.exists():
         raise Exception("{} does not exist".format(outdir))
 
-    vtm = VASTMOCS()
-    full_STMOC = vtm.load_pilot_stmoc()
+    if base_stmoc is None:
+        vtm = VASTMOCS()
+        full_STMOC = vtm.load_pilot_stmoc()
+    else:
+        if isinstance(base_stmoc, str):
+            base_stmoc = Path(base_stmoc)
+
+        if not base_stmoc.exists():
+            raise Exception("{} does not exist".format(base_stmoc))
+
+        full_STMOC = STMOC.from_fits(base_stmoc)
 
     if epoch_path is None:
         epoch_path = _set_epoch_path(epoch)
