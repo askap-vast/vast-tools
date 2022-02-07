@@ -197,7 +197,7 @@ class Fields:
             make up each field in the epoch.
     """
 
-    def __init__(self, epochs: Union[str, list]) -> None:
+    def __init__(self, epochs: Union[str, List[str]]) -> None:
         """
         Constructor method.
 
