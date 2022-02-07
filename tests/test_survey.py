@@ -110,7 +110,7 @@ def init_Image() -> vts.Image:
         tiles: bool = False,
         base_folder: str = '/mocked/basefolder/',
         rmspath: Optional[str] = None,
-        corrected_data: Optional[bool] = True
+        corrected_data: bool = True
     ) -> vts.Image:
         """
         Returns the Image instance.
