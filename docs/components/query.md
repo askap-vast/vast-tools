@@ -174,14 +174,15 @@ A list of epochs or a comma-separated string of epochs to search.
 Do not use zero padded values when entering the epochs.
 The values `all` and `all-vast` are also valid, selecting Epoch 0 + VAST data and just VAST data, respectively.
 
-!!! example "Example: Querying with a comma-separated string"
-    ```python
-    my_query = Query(..., epochs="1,2,6x,8,9")
-    ```
-!!! example "Example: Querying with a list"
-    ```python
-    my_query = Query(..., epochs=["1","2","6x","8","9"])
-    ```
+!!! example "Example: Defining the epochs parameter"
+    === "Comma-separated string"
+        ```python
+        my_query = Query(..., epochs="1,2,6x,8,9")
+        ```
+    === "List"
+        ```python
+        my_query = Query(..., epochs=["1","2","6x","8","9"])
+        ```
 
 **`stokes`**  
 Select which Stokes parameter data to search in.
