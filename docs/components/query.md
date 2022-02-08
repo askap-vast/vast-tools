@@ -170,14 +170,19 @@ All matches within the `crossmatch_radius` are returned instead of just the clos
 These `Query` keyword arguments control the data that is used to perform the query or the data returned.
 
 **`epochs`**  
-A comma-separated list of epochs (entered as a string) to search.
+A list of epochs or a comma-separated string of epochs to search.
 Do not use zero padded values when entering the epochs.
 The values `all` and `all-vast` are also valid, selecting Epoch 0 + VAST data and just VAST data, respectively.
 
-!!! example
-    ```python
-    my_query = Query(..., epochs="1,2,6x,8,9")
-    ```
+!!! example "Example: Defining the epochs parameter"
+    === "Comma-separated string"
+        ```python
+        my_query = Query(..., epochs="1,2,6x,8,9")
+        ```
+    === "List"
+        ```python
+        my_query = Query(..., epochs=["1","2","6x","8","9"])
+        ```
 
 **`stokes`**  
 Select which Stokes parameter data to search in.
