@@ -424,13 +424,6 @@ class Query:
             )
             return False
 
-        if self.settings['tiles'] and not self.settings['no_rms']:
-            self.logger.warning(
-                "RMS measurements are not supported with tiles!"
-            )
-            self.logger.warning("Turning RMS measurements off.")
-            self.settings['no_rms'] = True
-
         return True
 
     def _get_all_cutout_data(self, imsize: Angle) -> pd.DataFrame:
