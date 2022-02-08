@@ -418,12 +418,6 @@ class Query:
             self.logger.critical("Only Stokes I are supported with tiles!")
             return False
 
-        if self.settings['tiles'] and self.settings['islands']:
-            self.logger.critical(
-                "Only component catalogues are supported with tiles!"
-            )
-            return False
-
         if self.settings['tiles'] and not self.settings['no_rms']:
             self.logger.warning(
                 "RMS measurements are not supported with tiles!"
