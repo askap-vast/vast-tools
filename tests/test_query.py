@@ -932,8 +932,13 @@ class TestQuery:
 
         assert results == expected_results
 
+    @pytest.mark.parametrize("corrected",
+                             [True,False],
+                             ids=('corrected','uncorrected')
+                             )
     def test__add_files_tiles(
         self,
+        corrected: bool,
         vast_query_psrj2129_fields: vtq.Query,
         mocker
     ) -> None:
@@ -943,6 +948,7 @@ class TestQuery:
         Assumes the standard VAST Pilot directory and file structure.
 
         Args:
+            corrected: Whether to test the corrected paths or not.
             vast_query_psrj2129_fields: The dummy Query instance that includes
                 a search for PSR J2129-04 with the included found fields data.
             mocker: The pytest-mock mocker object.
@@ -950,18 +956,34 @@ class TestQuery:
         Returns:
             None
         """
-        expected_results = (
-            '/testing/folder/EPOCH01/TILES/STOKESI_SELAVY_CORRECTED'
-            '/selavy-image.i.VAST_2118-06A.SB9668.cont.taylor.0'
-            '.restored.components.corrected.xml',
-            '/testing/folder/EPOCH01/TILES/STOKESI_IMAGES_CORRECTED'
-            '/image.i.VAST_2118-06A.SB9668.cont.taylor.0.'
-            'restored.corrected.fits',
-            'N/A'
-        )
-
+        if corrected:
+            expected_results = (
+                '/testing/folder/EPOCH01/TILES/STOKESI_SELAVY_CORRECTED'
+                '/selavy-image.i.VAST_2118-06A.SB9668.cont.taylor.0'
+                '.restored.components.corrected.xml',
+                '/testing/folder/EPOCH01/TILES/STOKESI_IMAGES_CORRECTED'
+                '/image.i.VAST_2118-06A.SB9668.cont.taylor.0.'
+                'restored.corrected.fits',
+                '/testing/folder/EPOCH01/TILES/STOKESI_RMSMAPS_CORRECTED'
+                '/noiseMap.image.i.VAST_2118-06A.SB9668.cont.taylor.0'
+                '.restored.corrected.fits'
+            )
+        else:
+            expected_results = (
+                '/testing/folder/EPOCH01/TILES/STOKESI_SELAVY'
+                '/selavy-image.i.VAST_2118-06A.SB9668.cont.taylor.0'
+                '.restored.components.xml',
+                '/testing/folder/EPOCH01/TILES/STOKESI_IMAGES'
+                '/image.i.VAST_2118-06A.SB9668.cont.taylor.0.'
+                'restored.fits',
+                '/testing/folder/EPOCH01/TILES/STOKESI_RMSMAPS'
+                '/noiseMap.image.i.VAST_2118-06A.SB9668.cont.taylor.0'
+                '.restored.fits'
+            )
         test_query = vast_query_psrj2129_fields
         test_query.settings['tiles'] = True
+        
+        test_query.corrected_data = corrected
 
         mock_selavy_path = mocker.patch(
             'vasttools.query.Query._get_selavy_path',
