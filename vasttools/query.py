@@ -51,7 +51,7 @@ from radio_beam import Beams, Beam
 
 from tabulate import tabulate
 
-from typing import Optional, List, Tuple, Dict
+from typing import Optional, List, Tuple, Dict, Union
 
 from pathlib import Path
 
@@ -121,7 +121,7 @@ class Query:
         self,
         coords: Optional[SkyCoord] = None,
         source_names: Optional[List[str]] = None,
-        epochs: str = "1",
+        epochs: Union[str, List[str]] = "1",
         stokes: str = "I",
         crossmatch_radius: float = 5.0,
         max_sep: float = 1.0,
@@ -147,9 +147,10 @@ class Query:
         Args:
             coords: List of coordinates to query, defaults to None.
             source_names: List of source names, defaults to None.
-            epochs: Comma-separated list of epochs to query.
-                All available epochs can be queried by passing "all".
-                Defaults to "all".
+            epochs: Epochs to query. Can be specified with either a list
+                or a comma-separated string. All available epochs can be
+                queried by passing "all", and all available VAST epochs can be
+                queried by passing "all-vast". Defaults to "1".
             stokes: Stokes parameter to query.
             crossmatch_radius: Crossmatch radius in arcsec, defaults to 5.0.
             max_sep: Maximum separation of source from beam centre
@@ -2209,7 +2210,7 @@ class Query:
         return catalog
 
     def _get_epochs(self,
-                    req_epochs: str
+                    req_epochs: Union[str, List[str]]
                     ) -> List[str]:
         """
         Parse the list of epochs to query.
@@ -2237,6 +2238,11 @@ class Query:
                     epochs.remove(racs_epoch)
         else:
             epochs = []
+            if type(req_epochs) == list:
+                epoch_iter = req_epochs
+            else:
+                epoch_iter = req_epochs.split(',')
+
             for epoch in req_epochs.split(','):
                 if epoch in available_epochs:
                     epochs.append(epoch)
