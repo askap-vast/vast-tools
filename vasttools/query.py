@@ -1712,17 +1712,19 @@ class Query:
             dir_name = "TILES"
 
             image_file_fmt = (
-                "image.i.{}.SB{}.cont"
+                "image.{}.{}.SB{}.cont"
                 ".taylor.0.restored.fits".format(
-                    row.field, row.sbid
+                    self.settings['stokes'], row.field, row.sbid
                 )
             )
+
             if self.corrected_data:
                 img_dir += "_CORRECTED"
                 rms_dir += "_CORRECTED"
                 image_file_fmt = image_file_fmt.replace(".fits",
                                                         ".corrected.fits"
                                                         )
+            rms_file_fmt = f"noiseMap.{image_file_fmt}"
 
         else:
             dir_name = "COMBINED"
@@ -1749,16 +1751,14 @@ class Query:
             image_file_fmt
         )
 
-        if self.settings['tiles']:
-            rms_file = "N/A"
-        else:
-            rms_file = os.path.join(
-                self.base_folder,
-                epoch_string,
-                dir_name,
-                rms_dir,
-                rms_file_fmt
-            )
+
+        rms_file = os.path.join(
+            self.base_folder,
+            epoch_string,
+            dir_name,
+            rms_dir,
+            rms_file_fmt
+        )
 
         return selavy_file, image_file, rms_file
 
