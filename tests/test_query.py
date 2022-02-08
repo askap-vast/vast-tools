@@ -937,7 +937,7 @@ class TestQuery:
                               (True, "V"),
                               (False, "I"),
                               (False, "V"),
-                             ],
+                              ],
                              ids=('corrected-i',
                                   'corrected-v',
                                   'uncorrected-i',
@@ -970,27 +970,27 @@ class TestQuery:
         stokes_lower = stokes.lower()
         if corrected:
             expected_results = (
-                f'/testing/folder/EPOCH01/TILES/STOKES{stokes}_SELAVY_CORRECTED'
-                f'/selavy-image.{stokes_lower}.VAST_2118-06A.SB9668.cont.taylor'
-                '.0.restored.components.corrected.xml',
-                f'/testing/folder/EPOCH01/TILES/STOKES{stokes}_IMAGES_CORRECTED'
-                f'/image.{stokes_lower}.VAST_2118-06A.SB9668.cont.taylor.0.'
-                'restored.corrected.fits',
+                f'/testing/folder/EPOCH01/TILES/STOKES{stokes}_SELAVY'
+                f'_CORRECTED/selavy-image.{stokes_lower}.VAST_2118-06A.SB9668'
+                '.cont.taylor.0.restored.components.corrected.xml',
+                f'/testing/folder/EPOCH01/TILES/STOKES{stokes}_IMAGES'
+                f'_CORRECTED/image.{stokes_lower}.VAST_2118-06A.SB9668.cont'
+                '.taylor.0.restored.corrected.fits',
                 f'/testing/folder/EPOCH01/TILES/STOKES{stokes}_RMSMAPS'
-                f'_CORRECTED/noiseMap.image.{stokes_lower}.VAST_2118-06A.SB9668'
-                '.cont.taylor.0.restored.corrected.fits'
+                f'_CORRECTED/noiseMap.image.{stokes_lower}.VAST_2118-06A'
+                '.SB9668.cont.taylor.0.restored.corrected.fits'
             )
         else:
             expected_results = (
                 f'/testing/folder/EPOCH01/TILES/STOKES{stokes}_SELAVY'
-                f'/selavy-image.{stokes_lower}.VAST_2118-06A.SB9668.cont.taylor'
-                '.0.restored.components.xml',
+                f'/selavy-image.{stokes_lower}.VAST_2118-06A.SB9668.cont'
+                '.taylor.0.restored.components.xml',
                 f'/testing/folder/EPOCH01/TILES/STOKES{stokes}_IMAGES'
                 f'/image.{stokes_lower}.VAST_2118-06A.SB9668.cont.taylor.0.'
                 'restored.fits',
                 f'/testing/folder/EPOCH01/TILES/STOKES{stokes}_RMSMAPS'
-                f'/noiseMap.image.{stokes_lower}.VAST_2118-06A.SB9668.cont.taylor'
-                '.0.restored.fits'
+                f'/noiseMap.image.{stokes_lower}.VAST_2118-06A.SB9668.cont'
+                '.taylor.0.restored.fits'
             )
         test_query = vast_query_psrj2129_fields
         test_query.settings['tiles'] = True
