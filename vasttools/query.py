@@ -1707,7 +1707,7 @@ class Query:
             image_file_fmt = (
                 "image.{}.{}.SB{}.cont"
                 ".taylor.0.restored.fits".format(
-                    self.settings['stokes'], row.field, row.sbid
+                    self.settings['stokes'].lower(), row.field, row.sbid
                 )
             )
 
