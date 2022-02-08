@@ -34,7 +34,8 @@ def dummy_load_fields_file() -> pd.DataFrame:
             'NINT': [100, 100],
             'BMAJ': [15.0, 15.1],
             'BMIN': [12.1, 12.2],
-            'BPA': [90., 90.]
+            'BPA': [90., 90.],
+            'OBS_FREQ': [887.5, 887.5]
         }
     )
 
@@ -108,7 +109,8 @@ def init_Image() -> vts.Image:
         path: Optional[str] = None,
         tiles: bool = False,
         base_folder: str = '/mocked/basefolder/',
-        rmspath: Optional[str] = None
+        rmspath: Optional[str] = None,
+        corrected_data: bool = True
     ) -> vts.Image:
         """
         Returns the Image instance.
@@ -121,6 +123,8 @@ def init_Image() -> vts.Image:
             tiles: Whether the image is tiles or combined.
             base_folder: Base folder of data.
             rmspath: Path of the rms image.
+            corrected_data: Access the corrected data. Only relevant if
+                `tiles` is `True`. Defaults to `True`.
 
         Returns:
             The image instance.
@@ -133,7 +137,8 @@ def init_Image() -> vts.Image:
             tiles=tiles,
             sbid=9667,
             path=path,
-            rmspath=rmspath
+            rmspath=rmspath,
+            corrected_data=corrected_data
         )
 
         return img
@@ -152,20 +157,34 @@ def test_load_field_centres(mocker) -> None:
         None
     """
     assumed_path = "vasttools.data.csvs"
-    assumed_filename = "vast_field_centres.csv"
+    low_filename = "low_field_centres.csv"
+    mid_filename = "mid_field_centres.csv"
+
+    importlib_calls = [mocker.call(assumed_path, low_filename),
+                       mocker.call(assumed_path, mid_filename)
+                       ]
+
+    side_effect = [pathlib.Path(assumed_path, low_filename),
+                   pathlib.Path(assumed_path, mid_filename)
+                   ]
+    read_csv_calls = [mocker.call(effect) for effect in side_effect]
 
     importlib_mocker = mocker.patch(
         'importlib.resources.path',
-        return_value=pathlib.Path(assumed_filename)
+        side_effect=side_effect
     )
     pandas_mocker = mocker.patch(
-        'vasttools.survey.pd.read_csv', return_value=-99
+        'vasttools.survey.pd.read_csv'
+    )
+    concat_mocker = mocker.patch(
+        'vasttools.survey.pd.concat', return_value=-99
     )
 
     result = vts.load_field_centres()
 
-    importlib_mocker.assert_called_once_with(assumed_path, assumed_filename)
-    pandas_mocker.assert_called_once_with(importlib_mocker.return_value)
+    importlib_mocker.assert_has_calls(importlib_calls)
+    pandas_mocker.assert_has_calls(read_csv_calls)
+
     assert result == -99
 
 
@@ -379,7 +398,7 @@ class TestImage:
         image = init_Image()
 
         # Use the defaults on the init_Image fixture.
-        expected_filename = "VAST_0012+00.EPOCH01.I.fits"
+        expected_filename = "VAST_0012+00.EPOCH01.I.conv.fits"
         expected_path = (
             "/mocked/basefolder/EPOCH01/COMBINED/"
             f"STOKESI_IMAGES/{expected_filename}"
@@ -389,9 +408,36 @@ class TestImage:
         assert image.imgname == expected_filename
         assert image.image_fail is False
 
+    @pytest.mark.parametrize("corrected, conv, expected_suffix",
+                             [(True,
+                               True,
+                               'restored.conv.corrected.fits'
+                               ),
+                              (False,
+                               True,
+                               'restored.conv.fits'
+                               ),
+                              (True,
+                               False,
+                               'restored.corrected.fits'
+                               ),
+                              (False,
+                               False,
+                               'restored.fits'
+                               )
+                              ],
+                             ids=("corrected-conv",
+                                  "uncorrected-conv",
+                                  "corrected-noconv",
+                                  "uncorrected-noconv",
+                                  )
+                             )
     def test_image_init_tiles_nopath(
         self,
         init_Image: vts.Image,
+        corrected,
+        conv,
+        expected_suffix,
         mocker
     ) -> None:
         """
@@ -402,23 +448,31 @@ class TestImage:
 
         Args:
             init_Image: The Image pytest fixture.
+            corrected: Test the "corrected" path.
+            conv: Test the "convolved" path.
+            expected_suffix: The suffix of the expected file path.
             mocker: Pytest mock mocker object.
 
         Returns:
             None
         """
-        mock_isfile = mocker.patch('os.path.isfile', return_value=True)
+        mock_ospath = mocker.patch('os.path.exists', return_value=not conv)
+        mock_check_exists = mocker.patch('os.path.isfile', return_value=True)
 
-        image = init_Image(tiles=True)
+        image = init_Image(tiles=True, corrected_data=corrected)
 
         # Use the defaults on the init_Image fixture.
         expected_filename = (
-            "image.i.SB9667.cont.VAST_0012+00.linmos.taylor.0.restored.fits"
+            f"image.i.VAST_0012+00.SB9667.cont.taylor.0.{expected_suffix}"
         )
+
         expected_path = (
             "/mocked/basefolder/EPOCH01/TILES/"
-            f"STOKESI_IMAGES/{expected_filename}"
+            f"STOKESI_IMAGES_CORRECTED/{expected_filename}"
         )
+
+        if not corrected:
+            expected_path = expected_path.replace("_CORRECTED", "")
 
         assert image.imgpath == expected_path
         assert image.imgname == expected_filename
@@ -447,7 +501,7 @@ class TestImage:
         image = init_Image(stokes='V')
 
         # Use the defaults on the init_Image fixture.
-        expected_filename = "VAST_0012+00.EPOCH01.V.fits"
+        expected_filename = "VAST_0012+00.EPOCH01.V.conv.fits"
         expected_path = (
             "/mocked/basefolder/EPOCH01/COMBINED/"
             f"STOKESV_IMAGES/{expected_filename}"
@@ -480,11 +534,12 @@ class TestImage:
 
         # Use the defaults on the init_Image fixture.
         expected_filename = (
-            "image.v.SB9667.cont.VAST_0012+00.linmos.taylor.0.restored.fits"
+            "image.v.VAST_0012+00.SB9667.cont.taylor."
+            "0.restored.conv.corrected.fits"
         )
         expected_path = (
             "/mocked/basefolder/EPOCH01/TILES/"
-            f"STOKESV_IMAGES/{expected_filename}"
+            f"STOKESV_IMAGES_CORRECTED/{expected_filename}"
         )
 
         assert image.imgpath == expected_path
@@ -569,7 +624,7 @@ class TestImage:
 
         image = init_Image()
 
-        expected_filename = "VAST_0012+00.EPOCH01.I.fits"
+        expected_filename = "VAST_0012+00.EPOCH01.I.conv.fits"
         expected_path = (
             "/mocked/basefolder/EPOCH01/COMBINED/"
             f"STOKESI_IMAGES/{expected_filename}"
@@ -608,7 +663,7 @@ class TestImage:
         )
 
         # Use the defaults on the init_Image fixture.
-        expected_filename = "VAST_0012+00.EPOCH01.I_rms.fits"
+        expected_filename = "noiseMap.VAST_0012+00.EPOCH01.I.conv.fits"
         expected_path = (
             "/mocked/basefolder/EPOCH01/COMBINED/"
             f"STOKESI_RMSMAPS/{expected_filename}"

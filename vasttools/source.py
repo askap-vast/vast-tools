@@ -53,9 +53,8 @@ from typing import List, Tuple, Optional, Union
 from radio_beam import Beam
 
 from vasttools import RELEASED_EPOCHS
-from vasttools.utils import crosshair
 from vasttools.survey import Image
-from vasttools.utils import filter_selavy_components
+from vasttools.utils import crosshair, filter_selavy_components, read_selavy
 from vasttools.tools import offset_postagestamp_axes
 
 # run crosshair to set up the marker.
@@ -401,25 +400,20 @@ class Source:
             raise SourcePlottingError(msg)
 
         # remove empty values
-        measurements = self.measurements
+        measurements_df = self.measurements
         if not self.pipeline and not (
             use_forced_for_limits or use_forced_for_all
         ):
-            measurements = self.measurements[
+            measurements_df = self.measurements[
                 self.measurements['rms_image'] != -99
             ]
 
-        if measurements.empty:
+        if measurements_df.empty:
             msg = f"{self.name} has no measurements!"
             self.logger.error(msg)
             raise SourcePlottingError(msg)
 
-        plot_dates = measurements['dateobs']
-        if mjd:
-            plot_dates = Time(plot_dates.to_numpy()).mjd
-        elif start_date:
-            plot_dates = (plot_dates-start_date)/pd.Timedelta(1, unit='d')
-
+        # Build figure and labels
         fig = plt.figure(figsize=figsize)
         ax = fig.add_subplot(111)
         plot_title = self.name
@@ -440,101 +434,137 @@ class Source:
 
         if self.stokes != "I":
             label = "Absolute " + label
-            measurements[flux_col] = measurements[flux_col].abs()
+            measurements_df[flux_col] = measurements_df[flux_col].abs()
 
         ax.set_ylabel(label)
 
-        self.logger.debug("Plotting upper limit")
-        if self.pipeline:
-            upper_lim_mask = measurements.forced
-        else:
-            upper_lim_mask = measurements.detection == False
-            if use_forced_for_all:
-                upper_lim_mask = np.array([False for i in upper_lim_mask])
-        upper_lims = measurements[
-            upper_lim_mask
-        ]
-        if self.pipeline:
-            if peak_flux:
-                value_col = 'flux_peak'
-                err_value_col = 'flux_peak_err'
-            else:
-                value_col = 'flux_int'
-                err_value_col = 'flux_int_err'
-            marker = "D"
-            uplims = False
-            sigma_thresh = 1.0
-            label = 'Forced'
-            markerfacecolor = 'w'
-        else:
-            if use_forced_for_limits:
-                value_col = 'f_flux_peak'
-                err_value_col = 'f_flux_peak_err'
-                uplims = False
-                marker = "D"
-                sigma_thresh = 1.0
-                markerfacecolor = 'w'
-                label = "Forced"
-            else:
-                value_col = err_value_col = 'rms_image'
-                marker = "_"
-                uplims = True
-                markerfacecolor = 'k'
-                label = 'Upper limit'
-        if upper_lim_mask.any():
-            upperlim_points = ax.errorbar(
-                plot_dates[upper_lim_mask],
-                sigma_thresh *
-                upper_lims[value_col],
-                yerr=upper_lims[err_value_col],
-                uplims=uplims,
-                lolims=False,
-                marker=marker,
-                c='k',
-                linestyle="none",
-                markerfacecolor=markerfacecolor,
-                label=label
-            )
+        freq_col = 'frequency'
 
-        self.logger.debug("Plotting detection")
+        grouped_df = measurements_df.groupby(freq_col)
+        freqs = list(grouped_df.groups.keys())
+
+        # Colours for each frequency
+        freq_cmap = plt.cm.get_cmap('viridis')
+        cNorm = matplotlib.colors.Normalize(
+            vmin=min(freqs), vmax=max(freqs) * 1.1)
+        scalarMap = matplotlib.cm.ScalarMappable(norm=cNorm, cmap=freq_cmap)
+        sm = scalarMap
+        sm._A = []
+
+        # Markers for each frequency
+        markers = ['o', 'D', '*', 'X', 's', 'd', 'p']
+
+        self.logger.debug("Frequencies: {}".format(freqs))
+        for i, (freq, measurements) in enumerate(grouped_df):
+            self.logger.debug("Plotting {} MHz data".format(freq))
+            marker = markers[i % len(markers)]
+            marker_colour = sm.to_rgba(freq)
+            plot_dates = measurements['dateobs']
+            self.logger.debug(plot_dates)
+            if mjd:
+                plot_dates = Time(plot_dates.to_numpy()).mjd
+            elif start_date:
+                plot_dates -= start_date
+                plot_dates /= pd.Timedelta(1, unit='d')
+
+            self.logger.debug("Plotting upper limit")
+            if self.pipeline:
+                upper_lim_mask = measurements.forced
+            else:
+                upper_lim_mask = measurements.detection == False
+                if use_forced_for_all:
+                    upper_lim_mask = np.array([False for i in upper_lim_mask])
+            upper_lims = measurements[
+                upper_lim_mask
+            ]
+            if self.pipeline:
+                if peak_flux:
+                    value_col = 'flux_peak'
+                    err_value_col = 'flux_peak_err'
+                else:
+                    value_col = 'flux_int'
+                    err_value_col = 'flux_int_err'
+                uplims = False
+                sigma_thresh = 1.0
+                label = 'Forced'
+                markerfacecolor = 'w'
+            else:
+                if use_forced_for_limits:
+                    value_col = 'f_flux_peak'
+                    err_value_col = 'f_flux_peak_err'
+                    uplims = False
+                    sigma_thresh = 1.0
+                    markerfacecolor = 'w'
+                    label = "Forced"
+                else:
+                    value_col = err_value_col = 'rms_image'
+                    uplims = True
+                    markerfacecolor = marker_colour
+                    label = 'Upper limit'
+            if upper_lim_mask.any():
+                upperlim_points = ax.errorbar(
+                    plot_dates[upper_lim_mask],
+                    sigma_thresh *
+                    upper_lims[value_col],
+                    yerr=upper_lims[err_value_col],
+                    uplims=uplims,
+                    lolims=False,
+                    marker=marker,
+                    c=marker_colour,
+                    linestyle="none",
+                    markerfacecolor=markerfacecolor
+                )
+
+            self.logger.debug("Plotting detection")
+
+            if use_forced_for_all:
+                detections = measurements
+            else:
+                print(upper_lim_mask)
+                detections = measurements[
+                    ~upper_lim_mask
+                ]
+
+            if self.pipeline:
+                if peak_flux:
+                    err_value_col = 'flux_peak_err'
+                else:
+                    err_value_col = 'flux_int_err'
+            else:
+                if use_forced_for_all:
+                    err_value_col = flux_col + '_err'
+                else:
+                    err_value_col = 'rms_image'
+
+            if use_forced_for_all:
+                markerfacecolor = 'w'
+                label = 'Forced'
+            else:
+                markerfacecolor = marker_colour
+                label = 'Selavy'
+            if (~upper_lim_mask).any():
+                detection_points = ax.errorbar(
+                    plot_dates[~upper_lim_mask],
+                    detections[flux_col],
+                    yerr=detections[err_value_col],
+                    marker=marker,
+                    c=marker_colour,
+                    linestyle="none",
+                    markerfacecolor=markerfacecolor
+                )
+
+        self.logger.debug("Plotting finished.")
+        if self.pipeline:
+            upper_lim_mask = measurements_df.forced
+        else:
+            upper_lim_mask = measurements_df.detection == False
 
         if use_forced_for_all:
-            detections = measurements
+            detections = measurements_df
         else:
-            detections = measurements[
+            detections = measurements_df[
                 ~upper_lim_mask
             ]
-
-        if self.pipeline:
-            if peak_flux:
-                err_value_col = 'flux_peak_err'
-            else:
-                err_value_col = 'flux_int_err'
-        else:
-            if use_forced_for_all:
-                err_value_col = flux_col + '_err'
-            else:
-                err_value_col = 'rms_image'
-
-        if use_forced_for_all:
-            marker = "D"
-            markerfacecolor = 'w'
-            label = 'Forced'
-        else:
-            marker = 'o'
-            markerfacecolor = 'k'
-            label = 'Selavy'
-        if (~upper_lim_mask).any():
-            detection_points = ax.errorbar(
-                plot_dates[~upper_lim_mask],
-                detections[flux_col],
-                yerr=detections[err_value_col],
-                marker=marker,
-                c='k',
-                linestyle="none",
-                markerfacecolor=markerfacecolor,
-                label=label)
-
         if yaxis_start == "0":
             max_det = detections.loc[:, [flux_col, err_value_col]].sum(axis=1)
             if use_forced_for_limits or self.pipeline:
@@ -565,6 +595,20 @@ class Source:
             date_form = mdates.DateFormatter("%Y-%m-%d")
             ax.xaxis.set_major_formatter(date_form)
             ax.xaxis.set_major_locator(mdates.AutoDateLocator(maxticks=15))
+
+        # dummy points for legend - needs to be after fig.autofmt_xdate() call
+        for i, freq in enumerate(freqs):
+            marker = markers[i]
+            marker_colour = sm.to_rgba(freq)
+
+            ax.errorbar(np.nan,
+                        np.nan,
+                        yerr=np.nan,
+                        ls='',
+                        label='{} MHz'.format(freq),
+                        c=marker_colour,
+                        marker=marker
+                        )
 
         ax.grid(grid)
 
@@ -759,8 +803,7 @@ class Source:
                 }
             )
         else:
-            selavy_components = pd.read_fwf(
-                row.selavy, skiprows=[1, ], usecols=[
+            selavy_components = read_selavy(row.selavy, cols=[
                     'island_id',
                     'ra_deg_cont',
                     'dec_deg_cont',

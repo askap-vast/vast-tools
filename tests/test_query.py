@@ -262,6 +262,10 @@ def fields_df_expected_result() -> pd.DataFrame:
                     0: pd.Timestamp('2019-08-27 18:52:00.556000'),
                     1: pd.Timestamp('2019-10-30 10:11:56.913000')
                 },
+                'frequency': {
+                    0: 887.5,
+                    1: 887.5
+                },
                 'planet': {
                     0: False,
                     1: False
@@ -667,6 +671,7 @@ class TestQuery:
         forced_allow_nan = True
         forced_cluster_threshold = 7.5
         output_dir = '/output/here'
+        incl_observed = False
 
         expected_settings = {
             'epochs': ["1", "2", "3x"],
@@ -682,7 +687,8 @@ class TestQuery:
             'forced_cluster_threshold': forced_cluster_threshold,
             'output_dir': output_dir,
             'search_around': False,
-            'tiles': use_tiles
+            'tiles': use_tiles,
+            'incl_observed': False
         }
 
         query = vtq.Query(
@@ -700,7 +706,8 @@ class TestQuery:
             forced_fits=forced_fits,
             forced_allow_nan=forced_allow_nan,
             forced_cluster_threshold=forced_cluster_threshold,
-            output_dir=output_dir
+            output_dir=output_dir,
+            incl_observed=incl_observed
         )
 
         assert query.settings == expected_settings
@@ -784,11 +791,12 @@ class TestQuery:
             'VAST_2118-06A',
             [['1', '2']],
             [[
-                ['1', 'VAST_2118-06A', 9668, '2019-08-27 18:52:00.556'],
-                ['2', 'VAST_2118-06A', 10342, '2019-10-30 10:11:56.913']
+                ['1', 'VAST_2118-06A', 9668, '2019-08-27 18:52:00.556', 887.5],
+                ['2', 'VAST_2118-06A', 10342, '2019-10-30 10:11:56.913', 887.5]
             ]],
             [[9668, 10342]],
-            [['2019-08-27 18:52:00.556', '2019-10-30 10:11:56.913']]
+            [['2019-08-27 18:52:00.556', '2019-10-30 10:11:56.913']],
+            [[887.5, 887.5]]
         )
 
         dask_from_pandas_mocker = mocker.patch(
@@ -810,6 +818,82 @@ class TestQuery:
             fields_df_expected_result()
         )
 
+    @pytest.mark.parametrize("tiles, conv, islands, expected_file",
+                             [(True,
+                               False,
+                               None,
+                               'selavy-image.i.VAST_2118-06A.SB9668.cont'
+                               '.taylor.0.restored.components.corrected.xml'
+                               ),
+                              (True,
+                               True,
+                               None,
+                               'selavy-image.i.VAST_2118-06A.SB9668.cont'
+                               '.taylor.0.restored.conv.components.corrected'
+                               '.xml'
+                               ),
+                              (False,
+                               None,
+                               True,
+                               'selavy-VAST_2118-06A.EPOCH01.I.conv'
+                               '.islands.xml'
+                               ),
+                              (False,
+                               None,
+                               False,
+                               'selavy-VAST_2118-06A.EPOCH01.I.conv'
+                               '.components.xml'
+                               )
+                              ],
+                             ids=('tiles-noconv',
+                                  'tiles-conv',
+                                  'comb-islands',
+                                  'comb-noislands'
+                                  )
+                             )
+    def test__get_selavy_path(
+        self,
+        vast_query_psrj2129_fields: vtq.Query,
+        tiles: bool,
+        conv: list,
+        islands: bool,
+        expected_file: str,
+        mocker
+    ) -> None:
+        """
+        Tests adding the paths to the combined data in the query.
+        Assumes the standard VAST Pilot directory and file structure.
+        Args:
+            vast_query_psrj2129_fields: The dummy Query instance that includes
+                a search for PSR J2129-04 with the included found fields data.
+            tiles: Whether to query the TILES or COMBINED data.
+            conv: Whether `.conv` is present in the filename.
+                This argument is only relevant if tiles is True
+            islands: Whether to return the islands or components catalogue.
+                This argument is only relevant if tiles is False.
+            expected_file: The expected filename to be returned.
+            mocker: The pytest-mock mocker object.
+        Returns:
+            None
+        """
+        epoch_string = 'EPOCH01'
+        test_query = vast_query_psrj2129_fields
+
+        test_query.settings['tiles'] = tiles
+        test_query.settings['islands'] = islands
+
+        row = test_query.fields_df.loc[0]
+
+        if conv is not None:
+            mock_selavy_isfile = mocker.patch(
+                'vasttools.query.Path.is_file',
+                return_value=conv
+            )
+
+        path = test_query._get_selavy_path(epoch_string, row)
+
+        assert os.path.split(path)[1] == expected_file
+
     def test__add_files_combined(
         self,
         vast_query_psrj2129_fields: vtq.Query,
@@ -828,17 +912,23 @@ class TestQuery:
         Returns:
             None
         """
-        test_query = vast_query_psrj2129_fields
-        results = test_query._add_files(test_query.fields_df.loc[0])
-
         expected_results = (
             '/testing/folder/EPOCH01/COMBINED/STOKESI_SELAVY'
-            '/VAST_2118-06A.EPOCH01.I.selavy.components.txt',
+            '/selavy-VAST_2118-06A.EPOCH01.I.conv.components.xml',
             '/testing/folder/EPOCH01/COMBINED/STOKESI_IMAGES'
-            '/VAST_2118-06A.EPOCH01.I.fits',
+            '/VAST_2118-06A.EPOCH01.I.conv.fits',
             '/testing/folder/EPOCH01/COMBINED/STOKESI_RMSMAPS'
-            '/VAST_2118-06A.EPOCH01.I_rms.fits'
+            '/noiseMap.VAST_2118-06A.EPOCH01.I.conv.fits'
         )
+
+        test_query = vast_query_psrj2129_fields
+
+        mock_selavy_path = mocker.patch(
+            'vasttools.query.Query._get_selavy_path',
+            return_value=expected_results[0]
+        )
+
+        results = test_query._add_files(test_query.fields_df.loc[0])
 
         assert results == expected_results
 
@@ -860,22 +950,26 @@ class TestQuery:
         Returns:
             None
         """
-        test_query = vast_query_psrj2129_fields
+        expected_results = (
+            '/testing/folder/EPOCH01/TILES/STOKESI_SELAVY_CORRECTED'
+            '/selavy-image.i.VAST_2118-06A.SB9668.cont.taylor.0'
+            '.restored.components.corrected.xml',
+            '/testing/folder/EPOCH01/TILES/STOKESI_IMAGES_CORRECTED'
+            '/image.i.VAST_2118-06A.SB9668.cont.taylor.0.'
+            'restored.corrected.fits',
+            'N/A'
+        )
 
+        test_query = vast_query_psrj2129_fields
         test_query.settings['tiles'] = True
+
+        mock_selavy_path = mocker.patch(
+            'vasttools.query.Query._get_selavy_path',
+            return_value=expected_results[0]
+        )
 
         results = test_query._add_files(
             test_query.fields_df.loc[0]
-        )
-
-        expected_results = (
-            '/testing/folder/EPOCH01/TILES/STOKESI_SELAVY'
-            '/selavy-image.i.SB9668.cont.VAST_2118-06A.linmos'
-            '.taylor.0.restored.components.txt',
-            '/testing/folder/EPOCH01/TILES/STOKESI_IMAGES'
-            '/image.i.SB9668.cont.VAST_2118-06A.linmos'
-            '.taylor.0.restored.fits',
-            'N/A'
         )
 
         assert results == expected_results
@@ -898,19 +992,25 @@ class TestQuery:
         Returns:
             None
         """
+        expected_results = (
+            '/testing/folder/EPOCH01/COMBINED/STOKESV_SELAVY'
+            '/selavy-VAST_2118-06A.EPOCH01.V.conv.components.xml',
+            '/testing/folder/EPOCH01/COMBINED/STOKESV_IMAGES'
+            '/VAST_2118-06A.EPOCH01.V.conv.fits',
+            '/testing/folder/EPOCH01/COMBINED/STOKESV_RMSMAPS'
+            '/noiseMap.VAST_2118-06A.EPOCH01.V.conv.fits'
+        )
+
         test_query = vast_query_psrj2129_fields
         test_query.settings['stokes'] = 'V'
         test_query.fields_df['stokes'] = 'V'
-        results = test_query._add_files(test_query.fields_df.loc[0])
 
-        expected_results = (
-            '/testing/folder/EPOCH01/COMBINED/STOKESV_SELAVY'
-            '/VAST_2118-06A.EPOCH01.V.selavy.components.txt',
-            '/testing/folder/EPOCH01/COMBINED/STOKESV_IMAGES'
-            '/VAST_2118-06A.EPOCH01.V.fits',
-            '/testing/folder/EPOCH01/COMBINED/STOKESV_RMSMAPS'
-            '/VAST_2118-06A.EPOCH01.V_rms.fits'
+        mock_selavy_path = mocker.patch(
+            'vasttools.query.Query._get_selavy_path',
+            return_value=expected_results[0]
         )
+
+        results = test_query._add_files(test_query.fields_df.loc[0])
 
         assert results == expected_results
 
@@ -943,7 +1043,7 @@ class TestQuery:
         )
 
         mocker_selavy = mocker.patch(
-            'vasttools.query.pd.read_fwf',
+            'vasttools.query.read_selavy',
             return_value=selavy_cat(contain_pulsar=True)
         )
 
@@ -983,7 +1083,7 @@ class TestQuery:
         )
 
         mocker_selavy = mocker.patch(
-            'vasttools.query.pd.read_fwf',
+            'vasttools.query.read_selavy',
             return_value=selavy_cat()
         )
 

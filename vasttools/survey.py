@@ -21,9 +21,9 @@ from astropy.wcs import WCS
 from astropy.wcs.utils import skycoord_to_pixel
 from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
 from radio_beam import Beam
-from typing import Tuple, Optional, List
+from typing import Tuple, Optional, List, Union
 
-from vasttools import RELEASED_EPOCHS
+from vasttools import RELEASED_EPOCHS, OBSERVED_EPOCHS
 
 warnings.filterwarnings('ignore', category=AstropyWarning, append=True)
 warnings.filterwarnings(
@@ -35,7 +35,7 @@ warnings.filterwarnings(
 
 def load_field_centres() -> pd.DataFrame:
     """
-    Loads the field centres csv file as a dataframe for use.
+    Loads the field centres csv files as a dataframe for use.
 
     Columns present are, 'field', 'centre-ra' and 'centre-dec'.
     The coordinates are in units of degrees.
@@ -44,9 +44,16 @@ def load_field_centres() -> pd.DataFrame:
         Dataframe containing the field centres.
     """
     with importlib.resources.path(
-        "vasttools.data.csvs", "vast_field_centres.csv"
+        "vasttools.data.csvs", "low_field_centres.csv"
     ) as field_centres_csv:
-        field_centres = pd.read_csv(field_centres_csv)
+        low_centres = pd.read_csv(field_centres_csv)
+
+    with importlib.resources.path(
+        "vasttools.data.csvs", "mid_field_centres.csv"
+    ) as field_centres_csv:
+        mid_centres = pd.read_csv(field_centres_csv)
+
+    field_centres = pd.concat([low_centres, mid_centres])
 
     return field_centres
 
@@ -72,12 +79,14 @@ def load_fields_file(epoch: str) -> pd.DataFrame:
         if len(str(epoch)) > 2 and epoch.startswith('0'):
             epoch = epoch[1:]
         if epoch not in RELEASED_EPOCHS:
-            raise ValueError(
-                f'Epoch {epoch} is not available or is not a valid epoch.'
-            )
+            if epoch not in OBSERVED_EPOCHS:
+                raise ValueError(
+                    f'Epoch {epoch} is not available or is not a valid epoch.'
+                )
 
     paths = {
-        "0": importlib.resources.path('vasttools.data.csvs', 'racs_info.csv'),
+        "0": importlib.resources.path(
+            'vasttools.data.csvs', 'racs_low_info.csv'),
         "1": importlib.resources.path(
             'vasttools.data.csvs', 'vast_epoch01_info.csv'),
         "2": importlib.resources.path(
@@ -104,6 +113,16 @@ def load_fields_file(epoch: str) -> pd.DataFrame:
             'vasttools.data.csvs', 'vast_epoch12_info.csv'),
         "13": importlib.resources.path(
             'vasttools.data.csvs', 'vast_epoch13_info.csv'),
+        "14": importlib.resources.path('vasttools.data.csvs',
+                                       'racs_mid_info.csv'),
+        "17": importlib.resources.path(
+            'vasttools.data.csvs', 'vast_epoch17_info.csv'),
+        "18": importlib.resources.path(
+            'vasttools.data.csvs', 'vast_epoch18_info.csv'),
+        "19": importlib.resources.path(
+            'vasttools.data.csvs', 'vast_epoch19_info.csv'),
+        "20": importlib.resources.path(
+            'vasttools.data.csvs', 'vast_epoch20_info.csv'),
     }
 
     with paths[epoch] as fields_csv:
@@ -178,12 +197,12 @@ class Fields:
             make up each field in the epoch.
     """
 
-    def __init__(self, epoch: str) -> None:
+    def __init__(self, epochs: Union[str, List[str]]) -> None:
         """
         Constructor method.
 
         Args:
-            epoch: The epoch number of fields to collect.
+            epochs: The epoch number(s) of fields to collect.
 
         Returns:
             None
@@ -191,9 +210,18 @@ class Fields:
         self.logger = logging.getLogger('vasttools.survey.Fields')
         self.logger.debug('Created Fields instance')
 
-        self.fields = load_fields_file(epoch)
-        # Epoch 99 has some empty beam directions (processing failures)
-        # Drop them and any issue rows in the future.
+        if type(epochs) == str:
+            epochs = list(epochs)
+
+        field_dfs = []
+        for epoch in epochs:
+            self.logger.debug(f"Loading epoch {epoch}")
+            field_dfs.append(load_fields_file(epoch))
+
+        self.fields = pd.concat(field_dfs)
+
+        self.logger.debug(f"Frequencies: {self.fields.OBS_FREQ.unique()}")
+
         self.fields.dropna(inplace=True)
         self.fields.reset_index(drop=True, inplace=True)
 
@@ -236,7 +264,8 @@ class Image:
         sbid: Optional[str] = None,
         path: Optional[str] = None,
         rmspath: Optional[str] = None,
-        rms_header: Optional[fits.Header] = None
+        rms_header: Optional[fits.Header] = None,
+        corrected_data: bool = True
     ) -> None:
         """
         Constructor method.
@@ -256,6 +285,8 @@ class Image:
                 defaults to None.
             rms_header: Header of rms FITS image if already obtained,
                 defaults to None.
+            corrected_data: Access the corrected data. Only relevant if
+                `tiles` is `True`. Defaults to `True`.
 
         Returns:
             None
@@ -272,6 +303,7 @@ class Image:
         self.rmspath = rmspath
         self.tiles = tiles
         self.base_folder = base_folder
+        self.corrected_data = corrected_data
 
         if self.path is None:
             self.get_paths_and_names()
@@ -286,6 +318,9 @@ class Image:
         """
         Configure the file names if they have no been provided.
 
+        Args:
+            None
+
         Returns:
             None
         """
@@ -294,14 +329,30 @@ class Image:
                 self.base_folder,
                 "EPOCH{}".format(RELEASED_EPOCHS[self.epoch]),
                 "TILES",
-                "STOKES{}_IMAGES".format(self.stokes.upper())
+                "STOKES{}_IMAGES_CORRECTED".format(self.stokes.upper())
             )
             img_template = (
-                'image.{}.SB{}.cont.{}.linmos.taylor.0.restored.fits'
+                'image.{}.{}.SB{}.cont.taylor.0.restored.corrected.fits'
             )
+
+            if not self.corrected_data:
+                img_folder = img_folder.replace("_CORRECTED", "")
+                img_template = img_template.replace(".corrected", "")
+
             self.imgname = img_template.format(
-                self.stokes.lower(), self.sbid, self.field
+                self.stokes.lower(), self.field, self.sbid
             )
+            img_path = os.path.join(img_folder, self.imgname)
+
+            if not os.path.exists(img_path):
+                if self.corrected_data:
+                    self.imgname = self.imgname.replace(".corrected.",
+                                                        ".conv.corrected."
+                                                        )
+                else:
+                    self.imgname = self.imgname.replace(".fits",
+                                                        ".conv.fits"
+                                                        )
         else:
             img_folder = os.path.join(
                 self.base_folder,
@@ -309,7 +360,7 @@ class Image:
                 "COMBINED",
                 "STOKES{}_IMAGES".format(self.stokes.upper())
             )
-            self.imgname = '{}.EPOCH{}.{}.fits'.format(
+            self.imgname = '{}.EPOCH{}.{}.conv.fits'.format(
                 self.field,
                 RELEASED_EPOCHS[self.epoch],
                 self.stokes.upper()
@@ -360,10 +411,10 @@ class Image:
             None
         """
         if self.rmspath is None:
-            self.rmsname = self.imgname.replace('.fits', '_rms.fits')
+            self.rmsname = "noiseMap.{}".format(self.imgname)
             self.rmspath = self.imgpath.replace(
                 "_IMAGES", "_RMSMAPS"
-            ).replace('.fits', '_rms.fits')
+            ).replace(self.imgname, self.rmsname)
 
         if os.path.isfile(self.rmspath):
             self.rms_fail = False

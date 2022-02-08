@@ -7,20 +7,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased](https://github.com/askap-vast/vast-tools/compare/v2.0.0...HEAD)
 
 #### Added
+- Added observing frequency to all fields csv files [#311](https://github.com/askap-vast/vast-tools/pull/311)
+- Added OBSERVED_EPOCHS variable for epochs that have been observed but not yet released [#311](https://github.com/askap-vast/vast-tools/pull/311)
+- Added access to epochs up 17, 18, 19 [#311](https://github.com/askap-vast/vast-tools/pull/311)
+- Added BASE_EPOCHS variable [#311](https://github.com/askap-vast/vast-tools/pull/311)
 - Added tools.offset_postagestamp_axes which allows users to display postagestamps with offset (rather than absolute) coordinates [#315](https://github.com/askap-vast/vast-tools/pull/315)
 - Added Dask RuntimeError warning to query.md docs [#317](https://github.com/askap-vast/vast-tools/pull/317)
 - Added tools for new epoch addition: add datetimes to fits images create fields csv files, create and update MOCs [#298](https://github.com/askap-vast/vast-tools/pull/298)
 
 #### Changed
+- Changed plot legend to show frequency rather than selavy/forced [#311](https://github.com/askap-vast/vast-tools/pull/311)
+- General changes throughout to allow observing frequency to propagate through a query [#311](https://github.com/askap-vast/vast-tools/pull/311)
+- Updated access to field centres csvs to distinguish between low/mid bands [#311](https://github.com/askap-vast/vast-tools/pull/311)
+- Updated find_sources.py to automatically query all epochs [#311](https://github.com/askap-vast/vast-tools/pull/311)
+- Updated handling of RACS epochs [#311](https://github.com/askap-vast/vast-tools/pull/311)
+- Updated default values of query epochs and imsize [#311](https://github.com/askap-vast/vast-tools/pull/311)
 - Allow users to specify whether to write generated MOCs, and to use arbitrary STMOC [#323](https://github.com/askap-vast/vast-tools/pull/323)
 - Changed source.Source.make_png to create postagestamps using coordinate offsets [#315](https://github.com/askap-vast/vast-tools/pull/315)
 - Minor documentation edits [#298](https://github.com/askap-vast/vast-tools/pull/298)
 
 #### Fixed
+- Updated missing values in RACS beam info csv file [#311](https://github.com/askap-vast/vast-tools/pull/311)
 
 #### Removed
 
 #### List of PRs
+- [#311](https://github.com/askap-vast/vast-tools/pull/311): tests, docs, feat: Added multi-frequency handling and small updates
 - [#323](https://github.com/askap-vast/vast-tools/pull/323): feat, tests: New options for MOC generation
 - [#315](https://github.com/askap-vast/vast-tools/pull/315): tests, docs, feat: Use offset, rather than absolute, coordinates for postagestamps
 - [#317](https://github.com/askap-vast/vast-tools/pull/317): docs: Added warning to docs

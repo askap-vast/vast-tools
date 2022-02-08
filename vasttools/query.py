@@ -53,7 +53,11 @@ from tabulate import tabulate
 
 from typing import Optional, List, Tuple, Dict
 
-from vasttools import RELEASED_EPOCHS, ALLOWED_PLANETS
+from pathlib import Path
+
+from vasttools import (
+    RELEASED_EPOCHS, OBSERVED_EPOCHS, ALLOWED_PLANETS, BASE_EPOCHS
+)
 from vasttools.survey import Fields, Image
 from vasttools.survey import (
     load_fields_file, load_field_centres, get_fields_per_epoch_info
@@ -61,7 +65,7 @@ from vasttools.survey import (
 from vasttools.source import Source
 from vasttools.utils import (
     filter_selavy_components, simbad_search, match_planet_to_field,
-    check_racs_exists, epoch12_user_warning
+    check_racs_exists, epoch12_user_warning, read_selavy
 )
 from vasttools.moc import VASTMOCS
 from forced_phot import ForcedPhot
@@ -117,7 +121,7 @@ class Query:
         self,
         coords: Optional[SkyCoord] = None,
         source_names: Optional[List[str]] = None,
-        epochs: str = "all",
+        epochs: str = "1",
         stokes: str = "I",
         crossmatch_radius: float = 5.0,
         max_sep: float = 1.0,
@@ -133,7 +137,9 @@ class Query:
         sort_output: bool = False,
         forced_fits: bool = False,
         forced_cluster_threshold: float = 1.5,
-        forced_allow_nan: bool = False
+        forced_allow_nan: bool = False,
+        incl_observed: bool = False,
+        corrected_data: bool = True
     ) -> None:
         """
         Constructor method.
@@ -176,6 +182,11 @@ class Query:
             forced_allow_nan: `allow_nan` value passed to the
                 forced photometry. If False then any cluster containing a
                 NaN is ignored. Defaults to False.
+            incl_observed: Include epochs that have been observed, but not
+                released, in the query. This should only be used when finding
+                fields, not querying data. Defaults to False.
+            corrected_data: Access the corrected data. Only relevant if
+                `tiles` is `True`. Defaults to `True`.
 
         Returns:
             None
@@ -204,6 +215,8 @@ class Query:
 
         self.source_names = np.array(source_names)
         self.simbad_names = None
+
+        self.corrected_data = corrected_data
 
         if coords is None:
             self.coords = coords
@@ -330,6 +343,7 @@ class Query:
 
         self.base_folder = the_base_folder
 
+        self.settings['incl_observed'] = incl_observed
         self.settings['epochs'] = self._get_epochs(epochs)
         self.settings['stokes'] = self._get_stokes(stokes)
 
@@ -920,7 +934,8 @@ class Query:
                 self.settings['stokes'],
                 self.base_folder,
                 sbid=group.iloc[0].sbid,
-                tiles=self.settings['tiles']
+                tiles=self.settings['tiles'],
+                corrected_data=self.corrected_data
             )
 
             image.get_img_data()
@@ -980,7 +995,7 @@ class Query:
             wcs=image.wcs
         )
 
-        selavy_components = pd.read_fwf(row.selavy, skiprows=[1, ], usecols=[
+        selavy_components = read_selavy(row.selavy, usecols=[
             'island_id',
             'ra_deg_cont',
             'dec_deg_cont',
@@ -1026,7 +1041,16 @@ class Query:
 
         Returns:
             None
+
+        Raises:
+            Exception: find_sources cannot be run with the incl_observed option
         """
+
+        if self.settings['incl_observed']:
+            raise Exception(
+                'find_sources cannot be run with the incl_observed option'
+            )
+
         self.logger.debug('Running find_sources...')
 
         if self.fields_found is False:
@@ -1038,6 +1062,7 @@ class Query:
             by=['name', 'dateobs']
         ).reset_index(drop=True)
 
+        self.logger.debug("Adding files...")
         self.sources_df[
             ['selavy', 'image', 'rms']
         ] = self.sources_df[['epoch', 'field', 'sbid']].apply(
@@ -1131,6 +1156,7 @@ class Query:
         if self.settings['search_around']:
             meta['index'] = 'i'
 
+        self.logger.debug("Getting components...")
         results = (
             dd.from_pandas(self.sources_df, self.ncpu)
             .groupby('selavy')
@@ -1394,7 +1420,7 @@ class Query:
         m = group.iloc[0]
         image_name = image.split("/")[-1]
         rms = m['rms']
-        bkg = rms.replace('rms', 'bkg')
+        bkg = rms.replace('noiseMap', 'meanMap')
 
         field = m['field']
         epoch = m['epoch']
@@ -1405,7 +1431,8 @@ class Query:
                 field,
                 epoch,
                 stokes,
-                self.base_folder
+                self.base_folder,
+                corrected_data=self.corrected_data
             )
             img_beam.get_img_data()
             img_beam = img_beam.beam
@@ -1503,16 +1530,12 @@ class Query:
 
         master = pd.DataFrame()
 
-        selavy_df = pd.read_fwf(
-            selavy_file, skiprows=[1, ]
-        )
+        selavy_df = read_selavy(selavy_file)
 
         if self.settings['stokes'] != "I":
             head, tail = os.path.split(selavy_file)
             nselavy_file = os.path.join(head, 'n{}'.format(tail))
-            nselavy_df = pd.read_fwf(
-                nselavy_file, skiprows=[1, ]
-            )
+            nselavy_df = read_selavy(nselavy_file)
 
             nselavy_df[["flux_peak", "flux_int"]] *= -1.0
 
@@ -1566,7 +1589,8 @@ class Query:
                             self.settings['stokes'],
                             self.base_folder,
                             sbid=group.iloc[0].sbid,
-                            tiles=self.settings['tiles']
+                            tiles=self.settings['tiles'],
+                            corrected_data=self.corrected_data
                         )
                         image.get_img_data()
                         rms_values = image.measure_coord_pixel_values(
@@ -1593,24 +1617,19 @@ class Query:
                 rms_df.index = group[~mask].index.values
 
                 master = master.append(rms_df, sort=False)
-
+        if '#' not in master.columns:
+            master.insert(0, "#", '')
         return master
 
-    def _add_files(self, row: pd.Series) -> Tuple[str, str, str]:
+    def _get_selavy_path(self, epoch_string: str, row: pd.Series) -> str:
         """
-        Adds the file paths for the image, selavy catalogues and
-        rms images for each source to be queried.
-
+        Get the path to the selavy file for a specific row of the dataframe.
         Args:
-            row: The input row of the dataframe (this function is called with
-                a .apply())
-
+            epoch_string: The name of the epoch in the form of 'EPOCHXX'.
+            row: row: The input row of the dataframe.
         Returns:
-            The paths of the image, selavy catalogue and rms image.
+            The path to the selavy file of interest
         """
-        epoch_string = "EPOCH{}".format(
-            RELEASED_EPOCHS[row.epoch]
-        )
 
         if self.settings['islands']:
             cat_type = 'islands'
@@ -1618,59 +1637,115 @@ class Query:
             cat_type = 'components'
 
         if self.settings['tiles']:
-
             dir_name = "TILES"
 
+            data_folder = f"STOKES{self.settings['stokes']}_SELAVY"
+            if self.corrected_data:
+                data_folder += "_CORRECTED"
+
+            selavy_folder = Path(
+                self.base_folder,
+                epoch_string,
+                dir_name,
+                data_folder
+            )
+
             selavy_file_fmt = (
-                "selavy-image.i.SB{}.cont.{}."
-                "linmos.taylor.0.restored.components.txt".format(
-                    row.sbid, row.field
+                "selavy-image.i.{}.SB{}.cont."
+                "taylor.0.restored.conv.{}.xml".format(
+                    row.field, row.sbid, cat_type
                 )
             )
 
-            image_file_fmt = (
-                "image.i.SB{}.cont.{}"
-                ".linmos.taylor.0.restored.fits".format(
-                    row.sbid, row.field
-                )
-            )
+            if self.corrected_data:
+                selavy_file_fmt = selavy_file_fmt.replace(".xml",
+                                                          ".corrected.xml"
+                                                          )
+
+            selavy_path = selavy_folder / selavy_file_fmt
+
+            # Some epochs don't have .conv.
+            if not selavy_path.is_file():
+                selavy_path = Path(str(selavy_path).replace('.conv', ''))
 
         else:
-
             dir_name = "COMBINED"
+            selavy_folder = Path(
+                self.base_folder,
+                epoch_string,
+                dir_name,
+                f"STOKES{self.settings['stokes']}_SELAVY"
+            )
 
-            selavy_file_fmt = "{}.EPOCH{}.{}.selavy.{}.txt".format(
+            selavy_file_fmt = "selavy-{}.EPOCH{}.{}.conv.{}.xml".format(
                 row.field,
                 RELEASED_EPOCHS[row.epoch],
                 self.settings['stokes'],
                 cat_type
             )
 
-            image_file_fmt = "{}.EPOCH{}.{}.fits".format(
-                row.field,
-                RELEASED_EPOCHS[row.epoch],
-                self.settings['stokes'],
-            )
+            selavy_path = selavy_folder / selavy_file_fmt
 
-            rms_file_fmt = "{}.EPOCH{}.{}_rms.fits".format(
-                row.field,
-                RELEASED_EPOCHS[row.epoch],
-                self.settings['stokes'],
-            )
+        if not selavy_path.exists():
+            selavy_path = str(selavy_path).replace("RACS", "VAST")
 
-        selavy_file = os.path.join(
-            self.base_folder,
-            epoch_string,
-            dir_name,
-            "STOKES{}_SELAVY".format(self.settings['stokes']),
-            selavy_file_fmt
+        return str(selavy_path)
+
+    def _add_files(self, row: pd.Series) -> Tuple[str, str, str]:
+        """
+        Adds the file paths for the image, selavy catalogues and
+        rms images for each source to be queried.
+        Args:
+            row: The input row of the dataframe (this function is called with
+                a .apply())
+        Returns:
+            The paths of the image, selavy catalogue and rms image.
+        """
+        epoch_string = "EPOCH{}".format(
+            RELEASED_EPOCHS[row.epoch]
         )
+
+        img_dir = "STOKES{}_IMAGES".format(self.settings['stokes'])
+        rms_dir = "STOKES{}_RMSMAPS".format(self.settings['stokes'])
+
+        if self.settings['tiles']:
+            dir_name = "TILES"
+
+            image_file_fmt = (
+                "image.i.{}.SB{}.cont"
+                ".taylor.0.restored.fits".format(
+                    row.field, row.sbid
+                )
+            )
+            if self.corrected_data:
+                img_dir += "_CORRECTED"
+                rms_dir += "_CORRECTED"
+                image_file_fmt = image_file_fmt.replace(".fits",
+                                                        ".corrected.fits"
+                                                        )
+
+        else:
+            dir_name = "COMBINED"
+
+            image_file_fmt = "{}.EPOCH{}.{}.conv.fits".format(
+                row.field,
+                RELEASED_EPOCHS[row.epoch],
+                self.settings['stokes'],
+            )
+
+            rms_file_fmt = "noiseMap.{}.EPOCH{}.{}.conv.fits".format(
+                row.field,
+                RELEASED_EPOCHS[row.epoch],
+                self.settings['stokes'],
+            )
+
+        selavy_file = self._get_selavy_path(epoch_string, row)
 
         image_file = os.path.join(
             self.base_folder,
             epoch_string,
             dir_name,
-            "STOKES{}_IMAGES".format(self.settings['stokes']),
+            img_dir,
             image_file_fmt
         )
 
@@ -1681,7 +1756,7 @@ class Query:
                 self.base_folder,
                 epoch_string,
                 dir_name,
-                "STOKES{}_RMSMAPS".format(self.settings['stokes']),
+                rms_dir,
                 rms_file_fmt
             )
 
@@ -1742,14 +1817,15 @@ class Query:
         )
 
         if self.racs:
-            base_epoch = '0'
             base_fc = 'RACS'
         else:
-            base_epoch = '1'
             base_fc = 'VAST'
+
+        base_epoch = BASE_EPOCHS[base_fc]
 
         fields = Fields(base_epoch)
         field_centres = load_field_centres()
+
         field_centres = field_centres.loc[
             field_centres['field'].str.contains(base_fc)
         ].reset_index()
@@ -1772,6 +1848,8 @@ class Query:
         if self.query_df is not None:
             self.fields_df = self.query_df.copy()
 
+            # _field_matching returns 7 arguments. This dict specifies types,
+            # O for object (in this case, lists) and U for unicode string.
             meta = {
                 0: 'O',
                 1: 'U',
@@ -1779,7 +1857,9 @@ class Query:
                 3: 'O',
                 4: 'O',
                 5: 'O',
+                6: 'O',
             }
+            self.logger.debug("Running field matching...")
 
             self.fields_df[[
                 'fields',
@@ -1787,7 +1867,8 @@ class Query:
                 'epochs',
                 'field_per_epoch',
                 'sbids',
-                'dates'
+                'dates',
+                'freqs'
             ]] = (
                 dd.from_pandas(self.fields_df, self.ncpu)
                 .apply(
@@ -1804,6 +1885,7 @@ class Query:
                 ).compute(num_workers=self.ncpu, scheduler='processes')
             )
 
+            self.logger.debug("Finished field matching.")
             self.fields_df = self.fields_df.dropna()
             if self.fields_df.empty:
                 raise Exception(
@@ -1814,7 +1896,7 @@ class Query:
             ).reset_index(drop=True)
 
             self.fields_df[
-                ['epoch', 'field', 'sbid', 'dateobs']
+                ['epoch', 'field', 'sbid', 'dateobs', 'frequency']
             ] = pd.DataFrame(
                 self.fields_df['field_per_epoch'].tolist(),
                 index=self.fields_df.index
@@ -1824,7 +1906,8 @@ class Query:
                 'field_per_epoch',
                 'epochs',
                 'sbids',
-                'dates'
+                'dates',
+                'freqs'
             ]
 
             self.fields_df = self.fields_df.drop(
@@ -1907,6 +1990,7 @@ class Query:
         Returns:
             Tuple containing the field information.
         """
+
         seps = row.skycoord.separation(fields_coords)
         accept = seps.deg < self.settings['max_sep']
         fields = np.unique(fields_names[accept])
@@ -1934,9 +2018,9 @@ class Query:
         field_per_epochs = []
         sbids = []
         dateobs = []
+        freqs = []
 
         for i in self.settings['epochs']:
-
             if i != '0' and self.racs:
                 the_fields = vast_fields
             else:
@@ -1980,11 +2064,22 @@ class Query:
             epochs.append(i)
             sbid = self._epoch_fields.loc[i, field]["SBID"]
             date = self._epoch_fields.loc[i, field]["DATEOBS"]
+            freq = self._epoch_fields.loc[i, field]["OBS_FREQ"]
             sbids.append(sbid)
             dateobs.append(date)
-            field_per_epochs.append([i, field, sbid, date])
+            freqs.append(freq)
+            field_per_epochs.append([i, field, sbid, date, freq])
 
-        return fields, primary_field, epochs, field_per_epochs, sbids, dateobs
+        return_vals = (fields,
+                       primary_field,
+                       epochs,
+                       field_per_epochs,
+                       sbids,
+                       dateobs,
+                       freqs
+                       )
+
+        return return_vals
 
     def _get_planets_epoch_df_template(self) -> pd.DataFrame:
         """
@@ -2121,7 +2216,9 @@ class Query:
 
         return catalog
 
-    def _get_epochs(self, req_epochs: str) -> List[str]:
+    def _get_epochs(self,
+                    req_epochs: str
+                    ) -> List[str]:
         """
         Parse the list of epochs to query.
 
@@ -2132,14 +2229,20 @@ class Query:
             Epochs to query, as a list of strings.
         """
 
-        available_epochs = sorted(RELEASED_EPOCHS, key=RELEASED_EPOCHS.get)
+        epoch_dict = RELEASED_EPOCHS.copy()
+
+        if self.settings['incl_observed']:
+            epoch_dict.update(OBSERVED_EPOCHS)
+        available_epochs = sorted(epoch_dict, key=epoch_dict.get)
         self.logger.debug("Available epochs: " + str(available_epochs))
 
         if req_epochs == 'all':
             epochs = available_epochs
         elif req_epochs == 'all-vast':
             epochs = available_epochs
-            epochs.remove('0')
+            for racs_epoch in BASE_EPOCHS['RACS']:
+                if racs_epoch in epochs:
+                    epochs.remove(racs_epoch)
         else:
             epochs = []
             for epoch in req_epochs.split(','):
@@ -2160,21 +2263,29 @@ class Query:
                         )
 
         # RACS check
-        if '0' in epochs:
-            if not check_racs_exists(self.base_folder):
-                self.logger.warning('RACS EPOCH00 directory not found!')
-                self.logger.warning('Removing RACS from requested epochs.')
-                epochs.remove('0')
-                self.racs = False
-            else:
-                self.logger.warning('RACS data selected!')
-                self.logger.warning(
-                    'Remember RACS data supplied by VAST is not final '
-                    'and results may vary.'
-                )
-                self.racs = True
-        else:
-            self.racs = False
+        self.racs = False
+        for racs_epoch in BASE_EPOCHS['RACS']:
+            if racs_epoch in epochs:
+                epoch_str = "EPOCH{}".format(racs_epoch.zfill(2))
+                exists = os.path.isdir(os.path.join(self.base_folder,
+                                                    epoch_str)
+                                       )
+                if not exists:
+                    self.logger.warning(
+                        'RACS {} directory not found!'.format(epoch_str)
+                    )
+                    self.logger.warning(
+                        'Removing from requested epochs.'
+                    )
+                    epochs.remove(racs_epoch)
+                    self.racs = False
+                else:
+                    self.logger.warning('RACS data selected!')
+                    self.logger.warning(
+                        'Remember RACS data supplied by VAST is not final '
+                        'and results may vary.'
+                    )
+                    self.racs = True
 
         if len(epochs) == 0:
             self.logger.critical("No requested epochs are available")
@@ -2246,15 +2357,18 @@ class FieldQuery:
         """
         Check that the field is a valid pilot survey field.
 
-        Epoch 1 is checked against as it is a complete observation.
+        We check against epochs 1 and 18 which are the first complete
+        low- and mid-band epochs respectively.
 
         Returns:
             Bool representing if field is valid.
         """
 
         epoch_01 = load_fields_file("1")
+        epoch_18 = load_fields_file("18")
+        base_fields = pd.concat(epoch_01, epoch_18)
         self.logger.debug("Field name: {}".format(self.field))
-        result = epoch_01['FIELD_NAME'].str.contains(
+        result = base_fields['FIELD_NAME'].str.contains(
             re.escape(self.field)
         ).any()
         self.logger.debug("Field found: {}".format(result))
@@ -2262,7 +2376,7 @@ class FieldQuery:
             self.logger.error(
                 "Field {} is not a valid field name!".format(self.field)
             )
-        del epoch_01
+        del epoch_01, epoch_18, base_fields
         return result
 
     def _get_beams(self) -> Dict[str, Beams]:
@@ -2318,13 +2432,15 @@ class FieldQuery:
             self.pilot_info = _pilot_info
         else:
             self.logger.debug("Building pilot info file.")
-            for i, val in enumerate(sorted(RELEASED_EPOCHS)):
+            epochs_dict = RELEASED_EPOCHS.copy()
+            epochs_dict.update(OBSERVED_EPOCHS)
+            for i, val in enumerate(sorted(epochs_dict)):
                 if i == 0:
                     self.pilot_info = load_fields_file(val)
-                    self.pilot_info["EPOCH"] = RELEASED_EPOCHS[val]
+                    self.pilot_info["EPOCH"] = epochs_dict[val]
                 else:
                     to_append = load_fields_file(val)
-                    to_append["EPOCH"] = RELEASED_EPOCHS[val]
+                    to_append["EPOCH"] = epochs_dict[val]
                     self.pilot_info = self.pilot_info.append(
                         to_append, sort=False
                     )
@@ -2339,6 +2455,7 @@ class FieldQuery:
             "EPOCH",
             "FIELD_NAME",
             "SBID",
+            "OBS_FREQ",
             "BEAM",
             "RA_HMS",
             "DEC_DMS",

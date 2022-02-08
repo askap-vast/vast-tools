@@ -25,6 +25,7 @@ from astropy.coordinates import SkyCoord, Angle
 from vasttools.survey import load_fields_file
 from vasttools.moc import VASTMOCS
 from vasttools.utils import create_moc_from_fits
+from vasttools import FREQ_CONVERSION
 
 
 def skymap2moc(filename: str, cutoff: float) -> MOC:
@@ -165,8 +166,11 @@ def _create_beam_df(beam_files: list) -> pd.DataFrame:
                     ]
 
     for i, beam_file in enumerate(beam_files):
-        field = "VAST_" + \
-            beam_file.name.split('VAST_')[-1].split(beam_file.suffix)[0]
+        survey_str = "VAST_"
+        if "RACS" in beam_file.name:
+            survey_str = "RACS_"
+        field = survey_str + \
+            beam_file.name.split(survey_str)[-1].split(beam_file.suffix)[0]
         sbid = int(beam_file.name.split('beam_inf_')[-1].split('-')[0])
 
         temp = pd.read_csv(beam_file)
@@ -227,6 +231,7 @@ def _create_fields_df(epoch_num: str,
 
     Raises:
         Exception: Path does not exist.
+        Exception: No data available for epoch.
     """
     field_columns = ['FIELD_NAME', 'SBID', 'SCAN_START', 'SCAN_LEN']
 
@@ -234,9 +239,22 @@ def _create_fields_df(epoch_num: str,
     if not vast_db.exists():
         raise Exception("{} does not exist!".format(vast_db))
 
-    if type(epoch_num) is int:
-        epoch_num = str(epoch_num)
-    epoch = vast_db / 'epoch_{}'.format(epoch_num.replace('x', ''))
+    if type(epoch_num) is str:
+        epoch_num = int(epoch_num.replace('x', ''))
+
+    descrip_df = pd.read_csv(vast_db / 'description.csv', index_col='EPOCH')
+
+    if epoch_num not in descrip_df.index:
+        raise Exception("No data available for epoch {}".format(epoch_num))
+
+    sky_freq = descrip_df.OBS_FREQ.loc[epoch_num]
+
+    if sky_freq not in FREQ_CONVERSION.keys():
+        raise Exception("Sky frequency is not in a recognised VAST band")
+    else:
+        obs_freq = FREQ_CONVERSION[sky_freq]
+
+    epoch = vast_db / 'epoch_{}'.format(epoch_num)
 
     beam_files = list(epoch.glob('beam_inf_*.csv'))
     beam_df = _create_beam_df(beam_files)
@@ -285,8 +303,11 @@ def _create_fields_df(epoch_num: str,
                                           'PSF_MAJOR': 'BMAJ',
                                           'PSF_MINOR': 'BMIN',
                                           'PSF_ANGLE': 'BPA'})
+
+    epoch_csv['OBS_FREQ'] = [obs_freq] * len(epoch_csv)
     epoch_csv = epoch_csv.loc[:, [
         'SBID',
+        'OBS_FREQ',
         'FIELD_NAME',
         'BEAM',
         'RA_HMS',

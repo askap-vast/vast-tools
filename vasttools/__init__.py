@@ -27,8 +27,19 @@ RELEASED_EPOCHS = {
     "11x": "11x",
     "12": "12",
     "13": "13",
+    "17": "17",
+    "18": "18",
+    "19": "19"
 }
 
+OBSERVED_EPOCHS = {
+    "14": "14",
+}
+
+BASE_EPOCHS = {
+    "RACS": ['0', '14'],
+    "VAST": ['1', '18']
+}
 
 ALLOWED_PLANETS = [
     'mercury',
@@ -41,3 +52,8 @@ ALLOWED_PLANETS = [
     'sun',
     'moon'
 ]
+
+FREQ_CONVERSION = {
+    864.5: 887.5,
+    1272.5: 1367.5
+}

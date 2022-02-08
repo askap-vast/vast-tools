@@ -87,7 +87,7 @@ def parse_args() -> argparse.Namespace:
         '--imsize',
         type=float,
         help='Edge size of the postagestamp in arcmin',
-        default=30.)
+        default=5.)
     parser.add_argument(
         '--maxsep',
         type=float,
@@ -103,11 +103,15 @@ def parse_args() -> argparse.Namespace:
         '--crossmatch-radius',
         type=float,
         help='Crossmatch radius in arcseconds',
-        default=15.0)
+        default=10.0)
     parser.add_argument(
         '--use-tiles',
         action="store_true",
         help='Use the individual tiles instead of combined mosaics.')
+    parser.add_argument(
+        '--uncorrected-data',
+        action="store_true",
+        help='Use the uncorrected data. Only relevant with --use-tiles')
     parser.add_argument(
         '--islands',
         action="store_true",
@@ -400,6 +404,14 @@ def main() -> None:
         "Available epochs: {}".format(sorted(RELEASED_EPOCHS.keys()))
     )
 
+    if args.uncorrected_data and not args.use_tiles:
+        logger.error(
+            "Uncorrected data has been selected with COMBINED data!"
+        )
+        logger.error(
+            "These modes cannot be used together, "
+            "please check input and try again."
+        )
     if len(args.planets) > 0:
         args.planets = args.planets.lower().replace(" ", "").split(",")
 
@@ -476,6 +488,7 @@ def main() -> None:
         sky_coords = None
         source_names = ""
     logger.debug(args.epochs)
+
     query = Query(
         coords=sky_coords,
         source_names=source_names,
@@ -495,7 +508,9 @@ def main() -> None:
         sort_output=args.sort_output,
         forced_fits=args.forced_fits,
         forced_cluster_threshold=args.forced_cluster_threshold,
-        forced_allow_nan=args.forced_allow_nan
+        forced_allow_nan=args.forced_allow_nan,
+        incl_observed=args.find_fields,
+        corrected_data=not args.uncorrected_data
     )
 
     if args.find_fields:

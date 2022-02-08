@@ -1,0 +1,3 @@
+EPOCH,OBS_FREQ,FOOTPRINT,PITCH,ROTATION,DURATION,POL_MODE,DATABASE,PRODUCT_ROOT
+1,864.5,square_6x6,1.05,45.0,720.0,pa_fixed,epoch_1,/askapbuffer/payne/len067/vast1
+2,864.5,square_6x6,1.05,45.0,720.0,pa_fixed,epoch_2,/askapbuffer/payne/len067/vast2
