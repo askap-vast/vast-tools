@@ -1464,13 +1464,13 @@ class Query:
         """
         Obtains the correct metadata dictionary for use with
         Query._get_components
-        
+
         Args:
             None
         Returns:
             The metadata dictionary
         """
-        
+
         if self.settings["islands"]:
             meta = {
                 '#': 'f',
@@ -1560,7 +1560,6 @@ class Query:
             }
 
         return meta
-
 
     def _get_components(self, group: pd.DataFrame) -> pd.DataFrame:
         """
