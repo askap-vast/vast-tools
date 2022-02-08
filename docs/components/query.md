@@ -170,7 +170,7 @@ All matches within the `crossmatch_radius` are returned instead of just the clos
 These `Query` keyword arguments control the data that is used to perform the query or the data returned.
 
 **`epochs`**  
-A comma-separated list of epochs (entered as a string) to search.
+A list of epochs or a comma-separated string of epochs to search.
 Do not use zero padded values when entering the epochs.
 The values `all` and `all-vast` are also valid, selecting Epoch 0 + VAST data and just VAST data, respectively.
 
