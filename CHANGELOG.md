@@ -33,7 +33,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 #### Removed
 
 #### List of PRs
-- [#328](https://github.com/askap-vast/vast-tools/pull/328): tests, feat: Fixed metadata for islands queries 
+- [#328](https://github.com/askap-vast/vast-tools/pull/328): fix: Fixed metadata for islands queries 
 - [#311](https://github.com/askap-vast/vast-tools/pull/311): tests, docs, feat: Added multi-frequency handling and small updates
 - [#323](https://github.com/askap-vast/vast-tools/pull/323): feat, tests: New options for MOC generation
 - [#315](https://github.com/askap-vast/vast-tools/pull/315): tests, docs, feat: Use offset, rather than absolute, coordinates for postagestamps
