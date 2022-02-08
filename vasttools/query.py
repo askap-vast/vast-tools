@@ -1744,7 +1744,6 @@ class Query:
             image_file_fmt
         )
 
-
         rms_file = os.path.join(
             self.base_folder,
             epoch_string,

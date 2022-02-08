@@ -933,8 +933,8 @@ class TestQuery:
         assert results == expected_results
 
     @pytest.mark.parametrize("corrected",
-                             [True,False],
-                             ids=('corrected','uncorrected')
+                             [True, False],
+                             ids=('corrected', 'uncorrected')
                              )
     def test__add_files_tiles(
         self,
@@ -982,7 +982,7 @@ class TestQuery:
             )
         test_query = vast_query_psrj2129_fields
         test_query.settings['tiles'] = True
-        
+
         test_query.corrected_data = corrected
 
         mock_selavy_path = mocker.patch(
