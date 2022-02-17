@@ -1118,6 +1118,10 @@ class Query:
             ).compute(num_workers=self.ncpu, scheduler='processes')
         )
 
+        if self.settings['islands']:
+            results['rms_image'] = results['background_noise']
+            results['flux_peak_err'] = results['background_noise']
+
         if not results.empty:
             if isinstance(results.index, pd.MultiIndex):
                 results.index = results.index.droplevel()
