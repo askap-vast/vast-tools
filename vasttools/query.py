@@ -425,7 +425,7 @@ class Query:
             )
             self.logger.warning("Turning RMS measurements off.")
             self.settings['no_rms'] = True
-        
+
         if self.settings['islands']:
             self.logger.warning(
                 "Image RMS and peak flux error are not available with islands."
