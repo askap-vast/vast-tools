@@ -1009,9 +1009,22 @@ class TestQuery:
 
         assert results == expected_results
 
-    def test__add_files_stokesv_combined(
+    @pytest.mark.parametrize("stokes",
+                             [("I"),
+                              ("Q"),
+                              ("U"),
+                              ("V"),
+                              ],
+                             ids=('stokes-i',
+                                  'stokes-q',
+                                  'stokes-u',
+                                  'stokes-v',
+                                  )
+                             )
+    def test__add_files_stokes_combined(
         self,
         vast_query_psrj2129_fields: vtq.Query,
+        stokes,
         mocker
     ) -> None:
         """
@@ -1022,23 +1035,24 @@ class TestQuery:
         Args:
             vast_query_psrj2129_fields: The dummy Query instance that includes
                 a search for PSR J2129-04 with the included found fields data.
+            stokes: Stokes parameter
             mocker: The pytest-mock mocker object.
 
         Returns:
             None
         """
         expected_results = (
-            '/testing/folder/EPOCH01/COMBINED/STOKESV_SELAVY'
-            '/selavy-VAST_2118-06A.EPOCH01.V.conv.components.xml',
-            '/testing/folder/EPOCH01/COMBINED/STOKESV_IMAGES'
-            '/VAST_2118-06A.EPOCH01.V.conv.fits',
-            '/testing/folder/EPOCH01/COMBINED/STOKESV_RMSMAPS'
-            '/noiseMap.VAST_2118-06A.EPOCH01.V.conv.fits'
+            f'/testing/folder/EPOCH01/COMBINED/STOKES{stokes}_SELAVY'
+            f'/selavy-VAST_2118-06A.EPOCH01.{stokes}.conv.components.xml',
+            f'/testing/folder/EPOCH01/COMBINED/STOKES{stokes}_IMAGES'
+            f'/VAST_2118-06A.EPOCH01.{stokes}.conv.fits',
+            f'/testing/folder/EPOCH01/COMBINED/STOKES{stokes}_RMSMAPS'
+            f'/noiseMap.VAST_2118-06A.EPOCH01.{stokes}.conv.fits'
         )
 
         test_query = vast_query_psrj2129_fields
-        test_query.settings['stokes'] = 'V'
-        test_query.fields_df['stokes'] = 'V'
+        test_query.settings['stokes'] = stokes
+        test_query.fields_df['stokes'] = stokes
 
         mock_selavy_path = mocker.patch(
             'vasttools.query.Query._get_selavy_path',
