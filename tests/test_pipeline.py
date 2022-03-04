@@ -1558,6 +1558,7 @@ class TestPipeAnalysis:
         dummy_PipeAnalysis.images = pd.concat(
             [
                 dummy_PipeAnalysis.images,
+                # need to transpose the series to a dataframe to concat
                 new_image_row.to_frame().T.set_index('name')
             ]
         )

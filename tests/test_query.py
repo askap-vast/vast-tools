@@ -1240,6 +1240,7 @@ class TestQuery:
         to_add['ra'] += 1.
         to_add['dec'] += 1.
         mocked_input = pd.concat(
+            # need to transpose the series to a dataframe to concat
             [mocked_input, to_add.to_frame().T.reset_index(drop=True)]
         )
 
