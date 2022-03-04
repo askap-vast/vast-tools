@@ -195,6 +195,9 @@ Refer to [this wiki page](https://github.com/askap-vast/vast-project/wiki/Pilot-
 **`use_islands`**  
 Query the island catalogues produced by the [`selavy`](https://www.atnf.csiro.au/computing/software/askapsoft/sdp/docs/current/analysis/selavy.html){:target="_blank"} source finder instead of the component catalogues (default).
 
+!!! warning "Warning: Islands selavy catalogues"
+    `flux_peak_err` and `rms_image` are not calculated for islands catalogues. For the purposes of `vast-tools` we have chosen to use `background_noise` as a placeholder for both.
+
 **`matches_only`**  
 Only return results that have a source match. 
 I.e. no forced fit or upper limit measurements will be returned.

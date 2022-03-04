@@ -28,11 +28,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Minor documentation edits [#298](https://github.com/askap-vast/vast-tools/pull/298)
 
 #### Fixed
+- Fixed metadata for islands queries [#328](https://github.com/askap-vast/vast-tools/pull/328)
 - Updated missing values in RACS beam info csv file [#311](https://github.com/askap-vast/vast-tools/pull/311)
 
 #### Removed
 
 #### List of PRs
+- [#328](https://github.com/askap-vast/vast-tools/pull/328): fix, docs: Fixed metadata for islands queries 
 - [#327](https://github.com/askap-vast/vast-tools/pull/327): feat, docs: Allow query epochs to be specified as list
 - [#311](https://github.com/askap-vast/vast-tools/pull/311): tests, docs, feat: Added multi-frequency handling and small updates
 - [#323](https://github.com/askap-vast/vast-tools/pull/323): feat, tests: New options for MOC generation
