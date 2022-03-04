@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased](https://github.com/askap-vast/vast-tools/compare/v2.0.0...HEAD)
 
 #### Added
+- Added pylint github action for pull requests [#338](https://github.com/askap-vast/vast-tools/pull/338).
 - Added observing frequency to all fields csv files [#311](https://github.com/askap-vast/vast-tools/pull/311)
 - Added OBSERVED_EPOCHS variable for epochs that have been observed but not yet released [#311](https://github.com/askap-vast/vast-tools/pull/311)
 - Added access to epochs up 17, 18, 19 [#311](https://github.com/askap-vast/vast-tools/pull/311)
@@ -35,6 +36,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 #### Removed
 
 #### List of PRs
+- [#338](https://github.com/askap-vast/vast-tools/pull/338): feat: Added pylint workflow for pull requests.
 - [#325](https://github.com/askap-vast/vast-tools/pull/325): tests, feat: Enabled access to full TILES data
 - [#328](https://github.com/askap-vast/vast-tools/pull/328): fix, docs: Fixed metadata for islands queries 
 - [#327](https://github.com/askap-vast/vast-tools/pull/327): feat, docs: Allow query epochs to be specified as list
