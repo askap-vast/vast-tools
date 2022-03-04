@@ -425,6 +425,12 @@ class Query:
             )
             return False
 
+        if self.settings['islands']:
+            self.logger.warning(
+                "Image RMS and peak flux error are not available with islands."
+                "Using background_noise as a placeholder for both."
+            )
+
         return True
 
     def _get_all_cutout_data(self, imsize: Angle) -> pd.DataFrame:
@@ -1104,49 +1110,6 @@ class Query:
 
             self.logger.info("Done.")
 
-        meta = {
-            '#': 'f',
-            'island_id': 'U',
-            'component_id': 'U',
-            'component_name': 'U',
-            'ra_hms_cont': 'U',
-            'dec_dms_cont': 'U',
-            'ra_deg_cont': 'f',
-            'dec_deg_cont': 'f',
-            'ra_err': 'f',
-            'dec_err': 'f',
-            'freq': 'f',
-            'flux_peak': 'f',
-            'flux_peak_err': 'f',
-            'flux_int': 'f',
-            'flux_int_err': 'f',
-            'maj_axis': 'f',
-            'min_axis': 'f',
-            'pos_ang': 'f',
-            'maj_axis_err': 'f',
-            'min_axis_err': 'f',
-            'pos_ang_err': 'f',
-            'maj_axis_deconv': 'f',
-            'min_axis_deconv': 'f',
-            'pos_ang_deconv': 'f',
-            'maj_axis_deconv_err': 'f',
-            'min_axis_deconv_err': 'f',
-            'pos_ang_deconv_err': 'f',
-            'chi_squared_fit': 'f',
-            'rms_fit_gauss': 'f',
-            'spectral_index': 'f',
-            'spectral_curvature': 'f',
-            'spectral_index_err': 'f',
-            'spectral_curvature_err': 'f',
-            'rms_image': 'f',
-            'has_siblings': 'f',
-            'fit_is_estimate': 'f',
-            'spectral_index_from_TT': 'f',
-            'flag_c4': 'f',
-            'comment': 'f',
-            'detection': '?',
-        }
-
         if self.settings['search_around']:
             meta['index'] = 'i'
 
@@ -1156,9 +1119,13 @@ class Query:
             .groupby('selavy')
             .apply(
                 self._get_components,
-                meta=meta,
+                meta=self._get_selavy_meta(),
             ).compute(num_workers=self.ncpu, scheduler='processes')
         )
+
+        if self.settings['islands']:
+            results['rms_image'] = results['background_noise']
+            results['flux_peak_err'] = results['background_noise']
 
         if not results.empty:
             if isinstance(results.index, pd.MultiIndex):
@@ -1502,6 +1469,107 @@ class Query:
         df.index = group.index.values
 
         return df
+
+    def _get_selavy_meta(self) -> dict:
+        """
+        Obtains the correct metadata dictionary for use with
+        Query._get_components
+
+        Args:
+            None
+        Returns:
+            The metadata dictionary
+        """
+
+        if self.settings["islands"]:
+            meta = {
+                '#': 'f',
+                'island_id': 'U',
+                'island_name': 'U',
+                'n_components': 'f',
+                'ra_hms_cont': 'U',
+                'dec_dms_cont': 'U',
+                'ra_deg_cont': 'f',
+                'dec_deg_cont': 'f',
+                'freq': 'f',
+                'maj_axis': 'f',
+                'min_axis': 'f',
+                'pos_ang': 'f',
+                'flux_int': 'f',
+                'flux_int_err': 'f',
+                'flux_peak': 'f',
+                'mean_background': 'f',
+                'background_noise': 'f',
+                'max_residual': 'f',
+                'min_residual': 'f',
+                'mean_residual': 'f',
+                'rms_residual': 'f',
+                'stdev_residual': 'f',
+                'x_min': 'i',
+                'x_max': 'i',
+                'y_min': 'i',
+                'y_max': 'i',
+                'n_pix': 'i',
+                'solid_angle': 'f',
+                'beam_area': 'f',
+                'x_ave': 'f',
+                'y_ave': 'f',
+                'x_cen': 'f',
+                'y_cen': 'f',
+                'x_peak': 'i',
+                'y_peak': 'i',
+                'flag_i1': 'i',
+                'flag_i2': 'i',
+                'flag_i3': 'i',
+                'flag_i4': 'i',
+                'comment': 'U',
+                'detection': '?'
+            }
+        else:
+            meta = {
+                '#': 'f',
+                'island_id': 'U',
+                'component_id': 'U',
+                'component_name': 'U',
+                'ra_hms_cont': 'U',
+                'dec_dms_cont': 'U',
+                'ra_deg_cont': 'f',
+                'dec_deg_cont': 'f',
+                'ra_err': 'f',
+                'dec_err': 'f',
+                'freq': 'f',
+                'flux_peak': 'f',
+                'flux_peak_err': 'f',
+                'flux_int': 'f',
+                'flux_int_err': 'f',
+                'maj_axis': 'f',
+                'min_axis': 'f',
+                'pos_ang': 'f',
+                'maj_axis_err': 'f',
+                'min_axis_err': 'f',
+                'pos_ang_err': 'f',
+                'maj_axis_deconv': 'f',
+                'min_axis_deconv': 'f',
+                'pos_ang_deconv': 'f',
+                'maj_axis_deconv_err': 'f',
+                'min_axis_deconv_err': 'f',
+                'pos_ang_deconv_err': 'f',
+                'chi_squared_fit': 'f',
+                'rms_fit_gauss': 'f',
+                'spectral_index': 'f',
+                'spectral_curvature': 'f',
+                'spectral_index_err': 'f',
+                'spectral_curvature_err': 'f',
+                'rms_image': 'f',
+                'has_siblings': 'f',
+                'fit_is_estimate': 'f',
+                'spectral_index_from_TT': 'f',
+                'flag_c4': 'f',
+                'comment': 'f',
+                'detection': '?',
+            }
+
+        return meta
 
     def _get_components(self, group: pd.DataFrame) -> pd.DataFrame:
         """
