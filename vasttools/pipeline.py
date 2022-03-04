@@ -1227,7 +1227,6 @@ class PipeAnalysis(PipeRun):
         ).rename(columns={'to_source_id': 'n_relations'})
 
         sources_df = sources_df.join(sources_df_relations)
-
         # nearest neighbour
         sources_sky_coord = gen_skycoord_from_df(
             sources_df, ra_col='wavg_ra', dec_col='wavg_dec'
@@ -1254,10 +1253,10 @@ class PipeAnalysis(PipeRun):
         ], axis=1)
 
         # correct the RA wrapping
-        ra_wrap_mask = sources_df['wavg_ra'] >= 360.
-        sources_df.at[
+        ra_wrap_mask = (sources_df['wavg_ra'] >= 360.).to_numpy()
+        sources_df.loc[
             ra_wrap_mask, 'wavg_ra'
-        ] = sources_df[ra_wrap_mask].wavg_ra.values - 360.
+        ] = sources_df.loc[ra_wrap_mask]['wavg_ra'].to_numpy() - 360.
 
         # Switch relations column to int
         sources_df['n_relations'] = sources_df['n_relations'].astype(int)

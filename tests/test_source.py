@@ -524,12 +524,16 @@ class TestSource:
                 expected_values[freq]['1_y'] = temp_df[flux_col].to_numpy()
             else:
                 temp_df = meas_df[meas_df['detection'] == False]
-                expected_values[freq]['0_x'] = temp_df['dateobs'].to_numpy()
+                expected_values[freq]['0_x'] = pd.to_datetime(
+                    temp_df['dateobs']
+                )
                 upper_lims = temp_df['rms_image'].to_numpy() * 5.
                 expected_values[freq]['0_y'] = upper_lims
 
                 temp_df = meas_df[meas_df['detection'] == True]
-                expected_values[freq]['2_x'] = temp_df['dateobs'].to_numpy()
+                expected_values[freq]['2_x'] = pd.to_datetime(
+                    temp_df['dateobs']
+                )
                 expected_values[freq]['2_y'] = temp_df[flux_col].to_numpy()
 
         freq_counter = 0
@@ -612,14 +616,14 @@ class TestSource:
 
         if use_forced_for_limits:
             temp_df = meas_df[meas_df['detection'] == False]
-            expected_values['0_x'] = temp_df['dateobs'].to_numpy()
+            expected_values['0_x'] = pd.to_datetime(temp_df['dateobs'])
             expected_values['0_y'] = temp_df['f_flux_peak'].to_numpy()
 
             temp_df = meas_df[meas_df['detection'] == True]
-            expected_values['2_x'] = temp_df['dateobs'].to_numpy()
+            expected_values['2_x'] = pd.to_datetime(temp_df['dateobs'])
             expected_values['2_y'] = temp_df['flux_peak'].to_numpy()
         else:
-            expected_values['0_x'] = meas_df['dateobs'].to_numpy()
+            expected_values['0_x'] = pd.to_datetime(meas_df['dateobs'])
             expected_values['0_y'] = meas_df['f_flux_peak'].to_numpy()
 
         for i, line in enumerate(lightcurve.axes[0].lines):

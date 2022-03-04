@@ -39,7 +39,7 @@ from astropy.time import Time
 from astropy.timeseries import TimeSeries
 from astropy.table import Table
 from astroquery.simbad import Simbad
-from astroquery.ned import Ned
+from astroquery.ipac.ned import Ned
 from astroquery.casda import Casda
 from astropy.stats import sigma_clipped_stats
 from astroquery.skyview import SkyView

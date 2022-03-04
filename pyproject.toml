@@ -4,17 +4,17 @@ version = "2.0.0-dev"
 description = "Python module to interact with ASKAP VAST data."
 license = "MIT"
 homepage = "https://github.com/askap-vast/vasttools/"
-authors = ["Adam Stewart <adam.stewart@sydney.edu.au>", "Dougal Dobie <ddobie@swin.edu.au>"]
+authors = ["Adam Stewart <adam.stewart.astro@gmail.com>", "Dougal Dobie <ddobie@swin.edu.au>"]
 include = ["vasttools/data", "example_notebooks"]
 
 [tool.poetry.dependencies]
-python = "^3.8.0"
-astropy = "^4.2"
-astroquery = "^0.4.1"
+python = ">=3.8.0,<3.11"
+astropy = "^5.0"
+astroquery = "^0.4.4"
 bokeh = "^2.1.1"
 colorcet = "^2.0.2"
 colorlog = "^4.1.0"
-dask = {extras = ["dataframe"], version = "^2021.3.0"}
+dask = {version = "^2022.01.0", extras = ["dataframe"]}
 forced-phot = { git = "https://github.com/askap-vast/forced_phot.git" }
 matplotlib = "^3.2.1"
 mocpy = "^0.8.4"
@@ -37,8 +37,8 @@ ipdb = "^0.13.6"
 jupyterlab = "^3.1.0"
 jupyterlab-execute-time = "^2.0.2"
 jupyterlab-system-monitor = "^0.8.0"
-mkdocs-material = "^7.3.0"
-mkdocstrings = "^0.16.0"
+mkdocs-material = "^8.2.4"
+mkdocstrings = {version = "^0.18", extras = ["python-legacy"]}
 mkdocs-minify-plugin = "^0.4.1"
 mkdocs-material-extensions = "^1.0.3"
 mkdocs-gen-files = "^0.3.3"
@@ -46,7 +46,7 @@ mknotebooks = "^0.7.1"
 Pygments = "^2.8.1"
 lightgallery = "^0.5"
 mkdocs-git-revision-date-localized-plugin = "^0.10.0"
-pytest = "^6.2.4"
+pytest = "^7.0.0"
 pytest-mock = "^3.6.1"
 autopep8 = "^1.5.7"
 pytest-cov = "^2.12.1"
