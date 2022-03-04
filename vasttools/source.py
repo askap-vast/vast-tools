@@ -520,7 +520,6 @@ class Source:
             if use_forced_for_all:
                 detections = measurements
             else:
-                print(upper_lim_mask)
                 detections = measurements[
                     ~upper_lim_mask
                 ]
