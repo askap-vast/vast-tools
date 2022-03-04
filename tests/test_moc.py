@@ -2,7 +2,7 @@ import pathlib
 import pandas as pd
 import pytest
 
-from pytest_mock import mocker # pylint: disable=unused-import
+from pytest_mock import mocker  # noqa: F401
 from typing import Union
 
 from vasttools.moc import VASTMOCS

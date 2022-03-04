@@ -8,7 +8,7 @@ from astropy.coordinates import SkyCoord
 from astropy.time import Time
 from astropy.io import fits
 from astropy.wcs import WCS
-from pytest_mock import mocker  # pylint: disable=unused-import
+from pytest_mock import mocker  # noqa: F401
 from pathlib import Path
 from mocpy import MOC, STMOC
 from typing import Union

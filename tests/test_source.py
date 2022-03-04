@@ -10,7 +10,7 @@ from astropy.time import Time
 from astropy.wcs import WCS
 from matplotlib.pyplot import Figure
 from pathlib import Path
-from pytest_mock import mocker  # pylint: disable=unused-import
+from pytest_mock import mocker  # noqa: F401
 from radio_beam import Beam
 from typing import Optional
 

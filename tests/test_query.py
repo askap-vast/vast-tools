@@ -7,7 +7,7 @@ import pytest
 
 from astropy.coordinates import SkyCoord, Angle
 from mocpy import MOC
-from pytest_mock import mocker  # pylint: disable=unused-import
+from pytest_mock import mocker  # noqa: F401
 
 import vasttools.query as vtq
 
