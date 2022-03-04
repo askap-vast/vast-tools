@@ -1239,7 +1239,9 @@ class TestQuery:
         to_add = mocked_input.iloc[0].copy()
         to_add['ra'] += 1.
         to_add['dec'] += 1.
-        mocked_input = pd.concat([mocked_input, to_add])
+        mocked_input = pd.concat(
+            [mocked_input, to_add.to_frame().T.reset_index(drop=True)]
+        )
 
         mocked_input.name = group_name
 

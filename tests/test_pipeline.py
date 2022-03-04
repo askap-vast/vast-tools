@@ -1556,7 +1556,10 @@ class TestPipeAnalysis:
         new_image_row.name = 10
 
         dummy_PipeAnalysis.images = pd.concat(
-            [dummy_PipeAnalysis.images, new_image_row]
+            [
+                dummy_PipeAnalysis.images,
+                new_image_row.to_frame().T.set_index('name')
+            ]
         )
 
         dummy_PipeAnalysis.images.loc[10, 'skyreg_id'] = 4
