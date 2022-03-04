@@ -431,7 +431,7 @@ def selavy_cat() -> pd.DataFrame:
         )
 
         if search_around:
-            selavy_df = selavy_df.append(selavy_df.loc[[0, 0, 0]])
+            selavy_df = pd.concat([selavy_df, selavy_df.loc[[0, 0, 0]]])
 
         if add_detection:
             selavy_df['detection'] = [True, False]
@@ -1239,7 +1239,7 @@ class TestQuery:
         to_add = mocked_input.iloc[0].copy()
         to_add['ra'] += 1.
         to_add['dec'] += 1.
-        mocked_input = mocked_input.append(to_add)
+        mocked_input = pd.concat([mocked_input, to_add])
 
         mocked_input.name = group_name
 

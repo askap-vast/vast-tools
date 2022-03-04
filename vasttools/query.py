@@ -1601,8 +1601,10 @@ class Query:
 
             nselavy_df[["flux_peak", "flux_int"]] *= -1.0
 
-            selavy_df = selavy_df.append(
-                nselavy_df, ignore_index=True, sort=False
+            selavy_df = pd.concat(
+                [selavy_df, nselavy_df],
+                ignore_index=True,
+                sort=False
             )
 
         selavy_coords = SkyCoord(
@@ -1626,7 +1628,7 @@ class Query:
             copy['detection'] = True
             copy['#'] = d2d.arcsec
             copy.index = group.iloc[idxc].index.values
-            master = master.append(copy, sort=False)
+            master = pd.concat([master, copy], sort=False)
             # reset index and move previous index to the end to match the meta
             master_cols = master.columns.to_list()
             master = master.reset_index()[master_cols + ['index']]
@@ -1639,7 +1641,7 @@ class Query:
             copy['detection'] = True
             copy.index = group[mask].index.values
 
-            master = master.append(copy, sort=False)
+            master = pd.concat([master, copy], sort=False)
 
             missing = group_coords[~mask]
             if missing.shape[0] > 0:
@@ -1678,7 +1680,7 @@ class Query:
 
                 rms_df.index = group[~mask].index.values
 
-                master = master.append(rms_df, sort=False)
+                master = pd.concat([master, rms_df], sort=False)
         if '#' not in master.columns:
             master.insert(0, "#", '')
         return master
@@ -1988,8 +1990,8 @@ class Query:
             if self.fields_df is None:
                 self.fields_df = planet_fields
             else:
-                self.fields_df = self.fields_df.append(
-                    planet_fields
+                self.fields_df = pd.concat(
+                    [self.fields_df, planet_fields]
                 ).reset_index(drop=True)
 
         self.logger.debug(self.fields_df)
@@ -2507,8 +2509,9 @@ class FieldQuery:
                 else:
                     to_append = load_fields_file(val)
                     to_append["EPOCH"] = epochs_dict[val]
-                    self.pilot_info = self.pilot_info.append(
-                        to_append, sort=False
+                    self.pilot_info = pd.concat(
+                        [self.pilot_info, to_append],
+                        sort=False
                     )
 
         self.field_info = self.pilot_info[

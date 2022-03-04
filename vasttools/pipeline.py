@@ -187,12 +187,12 @@ class PipeRun(object):
             PipeRun: The self object with the other pipeline run added.
         """
 
-        self.images = self.images.append(
-            other_PipeRun.images,
+        self.images = pd.concat(
+            [self.images, other_PipeRun.images]
         ).drop_duplicates('path')
 
-        self.skyregions = self.skyregions.append(
-            other_PipeRun.skyregions,
+        self.skyregions = pd.concat(
+            [self.skyregions, other_PipeRun.skyregions],
             ignore_index=True
         ).drop_duplicates('id')
 
@@ -213,8 +213,8 @@ class PipeRun(object):
             self._vaex_meas = True
 
         else:
-            self.measurements = self.measurements.append(
-                other_PipeRun.measurements,
+            self.measurements = pd.concat(
+                [self.measurements, other_PipeRun.measurements],
                 ignore_index=True
             ).drop_duplicates(['id', 'source'])
 
@@ -224,9 +224,7 @@ class PipeRun(object):
             ))
         ]
 
-        self.sources = self.sources.append(
-            sources_to_add
-        )
+        self.sources = pd.concat([self.sources, sources_to_add])
 
         # need to keep access to all the different pairs files
         # for two epoch metrics.
@@ -632,7 +630,7 @@ class PipeRun(object):
             ['sun', 'moon'] for i in range(sun_moon_df.shape[0])
         ]
 
-        planets_df = planets_df.append(sun_moon_df, ignore_index=True)
+        planets_df = pd.concat([planets_df, sun_moon_df], ignore_index=True)
 
         del sun_moon_df
 

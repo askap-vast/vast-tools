@@ -181,7 +181,7 @@ def _create_beam_df(beam_files: list) -> pd.DataFrame:
         if i == 0:
             beam_df = temp.copy()
         else:
-            beam_df = beam_df.append(temp)
+            beam_df = pd.concat([beam_df, temp])
 
     return beam_df
 
