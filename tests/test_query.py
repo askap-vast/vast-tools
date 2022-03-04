@@ -932,8 +932,22 @@ class TestQuery:
 
         assert results == expected_results
 
+    @pytest.mark.parametrize("corrected, stokes",
+                             [(True, "I"),
+                              (True, "V"),
+                              (False, "I"),
+                              (False, "V"),
+                              ],
+                             ids=('corrected-i',
+                                  'corrected-v',
+                                  'uncorrected-i',
+                                  'uncorrected-v',
+                                  )
+                             )
     def test__add_files_tiles(
         self,
+        corrected: bool,
+        stokes: str,
         vast_query_psrj2129_fields: vtq.Query,
         mocker
     ) -> None:
@@ -943,6 +957,8 @@ class TestQuery:
         Assumes the standard VAST Pilot directory and file structure.
 
         Args:
+            corrected: Whether to test the corrected paths or not.
+            stokes: Stokes parameter.
             vast_query_psrj2129_fields: The dummy Query instance that includes
                 a search for PSR J2129-04 with the included found fields data.
             mocker: The pytest-mock mocker object.
@@ -950,18 +966,37 @@ class TestQuery:
         Returns:
             None
         """
-        expected_results = (
-            '/testing/folder/EPOCH01/TILES/STOKESI_SELAVY_CORRECTED'
-            '/selavy-image.i.VAST_2118-06A.SB9668.cont.taylor.0'
-            '.restored.components.corrected.xml',
-            '/testing/folder/EPOCH01/TILES/STOKESI_IMAGES_CORRECTED'
-            '/image.i.VAST_2118-06A.SB9668.cont.taylor.0.'
-            'restored.corrected.fits',
-            'N/A'
-        )
 
+        stokes_lower = stokes.lower()
+        if corrected:
+            expected_results = (
+                f'/testing/folder/EPOCH01/TILES/STOKES{stokes}_SELAVY'
+                f'_CORRECTED/selavy-image.{stokes_lower}.VAST_2118-06A.SB9668'
+                '.cont.taylor.0.restored.components.corrected.xml',
+                f'/testing/folder/EPOCH01/TILES/STOKES{stokes}_IMAGES'
+                f'_CORRECTED/image.{stokes_lower}.VAST_2118-06A.SB9668.cont'
+                '.taylor.0.restored.corrected.fits',
+                f'/testing/folder/EPOCH01/TILES/STOKES{stokes}_RMSMAPS'
+                f'_CORRECTED/noiseMap.image.{stokes_lower}.VAST_2118-06A'
+                '.SB9668.cont.taylor.0.restored.corrected.fits'
+            )
+        else:
+            expected_results = (
+                f'/testing/folder/EPOCH01/TILES/STOKES{stokes}_SELAVY'
+                f'/selavy-image.{stokes_lower}.VAST_2118-06A.SB9668.cont'
+                '.taylor.0.restored.components.xml',
+                f'/testing/folder/EPOCH01/TILES/STOKES{stokes}_IMAGES'
+                f'/image.{stokes_lower}.VAST_2118-06A.SB9668.cont.taylor.0.'
+                'restored.fits',
+                f'/testing/folder/EPOCH01/TILES/STOKES{stokes}_RMSMAPS'
+                f'/noiseMap.image.{stokes_lower}.VAST_2118-06A.SB9668.cont'
+                '.taylor.0.restored.fits'
+            )
         test_query = vast_query_psrj2129_fields
         test_query.settings['tiles'] = True
+        test_query.settings['stokes'] = stokes
+
+        test_query.corrected_data = corrected
 
         mock_selavy_path = mocker.patch(
             'vasttools.query.Query._get_selavy_path',
@@ -974,9 +1009,22 @@ class TestQuery:
 
         assert results == expected_results
 
-    def test__add_files_stokesv_combined(
+    @pytest.mark.parametrize("stokes",
+                             [("I"),
+                              ("Q"),
+                              ("U"),
+                              ("V"),
+                              ],
+                             ids=('stokes-i',
+                                  'stokes-q',
+                                  'stokes-u',
+                                  'stokes-v',
+                                  )
+                             )
+    def test__add_files_stokes_combined(
         self,
         vast_query_psrj2129_fields: vtq.Query,
+        stokes,
         mocker
     ) -> None:
         """
@@ -987,23 +1035,24 @@ class TestQuery:
         Args:
             vast_query_psrj2129_fields: The dummy Query instance that includes
                 a search for PSR J2129-04 with the included found fields data.
+            stokes: Stokes parameter
             mocker: The pytest-mock mocker object.
 
         Returns:
             None
         """
         expected_results = (
-            '/testing/folder/EPOCH01/COMBINED/STOKESV_SELAVY'
-            '/selavy-VAST_2118-06A.EPOCH01.V.conv.components.xml',
-            '/testing/folder/EPOCH01/COMBINED/STOKESV_IMAGES'
-            '/VAST_2118-06A.EPOCH01.V.conv.fits',
-            '/testing/folder/EPOCH01/COMBINED/STOKESV_RMSMAPS'
-            '/noiseMap.VAST_2118-06A.EPOCH01.V.conv.fits'
+            f'/testing/folder/EPOCH01/COMBINED/STOKES{stokes}_SELAVY'
+            f'/selavy-VAST_2118-06A.EPOCH01.{stokes}.conv.components.xml',
+            f'/testing/folder/EPOCH01/COMBINED/STOKES{stokes}_IMAGES'
+            f'/VAST_2118-06A.EPOCH01.{stokes}.conv.fits',
+            f'/testing/folder/EPOCH01/COMBINED/STOKES{stokes}_RMSMAPS'
+            f'/noiseMap.VAST_2118-06A.EPOCH01.{stokes}.conv.fits'
         )
 
         test_query = vast_query_psrj2129_fields
-        test_query.settings['stokes'] = 'V'
-        test_query.fields_df['stokes'] = 'V'
+        test_query.settings['stokes'] = stokes
+        test_query.fields_df['stokes'] = stokes
 
         mock_selavy_path = mocker.patch(
             'vasttools.query.Query._get_selavy_path',
