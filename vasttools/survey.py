@@ -143,7 +143,7 @@ def get_fields_per_epoch_info() -> pd.DataFrame:
     for i, e in enumerate(RELEASED_EPOCHS):
         temp = load_fields_file(e)
         temp['EPOCH'] = e
-        epoch_fields = epoch_fields.append(temp)
+        epoch_fields = pd.concat([epoch_fields, temp])
 
     epoch_fields = epoch_fields.drop_duplicates(
         ['FIELD_NAME', 'EPOCH']

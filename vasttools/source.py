@@ -2422,8 +2422,8 @@ class Source:
             self.measurements[~detect_mask][non_detect_label_err]
         )
 
-        fluxes = detect_fluxes.append(non_detect_fluxes)
-        errors = detect_errors.append(non_detect_errors)
+        fluxes = pd.concat([detect_fluxes, non_detect_fluxes])
+        errors = pd.concat([detect_errors, non_detect_errors])
 
         return fluxes, errors
 
