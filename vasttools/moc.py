@@ -4,12 +4,8 @@ Attributes:
     BASE_MOC_PATH (str): The base MOC path (str) in relation to the package.
 
 """
-import os
 import importlib.resources
 
-from astropy.time import Time
-from astropy import units as u
-from astropy.coordinates import Angle, SkyCoord
 from astropy.table import Table
 from mocpy import MOC, STMOC
 from typing import Union

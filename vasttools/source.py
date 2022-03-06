@@ -2,7 +2,6 @@
 """
 # Source class
 
-import gc
 import logging.config
 import logging.handlers
 import logging
@@ -13,15 +12,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import pandas as pd
-import signal
 import warnings
 
 from astropy.visualization import LinearStretch
-from astropy.visualization import AsymmetricPercentileInterval
 from astropy.visualization import PercentileInterval
 from astropy.visualization import ZScaleInterval, ImageNormalize
-from mpl_toolkits.axes_grid1.anchored_artists import (AnchoredEllipse,
-                                                      AnchoredSizeBar)
+from mpl_toolkits.axes_grid1.anchored_artists import AnchoredEllipse
 from astropy.coordinates import Angle
 from astropy.visualization.wcsaxes import SphericalCircle
 from matplotlib.collections import PatchCollection
@@ -29,14 +25,11 @@ from astropy.wcs.utils import proj_plane_pixel_scales
 from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
 from matplotlib.patches import Ellipse
-from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
-from astropy.wcs.utils import skycoord_to_pixel
 from astropy.io import fits
 from astropy.coordinates import SkyCoord
 from astropy.nddata.utils import Cutout2D
 from astropy import units as u
 from astropy.time import Time
-from astropy.timeseries import TimeSeries
 from astropy.table import Table
 from astroquery.simbad import Simbad
 from astroquery.ipac.ned import Ned
@@ -2422,8 +2415,8 @@ class Source:
             self.measurements[~detect_mask][non_detect_label_err]
         )
 
-        fluxes = detect_fluxes.append(non_detect_fluxes)
-        errors = detect_errors.append(non_detect_errors)
+        fluxes = pd.concat([detect_fluxes, non_detect_fluxes])
+        errors = pd.concat([detect_errors, non_detect_errors])
 
         return fluxes, errors
 

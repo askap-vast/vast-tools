@@ -50,6 +50,7 @@ pytest = "^7.0.0"
 pytest-mock = "^3.6.1"
 autopep8 = "^1.5.7"
 pytest-cov = "^2.12.1"
+flake8 = "^4.0.1"
 
 [tool.poetry.scripts]
 build_lightcurves = "vasttools.bin.build_lightcurves:main"

@@ -4,12 +4,11 @@ import pandas as pd
 import pytest
 import matplotlib.pyplot as plt
 
-from astropy.coordinates import SkyCoord, Angle
-from astropy.table import Table
+from astropy.coordinates import SkyCoord
 from astropy.time import Time
 from astropy.io import fits
 from astropy.wcs import WCS
-from pytest_mock import mocker
+from pytest_mock import mocker  # noqa: F401
 from pathlib import Path
 from mocpy import MOC, STMOC
 from typing import Union

@@ -1,19 +1,14 @@
 import astropy.units as u
+import importlib.resources
 import numpy as np
 import os
 import pandas as pd
 import pytest
 
 from astropy.coordinates import SkyCoord, Angle
-from astropy.io import fits
-from astropy.wcs import WCS
-import importlib.resources
 from mocpy import MOC
-from pytest_mock import mocker
+from pytest_mock import mocker  # noqa: F401
 
-from vasttools import RELEASED_EPOCHS
-from vasttools.survey import load_field_centres, Fields
-from vasttools.moc import VASTMOCS
 import vasttools.query as vtq
 
 
@@ -431,7 +426,7 @@ def selavy_cat() -> pd.DataFrame:
         )
 
         if search_around:
-            selavy_df = selavy_df.append(selavy_df.loc[[0, 0, 0]])
+            selavy_df = pd.concat([selavy_df, selavy_df.loc[[0, 0, 0]]])
 
         if add_detection:
             selavy_df['detection'] = [True, False]
@@ -1239,7 +1234,10 @@ class TestQuery:
         to_add = mocked_input.iloc[0].copy()
         to_add['ra'] += 1.
         to_add['dec'] += 1.
-        mocked_input = mocked_input.append(to_add)
+        mocked_input = pd.concat(
+            # need to transpose the series to a dataframe to concat
+            [mocked_input, to_add.to_frame().T.reset_index(drop=True)]
+        )
 
         mocked_input.name = group_name
 
