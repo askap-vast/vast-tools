@@ -2101,7 +2101,7 @@ class PipeAnalysis(PipeRun):
         axHistx.plot(range_x, fitx, 'k:', linewidth=2)
         range_y, fity = self._gaussian_fit(y, v_fit_mean, v_fit_sigma)
         axHisty.plot(fity, range_y, 'k:', linewidth=2)
-        
+
         axHistx.set_position(rect_histx)
         axHisty.set_position(rect_histy)
         axScatter.set_position(rect_scatter)
