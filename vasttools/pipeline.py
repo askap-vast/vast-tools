@@ -1999,7 +1999,6 @@ class PipeAnalysis(PipeRun):
         (see Rowlinson et al., 2018,
         https://ui.adsabs.harvard.edu/abs/2019A%26C....27..111R/abstract).
         Returns a matplotlib version.
-
         Args:
             df: Dataframe containing the sources from the pipeline run.
                 A `pandas.core.frame.DataFrame` instance.
@@ -2011,7 +2010,6 @@ class PipeAnalysis(PipeRun):
             v_cutoff: The log10 v_cutoff from the analysis.
             use_int_flux: Use integrated fluxes for the analysis instead of
                 peak fluxes, defaults to 'False'.
-
         Returns:
             Matplotlib figure containing the plot.
         """
@@ -2038,11 +2036,11 @@ class PipeAnalysis(PipeRun):
         rect_histx = [left, bottom_h, width, 0.2]
         rect_histy = [left_h, bottom, 0.2, height]
         fig = plt.figure(figsize=(12, 12))
-        axScatter = fig.add_subplot(223, position=rect_scatter)
+        axScatter = fig.add_subplot(223)
         plt.xlabel(r'$\eta_{\nu}$', fontsize=28)
         plt.ylabel(r'$V_{\nu}$', fontsize=28)
-        axHistx = fig.add_subplot(221, position=rect_histx)
-        axHisty = fig.add_subplot(224, position=rect_histy)
+        axHistx = fig.add_subplot(221)
+        axHisty = fig.add_subplot(224)
         axHistx.xaxis.set_major_formatter(nullfmt)
         axHisty.yaxis.set_major_formatter(nullfmt)
         axHistx.axes.yaxis.set_ticklabels([])
@@ -2103,6 +2101,10 @@ class PipeAnalysis(PipeRun):
         axHistx.plot(range_x, fitx, 'k:', linewidth=2)
         range_y, fity = self._gaussian_fit(y, v_fit_mean, v_fit_sigma)
         axHisty.plot(fity, range_y, 'k:', linewidth=2)
+        
+        axHistx.set_position(rect_histx)
+        axHisty.set_position(rect_histy)
+        axScatter.set_position(rect_scatter)
 
         return fig
 
