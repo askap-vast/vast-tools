@@ -8,11 +8,8 @@ import numexpr
 import os
 import warnings
 import glob
-import gc
 import vaex
 import dask.dataframe as dd
-import scipy.ndimage as ndi
-import bokeh.colors.named as colors
 import colorcet as cc
 import numpy as np
 import pandas as pd
@@ -21,30 +18,21 @@ import mocpy
 import matplotlib
 import matplotlib.pyplot as plt
 
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 from bokeh.models import (
-    ColumnDataSource,
     Span,
     BoxAnnotation,
     Model,
-    DataRange1d,
-    Range1d,
-    Whisker,
-    LabelSet,
-    Circle,
-    HoverTool,
-    Slider
 )
 from bokeh.layouts import gridplot, Spacer
 from bokeh.palettes import Category10_3
-from bokeh.plotting import figure, from_networkx
+from bokeh.plotting import figure
 from bokeh.transform import linear_cmap, factor_cmap
 from scipy.stats import norm
 from astropy.stats import sigma_clip, mad_std, bayesian_blocks
 from astropy.coordinates import SkyCoord
 from astropy import units as u
 from multiprocessing import cpu_count
-from mocpy import MOC
 from datetime import timedelta
 from itertools import combinations
 from matplotlib.ticker import NullFormatter
@@ -60,7 +48,6 @@ from vasttools.utils import (
     calculate_m_metric,
     create_moc_from_fits
 )
-from vasttools.survey import Image
 from vasttools.tools import add_credible_levels
 
 HOST_NCPU = cpu_count()

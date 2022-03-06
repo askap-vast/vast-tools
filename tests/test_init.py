@@ -1,4 +1,3 @@
-import pytest
 from vasttools import RELEASED_EPOCHS, OBSERVED_EPOCHS
 
 

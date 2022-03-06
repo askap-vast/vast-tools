@@ -22,7 +22,7 @@ from astroquery.simbad import Simbad
 from astropy.time import Time
 from astropy.table import Table
 from astropy.coordinates import solar_system_ephemeris
-from astropy.coordinates import get_body, get_moon
+from astropy.coordinates import get_body
 from astropy.io import fits
 from astropy.wcs import WCS
 from multiprocessing_logging import install_mp_handler

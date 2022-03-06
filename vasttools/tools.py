@@ -2,20 +2,16 @@
 and can be used generically.
 """
 import os
-import glob
-import logging
 
 import healpy as hp
 import numpy as np
 import pandas as pd
-import scipy.ndimage as ndi
 import matplotlib.pyplot as plt
 
 from pathlib import Path
 from mocpy import MOC
 from mocpy import STMOC
 from astropy.io import fits
-from astropy.wcs import WCS
 from astropy.time import Time
 from typing import Union
 

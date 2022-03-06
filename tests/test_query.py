@@ -1,19 +1,14 @@
 import astropy.units as u
+import importlib.resources
 import numpy as np
 import os
 import pandas as pd
 import pytest
 
 from astropy.coordinates import SkyCoord, Angle
-from astropy.io import fits
-from astropy.wcs import WCS
-import importlib.resources
 from mocpy import MOC
-from pytest_mock import mocker
+from pytest_mock import mocker  # noqa: F401
 
-from vasttools import RELEASED_EPOCHS
-from vasttools.survey import load_field_centres, Fields
-from vasttools.moc import VASTMOCS
 import vasttools.query as vtq
 
 

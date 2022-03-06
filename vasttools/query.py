@@ -11,7 +11,6 @@ import os
 import datetime
 import pandas as pd
 import warnings
-import io
 import re
 import signal
 import numexpr
@@ -21,8 +20,6 @@ import dask.dataframe as dd
 import logging
 import logging.handlers
 import logging.config
-import matplotlib.pyplot as plt
-import matplotlib.axes as maxes
 
 from astropy.coordinates import Angle
 from astropy.coordinates import SkyCoord
@@ -31,21 +28,12 @@ from astropy.nddata.utils import Cutout2D
 from astropy.coordinates import SkyCoord
 from astropy.io import fits
 from astropy.wcs import WCS
-from astropy.wcs.utils import skycoord_to_pixel
 from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
-from astropy.visualization import ZScaleInterval, ImageNormalize
-from astropy.visualization import PercentileInterval
-from astropy.visualization import AsymmetricPercentileInterval
-from astropy.visualization import LinearStretch
 
 from functools import partial
 
-from matplotlib.patches import Ellipse
-from matplotlib.collections import PatchCollection
 from multiprocessing import Pool, cpu_count
 from multiprocessing_logging import install_mp_handler
-
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from radio_beam import Beams, Beam
 
@@ -65,7 +53,7 @@ from vasttools.survey import (
 from vasttools.source import Source
 from vasttools.utils import (
     filter_selavy_components, simbad_search, match_planet_to_field,
-    check_racs_exists, epoch12_user_warning, read_selavy
+    epoch12_user_warning, read_selavy
 )
 from vasttools.moc import VASTMOCS
 from forced_phot import ForcedPhot

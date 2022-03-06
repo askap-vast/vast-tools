@@ -1,9 +1,8 @@
-import os
 import pathlib
 import pandas as pd
 import pytest
 
-from pytest_mock import mocker
+from pytest_mock import mocker  # noqa: F401
 from typing import Union
 
 from vasttools.moc import VASTMOCS

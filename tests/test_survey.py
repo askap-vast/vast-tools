@@ -7,7 +7,7 @@ import pytest
 from astropy.coordinates import Angle, EarthLocation, SkyCoord
 from astropy.io import fits
 from astropy.time import Time
-from pytest_mock import mocker
+from pytest_mock import mocker  # noqa: F401
 from typing import Optional
 
 from vasttools import RELEASED_EPOCHS

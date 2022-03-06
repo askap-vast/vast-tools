@@ -1,13 +1,10 @@
 """Functions and classes related to loading and searching of the survey data.
 """
-import sys
 import os
 import pandas as pd
 import warnings
 import importlib.resources
-import itertools
 import numpy as np
-import re
 
 import logging
 import logging.handlers
@@ -18,10 +15,9 @@ from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.io import fits
 from astropy.wcs import WCS
-from astropy.wcs.utils import skycoord_to_pixel
 from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
 from radio_beam import Beam
-from typing import Tuple, Optional, List, Union
+from typing import Optional, List, Union
 
 from vasttools import RELEASED_EPOCHS, OBSERVED_EPOCHS
 

@@ -8,14 +8,11 @@ import pytest
 import vaex
 
 from astropy.coordinates import SkyCoord
-from astropy.io import fits
-from astropy.wcs import WCS
 from mocpy import MOC
 from pathlib import Path
-from pytest_mock import mocker
+from pytest_mock import mocker  # noqa: F401
 from typing import Dict, List, Union
 
-from vasttools import RELEASED_EPOCHS
 import vasttools.pipeline as vtp
 
 
