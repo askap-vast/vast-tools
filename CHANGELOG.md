@@ -33,6 +33,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Fixed
 
+- Fixed plot_lightcurve legend creation [#345](https://github.com/askap-vast/vast-tools/pull/345)
 - Fixed pipeline eta-v matplotlib plot [#340](https://github.com/askap-vast/vast-tools/pull/340)
 - Fixed pandas dataframe and series append deprecation by using `pd.concat` [#337](https://github.com/askap-vast/vast-tools/pull/337).
 - Fixed metadata for islands queries [#328](https://github.com/askap-vast/vast-tools/pull/328)
@@ -42,6 +43,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#345](https://github.com/askap-vast/vast-tools/pull/345): fix: Fixed plot_lightcurve
 - [#338](https://github.com/askap-vast/vast-tools/pull/338): feat, dep: Added pylint workflow for pull requests.
 - [#340](https://github.com/askap-vast/vast-tools/pull/340): fix: Fixed eta-v plot
 - [#337](https://github.com/askap-vast/vast-tools/pull/337): fix: Fixed pandas append deprecation.
