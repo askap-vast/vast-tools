@@ -593,6 +593,8 @@ class Source:
         ax.grid(grid)
 
         if not hide_legend:
+            # Manually create legend artists for consistency.
+            # Using dummy points throws a matplotlib warning.
             handles = []
             labels = []
             for i, freq in enumerate(freqs):
