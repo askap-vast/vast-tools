@@ -2,20 +2,16 @@
 and can be used generically.
 """
 import os
-import glob
-import logging
 
 import healpy as hp
 import numpy as np
 import pandas as pd
-import scipy.ndimage as ndi
 import matplotlib.pyplot as plt
 
 from pathlib import Path
 from mocpy import MOC
 from mocpy import STMOC
 from astropy.io import fits
-from astropy.wcs import WCS
 from astropy.time import Time
 from typing import Union
 
@@ -181,7 +177,7 @@ def _create_beam_df(beam_files: list) -> pd.DataFrame:
         if i == 0:
             beam_df = temp.copy()
         else:
-            beam_df = beam_df.append(temp)
+            beam_df = pd.concat([beam_df, temp])
 
     return beam_df
 

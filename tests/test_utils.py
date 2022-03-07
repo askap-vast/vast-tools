@@ -6,7 +6,7 @@ import pytest
 from astropy.coordinates import SkyCoord, Angle
 from astropy.table import Table
 from astropy.io import fits
-from pytest_mock import mocker
+from pytest_mock import mocker  # noqa: F401
 
 import vasttools.utils as vtu
 

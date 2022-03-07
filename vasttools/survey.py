@@ -1,13 +1,10 @@
 """Functions and classes related to loading and searching of the survey data.
 """
-import sys
 import os
 import pandas as pd
 import warnings
 import importlib.resources
-import itertools
 import numpy as np
-import re
 
 import logging
 import logging.handlers
@@ -18,10 +15,9 @@ from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.io import fits
 from astropy.wcs import WCS
-from astropy.wcs.utils import skycoord_to_pixel
 from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
 from radio_beam import Beam
-from typing import Tuple, Optional, List, Union
+from typing import Optional, List, Union
 
 from vasttools import RELEASED_EPOCHS, OBSERVED_EPOCHS
 
@@ -143,7 +139,7 @@ def get_fields_per_epoch_info() -> pd.DataFrame:
     for i, e in enumerate(RELEASED_EPOCHS):
         temp = load_fields_file(e)
         temp['EPOCH'] = e
-        epoch_fields = epoch_fields.append(temp)
+        epoch_fields = pd.concat([epoch_fields, temp])
 
     epoch_fields = epoch_fields.drop_duplicates(
         ['FIELD_NAME', 'EPOCH']

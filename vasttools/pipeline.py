@@ -8,11 +8,8 @@ import numexpr
 import os
 import warnings
 import glob
-import gc
 import vaex
 import dask.dataframe as dd
-import scipy.ndimage as ndi
-import bokeh.colors.named as colors
 import colorcet as cc
 import numpy as np
 import pandas as pd
@@ -21,30 +18,21 @@ import mocpy
 import matplotlib
 import matplotlib.pyplot as plt
 
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 from bokeh.models import (
-    ColumnDataSource,
     Span,
     BoxAnnotation,
     Model,
-    DataRange1d,
-    Range1d,
-    Whisker,
-    LabelSet,
-    Circle,
-    HoverTool,
-    Slider
 )
 from bokeh.layouts import gridplot, Spacer
 from bokeh.palettes import Category10_3
-from bokeh.plotting import figure, from_networkx
+from bokeh.plotting import figure
 from bokeh.transform import linear_cmap, factor_cmap
 from scipy.stats import norm
 from astropy.stats import sigma_clip, mad_std, bayesian_blocks
 from astropy.coordinates import SkyCoord
 from astropy import units as u
 from multiprocessing import cpu_count
-from mocpy import MOC
 from datetime import timedelta
 from itertools import combinations
 from matplotlib.ticker import NullFormatter
@@ -60,7 +48,6 @@ from vasttools.utils import (
     calculate_m_metric,
     create_moc_from_fits
 )
-from vasttools.survey import Image
 from vasttools.tools import add_credible_levels
 
 HOST_NCPU = cpu_count()
@@ -187,12 +174,12 @@ class PipeRun(object):
             PipeRun: The self object with the other pipeline run added.
         """
 
-        self.images = self.images.append(
-            other_PipeRun.images,
+        self.images = pd.concat(
+            [self.images, other_PipeRun.images]
         ).drop_duplicates('path')
 
-        self.skyregions = self.skyregions.append(
-            other_PipeRun.skyregions,
+        self.skyregions = pd.concat(
+            [self.skyregions, other_PipeRun.skyregions],
             ignore_index=True
         ).drop_duplicates('id')
 
@@ -213,8 +200,8 @@ class PipeRun(object):
             self._vaex_meas = True
 
         else:
-            self.measurements = self.measurements.append(
-                other_PipeRun.measurements,
+            self.measurements = pd.concat(
+                [self.measurements, other_PipeRun.measurements],
                 ignore_index=True
             ).drop_duplicates(['id', 'source'])
 
@@ -224,9 +211,7 @@ class PipeRun(object):
             ))
         ]
 
-        self.sources = self.sources.append(
-            sources_to_add
-        )
+        self.sources = pd.concat([self.sources, sources_to_add])
 
         # need to keep access to all the different pairs files
         # for two epoch metrics.
@@ -632,7 +617,7 @@ class PipeRun(object):
             ['sun', 'moon'] for i in range(sun_moon_df.shape[0])
         ]
 
-        planets_df = planets_df.append(sun_moon_df, ignore_index=True)
+        planets_df = pd.concat([planets_df, sun_moon_df], ignore_index=True)
 
         del sun_moon_df
 
@@ -2001,7 +1986,6 @@ class PipeAnalysis(PipeRun):
         (see Rowlinson et al., 2018,
         https://ui.adsabs.harvard.edu/abs/2019A%26C....27..111R/abstract).
         Returns a matplotlib version.
-
         Args:
             df: Dataframe containing the sources from the pipeline run.
                 A `pandas.core.frame.DataFrame` instance.
@@ -2013,7 +1997,6 @@ class PipeAnalysis(PipeRun):
             v_cutoff: The log10 v_cutoff from the analysis.
             use_int_flux: Use integrated fluxes for the analysis instead of
                 peak fluxes, defaults to 'False'.
-
         Returns:
             Matplotlib figure containing the plot.
         """
@@ -2040,11 +2023,11 @@ class PipeAnalysis(PipeRun):
         rect_histx = [left, bottom_h, width, 0.2]
         rect_histy = [left_h, bottom, 0.2, height]
         fig = plt.figure(figsize=(12, 12))
-        axScatter = fig.add_subplot(223, position=rect_scatter)
+        axScatter = fig.add_subplot(223)
         plt.xlabel(r'$\eta_{\nu}$', fontsize=28)
         plt.ylabel(r'$V_{\nu}$', fontsize=28)
-        axHistx = fig.add_subplot(221, position=rect_histx)
-        axHisty = fig.add_subplot(224, position=rect_histy)
+        axHistx = fig.add_subplot(221)
+        axHisty = fig.add_subplot(224)
         axHistx.xaxis.set_major_formatter(nullfmt)
         axHisty.yaxis.set_major_formatter(nullfmt)
         axHistx.axes.yaxis.set_ticklabels([])
@@ -2105,6 +2088,10 @@ class PipeAnalysis(PipeRun):
         axHistx.plot(range_x, fitx, 'k:', linewidth=2)
         range_y, fity = self._gaussian_fit(y, v_fit_mean, v_fit_sigma)
         axHisty.plot(fity, range_y, 'k:', linewidth=2)
+
+        axHistx.set_position(rect_histx)
+        axHisty.set_position(rect_histy)
+        axScatter.set_position(rect_scatter)
 
         return fig
 

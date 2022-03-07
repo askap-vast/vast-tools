@@ -120,6 +120,13 @@ Tips on writing tests:
 * Use the pytest-mock plugin framework to mock required parts of the tests. [This guide](https://medium.com/analytics-vidhya/mocking-in-python-with-pytest-mock-part-i-6203c8ad3606){:target="_blank"} may help newcomers.
 * Write docstrings for your tests so that it is clear what is being tested.
 
+!!! warning "Warning: Flake8 Lint Check and pytest-mock"
+    Due to the way the `mocker` object from `pytest-mock` is imported and used, `flake8` will flag the import as violating the unused import [F401](https://www.flake8rules.com/rules/W292.html){:target="_blank"} rule.
+    To avoid this make sure the `mocker` object is imported with the flag to ignore this rule as so:
+    ```python
+    from pytest_mock import mocker  # noqa: F401
+    ```
+
 ## Tests Coverage
 
 The [pytest-cov](https://pytest-cov.readthedocs.io/en/latest/){:target="_blank"} package is included in the dependancies. 

@@ -10,7 +10,7 @@ from astropy.time import Time
 from astropy.wcs import WCS
 from matplotlib.pyplot import Figure
 from pathlib import Path
-from pytest_mock import mocker
+from pytest_mock import mocker  # noqa: F401
 from radio_beam import Beam
 from typing import Optional
 
@@ -277,15 +277,20 @@ def source_instance(
             )
 
             for i in range(source.measurements.shape[0]):
-                cutout_df = cutout_df.append(pd.DataFrame(
-                    data={
-                        "data": [hdul[0].data],
-                        "wcs": [wcs],
-                        "header": [hdul[0].header],
-                        "selavy_overlay": [selavy_components],
-                        "beam": [beam]
-                    }
-                ))
+                cutout_df = pd.concat(
+                    [
+                        cutout_df,
+                        pd.DataFrame(
+                            data={
+                                "data": [hdul[0].data],
+                                "wcs": [wcs],
+                                "header": [hdul[0].header],
+                                "selavy_overlay": [selavy_components],
+                                "beam": [beam]
+                            }
+                        )
+                    ]
+                )
 
             source.cutout_df = cutout_df.reset_index(drop=True)
 
@@ -1257,17 +1262,27 @@ class TestSource:
         if pipeline:
             detection_label = 'forced'
 
-            expected_fluxes = source.measurements[
-                source.measurements[detection_label] == False
-            ][f'flux_{suffix}'].append(source.measurements[
-                source.measurements[detection_label] == True
-            ][f'flux_{suffix}'])
+            expected_fluxes = pd.concat(
+                [
+                    source.measurements[
+                        source.measurements[detection_label] == False
+                    ][f'flux_{suffix}'],
+                    source.measurements[
+                        source.measurements[detection_label] == True
+                    ][f'flux_{suffix}']
+                ]
+            )
 
-            expected_errors = source.measurements[
-                source.measurements[detection_label] == False
-            ][f'flux_{suffix}_err'].append(source.measurements[
-                source.measurements[detection_label] == True
-            ][f'flux_{suffix}_err'])
+            expected_errors = pd.concat(
+                [
+                    source.measurements[
+                        source.measurements[detection_label] == False
+                    ][f'flux_{suffix}_err'],
+                    source.measurements[
+                        source.measurements[detection_label] == True
+                    ][f'flux_{suffix}_err']
+                ]
+            )
 
         else:
             detection_label = 'detection'
@@ -1281,28 +1296,40 @@ class TestSource:
             ][f'flux_{suffix}_err']
 
             if forced_fits:
-                expected_fluxes = expected_fluxes.append(
-                    source.measurements[
-                        source.measurements[detection_label] == False
-                    ][f'f_flux_{suffix}']
+                expected_fluxes = pd.concat(
+                    [
+                        expected_fluxes,
+                        source.measurements[
+                            source.measurements[detection_label] == False
+                        ][f'f_flux_{suffix}']
+                    ]
                 )
 
-                expected_errors = expected_errors.append(
-                    source.measurements[
-                        source.measurements[detection_label] == False
-                    ][f'f_flux_{suffix}_err']
+                expected_errors = pd.concat(
+                    [
+                        expected_errors,
+                        source.measurements[
+                            source.measurements[detection_label] == False
+                        ][f'f_flux_{suffix}_err']
+                    ]
                 )
             else:
-                expected_fluxes = expected_fluxes.append(
-                    source.measurements[
-                        source.measurements[detection_label] == False
-                    ][f'rms_image'] * 5.
+                expected_fluxes = pd.concat(
+                    [
+                        expected_fluxes,
+                        source.measurements[
+                            source.measurements[detection_label] == False
+                        ][f'rms_image'] * 5.
+                    ]
                 )
 
-                expected_errors = expected_errors.append(
-                    source.measurements[
-                        source.measurements[detection_label] == False
-                    ][f'rms_image']
+                expected_errors = pd.concat(
+                    [
+                        expected_errors,
+                        source.measurements[
+                            source.measurements[detection_label] == False
+                        ][f'rms_image']
+                    ]
                 )
 
         assert fluxes.equals(expected_fluxes)
