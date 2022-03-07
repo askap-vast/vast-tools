@@ -28,6 +28,8 @@ from matplotlib.collections import PatchCollection
 from astropy.wcs.utils import proj_plane_pixel_scales
 from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
+from matplotlib.container import ErrorbarContainer
+from matplotlib.collections import LineCollection
 from matplotlib.patches import Ellipse
 from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
 from astropy.wcs.utils import skycoord_to_pixel
@@ -595,24 +597,27 @@ class Source:
             ax.xaxis.set_major_formatter(date_form)
             ax.xaxis.set_major_locator(mdates.AutoDateLocator(maxticks=15))
 
-        # dummy points for legend - needs to be after fig.autofmt_xdate() call
-        for i, freq in enumerate(freqs):
-            marker = markers[i]
-            marker_colour = sm.to_rgba(freq)
-
-            ax.errorbar(np.nan,
-                        np.nan,
-                        yerr=np.nan,
-                        ls='',
-                        label='{} MHz'.format(freq),
-                        c=marker_colour,
-                        marker=marker
-                        )
-
         ax.grid(grid)
 
         if not hide_legend:
-            ax.legend()
+            handles = []
+            labels = []
+            for i, freq in enumerate(freqs):
+                line = Line2D([],
+                              [],
+                              ls="",
+                              marker=markers[i],
+                              color=sm.to_rgba(freq)
+                              )
+                barline = LineCollection(np.empty((2, 2, 2)))
+
+                err = ErrorbarContainer((line, None, [barline]),
+                                        has_yerr=True
+                                        )
+                handles.append(err)
+                labels.append('{} MHz'.format(freq))
+
+            ax.legend(handles=handles, labels=labels)
 
         if save:
             if outfile is None:
