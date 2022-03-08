@@ -489,7 +489,7 @@ class Query:
                 all_available = False
 
         if all_available:
-            self.logger.info("All data is available!")
+            self.logger.info("All requested data is available!")
 
         return all_available
 
