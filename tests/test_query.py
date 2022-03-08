@@ -798,7 +798,7 @@ class TestQuery:
             message = 'None'
         else:
             expectation = pytest.raises(vtq.QueryInitError)
-            message = ("Not all requested data is available!"
+            message = ("Not all requested data is available! "
                        "Please address and try again.")
 
         with expectation as e:

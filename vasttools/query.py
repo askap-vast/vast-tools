@@ -383,7 +383,7 @@ class Query:
         data_available = self._check_data_availability()
         if not data_available:
             raise QueryInitError((
-                "Not all requested data is available!"
+                "Not all requested data is available! "
                 "Please address and try again."
             ))
 
