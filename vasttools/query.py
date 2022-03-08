@@ -455,15 +455,17 @@ class Query:
         for epoch in self.settings['epochs']:
             epoch_dir = base_dir / "EPOCH{}".format(RELEASED_EPOCHS[epoch])
             if not epoch_dir.is_dir():
-                self.logger.critical(f"Epoch {epoch} does not exist.")
+                self.logger.critical(f"Epoch {epoch} is unavailable.")
+                self.logger.debug(f"{epoch_dir} does not exist.")
                 all_available = False
                 continue
 
             data_dir = epoch_dir / data_type
             if not data_dir.is_dir():
                 self.logger.critical(
-                    f"{data_type} unavailable for epoch {epoch}"
+                    f"{data_type} data unavailable for epoch {epoch}"
                 )
+                self.logger.debug(f"{data_dir} does not exist.")
                 all_available = False
                 continue
 
@@ -472,6 +474,7 @@ class Query:
                 self.logger.critical(
                     f"Stokes {stokes} images unavailable for epoch {epoch}"
                 )
+                self.logger.debug(f"{image_dir} does not exist.")
                 all_available = False
 
             selavy_dir = data_dir / f"STOKES{stokes}_SELAVY{corrected_str}"
@@ -479,6 +482,7 @@ class Query:
                 self.logger.critical(
                     f"Stokes {stokes} catalogues unavailable for epoch {epoch}"
                 )
+                self.logger.debug(f"{selavy_dir} does not exist.")
                 all_available = False
 
             rms_dir = data_dir / f"STOKES{stokes}_RMSMAPS{corrected_str}"
@@ -486,6 +490,7 @@ class Query:
                 self.logger.critical(
                     f"Stokes {stokes} catalogues unavailable for epoch {epoch}"
                 )
+                self.logger.debug(f"{rms_dir} does not exist.")
                 all_available = False
 
         if all_available:
