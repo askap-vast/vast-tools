@@ -726,14 +726,14 @@ class TestQuery:
         "epoch_exists,data_dir_exists,images_exist,"
         "cats_exist,rmsmaps_exist,no_rms,all_available",
         [
-            (True,True,True,True,True,False,True),
-            (True,True,True,True,True,True,True),
-            (False,True,True,True,True,False,False),
-            (True,False,True,True,True,False,False),
-            (True,True,False,True,True,False,False),
-            (True,True,True,False,True,False,False),
-            (True,True,True,True,False,False,False),
-            (True,True,True,True,False,True,True),
+            (True, True, True, True, True, False, True),
+            (True, True, True, True, True, True, True),
+            (False, True, True, True, True, False, False),
+            (True, False, True, True, True, False, False),
+            (True, True, False, True, True, False, False),
+            (True, True, True, False, True, False, False),
+            (True, True, True, True, False, False, False),
+            (True, True, True, True, False, True, True),
         ],
         ids=('all-available',
              'all-available-no-rms',
@@ -743,7 +743,7 @@ class TestQuery:
              'no-selavy-dir',
              'no-rms-dir-rms',
              'no-rms-dir-no-rms'
-            )
+             )
     )
     def test__check_data_availability(self,
                                       epoch_exists: bool,
@@ -754,10 +754,10 @@ class TestQuery:
                                       no_rms: bool,
                                       all_available: bool,
                                       tmp_path
-    ) -> None:
+                                      ) -> None:
         """
         Test the data availability check
-        
+
         Args:
             epoch_exists: The epoch directory exists.
             data_dir_exists: The data directory (i.e. COMBINED/TILES) exists.
@@ -767,21 +767,21 @@ class TestQuery:
             no_rms: The `no_rms` Query option has been selected.
             all_available: The expected result from _check_data_availability().
             tmp_path: Pathlib temporary directory path.
-        
+
         Returns:
             None.
         """
         stokes = "I"
         epoch = "10x"
         data_type = "COMBINED"
-        
+
         base_dir = tmp_path
         epoch_dir = base_dir / f"EPOCH{epoch}"
         data_dir = epoch_dir / data_type
         image_dir = data_dir / f"STOKES{stokes}_IMAGES"
         selavy_dir = data_dir / f"STOKES{stokes}_SELAVY"
         rms_dir = data_dir / f"STOKES{stokes}_RMSMAPS"
-        
+
         if epoch_exists:
             epoch_dir.mkdir()
             if data_dir_exists:
@@ -792,7 +792,6 @@ class TestQuery:
                     selavy_dir.mkdir()
                 if rmsmaps_exist:
                     rms_dir.mkdir()
-            
 
         if all_available:
             expectation = does_not_raise()
@@ -800,8 +799,8 @@ class TestQuery:
         else:
             expectation = pytest.raises(vtq.QueryInitError)
             message = ("Not all requested data is available!"
-                "Please address and try again.")
-            
+                       "Please address and try again.")
+
         with expectation as e:
             query = vtq.Query(
                 epochs=epoch,
@@ -811,7 +810,7 @@ class TestQuery:
                 no_rms=no_rms
             )
             assert str(e) == message
-        
+
     def test__field_matching(
         self,
         vast_query_psrj2129: vtq.Query,
