@@ -457,6 +457,7 @@ class Query:
             if not epoch_dir.is_dir():
                 self.logger.critical(f"Epoch {epoch} does not exist.")
                 all_available = False
+                continue
 
             data_dir = epoch_dir / data_type
             if not data_dir.is_dir():
@@ -464,6 +465,7 @@ class Query:
                     f"{data_type} unavailable for epoch {epoch}"
                 )
                 all_available = False
+                continue
 
             image_dir = data_dir / f"STOKES{stokes}_IMAGES{corrected_str}"
             if not image_dir.is_dir():
