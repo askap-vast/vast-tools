@@ -418,8 +418,74 @@ class Query:
                 "Image RMS and peak flux error are not available with islands."
                 "Using background_noise as a placeholder for both."
             )
+        data_available = self._check_data_availability()
+        if not data_available:
+            return False
 
         return True
+
+    def _check_data_availability(self) -> bool:
+        """
+        Used to check that the requested data is available.
+
+        Returns:
+            `True` if all data is available, `False` otherwise.
+        """
+
+        all_available = True
+
+        base_dir = Path(self.base_folder)
+
+        data_type = "COMBINED"
+        corrected_str = ""
+
+        if self.settings['tiles']:
+            data_type = "TILES"
+            if self.corrected_data:
+                corrected = "_CORRECTED"
+
+        stokes = self.settings['stokes']
+
+        self.logger.info("Checking data availability...")
+
+        for epoch in self.settings['epochs']:
+            epoch_dir = base_dir / "EPOCH{}".format(RELEASED_EPOCHS[epoch])
+            if not epoch_dir.is_dir():
+                self.logger.critical(f"Epoch {epoch} does not exist.}")
+                all_available = False
+
+            data_dir = epoch_dir / data_type
+            if not data_dir.is_dir():
+                self.logger.critical(
+                    f"{data_type} unavailable for epoch {epoch}"
+                )
+                all_available = False
+
+            image_dir = data_dir / f"STOKES{stokes}_IMAGES{corrected}"
+            if not image_dir.is_dir():
+                self.logger.critical(
+                    f"Stokes {stokes} images unavailable for epoch {epoch}"
+                )
+                all_available = False
+
+            selavy_dir = data_dir / f"STOKES{stokes}_SELAVY{corrected}"
+            if not selavy_dir.is_dir():
+                self.logger.critical(
+                    f"Stokes {stokes} catalogues unavailable for epoch {epoch}"
+                )
+                all_available = False
+
+            rms_dir = data_dir / f"STOKES{stokes}_RMSMAPS{corrected}"
+            if not rms_dir.is_dir() and not self.settings["no_rms"]:
+                self.logger.critical(
+                    f"Stokes {stokes} catalogues unavailable for epoch {epoch}"
+                )
+                all_available = False
+
+        if all_available:
+            self.logger.info("All data is available!")
+
+        return all_available
 
     def _get_all_cutout_data(self, imsize: Angle) -> pd.DataFrame:
         """
