@@ -380,6 +380,13 @@ class Query:
                 "\nPlease address and try again."
             ))
 
+        data_available = self._check_data_availability()
+        if not data_available:
+            raise QueryInitError((
+                "Not all requested data is available!"
+                "Please address and try again."
+            ))
+
         if self.coords is not None:
             self.query_df = self._build_catalog()
             if self.query_df.empty:
@@ -418,9 +425,6 @@ class Query:
                 "Image RMS and peak flux error are not available with islands."
                 "Using background_noise as a placeholder for both."
             )
-        data_available = self._check_data_availability()
-        if not data_available:
-            return False
 
         return True
 
@@ -442,7 +446,7 @@ class Query:
         if self.settings['tiles']:
             data_type = "TILES"
             if self.corrected_data:
-                corrected = "_CORRECTED"
+                corrected_str = "_CORRECTED"
 
         stokes = self.settings['stokes']
 
@@ -451,7 +455,7 @@ class Query:
         for epoch in self.settings['epochs']:
             epoch_dir = base_dir / "EPOCH{}".format(RELEASED_EPOCHS[epoch])
             if not epoch_dir.is_dir():
-                self.logger.critical(f"Epoch {epoch} does not exist.}")
+                self.logger.critical(f"Epoch {epoch} does not exist.")
                 all_available = False
 
             data_dir = epoch_dir / data_type
@@ -461,21 +465,21 @@ class Query:
                 )
                 all_available = False
 
-            image_dir = data_dir / f"STOKES{stokes}_IMAGES{corrected}"
+            image_dir = data_dir / f"STOKES{stokes}_IMAGES{corrected_str}"
             if not image_dir.is_dir():
                 self.logger.critical(
                     f"Stokes {stokes} images unavailable for epoch {epoch}"
                 )
                 all_available = False
 
-            selavy_dir = data_dir / f"STOKES{stokes}_SELAVY{corrected}"
+            selavy_dir = data_dir / f"STOKES{stokes}_SELAVY{corrected_str}"
             if not selavy_dir.is_dir():
                 self.logger.critical(
                     f"Stokes {stokes} catalogues unavailable for epoch {epoch}"
                 )
                 all_available = False
 
-            rms_dir = data_dir / f"STOKES{stokes}_RMSMAPS{corrected}"
+            rms_dir = data_dir / f"STOKES{stokes}_RMSMAPS{corrected_str}"
             if not rms_dir.is_dir() and not self.settings["no_rms"]:
                 self.logger.critical(
                     f"Stokes {stokes} catalogues unavailable for epoch {epoch}"
