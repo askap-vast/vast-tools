@@ -380,6 +380,13 @@ class Query:
                 "\nPlease address and try again."
             ))
 
+        data_available = self._check_data_availability()
+        if not data_available:
+            raise QueryInitError((
+                "Not all requested data is available! "
+                "Please address and try again."
+            ))
+
         if self.coords is not None:
             self.query_df = self._build_catalog()
             if self.query_df.empty:
@@ -420,6 +427,76 @@ class Query:
             )
 
         return True
+
+    def _check_data_availability(self) -> bool:
+        """
+        Used to check that the requested data is available.
+
+        Returns:
+            `True` if all data is available, `False` otherwise.
+        """
+
+        all_available = True
+
+        base_dir = Path(self.base_folder)
+
+        data_type = "COMBINED"
+        corrected_str = ""
+
+        if self.settings['tiles']:
+            data_type = "TILES"
+            if self.corrected_data:
+                corrected_str = "_CORRECTED"
+
+        stokes = self.settings['stokes']
+
+        self.logger.info("Checking data availability...")
+
+        for epoch in self.settings['epochs']:
+            epoch_dir = base_dir / "EPOCH{}".format(RELEASED_EPOCHS[epoch])
+            if not epoch_dir.is_dir():
+                self.logger.critical(f"Epoch {epoch} is unavailable.")
+                self.logger.debug(f"{epoch_dir} does not exist.")
+                all_available = False
+                continue
+
+            data_dir = epoch_dir / data_type
+            if not data_dir.is_dir():
+                self.logger.critical(
+                    f"{data_type} data unavailable for epoch {epoch}"
+                )
+                self.logger.debug(f"{data_dir} does not exist.")
+                all_available = False
+                continue
+
+            image_dir = data_dir / f"STOKES{stokes}_IMAGES{corrected_str}"
+            if not image_dir.is_dir():
+                self.logger.critical(
+                    f"Stokes {stokes} images unavailable for epoch {epoch}"
+                )
+                self.logger.debug(f"{image_dir} does not exist.")
+                all_available = False
+
+            selavy_dir = data_dir / f"STOKES{stokes}_SELAVY{corrected_str}"
+            if not selavy_dir.is_dir():
+                self.logger.critical(
+                    f"Stokes {stokes} catalogues unavailable for epoch {epoch}"
+                )
+                self.logger.debug(f"{selavy_dir} does not exist.")
+                all_available = False
+
+            rms_dir = data_dir / f"STOKES{stokes}_RMSMAPS{corrected_str}"
+            if not rms_dir.is_dir() and not self.settings["no_rms"]:
+                self.logger.critical(
+                    f"Stokes {stokes} catalogues unavailable for epoch {epoch}"
+                )
+                self.logger.debug(f"{rms_dir} does not exist.")
+                all_available = False
+
+        if all_available:
+            self.logger.info("All requested data is available!")
+
+        return all_available
 
     def _get_all_cutout_data(self, imsize: Angle) -> pd.DataFrame:
         """

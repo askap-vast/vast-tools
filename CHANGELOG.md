@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Added
 
+- Added check for existence of requested data in `Query` init [#346](https://github.com/askap-vast/vast-tools/pull/346/)
 - Added pylint github action for pull requests and flake8 dev dependency [#338](https://github.com/askap-vast/vast-tools/pull/338).
 - Added observing frequency to all fields csv files [#311](https://github.com/askap-vast/vast-tools/pull/311)
 - Added OBSERVED_EPOCHS variable for epochs that have been observed but not yet released [#311](https://github.com/askap-vast/vast-tools/pull/311)
@@ -43,6 +44,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#346](https://github.com/askap-vast/vast-tools/pull/346/): feat, fix, tests: Check if requested data exists in Query init
 - [#345](https://github.com/askap-vast/vast-tools/pull/345): fix: Fixed plot_lightcurve
 - [#338](https://github.com/askap-vast/vast-tools/pull/338): feat, dep: Added pylint workflow for pull requests.
 - [#340](https://github.com/askap-vast/vast-tools/pull/340): fix: Fixed eta-v plot

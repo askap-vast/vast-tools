@@ -8,6 +8,7 @@ import pytest
 from astropy.coordinates import SkyCoord, Angle
 from mocpy import MOC
 from pytest_mock import mocker  # noqa: F401
+from contextlib import nullcontext as does_not_raise
 
 import vasttools.query as vtq
 
@@ -57,6 +58,11 @@ def vast_query_psrj2129(pilot_moc_mocker: MOC, mocker) -> vtq.Query:
         'mocpy.MOC.from_fits',
         return_value=pilot_moc_mocker
     )
+    mocker_data_available = mocker.patch(
+        'vasttools.query.Query._check_data_availability',
+        return_value=True
+    )
+
     psr_coordinate = SkyCoord(322.4387083, -4.4866389, unit=(u.deg, u.deg))
 
     psr_query = vtq.Query(
@@ -613,6 +619,10 @@ class TestQuery:
                 'vasttools.query.os.path.isdir',
                 return_value=True
             )
+            mocker_data_available = mocker.patch(
+                'vasttools.query.Query._check_data_availability',
+                return_value=True
+            )
 
             mocker_moc_open = mocker.patch(
                 'mocpy.MOC.from_fits',
@@ -652,6 +662,11 @@ class TestQuery:
             'vasttools.query.os.path.isdir',
             return_value=True
         )
+        mocker_data_available = mocker.patch(
+            'vasttools.query.Query._check_data_availability',
+            return_value=True
+        )
+
         test_dir = '/testing/folder'
         epochs = '1,2,3x'
         stokes = 'I'
@@ -706,6 +721,95 @@ class TestQuery:
         )
 
         assert query.settings == expected_settings
+
+    @pytest.mark.parametrize(
+        "epoch_exists,data_dir_exists,images_exist,"
+        "cats_exist,rmsmaps_exist,no_rms,all_available",
+        [
+            (True, True, True, True, True, False, True),
+            (True, True, True, True, True, True, True),
+            (False, True, True, True, True, False, False),
+            (True, False, True, True, True, False, False),
+            (True, True, False, True, True, False, False),
+            (True, True, True, False, True, False, False),
+            (True, True, True, True, False, False, False),
+            (True, True, True, True, False, True, True),
+        ],
+        ids=('all-available',
+             'all-available-no-rms',
+             'no-epoch',
+             'no-data-dir',
+             'no-image-dir',
+             'no-selavy-dir',
+             'no-rms-dir-rms',
+             'no-rms-dir-no-rms'
+             )
+    )
+    def test__check_data_availability(self,
+                                      epoch_exists: bool,
+                                      data_dir_exists: bool,
+                                      images_exist: bool,
+                                      cats_exist: bool,
+                                      rmsmaps_exist: bool,
+                                      no_rms: bool,
+                                      all_available: bool,
+                                      tmp_path
+                                      ) -> None:
+        """
+        Test the data availability check
+
+        Args:
+            epoch_exists: The epoch directory exists.
+            data_dir_exists: The data directory (i.e. COMBINED/TILES) exists.
+            images_exist: The image directory (e.g. STOKESI_IMAGES) exists.
+            cats_exist: The selavy directory (e.g. STOKESI_SELAVY) exists.
+            rmsmaps_exist: The RMS map directory (e.g. STOKESI_RMSMAPS) exists.
+            no_rms: The `no_rms` Query option has been selected.
+            all_available: The expected result from _check_data_availability().
+            tmp_path: Pathlib temporary directory path.
+
+        Returns:
+            None.
+        """
+        stokes = "I"
+        epoch = "10x"
+        data_type = "COMBINED"
+
+        base_dir = tmp_path
+        epoch_dir = base_dir / f"EPOCH{epoch}"
+        data_dir = epoch_dir / data_type
+        image_dir = data_dir / f"STOKES{stokes}_IMAGES"
+        selavy_dir = data_dir / f"STOKES{stokes}_SELAVY"
+        rms_dir = data_dir / f"STOKES{stokes}_RMSMAPS"
+
+        if epoch_exists:
+            epoch_dir.mkdir()
+            if data_dir_exists:
+                data_dir.mkdir()
+                if images_exist:
+                    image_dir.mkdir()
+                if cats_exist:
+                    selavy_dir.mkdir()
+                if rmsmaps_exist:
+                    rms_dir.mkdir()
+
+        if all_available:
+            expectation = does_not_raise()
+            message = 'None'
+        else:
+            expectation = pytest.raises(vtq.QueryInitError)
+            message = ("Not all requested data is available! "
+                       "Please address and try again.")
+
+        with expectation as e:
+            query = vtq.Query(
+                epochs=epoch,
+                planets=['Mars'],
+                base_folder=base_dir,
+                stokes=stokes,
+                no_rms=no_rms
+            )
+            assert str(e) == message
 
     def test__field_matching(
         self,
