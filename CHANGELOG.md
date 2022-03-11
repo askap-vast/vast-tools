@@ -46,7 +46,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
-- [#351](https://github.com/askap-vast/vast-tools/pull/351): fix, fear: Added access to new epochs
+- [#351](https://github.com/askap-vast/vast-tools/pull/351): fix, fear: Add epoch 21.
 - [#346](https://github.com/askap-vast/vast-tools/pull/346/): feat, fix, tests: Check if requested data exists in Query init
 - [#345](https://github.com/askap-vast/vast-tools/pull/345): fix: Fixed plot_lightcurve
 - [#338](https://github.com/askap-vast/vast-tools/pull/338): feat, dep: Added pylint workflow for pull requests.
