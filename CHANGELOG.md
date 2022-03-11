@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Added
 
+- Added access to epoch 21 [#351](https://github.com/askap-vast/vast-tools/pull/351)
 - Added pylint github action for pull requests and flake8 dev dependency [#338](https://github.com/askap-vast/vast-tools/pull/338).
 - Added observing frequency to all fields csv files [#311](https://github.com/askap-vast/vast-tools/pull/311)
 - Added OBSERVED_EPOCHS variable for epochs that have been observed but not yet released [#311](https://github.com/askap-vast/vast-tools/pull/311)
@@ -19,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Changed
 
+- Updated RELEASED_EPOCHS to include epochs 14 and 20 [#351](https://github.com/askap-vast/vast-tools/pull/351)
 - Enabled access to full TILES data [#325](https://github.com/askap-vast/vast-tools/pull/325)
 - Allow query epochs to be specified as list [#327](https://github.com/askap-vast/vast-tools/pull/327).
 - Changed plot legend to show frequency rather than selavy/forced [#311](https://github.com/askap-vast/vast-tools/pull/311)
@@ -43,6 +45,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#351](https://github.com/askap-vast/vast-tools/pull/351): fix, fear: Added access to new epochs
 - [#345](https://github.com/askap-vast/vast-tools/pull/345): fix: Fixed plot_lightcurve
 - [#338](https://github.com/askap-vast/vast-tools/pull/338): feat, dep: Added pylint workflow for pull requests.
 - [#340](https://github.com/askap-vast/vast-tools/pull/340): fix: Fixed eta-v plot
