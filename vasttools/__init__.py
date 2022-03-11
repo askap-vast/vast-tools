@@ -36,7 +36,6 @@ RELEASED_EPOCHS = {
 }
 
 OBSERVED_EPOCHS = {
-    
 }
 
 BASE_EPOCHS = {
