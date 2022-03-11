@@ -57,7 +57,7 @@ To add a new epoch, users should take the below actions.
 
 * Replace the current version of `VAST_PILOT.stmoc.fits` in `vasttools/data/mocs/` with the updated version containing the observations from the new epoch.
 
-* Add the new epoch to the `RELEASED_EPOCHS` variable found in [`vasttools.survey`](../../reference/survey).
+* Add the new epoch to the `RELEASED_EPOCHS` variable found in `vasttools.__init__.py`.
 
 * Add the new epoch to the `path` variable found in [`vasttools.survey.load_fields_file`](../../reference/survey/load_fields_file).
 
