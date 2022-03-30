@@ -21,6 +21,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Changed
 
+- Removed epoch 12 warning [#361](https://github.com/askap-vast/vast-tools/pull/361
 - Updated RELEASED_EPOCHS to include epochs 14 and 20 [#351](https://github.com/askap-vast/vast-tools/pull/351)
 - Enabled access to full TILES data [#325](https://github.com/askap-vast/vast-tools/pull/325)
 - Allow query epochs to be specified as list [#327](https://github.com/askap-vast/vast-tools/pull/327).
@@ -46,6 +47,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#361](https://github.com/askap-vast/vast-tools/pull/361): feat: remove epoch 12 warning.
 - [#351](https://github.com/askap-vast/vast-tools/pull/351): fix, fear: Add epoch 21.
 - [#346](https://github.com/askap-vast/vast-tools/pull/346/): feat, fix, tests: Check if requested data exists in Query init
 - [#345](https://github.com/askap-vast/vast-tools/pull/345): fix: Fixed plot_lightcurve
