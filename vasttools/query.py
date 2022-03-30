@@ -1760,6 +1760,8 @@ class Query:
             The path to the selavy file of interest
         """
 
+        field = row.field.replace('RACS', 'VAST')
+
         if self.settings['islands']:
             cat_type = 'islands'
         else:
@@ -1814,9 +1816,6 @@ class Query:
             )
 
             selavy_path = selavy_folder / selavy_file_fmt
-
-        if not selavy_path.exists():
-            selavy_path = str(selavy_path).replace("RACS", "VAST")
 
         return str(selavy_path)
 
