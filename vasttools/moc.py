@@ -27,8 +27,6 @@ class VASTMOCS(object):
             None
         '''
         super(VASTMOCS, self).__init__()
-        # TODO: Remove warning in future release.
-        epoch12_user_warning()
 
     def load_pilot_stmoc(self) -> STMOC:
         """
