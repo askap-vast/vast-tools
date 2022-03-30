@@ -1175,9 +1175,6 @@ class Query:
 
             self.logger.info("Done.")
 
-        if self.settings['search_around']:
-            meta['index'] = 'i'
-
         self.logger.debug("Getting components...")
         results = (
             dd.from_pandas(self.sources_df, self.ncpu)
@@ -1633,6 +1630,9 @@ class Query:
                 'comment': 'f',
                 'detection': '?',
             }
+
+        if self.settings['search_around']:
+            meta['index'] = 'i'
 
         return meta
 

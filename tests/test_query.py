@@ -277,21 +277,21 @@ def fields_df_expected_result() -> pd.DataFrame:
         if add_files:
             fields_df['selavy'] = [
                 '/testing/folder/EPOCH01/COMBINED/STOKESI_SELAVY'
-                '/VAST_2118-06A.EPOCH01.I.selavy.components.txt',
+                '/selavy-VAST_2118-06A.EPOCH01.I.conv.components.xml',
                 '/testing/folder/EPOCH02/COMBINED/STOKESI_SELAVY'
-                '/VAST_2118-06A.EPOCH02.I.selavy.components.txt'
+                '/selavy-VAST_2118-06A.EPOCH02.I.conv.components.xml',
             ]
             fields_df['image'] = [
                 '/testing/folder/EPOCH01/COMBINED/STOKESI_IMAGES'
-                '/VAST_2118-06A.EPOCH01.I.fits',
+                '/VAST_2118-06A.EPOCH01.I.conv.fits',
                 '/testing/folder/EPOCH02/COMBINED/STOKESI_IMAGES'
-                '/VAST_2118-06A.EPOCH02.I.fits',
+                '/VAST_2118-06A.EPOCH02.I.conv.fits',
             ]
             fields_df['rms'] = [
                 '/testing/folder/EPOCH01/COMBINED/STOKESI_RMSMAPS'
-                '/VAST_2118-06A.EPOCH01.I_rms.fits',
+                '/noiseMap.VAST_2118-06A.EPOCH01.I.conv.fits',
                 '/testing/folder/EPOCH02/COMBINED/STOKESI_RMSMAPS'
-                '/VAST_2118-06A.EPOCH02.I_rms.fits'
+                '/noiseMap.VAST_2118-06A.EPOCH02.I.conv.fits'
             ]
 
         return fields_df
@@ -348,6 +348,7 @@ def selavy_cat() -> pd.DataFrame:
     def _get_selavy_cat(
         contain_pulsar: bool = False,
         search_around: bool = False,
+        search_around_index: bool = False,
         add_detection: bool = False
     ) -> pd.DataFrame:
         """
@@ -362,6 +363,9 @@ def selavy_cat() -> pd.DataFrame:
             search_around: If 'True' then the dataframe is appended to itself
                 such that multiple results are found if a search around query
                 is used.
+            search_around_index: If 'True' then an 'index' column is added
+                to mimic the act of processing the search around query. Only
+                done if 'search_around' is also 'True'.
             add_detection: If `True` then a `detection` column is added that
                 mimics the same column that is added in the query process.
 
@@ -431,11 +435,13 @@ def selavy_cat() -> pd.DataFrame:
             }
         )
 
-        if search_around:
-            selavy_df = pd.concat([selavy_df, selavy_df.loc[[0, 0, 0]]])
-
         if add_detection:
             selavy_df['detection'] = [True, False]
+
+        if search_around:
+            selavy_df = pd.concat([selavy_df, selavy_df.loc[[0, 0, 0]]])
+            if search_around_index:
+                selavy_df['index'] = 0
 
         return selavy_df
     return _get_selavy_cat
@@ -1430,10 +1436,17 @@ class TestQuery:
 
         assert np.all(expected == result.to_numpy())
 
+
+    @pytest.mark.parametrize(
+        "search_around",
+        [(False), (True)],
+        ids=('search_around_false', 'search_around_true')
+    )
     def test_find_sources(
         self,
         vast_query_psrj2129_fields: vtq.Query,
         selavy_cat: pd.DataFrame,
+        search_around: bool,
         mocker
     ) -> None:
         """
@@ -1454,12 +1467,20 @@ class TestQuery:
             None
         """
         test_query = vast_query_psrj2129_fields
+        test_query.settings['search_around'] = search_around
 
         return_df = selavy_cat(
             contain_pulsar=True,
-            add_detection=True
-        ).drop(['#', 'comment'], axis=1)
+            add_detection=True,
+            search_around=search_around,
+            search_around_index=search_around
+        )
+
         # these are dropped to force a return value.
+        # the # column becomes 'distance' in search_around
+        to_drop = ['comment'] if search_around else ['#', 'comment']
+
+        return_df = return_df.drop(to_drop, axis=1)
 
         dask_from_pandas_mocker = mocker.patch(
             'vasttools.query.dd.from_pandas',
@@ -1477,5 +1498,15 @@ class TestQuery:
         ) = return_df
 
         test_query.find_sources()
+
+        # need to set index and merge with fields_df in the search around
+        # case as this is performed in the find_sources function. Also this
+        # is where the # column is renamed
+        if search_around:
+            return_df = return_df.set_index('index')
+            return_df = test_query.fields_df.merge(
+                return_df, how='inner', left_index=True, right_index=True
+            )
+            return_df = return_df.rename(columns={'#': 'distance'})
 
         assert test_query.results.equals(return_df)
