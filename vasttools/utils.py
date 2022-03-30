@@ -13,7 +13,6 @@ import matplotlib.lines
 import numpy as np
 import pandas as pd
 import scipy.ndimage as ndi
-import warnings
 import gc
 
 from astropy import units as u
