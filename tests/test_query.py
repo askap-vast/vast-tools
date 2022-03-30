@@ -1436,7 +1436,6 @@ class TestQuery:
 
         assert np.all(expected == result.to_numpy())
 
-
     @pytest.mark.parametrize(
         "search_around",
         [(False), (True)],
