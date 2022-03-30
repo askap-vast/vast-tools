@@ -36,7 +36,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Fixed
 
-- Fixed handling of RACS filenames [#358](https://github.com/askap-vast/vast-tools/pull/358)
+- Fixed handling of RACS filenames and epochs [#358](https://github.com/askap-vast/vast-tools/pull/358)
 - Fixed plot_lightcurve legend creation [#345](https://github.com/askap-vast/vast-tools/pull/345)
 - Fixed pipeline eta-v matplotlib plot [#340](https://github.com/askap-vast/vast-tools/pull/340)
 - Fixed pandas dataframe and series append deprecation by using `pd.concat` [#337](https://github.com/askap-vast/vast-tools/pull/337).
@@ -47,7 +47,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
-- [#358](https://github.com/askap-vast/vast-tools/pull/358): fix: Fix RACS file paths.
+- [#358](https://github.com/askap-vast/vast-tools/pull/358): fix: Fix RACS file paths and epoch handling.
 - [#351](https://github.com/askap-vast/vast-tools/pull/351): fix, feat: Add epoch 21.
 - [#346](https://github.com/askap-vast/vast-tools/pull/346/): feat, fix, tests: Check if requested data exists in Query init
 - [#345](https://github.com/askap-vast/vast-tools/pull/345): fix: Fixed plot_lightcurve
