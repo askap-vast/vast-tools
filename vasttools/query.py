@@ -2411,14 +2411,15 @@ class Query:
                         'Removing from requested epochs.'
                     )
                     epochs.remove(racs_epoch)
-                    self.racs = False
                 else:
-                    self.logger.warning('RACS data selected!')
-                    self.logger.warning(
-                        'Remember RACS data supplied by VAST is not final '
-                        'and results may vary.'
-                    )
                     self.racs = True
+
+        if self.racs:
+            self.logger.warning('RACS data selected!')
+            self.logger.warning(
+                'Remember RACS data supplied by VAST is not final '
+                'and results may vary.'
+            )
 
         if len(epochs) == 0:
             self.logger.critical("No requested epochs are available")
