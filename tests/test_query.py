@@ -387,7 +387,6 @@ def selavy_cat() -> pd.DataFrame:
 
         selavy_df = pd.DataFrame(
             data={
-                '#': {0: np.nan, 1: np.nan},
                 'island_id': {
                     0: 'SB9668_island_1000',
                     1: 'SB9668_island_1001'
@@ -441,6 +440,7 @@ def selavy_cat() -> pd.DataFrame:
         if search_around:
             selavy_df = pd.concat([selavy_df, selavy_df.loc[[0, 0, 0]]])
             if search_around_index:
+                selavy_df['#'] = np.nan
                 selavy_df['index'] = 0
 
         return selavy_df
@@ -1413,7 +1413,7 @@ class TestQuery:
         assert source_call_args[2] == ['1', '2']
         assert source_call_args[3] == ['VAST_2118-06A', 'VAST_2118-06A']
         assert source_call_args[4] == 'I'
-        assert source_call_args[7].equals(sources_df.drop('#', axis=1))
+        assert source_call_args[7].equals(sources_df)
 
     def test__check_for_duplicate_epochs(
         self,
@@ -1477,7 +1477,7 @@ class TestQuery:
 
         # these are dropped to force a return value.
         # the # column becomes 'distance' in search_around
-        to_drop = ['comment'] if search_around else ['#', 'comment']
+        to_drop = ['comment']
 
         return_df = return_df.drop(to_drop, axis=1)
 
