@@ -1758,6 +1758,8 @@ class Query:
             The path to the selavy file of interest
         """
 
+        field = row.field.replace('RACS', 'VAST')
+
         if self.settings['islands']:
             cat_type = 'islands'
         else:
@@ -1813,9 +1815,6 @@ class Query:
 
             selavy_path = selavy_folder / selavy_file_fmt
 
-        if not selavy_path.exists():
-            selavy_path = str(selavy_path).replace("RACS", "VAST")
-
         return str(selavy_path)
 
     def _add_files(self, row: pd.Series) -> Tuple[str, str, str]:
@@ -1834,6 +1833,7 @@ class Query:
 
         img_dir = "STOKES{}_IMAGES".format(self.settings['stokes'])
         rms_dir = "STOKES{}_RMSMAPS".format(self.settings['stokes'])
+        field = row.field.replace('RACS', 'VAST')
 
         if self.settings['tiles']:
             dir_name = "TILES"
@@ -1841,7 +1841,7 @@ class Query:
             image_file_fmt = (
                 "image.{}.{}.SB{}.cont"
                 ".taylor.0.restored.fits".format(
-                    self.settings['stokes'].lower(), row.field, row.sbid
+                    self.settings['stokes'].lower(), field, row.sbid
                 )
             )
 
@@ -1857,13 +1857,13 @@ class Query:
             dir_name = "COMBINED"
 
             image_file_fmt = "{}.EPOCH{}.{}.conv.fits".format(
-                row.field,
+                field,
                 RELEASED_EPOCHS[row.epoch],
                 self.settings['stokes'],
             )
 
             rms_file_fmt = "noiseMap.{}.EPOCH{}.{}.conv.fits".format(
-                row.field,
+                field,
                 RELEASED_EPOCHS[row.epoch],
                 self.settings['stokes'],
             )
@@ -2409,14 +2409,15 @@ class Query:
                         'Removing from requested epochs.'
                     )
                     epochs.remove(racs_epoch)
-                    self.racs = False
                 else:
-                    self.logger.warning('RACS data selected!')
-                    self.logger.warning(
-                        'Remember RACS data supplied by VAST is not final '
-                        'and results may vary.'
-                    )
                     self.racs = True
+
+        if self.racs:
+            self.logger.warning('RACS data selected!')
+            self.logger.warning(
+                'Remember RACS data supplied by VAST is not final '
+                'and results may vary.'
+            )
 
         if len(epochs) == 0:
             self.logger.critical("No requested epochs are available")
