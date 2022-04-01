@@ -37,6 +37,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Fixed
 
+- Fixed issue with ncpu exceeding number of unique sources in Query._init_sources [#363](https://github.com/askap-vast/vast-tools/pull/363)
 - Fixed plot_lightcurve legend creation [#345](https://github.com/askap-vast/vast-tools/pull/345)
 - Fixed pipeline eta-v matplotlib plot [#340](https://github.com/askap-vast/vast-tools/pull/340)
 - Fixed pandas dataframe and series append deprecation by using `pd.concat` [#337](https://github.com/askap-vast/vast-tools/pull/337).
@@ -48,8 +49,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 #### List of PRs
 
 - [#361](https://github.com/askap-vast/vast-tools/pull/361): feat, docs: remove epoch 12 warning.
+- [#363](https://github.com/askap-vast/vast-tools/pull/363): fix: Update dask npartition specification in Query._init_sources call.
 - [#351](https://github.com/askap-vast/vast-tools/pull/351): fix, fear: Add epoch 21.
-- [#346](https://github.com/askap-vast/vast-tools/pull/346/): feat, fix, tests: Check if requested data exists in Query init
+- [#346](https://github.com/askap-vast/vast-tools/pull/346): feat, fix, tests: Check if requested data exists in Query init
 - [#345](https://github.com/askap-vast/vast-tools/pull/345): fix: Fixed plot_lightcurve
 - [#338](https://github.com/askap-vast/vast-tools/pull/338): feat, dep: Added pylint workflow for pull requests.
 - [#340](https://github.com/askap-vast/vast-tools/pull/340): fix: Fixed eta-v plot
