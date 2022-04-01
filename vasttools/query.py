@@ -1225,13 +1225,14 @@ class Query:
                 columns={'#': 'distance'}
             )
         else:
+            npart = min(self.ncpu, self.crossmatch_results.name.nunique())
             self.results = (
-                dd.from_pandas(self.crossmatch_results, self.ncpu)
+                dd.from_pandas(self.crossmatch_results, npart)
                 .groupby('name')
                 .apply(
                     self._init_sources,
                     meta=meta,
-                ).compute(num_workers=self.ncpu, scheduler='processes')
+                ).compute(num_workers=npart, scheduler='processes')
             )
             self.results = self.results.dropna()
 
