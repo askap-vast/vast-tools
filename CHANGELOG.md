@@ -21,6 +21,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Changed
 
+- Removed epoch 12 warning [#361](https://github.com/askap-vast/vast-tools/pull/361
 - Updated RELEASED_EPOCHS to include epochs 14 and 20 [#351](https://github.com/askap-vast/vast-tools/pull/351)
 - Enabled access to full TILES data [#325](https://github.com/askap-vast/vast-tools/pull/325)
 - Allow query epochs to be specified as list [#327](https://github.com/askap-vast/vast-tools/pull/327).
@@ -37,6 +38,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 #### Fixed
 
 - Fixed `search_around_coordinates` option in query [#365](https://github.com/askap-vast/vast-tools/pull/365)
+- Fixed handling of RACS-mid fields [#368](https://github.com/askap-vast/vast-tools/pull/368)
+- Fixed handling of RACS filenames and epochs [#358](https://github.com/askap-vast/vast-tools/pull/358)
 - Fixed issue with ncpu exceeding number of unique sources in Query._init_sources [#363](https://github.com/askap-vast/vast-tools/pull/363)
 - Fixed plot_lightcurve legend creation [#345](https://github.com/askap-vast/vast-tools/pull/345)
 - Fixed pipeline eta-v matplotlib plot [#340](https://github.com/askap-vast/vast-tools/pull/340)
@@ -51,21 +54,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 #### List of PRs
 
 - [#365](https://github.com/askap-vast/vast-tools/pull/365): fix, tests: Fix query `search_around_coordinates` option.
+- [#368](https://github.com/askap-vast/vast-tools/pull/368): fix, docs: Ensure find_fields returns RACS fields.
+- [#361](https://github.com/askap-vast/vast-tools/pull/361): feat, docs: remove epoch 12 warning.
+- [#358](https://github.com/askap-vast/vast-tools/pull/358): fix: Fix RACS file paths and epoch handling.
 - [#363](https://github.com/askap-vast/vast-tools/pull/363): fix: Update dask npartition specification in Query._init_sources call.
-- [#351](https://github.com/askap-vast/vast-tools/pull/351): fix, fear: Add epoch 21.
-- [#346](https://github.com/askap-vast/vast-tools/pull/346): feat, fix, tests: Check if requested data exists in Query init
-- [#345](https://github.com/askap-vast/vast-tools/pull/345): fix: Fixed plot_lightcurve
+- [#351](https://github.com/askap-vast/vast-tools/pull/351): fix, feat: Add epoch 21.
+- [#346](https://github.com/askap-vast/vast-tools/pull/346/): feat, fix, tests: Check if requested data exists in Query init.
+- [#345](https://github.com/askap-vast/vast-tools/pull/345): fix: Fixed plot_lightcurve.
 - [#338](https://github.com/askap-vast/vast-tools/pull/338): feat, dep: Added pylint workflow for pull requests.
-- [#340](https://github.com/askap-vast/vast-tools/pull/340): fix: Fixed eta-v plot
+- [#340](https://github.com/askap-vast/vast-tools/pull/340): fix: Fixed eta-v plot.
 - [#337](https://github.com/askap-vast/vast-tools/pull/337): fix: Fixed pandas append deprecation.
-- [#325](https://github.com/askap-vast/vast-tools/pull/325): tests, feat: Enabled access to full TILES data
-- [#328](https://github.com/askap-vast/vast-tools/pull/328): fix, docs: Fixed metadata for islands queries 
-- [#327](https://github.com/askap-vast/vast-tools/pull/327): feat, docs: Allow query epochs to be specified as list
-- [#311](https://github.com/askap-vast/vast-tools/pull/311): tests, docs, feat: Added multi-frequency handling and small updates
-- [#323](https://github.com/askap-vast/vast-tools/pull/323): feat, tests: New options for MOC generation
-- [#315](https://github.com/askap-vast/vast-tools/pull/315): tests, docs, feat: Use offset, rather than absolute, coordinates for postagestamps
-- [#317](https://github.com/askap-vast/vast-tools/pull/317): docs: Added warning to docs
-- [#298](https://github.com/askap-vast/vast-tools/pull/298): tests, docs, feat: Added tools for new epoch addition
+- [#325](https://github.com/askap-vast/vast-tools/pull/325): tests, feat: Enabled access to full TILES data.
+- [#328](https://github.com/askap-vast/vast-tools/pull/328): fix, docs: Fixed metadata for islands queries.
+- [#327](https://github.com/askap-vast/vast-tools/pull/327): feat, docs: Allow query epochs to be specified as list.
+- [#311](https://github.com/askap-vast/vast-tools/pull/311): tests, docs, feat: Added multi-frequency handling and small updates.
+- [#323](https://github.com/askap-vast/vast-tools/pull/323): feat, tests: New options for MOC generation.
+- [#315](https://github.com/askap-vast/vast-tools/pull/315): tests, docs, feat: Use offset, rather than absolute, coordinates for postagestamps.
+- [#317](https://github.com/askap-vast/vast-tools/pull/317): docs: Added warning to docs.
+- [#298](https://github.com/askap-vast/vast-tools/pull/298): tests, docs, feat: Added tools for new epoch addition.
 
 ## [2.0.0](https://github.com/askap-vast/vast-tools/releases/v2.0.0) (2021-10-09)
 

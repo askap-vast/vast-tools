@@ -44,7 +44,7 @@ from typing import Optional, List, Tuple, Dict, Union
 from pathlib import Path
 
 from vasttools import (
-    RELEASED_EPOCHS, OBSERVED_EPOCHS, ALLOWED_PLANETS, BASE_EPOCHS
+    RELEASED_EPOCHS, OBSERVED_EPOCHS, ALLOWED_PLANETS, BASE_EPOCHS, RACS_EPOCHS
 )
 from vasttools.survey import Fields, Image
 from vasttools.survey import (
@@ -53,7 +53,7 @@ from vasttools.survey import (
 from vasttools.source import Source
 from vasttools.utils import (
     filter_selavy_components, simbad_search, match_planet_to_field,
-    epoch12_user_warning, read_selavy
+    read_selavy
 )
 from vasttools.moc import VASTMOCS
 from forced_phot import ForcedPhot
@@ -398,9 +398,6 @@ class Query:
             self.query_df = None
 
         self.fields_found = False
-
-        # TODO: Remove warning in future release.
-        epoch12_user_warning()
 
     def _validate_settings(self) -> bool:
         """
@@ -1758,6 +1755,8 @@ class Query:
             The path to the selavy file of interest
         """
 
+        field = row.field.replace('RACS', 'VAST')
+
         if self.settings['islands']:
             cat_type = 'islands'
         else:
@@ -1813,9 +1812,6 @@ class Query:
 
             selavy_path = selavy_folder / selavy_file_fmt
 
-        if not selavy_path.exists():
-            selavy_path = str(selavy_path).replace("RACS", "VAST")
-
         return str(selavy_path)
 
     def _add_files(self, row: pd.Series) -> Tuple[str, str, str]:
@@ -1834,6 +1830,7 @@ class Query:
 
         img_dir = "STOKES{}_IMAGES".format(self.settings['stokes'])
         rms_dir = "STOKES{}_RMSMAPS".format(self.settings['stokes'])
+        field = row.field.replace('RACS', 'VAST')
 
         if self.settings['tiles']:
             dir_name = "TILES"
@@ -1841,7 +1838,7 @@ class Query:
             image_file_fmt = (
                 "image.{}.{}.SB{}.cont"
                 ".taylor.0.restored.fits".format(
-                    self.settings['stokes'].lower(), row.field, row.sbid
+                    self.settings['stokes'].lower(), field, row.sbid
                 )
             )
 
@@ -1857,13 +1854,13 @@ class Query:
             dir_name = "COMBINED"
 
             image_file_fmt = "{}.EPOCH{}.{}.conv.fits".format(
-                row.field,
+                field,
                 RELEASED_EPOCHS[row.epoch],
                 self.settings['stokes'],
             )
 
             rms_file_fmt = "noiseMap.{}.EPOCH{}.{}.conv.fits".format(
-                row.field,
+                field,
                 RELEASED_EPOCHS[row.epoch],
                 self.settings['stokes'],
             )
@@ -2147,7 +2144,7 @@ class Query:
         freqs = []
 
         for i in self.settings['epochs']:
-            if i != '0' and self.racs:
+            if i not in RACS_EPOCHS and self.racs:
                 the_fields = vast_fields
             else:
                 the_fields = fields
@@ -2158,7 +2155,7 @@ class Query:
                 ].index.to_list()
             ]
 
-            if i == '0':
+            if i in RACS_EPOCHS:
                 available_fields = [
                     j.replace("RACS", "VAST") for j in available_fields
                 ]
@@ -2185,7 +2182,7 @@ class Query:
                 field = available_fields[min_field_index]
 
             # Change VAST back to RACS
-            if i == '0':
+            if i in RACS_EPOCHS:
                 field = field.replace("VAST", "RACS")
             epochs.append(i)
             sbid = self._epoch_fields.loc[i, field]["SBID"]
@@ -2366,7 +2363,7 @@ class Query:
             epochs = available_epochs
         elif req_epochs == 'all-vast':
             epochs = available_epochs
-            for racs_epoch in BASE_EPOCHS['RACS']:
+            for racs_epoch in RACS_EPOCHS:
                 if racs_epoch in epochs:
                     epochs.remove(racs_epoch)
         else:
@@ -2395,7 +2392,7 @@ class Query:
 
         # RACS check
         self.racs = False
-        for racs_epoch in BASE_EPOCHS['RACS']:
+        for racs_epoch in RACS_EPOCHS:
             if racs_epoch in epochs:
                 epoch_str = "EPOCH{}".format(racs_epoch.zfill(2))
                 exists = os.path.isdir(os.path.join(self.base_folder,
@@ -2409,14 +2406,15 @@ class Query:
                         'Removing from requested epochs.'
                     )
                     epochs.remove(racs_epoch)
-                    self.racs = False
                 else:
-                    self.logger.warning('RACS data selected!')
-                    self.logger.warning(
-                        'Remember RACS data supplied by VAST is not final '
-                        'and results may vary.'
-                    )
                     self.racs = True
+
+        if self.racs:
+            self.logger.warning('RACS data selected!')
+            self.logger.warning(
+                'Remember RACS data supplied by VAST is not final '
+                'and results may vary.'
+            )
 
         if len(epochs) == 0:
             self.logger.critical("No requested epochs are available")
