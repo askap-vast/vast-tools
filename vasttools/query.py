@@ -1388,11 +1388,10 @@ class Query:
             source_image_type = "COMBINED"
         source_islands = self.settings['islands']
 
-        source_df = group.drop(
-            columns=[
-                '#'
-            ]
-        )
+        if '#' in group.columns:
+            source_df = group.drop('#', inplace=True)
+        else:
+            source_df = group
 
         source_df = source_df.sort_values('dateobs').reset_index(drop=True)
 
@@ -1546,7 +1545,6 @@ class Query:
 
         if self.settings["islands"]:
             meta = {
-                '#': 'f',
                 'island_id': 'U',
                 'island_name': 'U',
                 'n_components': 'f',
@@ -1590,7 +1588,6 @@ class Query:
             }
         else:
             meta = {
-                '#': 'f',
                 'island_id': 'U',
                 'component_id': 'U',
                 'component_name': 'U',
@@ -1633,6 +1630,7 @@ class Query:
             }
 
         if self.settings['search_around']:
+            meta['#'] = 'f'
             meta['index'] = 'i'
 
         return meta
@@ -1747,8 +1745,7 @@ class Query:
                 rms_df.index = group[~mask].index.values
 
                 master = pd.concat([master, rms_df], sort=False)
-        if '#' not in master.columns:
-            master.insert(0, "#", '')
+
         return master
 
     def _get_selavy_path(self, epoch_string: str, row: pd.Series) -> str:

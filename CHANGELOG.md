@@ -46,9 +46,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Removed
 
+- Removed '#' from get_components dataframe except when it is used in `search_around_coordinates` queries [#365](https://github.com/askap-vast/vast-tools/pull/365)
+
 #### List of PRs
 
-- [#364](https://github.com/askap-vast/vast-tools/pull/364): fix, tests: Fix query `search_around_coordinates` option.
+- [#365](https://github.com/askap-vast/vast-tools/pull/365): fix, tests: Fix query `search_around_coordinates` option.
 - [#363](https://github.com/askap-vast/vast-tools/pull/363): fix: Update dask npartition specification in Query._init_sources call.
 - [#351](https://github.com/askap-vast/vast-tools/pull/351): fix, fear: Add epoch 21.
 - [#346](https://github.com/askap-vast/vast-tools/pull/346): feat, fix, tests: Check if requested data exists in Query init
