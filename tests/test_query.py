@@ -1475,11 +1475,9 @@ class TestQuery:
             search_around_index=search_around
         )
 
-        # these are dropped to force a return value.
+        # comment is dropped as what is done in the function
         # the # column becomes 'distance' in search_around
-        to_drop = ['comment']
-
-        return_df = return_df.drop(to_drop, axis=1)
+        return_df = return_df.drop('comment', axis=1)
 
         dask_from_pandas_mocker = mocker.patch(
             'vasttools.query.dd.from_pandas',

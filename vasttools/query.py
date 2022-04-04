@@ -1386,7 +1386,7 @@ class Query:
         source_islands = self.settings['islands']
 
         if '#' in group.columns:
-            source_df = group.drop('#', inplace=True)
+            source_df = group.drop('#', axis=1)
         else:
             source_df = group
 
