@@ -1133,6 +1133,8 @@ class Query:
             result_type='expand'
         )
 
+        self._validate_files()
+
         if self.settings['forced_fits']:
             self.logger.info("Obtaining forced fits...")
             meta = {
@@ -1887,6 +1889,35 @@ class Query:
         )
 
         return selavy_file, image_file, rms_file
+
+    def _validate_files(self) -> None:
+        """
+        Check whether files in sources_df exist, and if not, remove them.
+
+        Returns:
+            None
+        """
+
+        missing_df = pd.DataFrame()
+        missing_df['selavy'] = ~self.sources_df['selavy'].map(os.path.exists)
+        missing_df['image'] = ~self.sources_df['image'].map(os.path.exists)
+        missing_df['rms'] = ~self.sources_df['rms'].map(os.path.exists)
+
+        missing_df['any'] = missing_df.any(axis=1)
+
+        self.logger.debug(missing_df)
+
+        for i, row in missing_df[missing_df['any']].iterrows():
+            sources_row = self.sources_df.iloc[i]
+            self.logger.debug(sources_row)
+            self.logger.warning(f"Removing {sources_row['name']}: Epoch "
+                                f"{sources_row.epoch} due to missing files")
+            if row.selavy:
+                self.logger.debug(f"{sources_row.selavy} does not exist!")
+            if row.image:
+                self.logger.debug(f"{sources_row.image} does not exist!")
+            if row.rms:
+                self.logger.debug(f"{sources_row.rms} does not exist!")
 
     def write_find_fields(self, outname: Optional[str] = None) -> None:
         """
