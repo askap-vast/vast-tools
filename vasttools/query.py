@@ -2366,7 +2366,7 @@ class Query:
             epochs = available_epochs
         elif req_epochs == 'all-vast':
             epochs = available_epochs
-            for racs_epoch in BASE_EPOCHS['RACS']:
+            for racs_epoch in RACS_EPOCHS:
                 if racs_epoch in epochs:
                     epochs.remove(racs_epoch)
         else:
@@ -2395,7 +2395,7 @@ class Query:
 
         # RACS check
         self.racs = False
-        for racs_epoch in BASE_EPOCHS['RACS']:
+        for racs_epoch in RACS_EPOCHS:
             if racs_epoch in epochs:
                 epoch_str = "EPOCH{}".format(racs_epoch.zfill(2))
                 exists = os.path.isdir(os.path.join(self.base_folder,
