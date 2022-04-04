@@ -1908,7 +1908,6 @@ class Query:
         self.logger.debug(missing_df)
 
         for i, row in missing_df[missing_df['any']].iterrows():
-            sources_row = self.sources_df.iloc[i]
             self.logger.debug(sources_row)
             self.logger.warning(f"Removing {sources_row['name']}: Epoch "
                                 f"{sources_row.epoch} due to missing files")
@@ -1918,6 +1917,8 @@ class Query:
                 self.logger.debug(f"{sources_row.image} does not exist!")
             if row.rms:
                 self.logger.debug(f"{sources_row.rms} does not exist!")
+
+        self.sources_df = self.sources_df[~missing_df['any']]
 
     def write_find_fields(self, outname: Optional[str] = None) -> None:
         """
