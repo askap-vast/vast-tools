@@ -43,6 +43,11 @@ BASE_EPOCHS = {
     "VAST": ['1', '18']
 }
 
+RACS_EPOCHS = [
+    '0',
+    '14'
+]
+
 ALLOWED_PLANETS = [
     'mercury',
     'venus',

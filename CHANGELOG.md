@@ -37,6 +37,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Fixed
 
+- Fixed handling of RACS-mid fields [#368](https://github.com/askap-vast/vast-tools/pull/368)
 - Fixed handling of RACS filenames and epochs [#358](https://github.com/askap-vast/vast-tools/pull/358)
 - Fixed issue with ncpu exceeding number of unique sources in Query._init_sources [#363](https://github.com/askap-vast/vast-tools/pull/363)
 - Fixed plot_lightcurve legend creation [#345](https://github.com/askap-vast/vast-tools/pull/345)
@@ -49,6 +50,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#368](https://github.com/askap-vast/vast-tools/pull/368): fix, docs: Ensure find_fields returns RACS fields.
 - [#361](https://github.com/askap-vast/vast-tools/pull/361): feat, docs: remove epoch 12 warning.
 - [#358](https://github.com/askap-vast/vast-tools/pull/358): fix: Fix RACS file paths and epoch handling.
 - [#363](https://github.com/askap-vast/vast-tools/pull/363): fix: Update dask npartition specification in Query._init_sources call.
