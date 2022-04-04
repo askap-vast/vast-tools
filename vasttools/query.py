@@ -2158,7 +2158,7 @@ class Query:
                 ].index.to_list()
             ]
 
-            if i == '0':
+            if i in RACS_EPOCHS:
                 available_fields = [
                     j.replace("RACS", "VAST") for j in available_fields
                 ]
@@ -2185,7 +2185,7 @@ class Query:
                 field = available_fields[min_field_index]
 
             # Change VAST back to RACS
-            if i == '0':
+            if i in RACS_EPOCHS:
                 field = field.replace("VAST", "RACS")
             epochs.append(i)
             sbid = self._epoch_fields.loc[i, field]["SBID"]
