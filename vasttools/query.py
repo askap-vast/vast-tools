@@ -382,9 +382,8 @@ class Query:
 
         data_available = self._check_data_availability()
         if not data_available:
-            raise QueryInitError((
-                "Not all requested data is available! "
-                "Please address and try again."
+            self.logger.critical((
+                "Not all requested data is available!"
             ))
 
         if self.coords is not None:
@@ -2440,10 +2439,6 @@ class Query:
                     self.logger.warning(
                         'RACS {} directory not found!'.format(epoch_str)
                     )
-                    self.logger.warning(
-                        'Removing from requested epochs.'
-                    )
-                    epochs.remove(racs_epoch)
                 else:
                     self.racs = True
 
