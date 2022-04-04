@@ -1388,7 +1388,10 @@ class Query:
             source_image_type = "COMBINED"
         source_islands = self.settings['islands']
 
-        source_df = group.drop(group.filter('#'))
+        if '#' in group.columns:
+            source_df = group.drop('#', inplace=True)
+        else:
+            source_df = group
 
         source_df = source_df.sort_values('dateobs').reset_index(drop=True)
 
