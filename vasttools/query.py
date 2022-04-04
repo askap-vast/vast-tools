@@ -1172,7 +1172,7 @@ class Query:
             else:
                 self.settings['forced_fits'] = False
 
-            self.logger.info("Done.")
+            self.logger.info("Forced fitting finished.")
 
         if self.settings['search_around']:
             meta['index'] = 'i'
@@ -1186,6 +1186,8 @@ class Query:
                 meta=self._get_selavy_meta(),
             ).compute(num_workers=self.ncpu, scheduler='processes')
         )
+
+        self.logger.debug("Selavy components succesfully added.")
 
         if self.settings['islands']:
             results['rms_image'] = results['background_noise']
@@ -1238,7 +1240,7 @@ class Query:
             )
             self.results = self.results.dropna()
 
-        self.logger.info("Done.")
+        self.logger.info("Source finding complete!")
 
     def save_search_around_results(self, sort_output: bool = False) -> None:
         """
@@ -1908,7 +1910,8 @@ class Query:
         self.logger.debug(missing_df)
 
         for i, row in missing_df[missing_df['any']].iterrows():
-            self.logger.debug(sources_row)
+            sources_row = self.sources_df.iloc[i]
+
             self.logger.warning(f"Removing {sources_row['name']}: Epoch "
                                 f"{sources_row.epoch} due to missing files")
             if row.selavy:
