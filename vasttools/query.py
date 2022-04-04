@@ -44,7 +44,7 @@ from typing import Optional, List, Tuple, Dict, Union
 from pathlib import Path
 
 from vasttools import (
-    RELEASED_EPOCHS, OBSERVED_EPOCHS, ALLOWED_PLANETS, BASE_EPOCHS
+    RELEASED_EPOCHS, OBSERVED_EPOCHS, ALLOWED_PLANETS, BASE_EPOCHS, RACS_EPOCHS
 )
 from vasttools.survey import Fields, Image
 from vasttools.survey import (
@@ -2147,7 +2147,7 @@ class Query:
         freqs = []
 
         for i in self.settings['epochs']:
-            if i != '0' and self.racs:
+            if i not in RACS_EPOCHS and self.racs:
                 the_fields = vast_fields
             else:
                 the_fields = fields
