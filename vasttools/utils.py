@@ -13,7 +13,6 @@ import matplotlib.lines
 import numpy as np
 import pandas as pd
 import scipy.ndimage as ndi
-import warnings
 import gc
 
 from astropy import units as u
@@ -619,29 +618,6 @@ def calculate_m_metric(flux_a: float, flux_b: float) -> float:
         float: the m metric for flux values "A" and "B".
     """
     return 2 * ((flux_a - flux_b) / (flux_a + flux_b))
-
-
-def epoch12_user_warning() -> None:
-    """
-    A function to raise a user warning about the new epoch 12 and 13
-    definitions.
-
-    To be removed in a future release.
-
-    Returns:
-        None
-    """
-    # TODO: Remove warning in future release.
-    warning_msg = (
-        "Using v2.0.0 epoch definitions which inserts a new epoch 12, "
-        "displacing the existing epoch 12 to epoch 13. "
-        "Code written before this time that uses vast-tools may need to be "
-        "updated to reproduce results. See "
-        "https://github.com/askap-vast/vast-project/wiki/"
-        "Pilot-Survey-Status-&-Data"
-    )
-
-    warnings.warn(warning_msg)
 
 
 def _distance_from_edge(x: np.ndarray) -> np.ndarray:

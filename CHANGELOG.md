@@ -21,6 +21,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Changed
 
+- Removed epoch 12 warning [#361](https://github.com/askap-vast/vast-tools/pull/361
 - Updated RELEASED_EPOCHS to include epochs 14 and 20 [#351](https://github.com/askap-vast/vast-tools/pull/351)
 - Enabled access to full TILES data [#325](https://github.com/askap-vast/vast-tools/pull/325)
 - Allow query epochs to be specified as list [#327](https://github.com/askap-vast/vast-tools/pull/327).
@@ -48,7 +49,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
-
+- [#361](https://github.com/askap-vast/vast-tools/pull/361): feat, docs: remove epoch 12 warning.
 - [#358](https://github.com/askap-vast/vast-tools/pull/358): fix: Fix RACS file paths and epoch handling.
 - [#363](https://github.com/askap-vast/vast-tools/pull/363): fix: Update dask npartition specification in Query._init_sources call.
 - [#351](https://github.com/askap-vast/vast-tools/pull/351): fix, feat: Add epoch 21.

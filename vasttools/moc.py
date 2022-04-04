@@ -12,7 +12,6 @@ from typing import Union
 
 from vasttools import RELEASED_EPOCHS
 from vasttools.survey import load_field_centres
-from vasttools.utils import epoch12_user_warning
 
 
 class VASTMOCS(object):
@@ -28,8 +27,6 @@ class VASTMOCS(object):
             None
         '''
         super(VASTMOCS, self).__init__()
-        # TODO: Remove warning in future release.
-        epoch12_user_warning()
 
     def load_pilot_stmoc(self) -> STMOC:
         """
