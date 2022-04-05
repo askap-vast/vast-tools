@@ -1804,7 +1804,7 @@ class Query:
             )
 
             selavy_file_fmt = "selavy-{}.EPOCH{}.{}.conv.{}.xml".format(
-                row.field,
+                field,
                 RELEASED_EPOCHS[row.epoch],
                 self.settings['stokes'],
                 cat_type
