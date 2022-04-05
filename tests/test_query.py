@@ -793,23 +793,15 @@ class TestQuery:
                 if rmsmaps_exist:
                     rms_dir.mkdir()
 
-        if all_available:
-            expectation = does_not_raise()
-            message = 'None'
-        else:
-            expectation = pytest.raises(vtq.QueryInitError)
-            message = ("Not all requested data is available! "
-                       "Please address and try again.")
-
-        with expectation as e:
-            query = vtq.Query(
-                epochs=epoch,
-                planets=['Mars'],
-                base_folder=base_dir,
-                stokes=stokes,
-                no_rms=no_rms
-            )
-            assert str(e) == message
+        query = vtq.Query(
+            epochs=epoch,
+            planets=['Mars'],
+            base_folder=base_dir,
+            stokes=stokes,
+            no_rms=no_rms
+        )
+        
+        assert all_available == query._check_data_availability()
 
     def test__field_matching(
         self,
