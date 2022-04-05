@@ -1779,7 +1779,7 @@ class Query:
             selavy_file_fmt = (
                 "selavy-image.i.{}.SB{}.cont."
                 "taylor.0.restored.conv.{}.xml".format(
-                    row.field, row.sbid, cat_type
+                    field, row.sbid, cat_type
                 )
             )
 
