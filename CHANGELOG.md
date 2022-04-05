@@ -37,6 +37,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Fixed
 
+- Fixed `search_around_coordinates` option in query [#365](https://github.com/askap-vast/vast-tools/pull/365)
 - Fixed handling of RACS-mid fields [#368](https://github.com/askap-vast/vast-tools/pull/368)
 - Fixed handling of RACS filenames and epochs [#358](https://github.com/askap-vast/vast-tools/pull/358)
 - Fixed issue with ncpu exceeding number of unique sources in Query._init_sources [#363](https://github.com/askap-vast/vast-tools/pull/363)
@@ -48,8 +49,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Removed
 
+- Removed '#' from get_components dataframe except when it is used in `search_around_coordinates` queries [#365](https://github.com/askap-vast/vast-tools/pull/365)
+
 #### List of PRs
 
+- [#365](https://github.com/askap-vast/vast-tools/pull/365): fix, tests: Fix query `search_around_coordinates` option.
 - [#368](https://github.com/askap-vast/vast-tools/pull/368): fix, docs: Ensure find_fields returns RACS fields.
 - [#361](https://github.com/askap-vast/vast-tools/pull/361): feat, docs: remove epoch 12 warning.
 - [#358](https://github.com/askap-vast/vast-tools/pull/358): fix: Fix RACS file paths and epoch handling.
