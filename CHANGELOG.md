@@ -37,6 +37,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Fixed
 
+- Fixed incorrect selavy filenames for EPOCH00 tiles [#373](https://github.com/askap-vast/vast-tools/pull/373)
 - Fixed `search_around_coordinates` option in query [#365](https://github.com/askap-vast/vast-tools/pull/365)
 - Fixed handling of RACS-mid fields [#368](https://github.com/askap-vast/vast-tools/pull/368)
 - Fixed handling of RACS filenames and epochs [#358](https://github.com/askap-vast/vast-tools/pull/358)
@@ -53,6 +54,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#373](https://github.com/askap-vast/vast-tools/pull/373): fix: Fixed incorrect selavy filenames for RACS tiles
 - [#365](https://github.com/askap-vast/vast-tools/pull/365): fix, tests: Fix query `search_around_coordinates` option.
 - [#368](https://github.com/askap-vast/vast-tools/pull/368): fix, docs: Ensure find_fields returns RACS fields.
 - [#361](https://github.com/askap-vast/vast-tools/pull/361): feat, docs: remove epoch 12 warning.
