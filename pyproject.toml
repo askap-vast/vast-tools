@@ -31,6 +31,7 @@ vaex-astro = "^0.8.0"
 vaex-core = "^4.5.0"
 vaex-hdf5 = "^0.7.0"
 healpy = "^1.15.0"
+svgpath2mpl = "^1.0.0"
 
 [tool.poetry.dev-dependencies]
 ipdb = "^0.13.6"
