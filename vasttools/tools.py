@@ -721,6 +721,7 @@ WISE_DEFAULT_PATCH_CONFIGS = {
 
 def wise_color_color_plot(
     patch_style_overrides: Optional[Dict[WiseClass, WisePatchConfig]] = None,
+    annotation_text_size: Union[float, str] = "x-small",
 ) -> matplotlib.figure.Figure:
     """Make an empty WISE color-color plot with common object classes drawn as patches.
     The patches have default styles that may be overridden. To override a patch style,
@@ -744,7 +745,9 @@ def wise_color_color_plot(
         patch_style_overrides (Optional[Dict[WiseClass, WisePatchConfig]], optional):
             Override the default patch styles for the given WISE object class. If None,
             use defaults for each patch. Defaults to None.
-
+        annotation_text_size (Union[float, str]): Font size for the patch annotations.
+            Accepts a font size (float) or a matplotlib font scale string (e.g.
+            "xx-small", "medium", "xx-large"). Defaults to "x-small".
     Returns:
         `matplotlib.figure.Figure`: the WISE color-color figure. Access the axes with the
             `.axes` attribute.
@@ -774,7 +777,7 @@ def wise_color_color_plot(
             patch_style.annotation_text,
             patch_style.annotation_position,
             ha="center",
-            fontsize="x-small",
+            fontsize=annotation_text_size,
         )
     ax.set_xlim(-1, 6)
     ax.set_ylim(-0.5, 4)
