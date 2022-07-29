@@ -637,8 +637,8 @@ def offset_postagestamp_axes(ax: plt.Axes,
 
 
 class WiseClass(enum.Enum):
-    """WISE object classes defined in the WISE color-color plot.
-    """
+    """WISE object classes defined in the WISE color-color plot."""
+
     COOL_T_DWARFS = "CoolTDwarfs"
     STARS = "Stars"
     ELLIPTICALS = "Ellipticals"
@@ -652,16 +652,17 @@ class WiseClass(enum.Enum):
 
 @dataclass
 class WisePatchConfig:
-    """Style and annotation configurations for the patch drawn to represent a WISE object
-    class in the WISE color-color plot.
+    """Style and annotation configurations for the patch drawn to represent a
+    WISE object class in the WISE color-color plot.
 
     Attributes:
-        style (Dict[str, Any]): Any style keyword arguments and values supported by
-            `matplotlib.patches.PathPatch`.
+        style (Dict[str, Any]): Any style keyword arguments and values
+            supported by `matplotlib.patches.PathPatch`.
         annotation_text (str): Text to annotate the patch.
-        annotation_position (Tuple[float, float]): Position in data coordinates for the
-            annotation text.
+        annotation_position (Tuple[float, float]): Position in data coordinates
+        for the annotation text.
     """
+
     style: Dict[str, Any]
     annotation_text: str
     annotation_position: Tuple[float, float]
@@ -723,12 +724,13 @@ def wise_color_color_plot(
     patch_style_overrides: Optional[Dict[WiseClass, WisePatchConfig]] = None,
     annotation_text_size: Union[float, str] = "x-small",
 ) -> matplotlib.figure.Figure:
-    """Make an empty WISE color-color plot with common object classes drawn as patches.
-    The patches have default styles that may be overridden. To override a patch style,
-    pass in a dict containing the desired style and annotation settings. The overrides
-    must be complete, i.e. a complete `WisePatchConfig` object must be provided for each
-    `WiseClass` you wish to modify. Partial updates to the style or annotation of
-    individual patches is not supported.
+    """Make an empty WISE color-color plot with common object classes drawn as
+    patches. The patches have default styles that may be overridden. To
+    override a patch style, pass in a dict containing the desired style and
+    annotation settings. The overrides must be complete, i.e. a complete
+    `WisePatchConfig` object must be provided for each `WiseClass` you wish to
+    modify. Partial updates to the style or annotation of individual patches is
+    not supported.
 
     For example, to change the color of the stars patch to blue:
     ```python
@@ -742,15 +744,17 @@ def wise_color_color_plot(
     ```
 
     Args:
-        patch_style_overrides (Optional[Dict[WiseClass, WisePatchConfig]], optional):
-            Override the default patch styles for the given WISE object class. If None,
-            use defaults for each patch. Defaults to None.
-        annotation_text_size (Union[float, str]): Font size for the patch annotations.
-            Accepts a font size (float) or a matplotlib font scale string (e.g.
-            "xx-small", "medium", "xx-large"). Defaults to "x-small".
+        patch_style_overrides (Optional[Dict[WiseClass, WisePatchConfig]],
+            optional): Override the default patch styles for the given WISE
+            object class. If None, use defaults for each patch. Defaults to
+            None.
+        annotation_text_size (Union[float, str]): Font size for the patch
+            annotations. Accepts a font size (float) or a matplotlib font scale
+            string (e.g. "xx-small", "medium", "xx-large"). Defaults to
+            "x-small".
     Returns:
-        `matplotlib.figure.Figure`: the WISE color-color figure. Access the axes with the
-            `.axes` attribute.
+        `matplotlib.figure.Figure`: the WISE color-color figure. Access the
+            axes with the `.axes` attribute.
     """
     # set the WISE object classification patch styles
     if patch_style_overrides is not None:
@@ -760,17 +764,23 @@ def wise_color_color_plot(
         patch_styles = WISE_DEFAULT_PATCH_CONFIGS
 
     # parse the WISE color-color SVG that contains the object class patches
-    with importlib.resources.path("vasttools.data", "WISE-color-color.svg") as svg_path:
+    with importlib.resources.path(
+        "vasttools.data", "WISE-color-color.svg"
+    ) as svg_path:
         doc = minidom.parse(str(svg_path))
     # define the transform from the SVG frame to the plotting frame
-    transform = matplotlib.transforms.Affine2D().scale(sx=1, sy=-1).translate(-1, 4)
+    transform = (
+        matplotlib.transforms.Affine2D().scale(sx=1, sy=-1).translate(-1, 4)
+    )
 
     fig, ax = plt.subplots()
     # add WISE object classification patches
     for svg_path in doc.getElementsByTagName("path"):
         name = svg_path.getAttribute("id")
         patch_style = patch_styles[getattr(WiseClass, name)]
-        path_mpl = parse_path(svg_path.getAttribute("d")).transformed(transform)
+        path_mpl = parse_path(svg_path.getAttribute("d")).transformed(
+            transform
+        )
         patch = matplotlib.patches.PathPatch(path_mpl, **patch_style.style)
         ax.add_patch(patch)
         ax.annotate(
