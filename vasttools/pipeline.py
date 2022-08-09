@@ -2197,7 +2197,7 @@ class PipeAnalysis(PipeRun):
             tools="",
         )
         x_hist_data, x_hist_edges = np.histogram(
-            np.log10(bokeh_df["eta_peak"]), density=True, bins=50,
+            np.log10(bokeh_df[x_value]), density=True, bins=50,
         )
         x_hist.quad(
             top=x_hist_data,
@@ -2225,7 +2225,7 @@ class PipeAnalysis(PipeRun):
             tools="",
         )
         y_hist_data, y_hist_edges = np.histogram(
-            np.log10(bokeh_df["v_peak"]), density=True, bins=50,
+            np.log10(bokeh_df[y_value]), density=True, bins=50,
         )
         y_hist.quad(
             right=y_hist_data,
