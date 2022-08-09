@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Added
 
+- Added logging to `pipeline.PipeRun` [#383](https://github.com/askap-vast/vast-tools/pull/383)
 - Added `tools.wise_color_color_plot` to create WISE color-color plots [#379](https://github.com/askap-vast/vast-tools/pull/379)
 - Added access to epoch 21 [#351](https://github.com/askap-vast/vast-tools/pull/351)
 - Added check for existence of requested data in `Query` init [#346](https://github.com/askap-vast/vast-tools/pull/346/)
@@ -39,6 +40,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Fixed
 
+- Correctly plot integrated flux histograms in eta-V bokeh plots [#383](https://github.com/askap-vast/vast-tools/pull/383)
+- Fixed handling of negative values in eta-V bokeh plots [#383](https://github.com/askap-vast/vast-tools/pull/383)
 - Fixed incorrect selavy filenames for EPOCH00 tiles [#373](https://github.com/askap-vast/vast-tools/pull/373)
 - Fixed `search_around_coordinates` option in query [#365](https://github.com/askap-vast/vast-tools/pull/365)
 - Fixed handling of RACS-mid fields [#368](https://github.com/askap-vast/vast-tools/pull/368)
