@@ -153,7 +153,7 @@ class PipeRun(object):
         self.n_workers = n_workers
         self._vaex_meas = vaex_meas
         self._loaded_two_epoch_metrics = False
-        
+
         self.logger = logging.getLogger('vasttools.pipeline.PipeRun')
         self.logger.debug('Created PipeRun instance')
 
@@ -2132,7 +2132,7 @@ class PipeAnalysis(PipeRun):
         Returns:
             Bokeh grid object containing figure.
         """
-        
+
         if use_int_flux:
             x_label = 'eta_int'
             y_label = 'v_int'
@@ -2148,9 +2148,9 @@ class PipeAnalysis(PipeRun):
             indices = bokeh_df[negative_v].index
             self.logger.warning("Negative V encountered. Removing...")
             self.logger.debug(f"Negative V indices: {indices.values}")
-            
+
             bokeh_df = bokeh_df.drop(indices)
-        
+
         # generate fitted curve data for plotting
         eta_x = np.linspace(
             norm.ppf(0.001, loc=eta_fit_mean, scale=eta_fit_sigma),
