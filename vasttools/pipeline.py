@@ -16,6 +16,7 @@ import pandas as pd
 import astropy
 import mocpy
 import matplotlib
+import logging
 import matplotlib.pyplot as plt
 
 from typing import List, Tuple
@@ -152,6 +153,9 @@ class PipeRun(object):
         self.n_workers = n_workers
         self._vaex_meas = vaex_meas
         self._loaded_two_epoch_metrics = False
+        
+        self.logger = logging.getLogger('vasttools.pipeline.PipeRun')
+        self.logger.debug('Created PipeRun instance')
 
     def combine_with_run(
         self, other_PipeRun, new_name: Optional[str] = None
@@ -2197,7 +2201,7 @@ class PipeAnalysis(PipeRun):
             tools="",
         )
         x_hist_data, x_hist_edges = np.histogram(
-            np.log10(bokeh_df[x_value]), density=True, bins=50,
+            np.log10(bokeh_df[x_label]), density=True, bins=50,
         )
         x_hist.quad(
             top=x_hist_data,
@@ -2225,7 +2229,7 @@ class PipeAnalysis(PipeRun):
             tools="",
         )
         y_hist_data, y_hist_edges = np.histogram(
-            np.log10(bokeh_df[y_value]), density=True, bins=50,
+            np.log10(bokeh_df[y_label]), density=True, bins=50,
         )
         y_hist.quad(
             right=y_hist_data,
