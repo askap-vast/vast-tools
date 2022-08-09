@@ -2128,6 +2128,25 @@ class PipeAnalysis(PipeRun):
         Returns:
             Bokeh grid object containing figure.
         """
+        
+        if use_int_flux:
+            x_label = 'eta_int'
+            y_label = 'v_int'
+            title = "Int. Flux"
+        else:
+            x_label = 'eta_peak'
+            y_label = 'v_peak'
+            title = 'Peak Flux'
+
+        bokeh_df = df
+        negative_v = bokeh_df[y_label] <= 0
+        if negative_v.any():
+            indices = bokeh_df[negative_v].index
+            self.logger.warning("Negative V encountered. Removing...")
+            self.logger.debug(f"Negative V indices: {indices.values}")
+            
+            bokeh_df = bokeh_df.drop(indices)
+        
         # generate fitted curve data for plotting
         eta_x = np.linspace(
             norm.ppf(0.001, loc=eta_fit_mean, scale=eta_fit_sigma),
@@ -2159,15 +2178,6 @@ class PipeAnalysis(PipeRun):
             df["n_selavy"].min(),
             df["n_selavy"].max(),
         )
-
-        if use_int_flux:
-            x_label = 'eta_int'
-            y_label = 'v_int'
-            title = "Int. Flux"
-        else:
-            x_label = 'eta_peak'
-            y_label = 'v_peak'
-            title = 'Peak Flux'
 
         fig.scatter(
             x=x_label, y=y_label, color=cmap,
