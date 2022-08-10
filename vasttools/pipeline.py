@@ -16,6 +16,7 @@ import pandas as pd
 import astropy
 import mocpy
 import matplotlib
+import logging
 import matplotlib.pyplot as plt
 
 from typing import List, Tuple
@@ -152,6 +153,9 @@ class PipeRun(object):
         self.n_workers = n_workers
         self._vaex_meas = vaex_meas
         self._loaded_two_epoch_metrics = False
+
+        self.logger = logging.getLogger('vasttools.pipeline.PipeRun')
+        self.logger.debug('Created PipeRun instance')
 
     def combine_with_run(
         self, other_PipeRun, new_name: Optional[str] = None
@@ -2128,6 +2132,25 @@ class PipeAnalysis(PipeRun):
         Returns:
             Bokeh grid object containing figure.
         """
+
+        if use_int_flux:
+            x_label = 'eta_int'
+            y_label = 'v_int'
+            title = "Int. Flux"
+        else:
+            x_label = 'eta_peak'
+            y_label = 'v_peak'
+            title = 'Peak Flux'
+
+        bokeh_df = df
+        negative_v = bokeh_df[y_label] <= 0
+        if negative_v.any():
+            indices = bokeh_df[negative_v].index
+            self.logger.warning("Negative V encountered. Removing...")
+            self.logger.debug(f"Negative V indices: {indices.values}")
+
+            bokeh_df = bokeh_df.drop(indices)
+
         # generate fitted curve data for plotting
         eta_x = np.linspace(
             norm.ppf(0.001, loc=eta_fit_mean, scale=eta_fit_sigma),
@@ -2160,15 +2183,6 @@ class PipeAnalysis(PipeRun):
             df["n_selavy"].max(),
         )
 
-        if use_int_flux:
-            x_label = 'eta_int'
-            y_label = 'v_int'
-            title = "Int. Flux"
-        else:
-            x_label = 'eta_peak'
-            y_label = 'v_peak'
-            title = 'Peak Flux'
-
         fig.scatter(
             x=x_label, y=y_label, color=cmap,
             marker="circle", size=5, source=df
@@ -2187,7 +2201,7 @@ class PipeAnalysis(PipeRun):
             tools="",
         )
         x_hist_data, x_hist_edges = np.histogram(
-            np.log10(df["eta_peak"]), density=True, bins=50,
+            np.log10(bokeh_df[x_label]), density=True, bins=50,
         )
         x_hist.quad(
             top=x_hist_data,
@@ -2215,7 +2229,7 @@ class PipeAnalysis(PipeRun):
             tools="",
         )
         y_hist_data, y_hist_edges = np.histogram(
-            np.log10(df["v_peak"]), density=True, bins=50,
+            np.log10(bokeh_df[y_label]), density=True, bins=50,
         )
         y_hist.quad(
             right=y_hist_data,
