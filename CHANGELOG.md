@@ -23,6 +23,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Changed
 
+- Updated GitHub actions Gr1N/setup-poetry to v7 [#385](https://github.com/askap-vast/vast-tools/pull/385)
 - Updated numpy to ~1.22.1 [#380](https://github.com/askap-vast/vast-tools/pull/380)
 - Removed epoch 12 warning [#361](https://github.com/askap-vast/vast-tools/pull/361)
 - Updated RELEASED_EPOCHS to include epochs 14 and 20 [#351](https://github.com/askap-vast/vast-tools/pull/351)
@@ -59,6 +60,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#385](https://github.com/askap-vast/vast-tools/pull/385): dep: Update Gr1N/setup-poetry to v7.
 - [#380](https://github.com/askap-vast/vast-tools/pull/380): dep: Update numpy to ~1.22.1.
 - [#379](https://github.com/askap-vast/vast-tools/pull/379): feat: Add function to create WISE color-color plots.
 - [#373](https://github.com/askap-vast/vast-tools/pull/373): fix: Fixed incorrect selavy filenames for RACS tiles
