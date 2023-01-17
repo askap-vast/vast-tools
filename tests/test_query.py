@@ -8,7 +8,6 @@ import pytest
 from astropy.coordinates import SkyCoord, Angle
 from mocpy import MOC
 from pytest_mock import mocker  # noqa: F401
-from contextlib import nullcontext as does_not_raise
 
 import vasttools.query as vtq
 
