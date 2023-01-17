@@ -58,8 +58,9 @@ def vast_query_psrj2129(pilot_moc_mocker: MOC, mocker) -> vtq.Query:
         'mocpy.MOC.from_fits',
         return_value=pilot_moc_mocker
     )
-    mocker_data_available = mocker.patch(
-        'vasttools.query.Query._check_data_availability',
+    
+    mocker_file_validation = mocker.patch(
+        'vasttools.query.Query._validate_files',
         return_value=True
     )
 
@@ -1457,6 +1458,11 @@ class TestQuery:
         Returns:
             None
         """
+
+        mocker_validate_files = mocker.patch(
+            'vasttools.query.Query._validate_files',
+            return_value=True
+        )
         test_query = vast_query_psrj2129_fields
         test_query.settings['search_around'] = search_around
 
