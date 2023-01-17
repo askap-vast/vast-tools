@@ -383,14 +383,14 @@ class Query:
         self.logger.info("Checking data availability...")
         all_data_available = self._check_data_availability()
         if all_data_available:
+            self.logger.info("All data available!")
+        else:
             self.logger.critical(
                 "Not all requested data is available! See above for details."
             )
             self.logger.critical(
                 "Query will continue run, but proceed with caution."
             )
-        else:
-            self.logger.info("All data available!")
 
         if self.coords is not None:
             self.query_df = self._build_catalog()
