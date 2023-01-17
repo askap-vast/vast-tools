@@ -57,7 +57,7 @@ def vast_query_psrj2129(pilot_moc_mocker: MOC, mocker) -> vtq.Query:
         'mocpy.MOC.from_fits',
         return_value=pilot_moc_mocker
     )
-    
+
     mocker_file_validation = mocker.patch(
         'vasttools.query.Query._validate_files',
         return_value=True
@@ -806,7 +806,7 @@ class TestQuery:
             stokes=stokes,
             no_rms=no_rms
         )
-        
+
         assert all_available == query._check_data_availability()
 
     def test__field_matching(
