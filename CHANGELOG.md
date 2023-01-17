@@ -41,6 +41,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Fixed
 
+- Fix bug where cutouts could not be created [#389](https://github.com/askap-vast/vast-tools/pull/389)
 - Correctly plot integrated flux histograms in eta-V bokeh plots [#383](https://github.com/askap-vast/vast-tools/pull/383)
 - Fixed handling of negative values in eta-V bokeh plots [#383](https://github.com/askap-vast/vast-tools/pull/383)
 - Fixed incorrect selavy filenames for EPOCH00 tiles [#373](https://github.com/askap-vast/vast-tools/pull/373)
@@ -60,6 +61,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#389](https://github.com/askap-vast/vast-tools/pull/389): fix: Fix cutout creation bug.
 - [#385](https://github.com/askap-vast/vast-tools/pull/385): dep: Update Gr1N/setup-poetry to v7.
 - [#380](https://github.com/askap-vast/vast-tools/pull/380): dep: Update numpy to ~1.22.1.
 - [#379](https://github.com/askap-vast/vast-tools/pull/379): feat: Add function to create WISE color-color plots.
