@@ -1062,7 +1062,7 @@ class Query:
             wcs=image.wcs
         )
 
-        selavy_components = read_selavy(row.selavy, usecols=[
+        selavy_components = read_selavy(row.selavy, cols=[
             'island_id',
             'ra_deg_cont',
             'dec_deg_cont',
@@ -1178,9 +1178,6 @@ class Query:
                 self.settings['forced_fits'] = False
 
             self.logger.info("Forced fitting finished.")
-
-        if self.settings['search_around']:
-            meta['index'] = 'i'
 
         self.logger.debug("Getting components...")
         results = (
@@ -1397,11 +1394,10 @@ class Query:
             source_image_type = "COMBINED"
         source_islands = self.settings['islands']
 
-        source_df = group.drop(
-            columns=[
-                '#'
-            ]
-        )
+        if '#' in group.columns:
+            source_df = group.drop('#', axis=1)
+        else:
+            source_df = group
 
         source_df = source_df.sort_values('dateobs').reset_index(drop=True)
 
@@ -1555,7 +1551,6 @@ class Query:
 
         if self.settings["islands"]:
             meta = {
-                '#': 'f',
                 'island_id': 'U',
                 'island_name': 'U',
                 'n_components': 'f',
@@ -1599,7 +1594,6 @@ class Query:
             }
         else:
             meta = {
-                '#': 'f',
                 'island_id': 'U',
                 'component_id': 'U',
                 'component_name': 'U',
@@ -1640,6 +1634,10 @@ class Query:
                 'comment': 'f',
                 'detection': '?',
             }
+
+        if self.settings['search_around']:
+            meta['#'] = 'f'
+            meta['index'] = 'i'
 
         return meta
 
@@ -1753,8 +1751,7 @@ class Query:
                 rms_df.index = group[~mask].index.values
 
                 master = pd.concat([master, rms_df], sort=False)
-        if '#' not in master.columns:
-            master.insert(0, "#", '')
+
         return master
 
     def _get_selavy_path(self, epoch_string: str, row: pd.Series) -> str:
@@ -1791,7 +1788,7 @@ class Query:
             selavy_file_fmt = (
                 "selavy-image.i.{}.SB{}.cont."
                 "taylor.0.restored.conv.{}.xml".format(
-                    row.field, row.sbid, cat_type
+                    field, row.sbid, cat_type
                 )
             )
 
@@ -1816,7 +1813,7 @@ class Query:
             )
 
             selavy_file_fmt = "selavy-{}.EPOCH{}.{}.conv.{}.xml".format(
-                row.field,
+                field,
                 RELEASED_EPOCHS[row.epoch],
                 self.settings['stokes'],
                 cat_type

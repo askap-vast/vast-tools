@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Added
 
+- Added logging to `pipeline.PipeRun` [#383](https://github.com/askap-vast/vast-tools/pull/383)
+- Added `tools.wise_color_color_plot` to create WISE color-color plots [#379](https://github.com/askap-vast/vast-tools/pull/379)
 - Added access to epoch 21 [#351](https://github.com/askap-vast/vast-tools/pull/351)
 - Added check for existence of requested data in `Query` init [#346](https://github.com/askap-vast/vast-tools/pull/346/)
 - Added pylint github action for pull requests and flake8 dev dependency [#338](https://github.com/askap-vast/vast-tools/pull/338).
@@ -21,7 +23,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Changed
 
-- Removed epoch 12 warning [#361](https://github.com/askap-vast/vast-tools/pull/361
+- Updated GitHub actions Gr1N/setup-poetry to v7 [#385](https://github.com/askap-vast/vast-tools/pull/385)
+- Updated numpy to ~1.22.1 [#380](https://github.com/askap-vast/vast-tools/pull/380)
+- Removed epoch 12 warning [#361](https://github.com/askap-vast/vast-tools/pull/361)
 - Updated RELEASED_EPOCHS to include epochs 14 and 20 [#351](https://github.com/askap-vast/vast-tools/pull/351)
 - Enabled access to full TILES data [#325](https://github.com/askap-vast/vast-tools/pull/325)
 - Allow query epochs to be specified as list [#327](https://github.com/askap-vast/vast-tools/pull/327).
@@ -37,6 +41,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Fixed
 
+- Fix bug where cutouts could not be created [#389](https://github.com/askap-vast/vast-tools/pull/389)
+- Correctly plot integrated flux histograms in eta-V bokeh plots [#383](https://github.com/askap-vast/vast-tools/pull/383)
+- Fixed handling of negative values in eta-V bokeh plots [#383](https://github.com/askap-vast/vast-tools/pull/383)
+- Fixed incorrect selavy filenames for EPOCH00 tiles [#373](https://github.com/askap-vast/vast-tools/pull/373)
+- Fixed `search_around_coordinates` option in query [#365](https://github.com/askap-vast/vast-tools/pull/365)
 - Fixed handling of RACS-mid fields [#368](https://github.com/askap-vast/vast-tools/pull/368)
 - Fixed handling of RACS filenames and epochs [#358](https://github.com/askap-vast/vast-tools/pull/358)
 - Fixed issue with ncpu exceeding number of unique sources in Query._init_sources [#363](https://github.com/askap-vast/vast-tools/pull/363)
@@ -48,8 +57,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Removed
 
+- Removed '#' from get_components dataframe except when it is used in `search_around_coordinates` queries [#365](https://github.com/askap-vast/vast-tools/pull/365)
+
 #### List of PRs
 
+- [#389](https://github.com/askap-vast/vast-tools/pull/389): fix: Fix cutout creation bug.
+- [#385](https://github.com/askap-vast/vast-tools/pull/385): dep: Update Gr1N/setup-poetry to v7.
+- [#380](https://github.com/askap-vast/vast-tools/pull/380): dep: Update numpy to ~1.22.1.
+- [#379](https://github.com/askap-vast/vast-tools/pull/379): feat: Add function to create WISE color-color plots.
+- [#373](https://github.com/askap-vast/vast-tools/pull/373): fix: Fixed incorrect selavy filenames for RACS tiles
+- [#365](https://github.com/askap-vast/vast-tools/pull/365): fix, tests: Fix query `search_around_coordinates` option.
 - [#368](https://github.com/askap-vast/vast-tools/pull/368): fix, docs: Ensure find_fields returns RACS fields.
 - [#361](https://github.com/askap-vast/vast-tools/pull/361): feat, docs: remove epoch 12 warning.
 - [#358](https://github.com/askap-vast/vast-tools/pull/358): fix: Fix RACS file paths and epoch handling.
