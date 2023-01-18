@@ -385,10 +385,10 @@ class Query:
         if all_data_available:
             self.logger.info("All data available!")
         else:
-            self.logger.critical(
+            self.logger.warning(
                 "Not all requested data is available! See above for details."
             )
-            self.logger.critical(
+            self.logger.warning(
                 "Query will continue run, but proceed with caution."
             )
 
