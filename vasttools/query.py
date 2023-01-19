@@ -486,7 +486,7 @@ class Query:
             rms_dir = data_dir / f"STOKES{stokes}_RMSMAPS{corrected_str}"
             if not rms_dir.is_dir() and not self.settings["no_rms"]:
                 self.logger.critical(
-                    f"Stokes {stokes} catalogues unavailable for epoch {epoch}"
+                    f"Stokes {stokes} RMS maps unavailable for epoch {epoch}"
                 )
                 self.logger.debug(f"{rms_dir} does not exist.")
                 all_available = False
