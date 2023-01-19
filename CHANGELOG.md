@@ -41,6 +41,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Fixed
 
+- Fixed variable names in query documentation example [#398](https://github.com/askap-vast/vast-tools/pull/398)
+- Updated logging in query.py to correctly reference the file type it was dealing with [#398](https://github.com/askap-vast/vast-tools/pull/398)
 - Fixed handling of empty list of planets in query [#390](https://github.com/askap-vast/vast-tools/pull/390)
 - Fix bug where cutouts could not be created [#389](https://github.com/askap-vast/vast-tools/pull/389)
 - Correctly plot integrated flux histograms in eta-V bokeh plots [#383](https://github.com/askap-vast/vast-tools/pull/383)
@@ -62,6 +64,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#398](https://github.com/askap-vast/vast-tools/pull/398): fix, docs: Fix incorrect logging in query.py and incorrect variable names in query documentation
 - [#390](https://github.com/askap-vast/vast-tools/pull/390): fix: Update handling of planets to be consistent with regular sources.
 - [#389](https://github.com/askap-vast/vast-tools/pull/389): fix: Fix cutout creation bug.
 - [#385](https://github.com/askap-vast/vast-tools/pull/385): dep: Update Gr1N/setup-poetry to v7.
