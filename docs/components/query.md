@@ -246,8 +246,8 @@ Once the `Query` has been defined the settings can be checked by viewing the `Qu
     my_source_names = ["1AXG J134412+0016", "SN 2012dy", "PSR J2129-0429"]
 
     my_query = Query(
-        coords=coords_to_query,
-        source_names=source_names,
+        coords=my_coords,
+        source_names=my_source_names,
         matches_only=True, 
         epochs="all-vast", 
         crossmatch_radius=10., 
