@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Added
 
+- Added `_validate files` to `query.Query` class to ensure that only accessible data is queried [#370](https://github.com/askap-vast/vast-tools/pull/370)
 - Added logging to `pipeline.PipeRun` [#383](https://github.com/askap-vast/vast-tools/pull/383)
 - Added `tools.wise_color_color_plot` to create WISE color-color plots [#379](https://github.com/askap-vast/vast-tools/pull/379)
 - Added access to epoch 21 [#351](https://github.com/askap-vast/vast-tools/pull/351)
@@ -64,6 +65,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#370](https://github.com/askap-vast/vast-tools/pull/370): feat, docs: Add file validation to check what data is available and remove anything that is not available from the query.
 - [#398](https://github.com/askap-vast/vast-tools/pull/398): fix, docs: Fix incorrect logging in query.py and incorrect variable names in query documentation
 - [#390](https://github.com/askap-vast/vast-tools/pull/390): fix: Update handling of planets to be consistent with regular sources.
 - [#389](https://github.com/askap-vast/vast-tools/pull/389): fix: Fix cutout creation bug.
