@@ -201,6 +201,8 @@ class Query:
 
         if source_names is None:
             source_names = []
+        if planets is None:
+            planets = []
 
         self.source_names = np.array(source_names)
         self.simbad_names = None
@@ -229,7 +231,7 @@ class Query:
             )
         self.ncpu = ncpu
 
-        if coords is None and len(source_names) == 0 and planets is None:
+        if coords is None and len(source_names) == 0 and len(planets) == 0:
             raise QueryInitError(
                 "No coordinates or source names have been provided!"
                 " Check inputs and try again!"
@@ -295,17 +297,16 @@ class Query:
                         "SIMBAD search failed!"
                     )
 
-        if planets is not None:
-            planets = [i.lower() for i in planets]
-            valid_planets = sum([i in ALLOWED_PLANETS for i in planets])
+        planets = [i.lower() for i in planets]
+        valid_planets = sum([i in ALLOWED_PLANETS for i in planets])
 
-            if valid_planets != len(planets):
-                self.logger.error(
-                    "Invalid planet object provided!"
-                )
-                raise ValueError(
-                    "Invalid planet object provided!"
-                )
+        if valid_planets != len(planets):
+            self.logger.error(
+                "Invalid planet object provided!"
+            )
+            raise ValueError(
+                "Invalid planet object provided!"
+            )
 
         self.planets = planets
 
@@ -490,7 +491,7 @@ class Query:
             rms_dir = data_dir / f"STOKES{stokes}_RMSMAPS{corrected_str}"
             if not rms_dir.is_dir() and not self.settings["no_rms"]:
                 self.logger.critical(
-                    f"Stokes {stokes} catalogues unavailable for epoch {epoch}"
+                    f"Stokes {stokes} RMS maps unavailable for epoch {epoch}"
                 )
                 self.logger.debug(f"{rms_dir} does not exist.")
                 all_available = False
@@ -2084,7 +2085,8 @@ class Query:
             self.fields_df = None
 
         # Handle Planets
-        if self.planets is not None:
+        if len(self.planets) > 0:
+            self.logger.info(self.planets)
             planet_fields = self._search_planets()
 
             if self.fields_df is None:
