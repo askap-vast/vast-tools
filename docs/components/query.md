@@ -29,7 +29,7 @@ In full, the `Query` component as the ability to:
 
 !!!warning "Warning: Data Access"
     It is assumed that the machine that is running VAST Tools has access to the VAST Pilot Survey release output.
-    Refer to the [Configuration & Data Access](../../getting_started/configuration/) page for more information.
+    Refer to the [Configuration & Data Access](../../getting_started/configuration/) page for more information. If the user only has access to an incomplete version of the dataset, the code will automatically remove the data that is unavailable, allowing the query to proceed.
 
 !!!tip "Tip: `find_sources` script"
     It is not ideal to perform large queries in a notebook environment.

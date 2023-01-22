@@ -381,12 +381,17 @@ class Query:
                 "\nPlease address and try again."
             ))
 
-        data_available = self._check_data_availability()
-        if not data_available:
-            raise QueryInitError((
-                "Not all requested data is available! "
-                "Please address and try again."
-            ))
+        self.logger.info("Checking data availability...")
+        all_data_available = self._check_data_availability()
+        if all_data_available:
+            self.logger.info("All data available!")
+        else:
+            self.logger.warning(
+                "Not all requested data is available! See above for details."
+            )
+            self.logger.warning(
+                "Query will continue run, but proceed with caution."
+            )
 
         if self.coords is not None:
             self.query_df = self._build_catalog()
@@ -1134,6 +1139,8 @@ class Query:
             result_type='expand'
         )
 
+        self._validate_files()
+
         if self.settings['forced_fits']:
             self.logger.info("Obtaining forced fits...")
             meta = {
@@ -1171,7 +1178,7 @@ class Query:
             else:
                 self.settings['forced_fits'] = False
 
-            self.logger.info("Done.")
+            self.logger.info("Forced fitting finished.")
 
         self.logger.debug("Getting components...")
         results = (
@@ -1182,6 +1189,8 @@ class Query:
                 meta=self._get_selavy_meta(),
             ).compute(num_workers=self.ncpu, scheduler='processes')
         )
+
+        self.logger.debug("Selavy components succesfully added.")
 
         if self.settings['islands']:
             results['rms_image'] = results['background_noise']
@@ -1234,7 +1243,7 @@ class Query:
             )
             self.results = self.results.dropna()
 
-        self.logger.info("Done.")
+        self.logger.info("Source finding complete!")
 
     def save_search_around_results(self, sort_output: bool = False) -> None:
         """
@@ -1886,6 +1895,37 @@ class Query:
 
         return selavy_file, image_file, rms_file
 
+    def _validate_files(self) -> None:
+        """
+        Check whether files in sources_df exist, and if not, remove them.
+
+        Returns:
+            None
+        """
+
+        missing_df = pd.DataFrame()
+        missing_df['selavy'] = ~self.sources_df['selavy'].map(os.path.exists)
+        missing_df['image'] = ~self.sources_df['image'].map(os.path.exists)
+        missing_df['rms'] = ~self.sources_df['rms'].map(os.path.exists)
+
+        missing_df['any'] = missing_df.any(axis=1)
+
+        self.logger.debug(missing_df)
+
+        for i, row in missing_df[missing_df['any']].iterrows():
+            sources_row = self.sources_df.iloc[i]
+
+            self.logger.warning(f"Removing {sources_row['name']}: Epoch "
+                                f"{sources_row.epoch} due to missing files")
+            if row.selavy:
+                self.logger.debug(f"{sources_row.selavy} does not exist!")
+            if row.image:
+                self.logger.debug(f"{sources_row.image} does not exist!")
+            if row.rms:
+                self.logger.debug(f"{sources_row.rms} does not exist!")
+
+        self.sources_df = self.sources_df[~missing_df['any']]
+
     def write_find_fields(self, outname: Optional[str] = None) -> None:
         """
         Write the results of a field search to file.
@@ -2404,10 +2444,6 @@ class Query:
                     self.logger.warning(
                         'RACS {} directory not found!'.format(epoch_str)
                     )
-                    self.logger.warning(
-                        'Removing from requested epochs.'
-                    )
-                    epochs.remove(racs_epoch)
                 else:
                     self.racs = True
 

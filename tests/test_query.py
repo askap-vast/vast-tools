@@ -8,7 +8,6 @@ import pytest
 from astropy.coordinates import SkyCoord, Angle
 from mocpy import MOC
 from pytest_mock import mocker  # noqa: F401
-from contextlib import nullcontext as does_not_raise
 
 import vasttools.query as vtq
 
@@ -58,8 +57,9 @@ def vast_query_psrj2129(pilot_moc_mocker: MOC, mocker) -> vtq.Query:
         'mocpy.MOC.from_fits',
         return_value=pilot_moc_mocker
     )
-    mocker_data_available = mocker.patch(
-        'vasttools.query.Query._check_data_availability',
+
+    mocker_file_validation = mocker.patch(
+        'vasttools.query.Query._validate_files',
         return_value=True
     )
 
@@ -799,23 +799,15 @@ class TestQuery:
                 if rmsmaps_exist:
                     rms_dir.mkdir()
 
-        if all_available:
-            expectation = does_not_raise()
-            message = 'None'
-        else:
-            expectation = pytest.raises(vtq.QueryInitError)
-            message = ("Not all requested data is available! "
-                       "Please address and try again.")
+        query = vtq.Query(
+            epochs=epoch,
+            planets=['Mars'],
+            base_folder=base_dir,
+            stokes=stokes,
+            no_rms=no_rms
+        )
 
-        with expectation as e:
-            query = vtq.Query(
-                epochs=epoch,
-                planets=['Mars'],
-                base_folder=base_dir,
-                stokes=stokes,
-                no_rms=no_rms
-            )
-            assert str(e) == message
+        assert all_available == query._check_data_availability()
 
     def test__field_matching(
         self,
@@ -1465,6 +1457,11 @@ class TestQuery:
         Returns:
             None
         """
+
+        mocker_validate_files = mocker.patch(
+            'vasttools.query.Query._validate_files',
+            return_value=True
+        )
         test_query = vast_query_psrj2129_fields
         test_query.settings['search_around'] = search_around
 
