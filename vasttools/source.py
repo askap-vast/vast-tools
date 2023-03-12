@@ -978,13 +978,20 @@ class Source:
 
         return
 
-    def _get_save_name(self, epoch: str, ext: str) -> str:
+    def _get_save_name(self,
+                       epoch: str,
+                       ext: str
+                       field: str,
+                       sbid: str
+                       ) -> str:
         """
         Generate name of file to save to.
 
         Args:
             epoch: Epoch corresponding to requested data
             ext: File extension
+            field: Field of the requested data
+            sbid: SBID of the requested data
 
         Returns:
             Name of file to save.
@@ -999,11 +1006,13 @@ class Source:
                 name_epoch = RELEASED_EPOCHS[e] + "-" + e_split[1]
             else:
                 name_epoch = RELEASED_EPOCHS[epoch]
-        outfile = "{}_EPOCH{}{}".format(
+        outfile = "{}_EPOCH{}_{}_{}".format(
             self.name.replace(" ", "_").replace(
                 "/", "_"
             ),
             name_epoch,
+            field,
+            sbid,
             ext
         )
         return outfile
