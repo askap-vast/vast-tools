@@ -2046,10 +2046,12 @@ class Query:
                     meta=meta,
                     axis=1,
                     result_type='expand'
-                ).compute(num_workers=self.ncpu, scheduler='processes')
+                ).compute(num_workers=self.ncpu, scheduler='single-threaded')
             )
+            
+            #self.logger.debug(self.fields_df)
 
-            self.logger.debug("Finished field matching.")
+            self.logger.info("Finished field matching.")
             self.fields_df = self.fields_df.dropna()
             if self.fields_df.empty:
                 raise Exception(
@@ -2058,6 +2060,8 @@ class Query:
             self.fields_df = self.fields_df.explode(
                 'field_per_epoch'
             ).reset_index(drop=True)
+            
+            self.logger.debug(self.fields_df)
 
             self.fields_df[
                 ['epoch', 'field', 'sbid', 'dateobs', 'frequency']
@@ -2065,6 +2069,8 @@ class Query:
                 self.fields_df['field_per_epoch'].tolist(),
                 index=self.fields_df.index
             )
+            
+            #self.logger.debug(self.fields_df)
 
             to_drop = [
                 'field_per_epoch',
@@ -2079,6 +2085,8 @@ class Query:
             ).sort_values(
                 by=['name', 'dateobs']
             ).reset_index(drop=True)
+            
+            #self.logger.debug(self.fields_df)
 
             self.fields_df['planet'] = False
         else:
@@ -2155,6 +2163,8 @@ class Query:
         Returns:
             Tuple containing the field information.
         """
+        
+        self.logger.debug("Running field matching")
 
         seps = row.skycoord.separation(fields_coords)
         accept = seps.deg < self.settings['max_sep']
@@ -2196,6 +2206,9 @@ class Query:
                     i
                 ].index.to_list()
             ]
+            self.logger.debug("Print available fields:")
+            self.logger.debug(available_fields)
+            
 
             if i in RACS_EPOCHS:
                 available_fields = [
