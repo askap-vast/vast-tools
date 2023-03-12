@@ -978,13 +978,20 @@ class Source:
 
         return
 
-    def _get_save_name(self, epoch: str, ext: str) -> str:
+    def _get_save_name(self,
+                       epoch: str,
+                       ext: str
+                       field: str,
+                       sbid: str
+                       ) -> str:
         """
         Generate name of file to save to.
 
         Args:
             epoch: Epoch corresponding to requested data
             ext: File extension
+            field: Field of the requested data
+            sbid: SBID of the requested data
 
         Returns:
             Name of file to save.
