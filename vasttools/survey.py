@@ -153,9 +153,6 @@ def get_fields_per_epoch_info() -> pd.DataFrame:
         'BEAM', 'RA_HMS', 'DEC_DMS', 'DATEEND',
         'NINT', 'BMAJ', 'BMIN', 'BPA'
     ]).sort_index()
-    
-    #print(epoch_fields.loc["99", "VAST_0216-06A"])
-    #exit()
 
     return epoch_fields
 

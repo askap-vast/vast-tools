@@ -2049,7 +2049,7 @@ class Query:
                 ).compute(num_workers=self.ncpu, scheduler='single-threaded')
             )
             
-            #self.logger.debug(self.fields_df)
+            self.logger.debug(self.fields_df['field_per_epoch'])
 
             self.logger.info("Finished field matching.")
             self.fields_df = self.fields_df.dropna()
@@ -2070,7 +2070,12 @@ class Query:
                 index=self.fields_df.index
             )
             
-            #self.logger.debug(self.fields_df)
+            self.logger.debug(self.fields_df)
+            self.logger.debug(self.fields_df.name)
+            self.logger.debug("dateobs")
+            self.logger.debug(self.fields_df.dateobs)
+            self.logger.debug(self.fields_df.dateobs.iloc[0])
+            self.logger.debug("end dateobs")
 
             to_drop = [
                 'field_per_epoch',
@@ -2165,6 +2170,7 @@ class Query:
         """
         
         self.logger.debug("Running field matching")
+        self.logger.debug(row)
 
         seps = row.skycoord.separation(fields_coords)
         accept = seps.deg < self.settings['max_sep']
@@ -2196,6 +2202,7 @@ class Query:
         freqs = []
 
         for i in self.settings['epochs']:
+            self.logger.debug(i)
             if i not in RACS_EPOCHS and self.racs:
                 the_fields = vast_fields
             else:
@@ -2240,13 +2247,17 @@ class Query:
             if i in RACS_EPOCHS:
                 field = field.replace("VAST", "RACS")
             epochs.append(i)
-            sbid = self._epoch_fields.loc[i, field]["SBID"]
-            date = self._epoch_fields.loc[i, field]["DATEOBS"]
-            freq = self._epoch_fields.loc[i, field]["OBS_FREQ"]
-            sbids.append(sbid)
-            dateobs.append(date)
-            freqs.append(freq)
-            field_per_epochs.append([i, field, sbid, date, freq])
+            #self.logger.debug(self._epoch_fields)
+            self.logger.debug(self._epoch_fields.loc[i])
+            sbid_vals = self._epoch_fields.loc[i, field]["SBID"]
+            date_vals = self._epoch_fields.loc[i, field]["DATEOBS"]
+            freq_vals = self._epoch_fields.loc[i, field]["OBS_FREQ"]
+            
+            for sbid, date, freq in zip(sbid_vals, date_vals, freq_vals):
+                sbids.append(sbid)
+                dateobs.append(date)
+                freqs.append(freq)
+                field_per_epochs.append([i, field, sbid, date, freq])
 
         return_vals = (fields,
                        primary_field,
