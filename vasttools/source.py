@@ -1006,11 +1006,13 @@ class Source:
                 name_epoch = RELEASED_EPOCHS[e] + "-" + e_split[1]
             else:
                 name_epoch = RELEASED_EPOCHS[epoch]
-        outfile = "{}_EPOCH{}{}".format(
+        outfile = "{}_EPOCH{}_{}_{}".format(
             self.name.replace(" ", "_").replace(
                 "/", "_"
             ),
             name_epoch,
+            field,
+            sbid,
             ext
         )
         return outfile
