@@ -803,13 +803,13 @@ class Source:
             )
         else:
             selavy_components = read_selavy(row.selavy, cols=[
-                    'island_id',
-                    'ra_deg_cont',
-                    'dec_deg_cont',
-                    'maj_axis',
-                    'min_axis',
-                    'pos_ang'
-                ]
+                'island_id',
+                'ra_deg_cont',
+                'dec_deg_cont',
+                'maj_axis',
+                'min_axis',
+                'pos_ang'
+            ]
             )
 
         selavy_coords = SkyCoord(
@@ -857,7 +857,7 @@ class Source:
         offset_axes: bool = True,
     ) -> plt.Figure:
         """
-        Wrapper for make_png to make nicer interactive function. 
+        Wrapper for make_png to make nicer interactive function.
         No access to save.
 
         Args:
@@ -992,18 +992,18 @@ class Source:
         Returns:
             Name of file to save.
         """
-        
+
         row = self.measurements.iloc[index]
-        
+
         if not ext.startswith("."):
             ext = f".{ext}"
-        
+
         source_name = self.name.replace(" ", "_").replace("/", "_")
         field_name = row.field
         sbid = row.sbid
-        
+
         outfile = f"{source_name}_{field_name}_SB{sbid}{ext}"
-        
+
         return outfile
 
     def save_fits_cutout(
@@ -1100,7 +1100,7 @@ class Source:
         hdu_stamp.writeto(outfile, overwrite=True)
 
         del hdu_stamp
-    
+
     def save_all_ann(
         self,
         crossmatch_overlay: bool = False,
@@ -1771,7 +1771,7 @@ class Source:
             if cutout_data is None:
                 self.get_cutout_data(size)
 
-        if not index in self.measurements.index:
+        if index not in self.measurements.index:
             raise ValueError("Index ({index}) out of range.")
 
         if outfile is None:
