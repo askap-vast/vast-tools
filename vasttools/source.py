@@ -979,23 +979,20 @@ class Source:
         return
 
     def _get_save_name(self,
-                       epoch: str,
-                       ext: str
-                       field: str,
-                       sbid: str
+                       index: int
                        ) -> str:
         """
         Generate name of file to save to.
 
         Args:
-            epoch: Epoch corresponding to requested data
-            ext: File extension
-            field: Field of the requested data
-            sbid: SBID of the requested data
+            index: Index of the requested data
 
         Returns:
             Name of file to save.
         """
+        
+        row = self.measurements.iloc[index]
+        epoch = row.epoch
 
         if self.pipeline:
             name_epoch = epoch
@@ -1011,8 +1008,8 @@ class Source:
                 "/", "_"
             ),
             name_epoch,
-            field,
-            sbid,
+            row.field,
+            row.sbid,
             ext
         )
         return outfile
@@ -1026,10 +1023,51 @@ class Source:
         cutout_data: Optional[pd.DataFrame] = None
     ) -> None:
         """
-        Saves the FITS file cutout of the requested epoch.
+        Wrapper for _save_fits_cutout_index that will save the first
+        observation of a given epoch. This behaviour is outdated and this
+        function should not be used, but it is kept in-place in order to
+        replicate behaviour from v2.0.0 and prior.
 
         Args:
             epoch: Requested epoch.
+            outfile: File to save to, defaults to None.
+            size: Size of the cutout, defaults to None.
+            force: Whether to force the re-fetching
+                of the cutout data, defaults to `False`.
+            cutout_data: Pass external cutout_data to be used
+                instead of fetching the data, defaults to None.
+
+        Returns:
+            None
+
+        Raises:
+            ValueError: If the source does not contain the requested epoch.
+        """
+
+        if epoch not in self.epochs:
+            raise ValueError(
+                "This source does not contain Epoch {}!".format(epoch)
+            )
+
+            return
+
+        index = self.epochs.index(epoch)
+
+        self._save_fits_cutout_index(index, **kwargs)
+
+    def _save_fits_cutout_index(
+        self,
+        index: int,
+        outfile: Optional[str] = None,
+        size: Optional[Angle] = None,
+        force: bool = False,
+        cutout_data: Optional[pd.DataFrame] = None
+    ) -> None:
+        """
+        Saves the FITS file cutout of the requested epoch.
+
+        Args:
+            index: The index of the requested observation.
             outfile: File to save to, defaults to None.
             size: Size of the cutout, defaults to None.
             force: Whether to force the re-fetching
@@ -1048,22 +1086,13 @@ class Source:
             if cutout_data is None:
                 self.get_cutout_data(size)
 
-        if epoch not in self.epochs:
-            raise ValueError(
-                "This source does not contain Epoch {}!".format(epoch)
-            )
-
-            return
-
         if outfile is None:
-            outfile = self._get_save_name(epoch, ".fits")
+            outfile = self._get_save_name(index, ".fits")
         if self.outdir != ".":
             outfile = os.path.join(
                 self.outdir,
                 outfile
             )
-
-        index = self.epochs.index(epoch)
 
         if cutout_data is None:
             cutout_row = self.cutout_df.iloc[index]
@@ -1079,7 +1108,7 @@ class Source:
         hdu_stamp.writeto(outfile, overwrite=True)
 
         del hdu_stamp
-
+    
     def save_all_ann(
         self,
         crossmatch_overlay: bool = False,
@@ -1160,8 +1189,9 @@ class Source:
             if cutout_data is None:
                 self.get_cutout_data(size)
 
-        for e in self.measurements['epoch']:
-            self.save_fits_cutout(e, cutout_data=cutout_data)
+        print(self.measurements)
+        for i in self.measurements.index:
+            self._save_fits_cutout_index(i, cutout_data=cutout_data)
 
     def save_all_png_cutouts(
         self,
