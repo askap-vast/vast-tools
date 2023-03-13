@@ -1118,7 +1118,8 @@ class Source:
         Returns:
             None
         """
-        self.measurements['epoch'].apply(
+        indices = self.measurements.index.to_series()
+        indices.apply(
             self.write_ann,
             args=(
                 None,
@@ -1147,7 +1148,8 @@ class Source:
             None
         """
 
-        self.measurements['epoch'].apply(
+        indices = self.measurements.index.to_series()
+        indices.apply(
             self.write_reg,
             args=(
                 None,
