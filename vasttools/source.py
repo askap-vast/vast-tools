@@ -2032,7 +2032,7 @@ class Source:
 
     def write_ann(
         self,
-        epoch: str,
+        index: int,
         outfile: str = None,
         crossmatch_overlay: bool = False,
         size: Optional[Angle] = None,
@@ -2044,7 +2044,7 @@ class Source:
         within the image.
 
         Args:
-            epoch: The requested epoch.
+            index: The index correpsonding to the requested observation.
             outfile: Name of the file to write, defaults to None.
             crossmatch_overlay: If True, a circle is added to the
                 annotation file output denoting the crossmatch radius,
@@ -2063,14 +2063,12 @@ class Source:
                 self.get_cutout_data(size)
 
         if outfile is None:
-            outfile = self._get_save_name(epoch, ".ann")
+            outfile = self._get_save_name(index, ".ann")
         if self.outdir != ".":
             outfile = os.path.join(
                 self.outdir,
                 outfile
             )
-
-        index = self.epochs.index(epoch)
 
         neg = False
         with open(outfile, 'w') as f:
@@ -2133,7 +2131,7 @@ class Source:
 
     def write_reg(
         self,
-        epoch: str,
+        index: int,
         outfile: Optional[str] = None,
         crossmatch_overlay: bool = False,
         size: Optional[Angle] = None,
@@ -2144,7 +2142,7 @@ class Source:
         Write a DS9 region file containing all selavy sources within the image
 
         Args:
-            epoch: The requested epoch.
+            index: The index correpsonding to the requested observation.
             outfile: Name of the file to write, defaults to None.
             crossmatch_overlay: If True, a circle is added to the
                 annotation file output denoting the crossmatch radius,
@@ -2163,14 +2161,13 @@ class Source:
                 self.get_cutout_data(size)
 
         if outfile is None:
-            outfile = self._get_save_name(epoch, ".reg")
+            outfile = self._get_save_name(index, ".reg")
         if self.outdir != ".":
             outfile = os.path.join(
                 self.outdir,
                 outfile
             )
 
-        index = self.epochs.index(epoch)
         with open(outfile, 'w') as f:
             f.write("# Region file format: DS9 version 4.0\n")
             f.write("global color=green font=\"helvetica 10 normal\" "
