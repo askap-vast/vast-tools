@@ -47,7 +47,6 @@ from typing import List, Tuple, Optional, Union
 
 from radio_beam import Beam
 
-from vasttools import RELEASED_EPOCHS
 from vasttools.survey import Image
 from vasttools.utils import crosshair, filter_selavy_components, read_selavy
 from vasttools.tools import offset_postagestamp_axes
