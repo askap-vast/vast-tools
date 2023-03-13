@@ -999,10 +999,14 @@ class Source:
             ext = f".{ext}"
 
         source_name = self.name.replace(" ", "_").replace("/", "_")
-        field_name = row.field
-        sbid = row.sbid
+        
+        if self.pipeline:
+            outfile = f"{source_name}_{index}{ext}"
+        else:
+            field_name = row.field
+            sbid = row.sbid
 
-        outfile = f"{source_name}_{field_name}_SB{sbid}{ext}"
+            outfile = f"{source_name}_{field_name}_SB{sbid}{ext}"
 
         return outfile
 
