@@ -1073,7 +1073,7 @@ class Source:
             None
 
         Raises:
-            ValueError: If the source does not contain the requested epoch.
+            ValueError: If the source does not contain the requested index.
         """
 
         if (self._cutouts_got is False) or (force):
