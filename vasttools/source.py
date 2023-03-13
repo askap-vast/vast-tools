@@ -808,8 +808,7 @@ class Source:
                 'maj_axis',
                 'min_axis',
                 'pos_ang'
-            ]
-            )
+            ])
 
         selavy_coords = SkyCoord(
             selavy_components.ra_deg_cont.values,
