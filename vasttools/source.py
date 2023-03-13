@@ -841,7 +841,7 @@ class Source:
 
     def show_png_cutout(
         self,
-        epoch: str,
+        index: int,
         selavy: bool = True,
         percentile: float = 99.9,
         zscale: bool = False,
@@ -857,11 +857,11 @@ class Source:
         offset_axes: bool = True,
     ) -> plt.Figure:
         """
-        Wrapper for make_png to make nicer interactive function.
+        Wrapper for make_png to make nicer interactive function. 
         No access to save.
 
         Args:
-            epoch: The epoch to show.
+            index: Index of the observation to show.
             selavy: If `True` then selavy overlay are shown,
                  defaults to `True`.
             percentile: The value passed to the percentile
@@ -887,7 +887,7 @@ class Source:
         """
 
         fig = self.make_png(
-            epoch,
+            index,
             selavy=selavy,
             percentile=percentile,
             zscale=zscale,
@@ -907,7 +907,7 @@ class Source:
 
     def save_png_cutout(
         self,
-        epoch: str,
+        index: int,
         selavy: bool = True,
         percentile: float = 99.9,
         zscale: bool = False,
@@ -929,7 +929,7 @@ class Source:
         Always save.
 
         Args:
-            epoch: The epoch to show.
+            index: Index of the observation to show.
             selavy: If `True` then selavy overlay are shown,
                  defaults to `True`.
             percentile: The value passed to the percentile
@@ -957,7 +957,7 @@ class Source:
             None
         """
         fig = self.make_png(
-            epoch,
+            index,
             selavy=selavy,
             percentile=percentile,
             zscale=zscale,
@@ -1262,7 +1262,7 @@ class Source:
                 cutout_data=cutout_data
             )
 
-        self.measurements['epoch'].apply(
+        self.measurements.index.apply(
             self.make_png,
             args=(
                 selavy,
@@ -1703,7 +1703,7 @@ class Source:
 
     def make_png(
         self,
-        epoch: str,
+        index: int,
         selavy: bool = True,
         percentile: float = 99.9,
         zscale: bool = False,
@@ -1728,7 +1728,7 @@ class Source:
         Save a PNG of the image postagestamp.
 
         Args:
-            epoch: The requested epoch.
+            index: The index correpsonding to the requested observation.
             selavy: `True` to overlay selavy components, `False` otherwise.
             percentile: The value passed to the percentile
                 normalization function, defaults to 99.9.
@@ -1756,7 +1756,7 @@ class Source:
             force: Whether to force the re-fetching of the cutout data,
                 defaults to `False`.
             disable_autoscaling: Turn off the consistent normalization and
-                calculate the normalizations separately for each epoch,
+                calculate the normalizations separately for each observation,
                 defaults to `False`.
             cutout_data: Pass external cutout_data to be used
                 instead of fetching the data, defaults to None.
@@ -1769,30 +1769,24 @@ class Source:
             None if save is `True` or the figure object if `False`
 
         Raises:
-            ValueError: If the source does not contain the requested epoch.
+            ValueError: If the index is out of range.
         """
 
         if (self._cutouts_got is False) or (force):
             if cutout_data is None:
                 self.get_cutout_data(size)
 
-        if epoch not in self.epochs:
-            raise ValueError(
-                "This source does not contain Epoch {}!".format(epoch)
-            )
-
-            return
+        if not index in self.measurements.index:
+            raise ValueError("Index ({index}) out of range.")
 
         if outfile is None:
-            outfile = self._get_save_name(epoch, ".png")
+            outfile = self._get_save_name(index, ".png")
 
         if self.outdir != ".":
             outfile = os.path.join(
                 self.outdir,
                 outfile
             )
-
-        index = self.epochs.index(epoch)
 
         if cutout_data is None:
             cutout_row = self.cutout_df.iloc[index]
@@ -1965,13 +1959,11 @@ class Source:
             cb.set_label("mJy/beam")
 
         if title is None:
-            epoch_time = self.measurements[
-                self.measurements['epoch'] == epoch
-            ].iloc[0].dateobs
-            title = "{} Epoch {} {}".format(
+            obs_time = self.measurements.iloc[index].dateobs
+            title = "{} SB{} {}".format(
                 self.name,
-                epoch,
-                epoch_time.strftime(
+                self.measurements.iloc[index].dateobs,
+                obs_time.strftime(
                     "%Y-%m-%d %H:%M:%S"
                 )
             )
