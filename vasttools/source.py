@@ -1189,7 +1189,6 @@ class Source:
             if cutout_data is None:
                 self.get_cutout_data(size)
 
-        print(self.measurements)
         for i in self.measurements.index:
             self._save_fits_cutout_index(i, cutout_data=cutout_data)
 
