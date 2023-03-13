@@ -708,8 +708,8 @@ class TestSource:
     @pytest.mark.parametrize(
         "pipeline,expected",
         [
-            (False, 'PSR_J2129-04_EPOCH01.fits'),
-            (True, 'PSR_J2129-04_EPOCH1.fits')
+            (False, 'PSR_J2129-04_VAST_2118-06A_SB9668.fits'),
+            (True, 'PSR_J2129-04_0.fits')
         ]
     )
     def test__get_save_name(
@@ -731,7 +731,7 @@ class TestSource:
         """
         source = source_instance(pipeline=pipeline)
 
-        outname = source._get_save_name('1', '.fits')
+        outname = source._get_save_name(0, '.fits')
 
         assert outname == expected
 
@@ -788,7 +788,7 @@ class TestSource:
         source = source_instance(pipeline=pipeline, add_cutout_data=True)
 
         png_plot = source.make_png(
-            '1',
+            0,
             selavy=selavy,
             no_islands=no_islands,
             no_colorbar=no_colorbar,
@@ -802,9 +802,9 @@ class TestSource:
 
         if title is None:
             if pipeline:
-                title = 'PSR J2129-04 Epoch 1 2019-08-27 13:38:38'
+                title = 'PSR J2129-04 2019-08-27 13:38:38'
             else:
-                title = 'PSR J2129-04 Epoch 1 2019-08-27 18:52:00'
+                title = 'PSR J2129-04 2019-08-27 18:52:00'
 
         assert isinstance(png_plot, Figure)
         assert result_title == title
@@ -853,7 +853,7 @@ class TestSource:
         source = source_instance(pipeline=pipeline, add_cutout_data=True)
 
         png_plot = source.make_png(
-            '1',
+            0,
             percentile=percentile,
             zscale=zscale,
             contrast=contrast
@@ -892,7 +892,7 @@ class TestSource:
             return_value=[dummy_fits]
         )
 
-        result = source.skyview_contour_plot('1', 'suveycode')
+        result = source.skyview_contour_plot(0, 'suveycode')
 
         assert isinstance(result, Figure)
         plt.close(result)
@@ -928,7 +928,7 @@ class TestSource:
         )
 
         if pipeline:
-            filename = 'PSR_J2129-04_EPOCH1.ann'
+            filename = 'PSR_J2129-04_0.ann'
             expected = (
                 "COORD W\n"
                 "PA SKY\n"
@@ -954,7 +954,7 @@ class TestSource:
                 "TEXT 315.56781 -0.299919 island_1004\n"
             )
         else:
-            filename = 'PSR_J2129-04_EPOCH01.ann'
+            filename = 'PSR_J2129-04_VAST_2118-06A_SB9668.ann'
             expected = (
                 "COORD W\n"
                 "PA SKY\n"
@@ -980,7 +980,7 @@ class TestSource:
                 "TEXT 315.56781 -0.299919 island_1004\n"
             )
 
-        source.write_ann('1')
+        source.write_ann(0)
 
         write_calls = (
             mocker_file_open.return_value.__enter__().write.call_args_list
@@ -1025,7 +1025,7 @@ class TestSource:
         )
 
         if pipeline:
-            filename = 'PSR_J2129-04_EPOCH1.reg'
+            filename = 'PSR_J2129-04_0.reg'
             expected = (
                 "# Region file format: DS9 version 4.0\n"
                 "global color=green font=\"helvetica 10 normal\" "
@@ -1056,7 +1056,7 @@ class TestSource:
                 "# color=green\n"
             )
         else:
-            filename = 'PSR_J2129-04_EPOCH01.reg'
+            filename = 'PSR_J2129-04_VAST_2118-06A_SB9668.reg'
             expected = (
                 "# Region file format: DS9 version 4.0\n"
                 "global color=green font=\"helvetica 10 normal\" select=1 "
@@ -1087,7 +1087,7 @@ class TestSource:
                 "# color=green\n"
             )
 
-        source.write_reg('1')
+        source.write_reg(0)
 
         write_calls = (
             mocker_file_open.return_value.__enter__().write.call_args_list
