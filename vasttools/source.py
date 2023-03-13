@@ -979,39 +979,31 @@ class Source:
         return
 
     def _get_save_name(self,
-                       index: int
+                       index: int,
+                       ext: str
                        ) -> str:
         """
         Generate name of file to save to.
 
         Args:
             index: Index of the requested data
+            ext: File extension
 
         Returns:
             Name of file to save.
         """
         
         row = self.measurements.iloc[index]
-        epoch = row.epoch
-
-        if self.pipeline:
-            name_epoch = epoch
-        else:
-            if "-" in epoch:
-                e_split = epoch.split("-")
-                e = e_split[0]
-                name_epoch = RELEASED_EPOCHS[e] + "-" + e_split[1]
-            else:
-                name_epoch = RELEASED_EPOCHS[epoch]
-        outfile = "{}_EPOCH{}_{}_{}".format(
-            self.name.replace(" ", "_").replace(
-                "/", "_"
-            ),
-            name_epoch,
-            row.field,
-            row.sbid,
-            ext
-        )
+        
+        if not ext.startswith("."):
+            ext = f".{ext}"
+        
+        source_name = self.name.replace(" ", "_").replace("/", "_")
+        field_name = row.field
+        sbid = row.sbid
+        
+        outfile = f"{source_name}_{field_name}_SB{sbid}{ext}"
+        
         return outfile
 
     def save_fits_cutout(
@@ -1262,7 +1254,8 @@ class Source:
                 cutout_data=cutout_data
             )
 
-        self.measurements.index.apply(
+        indices = self.measurements.index.to_series()
+        indices.apply(
             self.make_png,
             args=(
                 selavy,
@@ -1960,9 +1953,10 @@ class Source:
 
         if title is None:
             obs_time = self.measurements.iloc[index].dateobs
+            sbid = self.measurements.iloc[index].sbid
             title = "{} SB{} {}".format(
                 self.name,
-                self.measurements.iloc[index].dateobs,
+                sbid,
                 obs_time.strftime(
                     "%Y-%m-%d %H:%M:%S"
                 )
