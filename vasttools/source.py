@@ -1548,7 +1548,7 @@ class Source:
 
     def skyview_contour_plot(
         self,
-        epoch: str,
+        index: int,
         survey: str,
         contour_levels: List[float] = [3., 5., 10., 15.],
         percentile: float = 99.9,
@@ -1567,7 +1567,7 @@ class Source:
         the source location and overlays ASKAP contours.
 
         Args:
-            epoch: Epoch requested for the ASKAP contours.
+            index: Index of the requested ASKAP observation.
             survey: Survey requested to be fetched using SkyView.
             contour_levels: Contour levels to plot which are multiples
                  of the local rms, defaults to [3., 5., 10., 15.].
@@ -1592,7 +1592,7 @@ class Source:
             None if save is `True` or the figure object if `False`
 
         Raises:
-            ValueError: If the source does not contain the requested epoch.
+            ValueError: If the index is out of range.
         """
 
         if (self._cutouts_got is False) or (force):
@@ -1600,23 +1600,18 @@ class Source:
 
         size = self._size
 
-        if epoch not in self.epochs:
-            raise ValueError(
-                "This source does not contain Epoch {}!".format(epoch)
-            )
-
+        if index > len(self.measurements):
+            raise ValueError(f"Cannot access {index}th measurement.")
             return
 
         if outfile is None:
-            outfile = self._get_save_name(epoch, ".png")
+            outfile = self._get_save_name(index, ".png")
 
         if self.outdir != ".":
             outfile = os.path.join(
                 self.outdir,
                 outfile
             )
-
-        index = self.epochs.index(epoch)
 
         try:
             paths = SkyView.get_images(
@@ -1668,14 +1663,13 @@ class Source:
         )
 
         if title is None:
-            if self.pipeline:
-                title = "'{}' Epoch {} {}".format(
-                    self.name, epoch, survey
+            obs_time = self.measurements.iloc[index].dateobs
+            title = "{} {}".format(
+                self.name,
+                obs_time.strftime(
+                    "%Y-%m-%d %H:%M:%S"
                 )
-            else:
-                title = "VAST Epoch {} '{}' {}".format(
-                    epoch, self.name, survey
-                )
+            )
 
         ax.set_title(title)
 
@@ -1775,8 +1769,8 @@ class Source:
             if cutout_data is None:
                 self.get_cutout_data(size)
 
-        if index not in self.measurements.index:
-            raise ValueError("Index ({index}) out of range.")
+        if index > len(self.measurements):
+            raise ValueError(f"Cannot access {index}th measurement.")
 
         if outfile is None:
             outfile = self._get_save_name(index, ".png")
@@ -1959,10 +1953,8 @@ class Source:
 
         if title is None:
             obs_time = self.measurements.iloc[index].dateobs
-            sbid = self.measurements.iloc[index].sbid
-            title = "{} SB{} {}".format(
+            title = "{} {}".format(
                 self.name,
-                sbid,
                 obs_time.strftime(
                     "%Y-%m-%d %H:%M:%S"
                 )
