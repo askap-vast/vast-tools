@@ -2124,8 +2124,8 @@ class Query:
         self.fields_df['dateobs'] = pd.to_datetime(
             self.fields_df['dateobs']
         )
-        
-        #All field names should start with VAST, not RACS
+
+        # All field names should start with VAST, not RACS
         self.fields_df['field'] = self.fields_df['field'].str.replace("RACS",
                                                                       "VAST"
                                                                       )
