@@ -808,8 +808,7 @@ class Source:
                 'maj_axis',
                 'min_axis',
                 'pos_ang'
-            ]
-            )
+            ])
 
         selavy_coords = SkyCoord(
             selavy_components.ra_deg_cont.values,
@@ -1033,7 +1032,7 @@ class Source:
             None
 
         Raises:
-            ValueError: If the source does not contain the requested epoch.
+            ValueError: If the source does not contain the requested index.
         """
 
         if (self._cutouts_got is False) or (force):
