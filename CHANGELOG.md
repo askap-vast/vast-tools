@@ -23,7 +23,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added tools for new epoch addition: add datetimes to fits images create fields csv files, create and update MOCs [#298](https://github.com/askap-vast/vast-tools/pull/298)
 
 #### Changed
-
+- Changed handling of data product generation from epoch-based to index-based [#403](https://github.com/askap-vast/vast-tools/pull/403)
 - Updated GitHub actions Gr1N/setup-poetry to v7 [#385](https://github.com/askap-vast/vast-tools/pull/385)
 - Updated numpy to ~1.22.1 [#380](https://github.com/askap-vast/vast-tools/pull/380)
 - Removed epoch 12 warning [#361](https://github.com/askap-vast/vast-tools/pull/361)
@@ -66,6 +66,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#403](https://github.com/askap-vast/vast-tools/pull/403): feat, docs: Changed data product generation from epoch-based to index-based
 - [#405](https://github.com/askap-vast/vast-tools/pull/405): fix: Fix incorrect handling of RACS-named fields
 - [#370](https://github.com/askap-vast/vast-tools/pull/370): feat, docs: Add file validation to check what data is available and remove anything that is not available from the query.
 - [#398](https://github.com/askap-vast/vast-tools/pull/398): fix, docs: Fix incorrect logging in query.py and incorrect variable names in query documentation
