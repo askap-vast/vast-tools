@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Added
 
+- Added access to epochs 22, 23, 24, 25, 26, 28 (RACS-high), 29 (RACS-low-2) [#406](https://github.com/askap-vast/vast-tools/pull/406)
 - Added `_validate files` to `query.Query` class to ensure that only accessible data is queried [#370](https://github.com/askap-vast/vast-tools/pull/370)
 - Added logging to `pipeline.PipeRun` [#383](https://github.com/askap-vast/vast-tools/pull/383)
 - Added `tools.wise_color_color_plot` to create WISE color-color plots [#379](https://github.com/askap-vast/vast-tools/pull/379)
@@ -66,6 +67,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#406](https://github.com/askap-vast/vast-tools/pull/406): feat: Add epochs 22, 23, 24, 25, 26, 28 (RACS-high), 29 (RACS-low-2)
 - [#403](https://github.com/askap-vast/vast-tools/pull/403): feat, docs: Changed data product generation from epoch-based to index-based
 - [#405](https://github.com/askap-vast/vast-tools/pull/405): fix: Fix incorrect handling of RACS-named fields
 - [#370](https://github.com/askap-vast/vast-tools/pull/370): feat, docs: Add file validation to check what data is available and remove anything that is not available from the query.
