@@ -42,6 +42,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Fixed
 
+- Changed field name handling to correctly convert RACS -> VAST [#405](https://github.com/askap-vast/vast-tools/pull/405)
 - Fixed variable names in query documentation example [#398](https://github.com/askap-vast/vast-tools/pull/398)
 - Updated logging in query.py to correctly reference the file type it was dealing with [#398](https://github.com/askap-vast/vast-tools/pull/398)
 - Fixed handling of empty list of planets in query [#390](https://github.com/askap-vast/vast-tools/pull/390)
@@ -66,6 +67,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 #### List of PRs
 
 - [#403](https://github.com/askap-vast/vast-tools/pull/403): feat, docs: Changed data product generation from epoch-based to index-based
+- [#405](https://github.com/askap-vast/vast-tools/pull/405): fix: Fix incorrect handling of RACS-named fields
 - [#370](https://github.com/askap-vast/vast-tools/pull/370): feat, docs: Add file validation to check what data is available and remove anything that is not available from the query.
 - [#398](https://github.com/askap-vast/vast-tools/pull/398): fix, docs: Fix incorrect logging in query.py and incorrect variable names in query documentation
 - [#390](https://github.com/askap-vast/vast-tools/pull/390): fix: Update handling of planets to be consistent with regular sources.

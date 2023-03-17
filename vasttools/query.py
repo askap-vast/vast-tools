@@ -2125,6 +2125,11 @@ class Query:
             self.fields_df['dateobs']
         )
 
+        # All field names should start with VAST, not RACS
+        self.fields_df['field'] = self.fields_df['field'].str.replace("RACS",
+                                                                      "VAST"
+                                                                      )
+
         self.logger.info("Done.")
         self.fields_found = True
 
