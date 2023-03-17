@@ -1011,47 +1011,6 @@ class Source:
 
     def save_fits_cutout(
         self,
-        epoch: str,
-        outfile: Optional[str] = None,
-        size: Optional[Angle] = None,
-        force: bool = False,
-        cutout_data: Optional[pd.DataFrame] = None
-    ) -> None:
-        """
-        Wrapper for _save_fits_cutout_index that will save the first
-        observation of a given epoch. This behaviour is outdated and this
-        function should not be used, but it is kept in-place in order to
-        replicate behaviour from v2.0.0 and prior.
-
-        Args:
-            epoch: Requested epoch.
-            outfile: File to save to, defaults to None.
-            size: Size of the cutout, defaults to None.
-            force: Whether to force the re-fetching
-                of the cutout data, defaults to `False`.
-            cutout_data: Pass external cutout_data to be used
-                instead of fetching the data, defaults to None.
-
-        Returns:
-            None
-
-        Raises:
-            ValueError: If the source does not contain the requested epoch.
-        """
-
-        if epoch not in self.epochs:
-            raise ValueError(
-                "This source does not contain Epoch {}!".format(epoch)
-            )
-
-            return
-
-        index = self.epochs.index(epoch)
-
-        self._save_fits_cutout_index(index, **kwargs)
-
-    def _save_fits_cutout_index(
-        self,
         index: int,
         outfile: Optional[str] = None,
         size: Optional[Angle] = None,
@@ -1059,7 +1018,7 @@ class Source:
         cutout_data: Optional[pd.DataFrame] = None
     ) -> None:
         """
-        Saves the FITS file cutout of the requested epoch.
+        Saves the FITS file cutout of the requested observation.
 
         Args:
             index: The index of the requested observation.
