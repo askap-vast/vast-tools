@@ -13,7 +13,7 @@ __version__ = "2.0.0-dev"
 
 
 RELEASED_EPOCHS = {
-    "0": "00",  # RACS, needs check that it exists, not part of VAST release
+    "0": "00",  # RACS-low, needs check that it exists, not part of VAST release
     "1": "01",
     "2": "02",
     "3x": "03x",
@@ -27,25 +27,35 @@ RELEASED_EPOCHS = {
     "11x": "11x",
     "12": "12",
     "13": "13",
-    "14": "14",
+    "14": "14", # RACS-mid, needs check that it exists, not part of VAST release
     "17": "17",
     "18": "18",
     "19": "19",
     "20": "20",
     "21": "21",
+    "22": "22",
+    "23": "23",
+    "24": "24",
+    "25": "25",
+    "26": "26",
+    "28": "28", # RACS-high, needs check that it exists, not part of VAST release
+    "29": "29", # RACS-low-2, needs check that it exists, not part of VAST release
 }
 
 OBSERVED_EPOCHS = {
 }
 
 BASE_EPOCHS = {
-    "RACS": ['0', '14'],
+    "RACS": ['0', '14', '28'],
     "VAST": ['1', '18']
 }
 
 RACS_EPOCHS = [
     '0',
-    '14'
+    '14',
+    '28',
+    '29'
+    
 ]
 
 ALLOWED_PLANETS = [
@@ -62,5 +72,6 @@ ALLOWED_PLANETS = [
 
 FREQ_CONVERSION = {
     864.5: 887.5,
-    1272.5: 1367.5
+    1272.5: 1367.5,
+    1655.5: 1655.5
 }
