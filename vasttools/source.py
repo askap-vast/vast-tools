@@ -1145,7 +1145,7 @@ class Source:
                 self.get_cutout_data(size)
 
         for i in self.measurements.index:
-            self._save_fits_cutout_index(i, cutout_data=cutout_data)
+            self.save_fits_cutout(i, cutout_data=cutout_data)
 
     def save_all_png_cutouts(
         self,
