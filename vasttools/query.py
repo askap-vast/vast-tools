@@ -44,7 +44,8 @@ from typing import Optional, List, Tuple, Dict, Union
 from pathlib import Path
 
 from vasttools import (
-    RELEASED_EPOCHS, OBSERVED_EPOCHS, ALLOWED_PLANETS, BASE_EPOCHS, RACS_EPOCHS
+    RELEASED_EPOCHS, OBSERVED_EPOCHS, ALLOWED_PLANETS, BASE_EPOCHS,
+    RACS_EPOCHS, P1_EPOCHS, P2_EPOCHS
 )
 from vasttools.survey import Fields, Image
 from vasttools.survey import (
@@ -2437,20 +2438,8 @@ class Query:
                             stacklevel=2
                         )
 
-        # RACS check
-        self.racs = False
-        for racs_epoch in RACS_EPOCHS:
-            if racs_epoch in epochs:
-                epoch_str = "EPOCH{}".format(racs_epoch.zfill(2))
-                exists = os.path.isdir(os.path.join(self.base_folder,
-                                                    epoch_str)
-                                       )
-                if not exists:
-                    self.logger.warning(
-                        'RACS {} directory not found!'.format(epoch_str)
-                    )
-                else:
-                    self.racs = True
+        # survey check
+        self._check_survey(epochs)
 
         if self.racs:
             self.logger.warning('RACS data selected!')
@@ -2465,6 +2454,34 @@ class Query:
 
         return epochs
 
+    def _check_survey(self, epochs: list):
+        """
+        Check which surveys are being queried (e.g. RACS, pilot/full VAST).
+        
+        Args:
+            epochs: Requested epochs to query
+        """
+        
+        self.racs = False
+        self.vast_p1 = False
+        self.vast_p2 = False
+        self.vast_full = False
+        
+        non_full_epochs = RACS_EPOCHS+P1_EPOCHS+P2_EPOCHS
+        all_epochs = RELEASED_EPOCHS.keys()
+        full_epochs = set(all_epochs)-set(non_full_epochs)
+        
+        epochs_set = set(epochs)
+        if len(epochs_set & set(RACS_EPOCHS)) > 0:
+            self.racs = True
+        if len(epochs_set & set(P1_EPOCHS)) > 0:
+            self.vast_p1 = True
+        if len(epochs_set & set(P2_EPOCHS)) > 0:
+            self.vast_p2 = True
+        if len(epochs_set & set(full_epochs)) > 0:
+            self.vast_full = True
+        
+        
     def _get_stokes(self, req_stokes: str) -> str:
         """
         Set the stokes Parameter
