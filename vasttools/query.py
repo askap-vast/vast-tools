@@ -1996,8 +1996,10 @@ class Query:
 
         if self.racs:
             base_fc = 'RACS'
-        else:
+        elif self.vast_p1 or self.vast_p2:
             base_fc = 'VAST'
+        elif self.vast_full:
+            base_fc = 'RACS'
         
         self.logger.info(
             f"Matching queried sources to {base_fc} fields..."
@@ -2020,7 +2022,7 @@ class Query:
 
         # if RACS is being use we convert all the names to 'VAST'
         # to match the VAST field names, makes matching easier.
-        if self.racs:
+        if base_fc != 'VAST':
             field_centres['field'] = [
                 f.replace("RACS", "VAST") for f in field_centres.field
             ]
@@ -2064,10 +2066,11 @@ class Query:
                     meta=meta,
                     axis=1,
                     result_type='expand'
-                ).compute(num_workers=self.ncpu, scheduler='processes')
+                ).compute(num_workers=self.ncpu, scheduler='single-threaded')
             )
 
             self.logger.debug("Finished field matching.")
+            self.logger.debug(self.fields_df)
             self.fields_df = self.fields_df.dropna()
             if self.fields_df.empty:
                 raise Exception(
@@ -2077,6 +2080,8 @@ class Query:
                 'field_per_epoch'
             ).reset_index(drop=True)
 
+            self.logger.debug(self.fields_df)
+            self.logger.debug(self.fields_df['field_per_epoch'])
             self.fields_df[
                 ['epoch', 'field', 'sbid', 'dateobs', 'frequency']
             ] = pd.DataFrame(
@@ -2179,10 +2184,13 @@ class Query:
             Tuple containing the field information.
         """
 
+        self.logger.debug(row)
         seps = row.skycoord.separation(fields_coords)
         accept = seps.deg < self.settings['max_sep']
+        self.logger.debug(accept.sum())
         fields = np.unique(fields_names[accept])
-        if self.racs:
+        self.logger.debug(fields)
+        if self.racs or self.vast_full:
             vast_fields = np.array(
                 [f.replace("RACS", "VAST") for f in fields]
             )
@@ -2207,13 +2215,21 @@ class Query:
         sbids = []
         dateobs = []
         freqs = []
-
+        
+        self.logger.debug(fields)
+        self.logger.debug(primary_field)
+        
         for i in self.settings['epochs']:
+            self.logger.debug(f"Epoch {i}")
             if i not in RACS_EPOCHS and self.racs:
+                the_fields = vast_fields
+            elif i not in RACS_EPOCHS and self.vast_full:
                 the_fields = vast_fields
             else:
                 the_fields = fields
 
+            self.logger.debug(the_fields)
+            
             available_fields = [
                 f for f in the_fields if f in self._epoch_fields.loc[
                     i
