@@ -166,6 +166,57 @@ class VASTMOCS(object):
 
         return moc
 
+    def _load_pilot_footprint(self):
+        """
+        Load the complete footprint of the pilot survey
+        """"
+        
+        for i in range(5):
+            moc = load_pilot_field_moc(i)
+            if i == 0:
+                pilot_moc = moc
+            else:
+                pilot_moc = pilot_moc.union(moc)
+        
+        return pilot_moc
+    
+    def _load_full_survey_footprint(self):
+        """
+        Load the complete footprint of the full survey
+        """"
+        
+        for i, subsurvey in enumerate(['EQUATORIAL', 'HIGHDEC', 'GALACTIC']):
+            moc_name = f'VAST_{subsurvey}.fits'
+
+            with importlib.resources.path(
+                "vasttools.data.mocs",
+                moc_name
+            ) as moc_path:
+                moc_path = moc_path.resolve()
+
+            moc = MOC.from_fits(moc_path)
+            
+            if i == 0:
+                survey_moc = moc
+            else:
+                survey_moc = survey_moc.union(moc)
+        
+        return survey_moc
+
+    def load_survey_footprint(self, survey):
+        """
+        Load the footprint of either the pilot or full VAST surveys
+        """
+        
+        if survey not ['pilot', 'full']:
+            raise Exception(
+                f"Survey must be either 'pilot' or 'full', not {survey}"
+            )
+        if survey == 'pilot':
+            return self._load_pilot_footprint()
+        elif survey == 'full':
+            return self._load_full_survey_footprint()
+            
     def query_vizier_vast_pilot(
         self,
         table_id: str,
