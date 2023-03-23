@@ -417,11 +417,11 @@ class Query:
         if self.settings['tiles'] and self.settings['stokes'].lower() != "i":
             if self.vast_full:
                 self.logger.warning("Stokes V tiles are only available for the"
-                                    "full VAST survey. Proceed with caution!"
+                                    " full VAST survey. Proceed with caution!"
                 )
             else:
                 self.logger.critical("Stokes V tiles are only available for "
-                                    "the full VAST survey."
+                                     "the full VAST survey."
                 )
                 return False
 
@@ -1140,7 +1140,7 @@ class Query:
         if self.fields_found is False:
             self.find_fields()
 
-        self.logger.info("Finding sources in PILOT data...")
+        self.logger.info("Finding sources in VAST data...")
 
         self.sources_df = self.fields_df.sort_values(
             by=['name', 'dateobs']
@@ -1992,14 +1992,16 @@ class Query:
         Raises:
             Exception: No sources are found within the requested footprint.
         """
-        self.logger.info(
-            "Matching queried sources to VAST Pilot fields..."
-        )
+        
 
         if self.racs:
             base_fc = 'RACS'
         else:
             base_fc = 'VAST'
+        
+        self.logger.info(
+            f"Matching queried sources to {base_fc} fields..."
+        )
 
         base_epoch = BASE_EPOCHS[base_fc]
 
@@ -2132,7 +2134,7 @@ class Query:
             )
         else:
             self.logger.info(
-                "%i/%i sources in VAST Pilot footprint.",
+                "%i/%i sources in VAST footprint.",
                 self.num_sources_searched,
                 prev_num
             )
