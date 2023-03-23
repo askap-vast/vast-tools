@@ -2353,7 +2353,7 @@ class Query:
         """
         cols = ['ra', 'dec', 'name', 'skycoord', 'stokes']
 
-        if '0' in self.settings['epochs']:
+        if self.racs:
             mask = self.coords.dec.deg > 42
 
             if mask.any():
@@ -2364,14 +2364,26 @@ class Query:
                 self.source_names = self.source_names[~mask]
         else:
             mocs = VASTMOCS()
-            vast_pilot_moc = mocs.load_pilot_epoch_moc('1')
-            mask = vast_pilot_moc.contains(
+            
+            pilot = self.vast_p1 or self.vast_p2
+            
+            if pilot:
+                footprint_moc = mocs.load_survey_footprint('pilot')
+                
+            if self.vast_full:
+                full_moc = mocs.load_survey_footprint('full')
+                if pilot:
+                    footprint_moc = footprint_moc.union(full_moc)
+                else:
+                    footprint_moc = full_moc
+            
+            mask = footprint_moc.contains(
                 self.coords.ra, self.coords.dec, keep_inside=False
             )
             if mask.any():
                 self.logger.warning(
-                    "Removing %i sources outside"
-                    " the VAST Pilot Footprint", sum(mask)
+                    "Removing %i sources outside the "
+                    "requested survey footprint", sum(mask)
                 )
                 self.coords = self.coords[~mask]
                 self.source_names = self.source_names[~mask]
