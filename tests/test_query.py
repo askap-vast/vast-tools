@@ -570,36 +570,65 @@ class TestQuery:
 
         assert str(excinfo.value) == f"Base folder {test_dir} not found!"
 
-    def test_init_failure_stokes_v_tiles(self, mocker) -> None:
+    @pytest.mark.parametrize(
+        "vast_pilot,vast_full,fails",
+        [
+            (True,False,True),
+            (True,True,False),
+            (False,True,False),
+        ]
+    )
+    def test_init_failure_stokes_v_tiles(self,
+                                         vast_pilot: bool,
+                                         vast_full: bool,
+                                         fails: bool,
+                                         mocker) -> None:
         """
         Tests the initialisation failure of a Query object.
 
         Specifically when Stokes V is requested on tile images.
 
         Args:
+            vast_pilot: Whether to include VAST pilot epochs.
+            vast_full: Whether to include VAST full survey epochs.
+            fails: Whether the initialisation should fail.
             mocker: The pytest-mock mocker object.
 
         Returns:
             None
         """
-        with pytest.raises(vtq.QueryInitError) as excinfo:
-            isdir_mocker = mocker.patch(
+        epochs = []
+        if vast_pilot:
+            epochs.append("1")
+        if vast_full:
+            epochs.append("22")
+
+        isdir_mocker = mocker.patch(
                 'vasttools.query.os.path.isdir',
                 return_value=True
             )
-            test_dir = '/testing/folder'
-            query = vtq.Query(
-                epochs='all-vast',
-                planets=['Mars'],
-                base_folder=test_dir,
-                stokes='v',
-                use_tiles=True
+        test_dir = '/testing/folder'
+            
+        if fails:
+            with pytest.raises(vtq.QueryInitError) as excinfo:
+                query = vtq.Query(
+                    epochs=",".join(epochs),
+                    planets=['Mars'],
+                    base_folder=test_dir,
+                    stokes='v',
+                    use_tiles=True
+                )
+            assert str(excinfo.value).startswith(
+                "Problems found in query settings!"
             )
-
-        assert str(excinfo.value).startswith(
-            "Problems found in query settings!"
-        )
-
+        else:
+            query = vtq.Query(
+                    epochs=",".join(epochs),
+                    planets=['Mars'],
+                    base_folder=test_dir,
+                    stokes='v',
+                    use_tiles=True
+                )
     def test_init_failure_no_sources_in_footprint(
         self,
         pilot_moc_mocker: MOC,
@@ -641,7 +670,7 @@ class TestQuery:
             )
 
             query = vtq.Query(
-                epochs='all-vast',
+                epochs='1',
                 coords=test_coords,
                 base_folder=test_dir,
             )

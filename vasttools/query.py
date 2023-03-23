@@ -441,7 +441,7 @@ class Query:
         
         if self.vast_full and not self.settings['tiles']:
             self.logger.critical("COMBINED images are not available for "
-                                 "the full VAST survey.
+                                 "the full VAST survey."
             )
             return False
 
@@ -2508,6 +2508,10 @@ class Query:
         if len(epochs_set & set(full_epochs)) > 0:
             self.vast_full = True
         
+        self.logger.debug(f"self.racs: {self.racs}")
+        self.logger.debug(f"self.vast_p1: {self.vast_p1}")
+        self.logger.debug(f"self.vast_p2: {self.vast_p2}")
+        self.logger.debug(f"self.vast_full: {self.vast_full}")
         
     def _get_stokes(self, req_stokes: str) -> str:
         """
