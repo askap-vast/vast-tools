@@ -2353,9 +2353,12 @@ class Query:
         Returns:
             Catalogue of source positions.
         """
+        self.logger.debug("Building catalogue")
+
         cols = ['ra', 'dec', 'name', 'skycoord', 'stokes']
 
         if self.racs:
+            self.logger.debug("Using RACS footprint for masking")
             mask = self.coords.dec.deg > 42
 
             if mask.any():
@@ -2370,15 +2373,18 @@ class Query:
             pilot = self.vast_p1 or self.vast_p2
             
             if pilot:
+                self.logger.debug("Using VAST pilot footprint for masking")
                 footprint_moc = mocs.load_survey_footprint('pilot')
                 
             if self.vast_full:
+                self.logger.debug("Using full VAST footprint for masking")
                 full_moc = mocs.load_survey_footprint('full')
                 if pilot:
                     footprint_moc = footprint_moc.union(full_moc)
                 else:
                     footprint_moc = full_moc
             
+            self.logger.debug("Masking sources outside footprint")
             mask = footprint_moc.contains(
                 self.coords.ra, self.coords.dec, keep_inside=False
             )
@@ -2390,6 +2396,7 @@ class Query:
                 self.coords = self.coords[~mask]
                 self.source_names = self.source_names[~mask]
 
+        self.logger.debug("Generating catalog dataframe")
         if self.coords.shape == ():
             catalog = pd.DataFrame(
                 [[
@@ -2411,6 +2418,7 @@ class Query:
             catalog['stokes'] = self.settings['stokes']
 
         if self.simbad_names is not None:
+            self.logger.debug("Handling SIMBAD naming")
             self.simbad_names = self.simbad_names[~mask]
             catalog['simbad_name'] = self.simbad_names
 
