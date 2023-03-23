@@ -169,10 +169,10 @@ class VASTMOCS(object):
     def _load_pilot_footprint(self):
         """
         Load the complete footprint of the pilot survey
-        """"
+        """
         
         for i in range(5):
-            moc = load_pilot_field_moc(i)
+            moc = self.load_pilot_field_moc(i+1)
             if i == 0:
                 pilot_moc = moc
             else:
@@ -183,10 +183,10 @@ class VASTMOCS(object):
     def _load_full_survey_footprint(self):
         """
         Load the complete footprint of the full survey
-        """"
+        """
         
         for i, subsurvey in enumerate(['EQUATORIAL', 'HIGHDEC', 'GALACTIC']):
-            moc_name = f'VAST_{subsurvey}.fits'
+            moc_name = f'VAST_{subsurvey}.moc.fits'
 
             with importlib.resources.path(
                 "vasttools.data.mocs",
@@ -208,7 +208,7 @@ class VASTMOCS(object):
         Load the footprint of either the pilot or full VAST surveys
         """
         
-        if survey not ['pilot', 'full']:
+        if survey not in ['pilot', 'full']:
             raise Exception(
                 f"Survey must be either 'pilot' or 'full', not {survey}"
             )
