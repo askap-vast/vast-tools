@@ -415,20 +415,35 @@ class Query:
         """
 
         if self.settings['tiles'] and self.settings['stokes'].lower() != "i":
-            self.logger.critical("Only Stokes I are supported with tiles!")
-            return False
+            if self.vast_full:
+                self.logger.warning("Stokes V tiles are only available for the"
+                                    "full VAST survey. Proceed with caution!"
+                )
+            else:
+                self.logger.critical("Stokes V tiles are only available for "
+                                    "the full VAST survey."
+                )
+                return False
 
         if self.settings['tiles'] and self.settings['islands']:
-            self.logger.critical(
-                "Only component catalogues are supported with tiles!"
-            )
-            return False
+            if self.vast_p1 or self.vast_p2 or self.racs:
+                self.logger.critical(
+                    "Only component catalogues are supported with tiles "
+                    "for the selected epochs."
+                )
+                return False
 
         if self.settings['islands']:
             self.logger.warning(
                 "Image RMS and peak flux error are not available with islands."
                 "Using background_noise as a placeholder for both."
             )
+        
+        if self.vast_full and not self.settings['tiles']:
+            self.logger.critical("COMBINED images are not available for "
+                                 "the full VAST survey.
+            )
+            return False
 
         return True
 
