@@ -1915,7 +1915,7 @@ class Query:
                                                            )
             if conv_image_file.is_file():
                 image_file = conv_image_file
-                rms_file = Path(str(image_file).replace('.restored',
+                rms_file = Path(str(rms_file).replace('.restored',
                                                         '.restored.conv')
                                                         )
 
