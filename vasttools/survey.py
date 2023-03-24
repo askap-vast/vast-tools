@@ -50,11 +50,24 @@ def load_field_centres() -> pd.DataFrame:
         mid_centres = pd.read_csv(field_centres_csv)
 
     field_centres = pd.concat([low_centres, mid_centres])
-    field_centres.field = field_centres.field.str.rstrip('A')
+    
+    _strip_fieldnames(field_centres)
 
     return field_centres
 
 
+def _strip_fieldnames(df: pd.DataFrame) -> None:
+    """
+    Some field names have historically used the interleaving naming scheme,
+    but that has changed as of January 2023. This function removes the "A"
+    that is on the end of the field names
+    
+    Args:
+        df: DataFrame to strip field names from
+    """
+    
+    df.field = df.field.str.rstrip('A')
+    
 def load_fields_file(epoch: str) -> pd.DataFrame:
     """
     Load the csv field file of the requested epoch as a pandas dataframe.
@@ -140,7 +153,7 @@ def load_fields_file(epoch: str) -> pd.DataFrame:
 
     with paths[epoch] as fields_csv:
         fields_df = pd.read_csv(fields_csv, comment='#')
-        fields_df.FIELD_NAME = fields_df.FIELD_NAME.str.rstrip('A')
+        _strip_fieldnames(fields_df)
 
     return fields_df
 

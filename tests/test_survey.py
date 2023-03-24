@@ -179,6 +179,9 @@ def test_load_field_centres(mocker) -> None:
     concat_mocker = mocker.patch(
         'vasttools.survey.pd.concat', return_value=-99
     )
+    fieldstrip_mocker = mocker.patch(
+        'vasttools.survey._strip_fieldnames'
+    )
 
     result = vts.load_field_centres()
 
@@ -208,6 +211,9 @@ def test_load_fields_file(mocker) -> None:
     )
     pandas_mocker = mocker.patch(
         'vasttools.survey.pd.read_csv', return_value=-99
+    )
+    fieldstrip_mocker = mocker.patch(
+        'vasttools.survey._strip_fieldnames', return_value=-99
     )
 
     result = vts.load_fields_file(epoch)
