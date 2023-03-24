@@ -1787,9 +1787,9 @@ class Query:
             )
 
             selavy_file_fmt = (
-                "selavy-image.i.{}.SB{}.cont."
+                "selavy-image.{}.{}.SB{}.cont."
                 "taylor.0.restored.conv.{}.xml".format(
-                    field, row.sbid, cat_type
+                    self.settings['stokes'].lower(), field, row.sbid, cat_type
                 )
             )
 
@@ -1877,23 +1877,34 @@ class Query:
 
         selavy_file = self._get_selavy_path(epoch_string, row)
 
-        image_file = os.path.join(
+        image_file = Path(os.path.join(
             self.base_folder,
             epoch_string,
             dir_name,
             img_dir,
             image_file_fmt
-        )
+        ))
 
-        rms_file = os.path.join(
+        rms_file = Path(os.path.join(
             self.base_folder,
             epoch_string,
             dir_name,
             rms_dir,
             rms_file_fmt
-        )
+        ))
+        
+        if not image_file.is_file():
+            conv_image_file = Path(str(image_file).replace('.restored',
+                                                           '.restored.conv')
+                                                           )
+            if conv_image_file.is_file():
+                image_file = conv_image_file
+                rms_file = Path(str(image_file).replace('.restored',
+                                                        '.restored.conv')
+                                                        )
 
-        return selavy_file, image_file, rms_file
+
+        return selavy_file, str(image_file), str(rms_file)
 
     def _validate_files(self) -> None:
         """
