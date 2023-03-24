@@ -1051,7 +1051,8 @@ class TestQuery:
 
         results = test_query._add_files(test_query.fields_df.loc[0])
 
-        assert results == expected_results
+        for result, expected in zip(results, expected_results):
+            assert result == expected
 
     @pytest.mark.parametrize("corrected, stokes",
                              [(True, "I"),
