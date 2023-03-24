@@ -1818,6 +1818,8 @@ class Query:
 
             # Some epochs don't have .conv.
             if not selavy_path.is_file():
+                self.logger.debug(f"{selavy_path} is not a file...")
+                self.logger.debug(f"Removing '.conv' from filename")
                 selavy_path = Path(str(selavy_path).replace('.conv', ''))
 
         else:
