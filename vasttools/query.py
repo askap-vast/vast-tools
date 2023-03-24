@@ -2068,10 +2068,8 @@ class Query:
             )
 
             self.logger.debug("Finished field matching.")
-            self.logger.debug(self.fields_df)
             self.fields_df = self.fields_df.dropna()
-            self.logger.debug(self.fields_df)
-
+            
             if self.fields_df.empty:
                 raise Exception(
                     "No requested sources are within the requested footprint!")
@@ -2080,22 +2078,7 @@ class Query:
                 'field_per_epoch'
             ).reset_index(drop=True)
 
-            self.logger.debug(self.fields_df)
-            self.logger.debug(self.fields_df['field_per_epoch'])
-            
-            self.logger.debug("Running tolist()")
             field_per_epoch = self.fields_df['field_per_epoch'].tolist()
-            for i,row in enumerate(field_per_epoch):
-                self.logger.debug(row)
-                
-                self.logger.debug(self.fields_df.iloc[i])
-                self.logger.debug(len(row))
-            #self.logger.debug(field_per_epoch)
-            self.logger.debug("Ran fine!")
-            self.logger.debug(self.fields_df.index)
-            self.logger.debug("Trying to make df")
-            pd.DataFrame(field_per_epoch)
-            self.logger.debug("Made df")
             
             self.fields_df[
                 ['epoch', 'field', 'sbid', 'dateobs', 'frequency']
@@ -2277,7 +2260,7 @@ class Query:
 
                 field = available_fields[min_field_index]
                 self.logger.debug("Selecting closest field")
-            self.logger.debug("Selected field: {field}")
+            self.logger.debug(f"Selected field: {field}")
 
             # Change VAST back to RACS
             if i in RACS_EPOCHS:
