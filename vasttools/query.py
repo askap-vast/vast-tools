@@ -2198,27 +2198,20 @@ class Query:
         seps = row.skycoord.separation(fields_coords)
         accept = seps.deg < self.settings['max_sep']
         fields = np.unique(fields_names[accept])
-        self.logger.debug(f"Fields: {fields}")
-        self.logger.debug("Sep 1056")
-        self.logger.debug(seps[index_1056].deg)
-        
+
         if self.racs or self.vast_full:
             vast_fields = np.array(
                 [f.replace("RACS", "VAST") for f in fields]
             )
 
         if fields.shape[0] == 0:
-            if self.racs:
-                self.logger.info(
-                    "Source '%s' not in RACS & VAST Pilot footprint.",
-                    row['name']
-                )
-            else:
-                self.logger.info(
-                    "Source '%s' not in VAST footprint.",
-                    row['name']
-                )
-            return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
+            self.logger.info(
+                "Source '%s' not in the requested epoch footprint.",
+                row['name']
+            )
+            return_vals = [np.nan]*7
+            self.logger.debug(return_vals)
+            return return_vals
 
         centre_seps = row.skycoord.separation(field_centres)
         primary_field = field_centre_names.iloc[np.argmin(centre_seps.deg)]
