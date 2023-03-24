@@ -51,12 +51,12 @@ def load_field_centres() -> pd.DataFrame:
 
     field_centres = pd.concat([low_centres, mid_centres])
     
-    _strip_fieldnames(field_centres)
+    _strip_fieldnames(field_centres, 'field')
 
     return field_centres
 
 
-def _strip_fieldnames(df: pd.DataFrame) -> None:
+def _strip_fieldnames(df: pd.DataFrame, colname) -> None:
     """
     Some field names have historically used the interleaving naming scheme,
     but that has changed as of January 2023. This function removes the "A"
@@ -64,9 +64,10 @@ def _strip_fieldnames(df: pd.DataFrame) -> None:
     
     Args:
         df: DataFrame to strip field names from
+        colname: Name of the column containing the field names
     """
     
-    df.field = df.field.str.rstrip('A')
+    df[colname] = df[colname].str.rstrip('A')
     
 def load_fields_file(epoch: str) -> pd.DataFrame:
     """
@@ -153,7 +154,7 @@ def load_fields_file(epoch: str) -> pd.DataFrame:
 
     with paths[epoch] as fields_csv:
         fields_df = pd.read_csv(fields_csv, comment='#')
-        _strip_fieldnames(fields_df)
+        _strip_fieldnames(fields_df, 'FIELD_NAME')
 
     return fields_df
 
