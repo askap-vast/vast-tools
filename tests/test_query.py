@@ -97,13 +97,13 @@ def vast_fields_object_dummy() -> pd.DataFrame:
                 4000: 10000,
             },
             'FIELD_NAME': {
-                1893: 'VAST_2118-06A',
-                1894: 'VAST_2118-06A',
-                1907: 'VAST_2118-06A',
-                3693: 'VAST_2143-06A',
-                3694: 'VAST_2143-06A',
-                3707: 'VAST_2143-06A',
-                4000: 'VAST_0612-06A'
+                1893: 'VAST_2118-06',
+                1894: 'VAST_2118-06',
+                1907: 'VAST_2118-06',
+                3693: 'VAST_2143-06',
+                3694: 'VAST_2143-06',
+                3707: 'VAST_2143-06',
+                4000: 'VAST_0612-06'
             },
             'BEAM': {
                 1893: 21,
@@ -328,7 +328,7 @@ def field_centres_dummy() -> pd.DataFrame:
     """
     field_centres_df = pd.DataFrame(
         data={
-            'field': {89: 'VAST_2118-06A', 94: 'VAST_2143-06A'},
+            'field': {89: 'VAST_2118-06', 94: 'VAST_2143-06'},
             'centre-ra': {89: 319.65155983605507, 94: 325.8598931693551},
             'centre-dec': {89: -6.298205277661648, 94: -6.298205277661648}
         }
@@ -885,9 +885,9 @@ class TestQuery:
         )
 
         assert np.all(results[0] == np.array(
-            ['VAST_2118-06A', 'VAST_2143-06A']
+            ['VAST_2118-06', 'VAST_2143-06']
         ))
-        assert results[1] == 'VAST_2118-06A'
+        assert results[1] == 'VAST_2118-06'
         assert results[2] == ['1', '2']
 
     def test_find_fields(
