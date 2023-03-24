@@ -2064,7 +2064,7 @@ class Query:
                     meta=meta,
                     axis=1,
                     result_type='expand'
-                ).compute(num_workers=self.ncpu, scheduler='single-threaded')
+                ).compute(num_workers=self.ncpu, scheduler='processes')
             )
 
             self.logger.debug("Finished field matching.")
@@ -2084,13 +2084,23 @@ class Query:
             self.logger.debug(self.fields_df['field_per_epoch'])
             
             self.logger.debug("Running tolist()")
-            self.fields_df['field_per_epoch'].tolist()
+            field_per_epoch = self.fields_df['field_per_epoch'].tolist()
+            for i,row in enumerate(field_per_epoch):
+                self.logger.debug(row)
+                
+                self.logger.debug(self.fields_df.iloc[i])
+                self.logger.debug(len(row))
+            #self.logger.debug(field_per_epoch)
             self.logger.debug("Ran fine!")
+            self.logger.debug(self.fields_df.index)
+            self.logger.debug("Trying to make df")
+            pd.DataFrame(field_per_epoch)
+            self.logger.debug("Made df")
             
             self.fields_df[
                 ['epoch', 'field', 'sbid', 'dateobs', 'frequency']
             ] = pd.DataFrame(
-                self.fields_df['field_per_epoch'].tolist(),
+                field_per_epoch,
                 index=self.fields_df.index
             )
 
@@ -2193,8 +2203,6 @@ class Query:
         self.logger.debug("Field names")
         self.logger.debug(fields_names)
         
-        index_1056 = np.array(fields_names) == 'RACS_1056-56A'
-        
         seps = row.skycoord.separation(fields_coords)
         accept = seps.deg < self.settings['max_sep']
         fields = np.unique(fields_names[accept])
@@ -2215,6 +2223,7 @@ class Query:
 
         centre_seps = row.skycoord.separation(field_centres)
         primary_field = field_centre_names.iloc[np.argmin(centre_seps.deg)]
+        self.logger.debug(f"Primary field: {primary_field}")
         epochs = []
         field_per_epochs = []
         sbids = []
@@ -2236,8 +2245,6 @@ class Query:
             ]
             self.logger.debug("The fields: ")
             self.logger.debug(the_fields)
-            self.logger.debug("Epoch fields:")
-            self.logger.debug(self._epoch_fields.loc[i])
             self.logger.debug("available fields:")
             self.logger.debug(available_fields)
 
@@ -2246,15 +2253,17 @@ class Query:
                     j.replace("RACS", "VAST") for j in available_fields
                 ]
 
-            self.logger.debug("Length available fields: {len(available_fields)}")
             if len(available_fields) == 0:
+                self.logger.debug("No fields available")
                 continue
 
             elif primary_field in available_fields:
                 field = primary_field
+                self.logger.debug("Selecting primary field")
 
             elif len(available_fields) == 1:
                 field = available_fields[0]
+                self.logger.debug("Selecting only available field")
 
             else:
                 field_indexes = [
@@ -2267,6 +2276,8 @@ class Query:
                 )
 
                 field = available_fields[min_field_index]
+                self.logger.debug("Selecting closest field")
+            self.logger.debug("Selected field: {field}")
 
             # Change VAST back to RACS
             if i in RACS_EPOCHS:
@@ -2288,6 +2299,9 @@ class Query:
                        dateobs,
                        freqs
                        )
+        # If len(available_fields) == 0 for all epochs need to return nan
+        if len(epochs) == 0:
+            return [np.nan]*7
 
         return return_vals
 
