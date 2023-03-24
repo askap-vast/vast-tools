@@ -944,44 +944,66 @@ class TestQuery:
             fields_df_expected_result()
         )
 
-    @pytest.mark.parametrize("tiles, conv, islands, expected_file",
-                             [(True,
+    
+    @pytest.mark.parametrize("stokes, tiles, conv, islands, expected_file",
+                             [('I',
+                               True,
                                False,
                                None,
                                'selavy-image.i.VAST_2118-06A.SB9668.cont'
                                '.taylor.0.restored.components.corrected.xml'
                                ),
-                              (True,
+                              ('I',
+                               True,
                                True,
                                None,
                                'selavy-image.i.VAST_2118-06A.SB9668.cont'
                                '.taylor.0.restored.conv.components.corrected'
                                '.xml'
                                ),
-                              (False,
+                              ('I',
+                               False,
                                None,
                                True,
                                'selavy-VAST_2118-06A.EPOCH01.I.conv'
                                '.islands.xml'
                                ),
-                              (False,
+                              ('I',
+                               False,
                                None,
                                False,
                                'selavy-VAST_2118-06A.EPOCH01.I.conv'
                                '.components.xml'
+                               ),
+                               ('V',
+                                True,
+                                None,
+                                False,
+                                'selavy-image.v.VAST_2118-06A.SB9668.cont'
+                                '.taylor.0.restored.components.corrected.xml'
+                               ),
+                               ('V',
+                                False,
+                                None,
+                                False,
+                                'selavy-VAST_2118-06A.EPOCH01.V.conv'
+                                '.components.xml'
                                )
                               ],
                              ids=('tiles-noconv',
                                   'tiles-conv',
                                   'comb-islands',
-                                  'comb-noislands'
+                                  'comb-noislands',
+                                  'tiles-stokesv',
+                                  'comb-stokesv',
                                   )
                              )
     def test__get_selavy_path(
         self,
         vast_query_psrj2129_fields: vtq.Query,
+        stokes: str,
         tiles: bool,
-        conv: list,
+        conv: bool,
         islands: bool,
         expected_file: str,
         mocker
@@ -992,6 +1014,7 @@ class TestQuery:
         Args:
             vast_query_psrj2129_fields: The dummy Query instance that includes
                 a search for PSR J2129-04 with the included found fields data.
+            stokes: Which Stokes paramter to query.
             tiles: Whether to query the TILES or COMBINED data.
             conv: Whether `.conv` is present in the filename.
                 This argument is only relevant if tiles is True
@@ -1007,6 +1030,7 @@ class TestQuery:
 
         test_query.settings['tiles'] = tiles
         test_query.settings['islands'] = islands
+        test_query.settings['stokes'] = stokes
 
         row = test_query.fields_df.loc[0]
 
@@ -1056,7 +1080,8 @@ class TestQuery:
 
         results = test_query._add_files(test_query.fields_df.loc[0])
 
-        assert results == expected_results
+        for result, expected in zip(results, expected_results):
+            assert result == expected
 
     @pytest.mark.parametrize("corrected, stokes",
                              [(True, "I"),
