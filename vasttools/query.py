@@ -1996,10 +1996,8 @@ class Query:
 
         if self.racs:
             base_fc = 'RACS'
-        elif self.vast_p1 or self.vast_p2:
+        else:
             base_fc = 'VAST'
-        elif self.vast_full:
-            base_fc = 'RACS'
         
         self.logger.info(
             f"Matching queried sources to {base_fc} fields..."
@@ -2072,6 +2070,8 @@ class Query:
             self.logger.debug("Finished field matching.")
             self.logger.debug(self.fields_df)
             self.fields_df = self.fields_df.dropna()
+            self.logger.debug(self.fields_df)
+
             if self.fields_df.empty:
                 raise Exception(
                     "No requested sources are within the requested footprint!")
@@ -2082,6 +2082,11 @@ class Query:
 
             self.logger.debug(self.fields_df)
             self.logger.debug(self.fields_df['field_per_epoch'])
+            
+            self.logger.debug("Running tolist()")
+            self.fields_df['field_per_epoch'].tolist()
+            self.logger.debug("Ran fine!")
+            
             self.fields_df[
                 ['epoch', 'field', 'sbid', 'dateobs', 'frequency']
             ] = pd.DataFrame(
@@ -2185,11 +2190,18 @@ class Query:
         """
 
         self.logger.debug(row)
+        self.logger.debug("Field names")
+        self.logger.debug(fields_names)
+        
+        index_1056 = np.array(fields_names) == 'RACS_1056-56A'
+        
         seps = row.skycoord.separation(fields_coords)
         accept = seps.deg < self.settings['max_sep']
-        self.logger.debug(accept.sum())
         fields = np.unique(fields_names[accept])
-        self.logger.debug(fields)
+        self.logger.debug(f"Fields: {fields}")
+        self.logger.debug("Sep 1056")
+        self.logger.debug(seps[index_1056].deg)
+        
         if self.racs or self.vast_full:
             vast_fields = np.array(
                 [f.replace("RACS", "VAST") for f in fields]
@@ -2203,7 +2215,7 @@ class Query:
                 )
             else:
                 self.logger.info(
-                    "Source '%s' not in VAST Pilot footprint.",
+                    "Source '%s' not in VAST footprint.",
                     row['name']
                 )
             return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
@@ -2216,11 +2228,7 @@ class Query:
         dateobs = []
         freqs = []
         
-        self.logger.debug(fields)
-        self.logger.debug(primary_field)
-        
         for i in self.settings['epochs']:
-            self.logger.debug(f"Epoch {i}")
             if i not in RACS_EPOCHS and self.racs:
                 the_fields = vast_fields
             elif i not in RACS_EPOCHS and self.vast_full:
@@ -2228,19 +2236,24 @@ class Query:
             else:
                 the_fields = fields
 
-            self.logger.debug(the_fields)
-            
             available_fields = [
                 f for f in the_fields if f in self._epoch_fields.loc[
                     i
                 ].index.to_list()
             ]
+            self.logger.debug("The fields: ")
+            self.logger.debug(the_fields)
+            self.logger.debug("Epoch fields:")
+            self.logger.debug(self._epoch_fields.loc[i])
+            self.logger.debug("available fields:")
+            self.logger.debug(available_fields)
 
             if i in RACS_EPOCHS:
                 available_fields = [
                     j.replace("RACS", "VAST") for j in available_fields
                 ]
 
+            self.logger.debug("Length available fields: {len(available_fields)}")
             if len(available_fields) == 0:
                 continue
 
