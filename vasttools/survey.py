@@ -50,6 +50,7 @@ def load_field_centres() -> pd.DataFrame:
         mid_centres = pd.read_csv(field_centres_csv)
 
     field_centres = pd.concat([low_centres, mid_centres])
+    field_centres.field = field_centres.field.str.rstrip('A')
 
     return field_centres
 
@@ -139,6 +140,7 @@ def load_fields_file(epoch: str) -> pd.DataFrame:
 
     with paths[epoch] as fields_csv:
         fields_df = pd.read_csv(fields_csv, comment='#')
+        fields_df.FIELD_NAME = fields_df.FIELD_NAME.str.rstrip('A')
 
     return fields_df
 
