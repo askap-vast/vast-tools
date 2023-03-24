@@ -25,6 +25,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Changed
 
+- Changed path generation to allow for image/rms/background files to contain ".conv" [#410](https://github.com/askap-vast/vast-tools/pull/410)
 - Changed handling of data product generation from epoch-based to index-based [#403](https://github.com/askap-vast/vast-tools/pull/403)
 - Updated GitHub actions Gr1N/setup-poetry to v7 [#385](https://github.com/askap-vast/vast-tools/pull/385)
 - Updated numpy to ~1.22.1 [#380](https://github.com/askap-vast/vast-tools/pull/380)
@@ -44,6 +45,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Fixed
 
+- Fixed handling of Stokes Q/U/V selavy files [#410](https://github.com/askap-vast/vast-tools/pull/410)
 - Fixed naming of fits cutout functions [#407](https://github.com/askap-vast/vast-tools/pull/407)
 - Changed field name handling to correctly convert RACS -> VAST [#405](https://github.com/askap-vast/vast-tools/pull/405)
 - Fixed variable names in query documentation example [#398](https://github.com/askap-vast/vast-tools/pull/398)
@@ -68,7 +70,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Removed '#' from get_components dataframe except when it is used in `search_around_coordinates` queries [#365](https://github.com/askap-vast/vast-tools/pull/365)
 
 #### List of PRs
-
+- [#410](https://github.com/askap-vast/vast-tools/pull/410): fix: Fix handling of Stokes V products and image naming scheme
 - [#406](https://github.com/askap-vast/vast-tools/pull/406): feat: Add epochs 22, 23, 24, 25, 26, 28 (RACS-high), 29 (RACS-low-2)
 - [#407](https://github.com/askap-vast/vast-tools/pull/407): fix: Fixed naming of fits cutout functions
 - [#403](https://github.com/askap-vast/vast-tools/pull/403): feat, docs: Changed data product generation from epoch-based to index-based
