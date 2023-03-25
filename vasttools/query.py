@@ -1185,7 +1185,7 @@ class Query:
                     ),
                     allow_nan=self.settings['forced_allow_nan'],
                     meta=meta,
-                ).compute(num_workers=self.ncpu, scheduler='processes')
+                ).compute(num_workers=self.ncpu, scheduler='single-threaded')
             )
 
             if not f_results.empty:
