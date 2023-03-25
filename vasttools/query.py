@@ -2108,7 +2108,8 @@ class Query:
                 'dates',
                 'freqs'
             ]
-
+            self.logger.debug(self.fields_df['name'])
+            self.logger.debug(self.fields_df['dateobs'])
             self.fields_df = self.fields_df.drop(
                 labels=to_drop, axis=1
             ).sort_values(
@@ -2280,13 +2281,15 @@ class Query:
             if i in RACS_EPOCHS:
                 field = field.replace("VAST", "RACS")
             epochs.append(i)
-            sbid = self._epoch_fields.loc[i, field]["SBID"]
-            date = self._epoch_fields.loc[i, field]["DATEOBS"]
-            freq = self._epoch_fields.loc[i, field]["OBS_FREQ"]
-            sbids.append(sbid)
-            dateobs.append(date)
-            freqs.append(freq)
-            field_per_epochs.append([i, field, sbid, date, freq])
+            sbid_vals = self._epoch_fields.loc[i, field]["SBID"]
+            date_vals = self._epoch_fields.loc[i, field]["DATEOBS"]
+            freq_vals = self._epoch_fields.loc[i, field]["OBS_FREQ"]
+
+            for sbid, date, freq in zip(sbid_vals, date_vals, freq_vals):
+                sbids.append(sbid)
+                dateobs.append(date)
+                freqs.append(freq)
+                field_per_epochs.append([i, field, sbid, date, freq])
 
         return_vals = (fields,
                        primary_field,
