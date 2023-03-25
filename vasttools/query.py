@@ -1432,6 +1432,7 @@ class Query:
             islands=source_islands,
             forced_fits=self.settings['forced_fits'],
             outdir=source_outdir,
+            corrected_data=self.corrected_data
         )
 
         return thesource
