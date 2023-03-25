@@ -1419,7 +1419,7 @@ class Query:
         source_df = source_df.sort_values('dateobs').reset_index(drop=True)
 
         self.logger.debug("Initialising Source with base folder:")
-        self.logger.debug(source_basefolder)
+        self.logger.debug(source_base_folder)
         thesource = Source(
             source_coord,
             source_name,
