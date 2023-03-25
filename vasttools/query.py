@@ -1418,6 +1418,8 @@ class Query:
 
         source_df = source_df.sort_values('dateobs').reset_index(drop=True)
 
+        self.logger.debug("Initialising Source with base folder:")
+        self.logger.debug(source_basefolder)
         thesource = Source(
             source_coord,
             source_name,
@@ -1472,8 +1474,10 @@ class Query:
         field = m['field']
         epoch = m['epoch']
         stokes = m['stokes']
-
+        self.logger.debug("Getting Image for forced fits")
         try:
+            self.logger.debug("Initialising Image with base folder")
+            self.logger.debug(self.base_folder)
             img_beam = Image(
                 field,
                 epoch,
@@ -1735,6 +1739,8 @@ class Query:
             if missing.shape[0] > 0:
                 if not self.settings['no_rms']:
                     try:
+                        self.logger.debug("Initialising Image for components RMS estimates")
+                        self.logger.debug(self.base_folder)
                         image = Image(
                             group.iloc[0].field,
                             group.iloc[0].epoch,
