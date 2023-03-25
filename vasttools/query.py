@@ -1475,9 +1475,9 @@ class Query:
         epoch = m['epoch']
         stokes = m['stokes']
         self.logger.debug("Getting Image for forced fits")
+        self.logger.debug("Initialising Image with base folder")
+        self.logger.debug(self.base_folder)
         try:
-            self.logger.debug("Initialising Image with base folder")
-            self.logger.debug(self.base_folder)
             img_beam = Image(
                 field,
                 epoch,
