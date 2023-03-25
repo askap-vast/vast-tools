@@ -174,13 +174,13 @@ def get_fields_per_epoch_info() -> pd.DataFrame:
         epoch_fields = pd.concat([epoch_fields, temp])
 
     epoch_fields = epoch_fields.drop_duplicates(
-        ['FIELD_NAME', 'EPOCH']
+        ['FIELD_NAME', 'EPOCH', 'DATEOBS']
     ).set_index(
         ['EPOCH', 'FIELD_NAME']
     ).drop(columns=[
         'BEAM', 'RA_HMS', 'DEC_DMS', 'DATEEND',
         'NINT', 'BMAJ', 'BMIN', 'BPA'
-    ])
+    ]).sort_index()
 
     return epoch_fields
 
