@@ -90,6 +90,8 @@ class Source:
         base_folder (str): The directory where the data (fits files) is held.
         image_type (str): 'TILES' or 'COMBINED'.
         tiles (bool): `True` if `image_type` == `TILES`.
+        corrected_data (bool): Access the corrected data. Only relevant if
+            `tiles` is `True`. Defaults to `True`.
         detections (int): The number of selavy detections the source contains.
         limits (int):
             The number of upper limits the source contains. Will be set to
@@ -119,6 +121,7 @@ class Source:
         planet: bool = False,
         pipeline: bool = False,
         tiles: bool = False,
+        corrected_data: bool = True,
         forced_fits: bool = False,
     ) -> None:
         """
@@ -147,6 +150,8 @@ class Source:
                 VAST Pipeline run, defaults to `False`.
             tiles: Set to 'True` if the source is from a tile images,
                 defaults to `False`.
+            corrected_data: Access the corrected data. Only relevant if
+                `tiles` is `True`. Defaults to `True`.
             forced_fits: Set to `True` if forced fits are included in the
                 source measurements, defaults to `False`.
 
@@ -182,6 +187,7 @@ class Source:
         else:
             self.tiles = False
 
+        self.corrected_data = corrected_data
         if self.pipeline:
             self.detections = self.measurements[
                 self.measurements.forced == False
@@ -759,7 +765,8 @@ class Source:
         if self.pipeline:
             image = Image(
                 row.field, row.epoch, self.stokes, self.base_folder,
-                path=row.image, rmspath=row.rms
+                path=row.image, rmspath=row.rms,
+                corrected_data=self.corrected_data
             )
             image.get_img_data()
         else:
@@ -769,7 +776,7 @@ class Source:
             image = Image(
                 row.field, e, self.stokes,
                 self.base_folder, tiles=self.tiles,
-                sbid=row.sbid
+                sbid=row.sbid, corrected_data=self.corrected_data
             )
             image.get_img_data()
 
