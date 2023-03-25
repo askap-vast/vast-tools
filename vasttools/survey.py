@@ -334,8 +334,10 @@ class Image:
         self.corrected_data = corrected_data
 
         if self.path is None:
+            self.logger.debug("Path not supplied, fetching paths and names")
             self.get_paths_and_names()
         else:
+            self.logger.debug(f"Setting path {self.path}")
             self.imgpath = self.path
             self.imgname = os.path.basename(self.path)
 
@@ -395,6 +397,7 @@ class Image:
             )
 
         self.imgpath = os.path.join(img_folder, self.imgname)
+        self.logger.debug(f"Set image path: {self.imgpath}")
 
     def _check_exists(self) -> bool:
         if os.path.isfile(self.imgpath):
