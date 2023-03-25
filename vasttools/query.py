@@ -1185,7 +1185,7 @@ class Query:
                     ),
                     allow_nan=self.settings['forced_allow_nan'],
                     meta=meta,
-                ).compute(num_workers=self.ncpu, scheduler='single-threaded')
+                ).compute(num_workers=self.ncpu, scheduler='processes')
             )
 
             if not f_results.empty:
@@ -1475,10 +1475,6 @@ class Query:
         epoch = m['epoch']
         stokes = m['stokes']
         self.logger.debug("Getting Image for forced fits")
-        self.logger.debug("Initialising Image with base folder")
-        self.logger.debug(self.base_folder)
-        self.logger.debug(m)
-        self.logger.debug(m.columns)
         try:
             img_beam = Image(
                 field,
@@ -1487,6 +1483,7 @@ class Query:
                 self.base_folder,
                 tiles=self.settings["tiles"],
                 path=image,
+                rmspath=rms,
                 corrected_data=self.corrected_data
             )
             img_beam.get_img_data()
