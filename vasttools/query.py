@@ -1477,12 +1477,16 @@ class Query:
         self.logger.debug("Getting Image for forced fits")
         self.logger.debug("Initialising Image with base folder")
         self.logger.debug(self.base_folder)
+        self.logger.debug(m)
+        self.logger.debug(m.columns)
         try:
             img_beam = Image(
                 field,
                 epoch,
                 stokes,
                 self.base_folder,
+                tiles=self.settings["tiles"],
+                path=image,
                 corrected_data=self.corrected_data
             )
             img_beam.get_img_data()
