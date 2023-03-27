@@ -2243,14 +2243,15 @@ class Query:
             else:
                 the_fields = fields
 
-            self.logger.debug("Fields in epoch: ")
-            self.logger.debug(self._epoch_fields.loc[i].stripped_field_name)
             epoch_fields_names = self._epoch_fields.loc[i].index
             stripped = False
             if epoch_fields_names[0].endswith('A'):
                 stripped = True
                 epoch_fields_names = epoch_fields_names.str.rstrip('A')
                 
+            self.logger.debug("Fields in epoch: ")
+            self.logger.debug(epoch_fields_names)
+            
             available_fields = [
                 f for f in the_fields if f in epoch_fields_names.to_list()
             ]
