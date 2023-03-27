@@ -883,7 +883,7 @@ class TestQuery:
             field_centres_sc,
             field_centre_names
         )
-
+        
         assert np.all(results[0] == np.array(
             ['VAST_2118-06', 'VAST_2143-06']
         ))
