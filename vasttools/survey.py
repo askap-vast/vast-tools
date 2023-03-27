@@ -156,7 +156,6 @@ def load_fields_file(epoch: str) -> pd.DataFrame:
 
     with paths[epoch] as fields_csv:
         fields_df = pd.read_csv(fields_csv, comment='#')
-        _strip_fieldnames(fields_df, 'FIELD_NAME')
 
     return fields_df
 
