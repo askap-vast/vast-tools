@@ -38,6 +38,7 @@ RELEASED_EPOCHS = {
     "24": "24",
     "25": "25",
     "26": "26",
+    "27": "27",
     "28": "28", # RACS-high, needs check that it exists, not part of VAST release
     "29": "29", # RACS-low-2, needs check that it exists, not part of VAST release
 }
