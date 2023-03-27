@@ -2273,7 +2273,7 @@ class Query:
             else:
                 field_indexes = [
                     field_centre_names[
-                        field_centre_names == f
+                        field_centre_names == f.rstrip('A')
                     ].index[0] for f in available_fields
                 ]
                 min_field_index = np.argmin(
