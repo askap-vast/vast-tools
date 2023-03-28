@@ -127,7 +127,8 @@ class Query:
         forced_cluster_threshold: float = 1.5,
         forced_allow_nan: bool = False,
         incl_observed: bool = False,
-        corrected_data: bool = True
+        corrected_data: bool = True,
+        search_all_fields: bool = False
     ) -> None:
         """
         Constructor method.
@@ -176,6 +177,9 @@ class Query:
                 fields, not querying data. Defaults to False.
             corrected_data: Access the corrected data. Only relevant if
                 `tiles` is `True`. Defaults to `True`.
+            query_all_fields: If `True`, return all data at the requested 
+                positions regardless of field. If `False`, only return data
+                from the best (closest) field in each epoch.
 
         Returns:
             None
@@ -355,6 +359,7 @@ class Query:
         self.settings['forced_allow_nan'] = forced_allow_nan
 
         self.settings['output_dir'] = output_dir
+        self.settings['query_all_fields'] = query_all_fields
 
         # Going to need this so load it now
         self._epoch_fields = get_fields_per_epoch_info()
