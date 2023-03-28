@@ -2227,12 +2227,14 @@ class Query:
             if len(available_fields) == 0:
                 continue
 
+            if self.settings['query_all_fields']:
+                selected_fields = available_fields
+            
             elif primary_field in available_fields:
-                field = primary_field
+                selected_fields = [primary_field]
 
             elif len(available_fields) == 1:
-                field = available_fields[0]
-
+                selected_fields = [available_fields[0]]
             else:
                 field_indexes = [
                     field_centre_names[
@@ -2243,19 +2245,23 @@ class Query:
                     centre_seps[field_indexes].deg
                 )
 
-                field = available_fields[min_field_index]
+                selected_fields = [available_fields[min_field_index]]
 
+            
             # Change VAST back to RACS
             if i in RACS_EPOCHS:
-                field = field.replace("VAST", "RACS")
-            epochs.append(i)
-            sbid = self._epoch_fields.loc[i, field]["SBID"]
-            date = self._epoch_fields.loc[i, field]["DATEOBS"]
-            freq = self._epoch_fields.loc[i, field]["OBS_FREQ"]
-            sbids.append(sbid)
-            dateobs.append(date)
-            freqs.append(freq)
-            field_per_epochs.append([i, field, sbid, date, freq])
+                selected_fields = [f.replace("VAST", "RACS")
+                                   for f in selected_fields
+                                  ]
+            for field in selected_fields:
+                epochs.append(i)
+                sbid = self._epoch_fields.loc[i, field]["SBID"]
+                date = self._epoch_fields.loc[i, field]["DATEOBS"]
+                freq = self._epoch_fields.loc[i, field]["OBS_FREQ"]
+                sbids.append(sbid)
+                dateobs.append(date)
+                freqs.append(freq)
+                field_per_epochs.append([i, field, sbid, date, freq])
 
         return_vals = (fields,
                        primary_field,
