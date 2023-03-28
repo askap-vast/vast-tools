@@ -46,6 +46,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Fixed
 
+- Update match_planet_to_field to handle empty groups [#416](https://github.com/askap-vast/vast-tools/pull/416)
 - Added `corrected_data` to `Source` class to ensure correct image paths are used [#412](https://github.com/askap-vast/vast-tools/pull/412)
 - Fixed handling of Stokes Q/U/V selavy files [#410](https://github.com/askap-vast/vast-tools/pull/410)
 - Fixed naming of fits cutout functions [#407](https://github.com/askap-vast/vast-tools/pull/407)
@@ -73,6 +74,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#416](https://github.com/askap-vast/vast-tools/pull/416): fix: Update match_planet_to_field to handle empty groups
 - [#414](https://github.com/askap-vast/vast-tools/pull/414): feat: Added access to epoch 27
 - [#412](https://github.com/askap-vast/vast-tools/pull/412): fix: Added `corrected_data` to `Source` class to ensure correct image paths are used
 - [#410](https://github.com/askap-vast/vast-tools/pull/410): fix: Fix handling of Stokes V products and image naming scheme
