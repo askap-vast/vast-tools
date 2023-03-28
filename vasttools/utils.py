@@ -434,6 +434,10 @@ def match_planet_to_field(
         filtered for only those which are within 'sep_thresh' degrees. Hence
         an empty dataframe could be returned.
     """
+
+    if group.empty:
+        return
+
     planet = group.iloc[0]['planet']
     dates = Time(group['DATEOBS'].tolist())
     fields_skycoord = SkyCoord(
