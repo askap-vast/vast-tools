@@ -2236,6 +2236,7 @@ class Query:
         freqs = []
         
         for i in self.settings['epochs']:
+            self.logger.debug(f"Epoch {i}")
             if i not in RACS_EPOCHS and self.racs:
                 the_fields = vast_fields
             elif i not in RACS_EPOCHS and self.vast_full:
@@ -2243,21 +2244,25 @@ class Query:
             else:
                 the_fields = fields
 
+            
             epoch_fields_names = self._epoch_fields.loc[i].index
             stripped = False
             if epoch_fields_names[0].endswith('A'):
+                self.logger.debug("Using stripped field names")
                 stripped = True
                 epoch_fields_names = epoch_fields_names.str.rstrip('A')
+            the_fields = [f.rstrip('A') for f in the_fields]
                 
             self.logger.debug("Fields in epoch: ")
             self.logger.debug(epoch_fields_names)
             
+            self.logger.debug("The fields: ")
+            self.logger.debug(the_fields)
+            
             available_fields = [
                 f for f in the_fields if f in epoch_fields_names.to_list()
             ]
-            self.logger.debug("The fields: ")
-            self.logger.debug(the_fields)
-            self.logger.debug("available fields:")
+            self.logger.debug("Available fields:")
             self.logger.debug(available_fields)
 
             if i in RACS_EPOCHS:
