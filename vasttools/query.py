@@ -109,7 +109,7 @@ class Query:
         self,
         coords: Optional[SkyCoord] = None,
         source_names: Optional[List[str]] = None,
-        epochs: Union[str, List[str]] = "1",
+        epochs: Union[str, List[str], List[int]] = "1",
         stokes: str = "I",
         crossmatch_radius: float = 5.0,
         max_sep: float = 1.0,
@@ -2399,7 +2399,7 @@ class Query:
         return catalog
 
     def _get_epochs(self,
-                    req_epochs: Union[str, List[str]]
+                    req_epochs: Union[str, List[str], List[int]]
                     ) -> List[str]:
         """
         Parse the list of epochs to query.
