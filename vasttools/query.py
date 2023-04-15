@@ -2433,9 +2433,14 @@ class Query:
                 epoch_iter = req_epochs.split(',')
 
             for epoch in req_epochs.split(','):
+                if type(epoch) == int:
+                    epoch = str(epoch)
                 if epoch in available_epochs:
                     epochs.append(epoch)
                 else:
+                    epoch_x = "{epoch}x"
+                    if epoch_x in available_epochs:
+                        epochs.append(epoch_x)
                     if self.logger is None:
                         self.logger.info(
                             "Epoch {} is not available. Ignoring.".format(
