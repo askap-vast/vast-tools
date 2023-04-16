@@ -50,7 +50,7 @@ def load_field_centres() -> pd.DataFrame:
         mid_centres = pd.read_csv(field_centres_csv)
 
     field_centres = pd.concat([low_centres, mid_centres])
-    
+
     _strip_fieldnames(field_centres, 'field')
 
     return field_centres
@@ -61,14 +61,15 @@ def _strip_fieldnames(df: pd.DataFrame, colname) -> None:
     Some field names have historically used the interleaving naming scheme,
     but that has changed as of January 2023. This function removes the "A"
     that is on the end of the field names
-    
+
     Args:
         df: DataFrame to strip field names from
         colname: Name of the column containing the field names
     """
-    
+
     df[colname] = df[colname].str.rstrip('A')
-    
+
+
 def load_fields_file(epoch: str) -> pd.DataFrame:
     """
     Load the csv field file of the requested epoch as a pandas dataframe.
@@ -241,7 +242,7 @@ class Fields:
         self.logger = logging.getLogger('vasttools.survey.Fields')
         self.logger.debug('Created Fields instance')
 
-        if type(epochs) == str:
+        if isinstance(epochs, str):
             epochs = list(epochs)
 
         field_dfs = []

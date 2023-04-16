@@ -366,21 +366,23 @@ def test_moc_query_vizier_vast_pilot(
     )
     assert result == -99
 
+
 @pytest.mark.parametrize("survey", ['pilot', 'full'])
 def test_load_survey_footprint(survey, vast_tools_moc: VASTMOCS):
     """
     Test loading the pilot and full survey footprints.
-    
-    Args:   
+
+    Args:
         survey: survey name
         vast_tools_moc: Pytest fixture of VASTMOCS instance.
-    
+
     Returns:
         None
     """
 
     vast_tools_moc.load_survey_footprint(survey)
-    
+
+
 def test_load_survey_footprint_fail(vast_tools_moc: VASTMOCS) -> None:
     """
     Test the failure of loading of a survey footprint

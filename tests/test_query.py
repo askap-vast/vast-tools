@@ -573,9 +573,9 @@ class TestQuery:
     @pytest.mark.parametrize(
         "vast_pilot,vast_full,fails",
         [
-            (True,False,True),
-            (True,True,False),
-            (False,True,False),
+            (True, False, True),
+            (True, True, False),
+            (False, True, False),
         ]
     )
     def test_init_failure_stokes_v_tiles(self,
@@ -604,11 +604,11 @@ class TestQuery:
             epochs.append("22")
 
         isdir_mocker = mocker.patch(
-                'vasttools.query.os.path.isdir',
-                return_value=True
-            )
+            'vasttools.query.os.path.isdir',
+            return_value=True
+        )
         test_dir = '/testing/folder'
-            
+
         if fails:
             with pytest.raises(vtq.QueryInitError) as excinfo:
                 query = vtq.Query(
@@ -623,12 +623,13 @@ class TestQuery:
             )
         else:
             query = vtq.Query(
-                    epochs=",".join(epochs),
-                    planets=['Mars'],
-                    base_folder=test_dir,
-                    stokes='v',
-                    use_tiles=True
-                )
+                epochs=",".join(epochs),
+                planets=['Mars'],
+                base_folder=test_dir,
+                stokes='v',
+                use_tiles=True
+            )
+
     def test_init_failure_no_sources_in_footprint(
         self,
         pilot_moc_mocker: MOC,
@@ -883,7 +884,7 @@ class TestQuery:
             field_centres_sc,
             field_centre_names
         )
-        
+
         assert np.all(results[0] == np.array(
             ['VAST_2118-06', 'VAST_2143-06']
         ))
@@ -944,7 +945,6 @@ class TestQuery:
             fields_df_expected_result()
         )
 
-    
     @pytest.mark.parametrize("stokes, tiles, conv, islands, expected_file",
                              [('I',
                                True,
@@ -975,19 +975,19 @@ class TestQuery:
                                'selavy-VAST_2118-06A.EPOCH01.I.conv'
                                '.components.xml'
                                ),
-                               ('V',
-                                True,
-                                None,
-                                False,
-                                'selavy-image.v.VAST_2118-06A.SB9668.cont'
-                                '.taylor.0.restored.components.corrected.xml'
+                              ('V',
+                               True,
+                               None,
+                               False,
+                               'selavy-image.v.VAST_2118-06A.SB9668.cont'
+                               '.taylor.0.restored.components.corrected.xml'
                                ),
-                               ('V',
-                                False,
-                                None,
-                                False,
-                                'selavy-VAST_2118-06A.EPOCH01.V.conv'
-                                '.components.xml'
+                              ('V',
+                               False,
+                               None,
+                               False,
+                               'selavy-VAST_2118-06A.EPOCH01.V.conv'
+                               '.components.xml'
                                )
                               ],
                              ids=('tiles-noconv',

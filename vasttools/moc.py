@@ -169,34 +169,34 @@ class VASTMOCS(object):
     def _load_pilot_footprint(self, order=10) -> MOC:
         """
         Load the complete footprint of the pilot survey
-        
+
         Args:
             order: MOC order to use (10 corresponds to a spatial res of 3.5')
-        
+
         Returns:
             MOC containing the pilot survey footprint
         """
-        
+
         for i in range(5):
-            moc = self.load_pilot_field_moc(i+1)
+            moc = self.load_pilot_field_moc(i + 1)
             if i == 0:
                 pilot_moc = moc
             else:
                 pilot_moc = pilot_moc.union(moc)
-        
+
         return pilot_moc.degrade_to_order(order)
-    
+
     def _load_full_survey_footprint(self, order=10) -> MOC:
         """
         Load the complete footprint of the full survey
-        
+
         Args:
             order: MOC order to use (10 corresponds to a spatial res of 3.5')
-        
+
         Returns:
             MOC containing the full survey footprint
         """
-        
+
         for i, subsurvey in enumerate(['EQUATORIAL', 'HIGHDEC', 'GALACTIC']):
             moc_name = f'VAST_{subsurvey}.moc.fits'
 
@@ -207,26 +207,26 @@ class VASTMOCS(object):
                 moc_path = moc_path.resolve()
 
             moc = MOC.from_fits(moc_path)
-            
+
             if i == 0:
                 survey_moc = moc
             else:
                 survey_moc = survey_moc.union(moc)
-        
+
         return survey_moc.degrade_to_order(order)
 
     def load_survey_footprint(self, survey, order=10) -> MOC:
         """
         Load the footprint of either the pilot or full VAST surveys
-        
+
         Args:
             survey: Survey requested (can be "pilot or "full")
             order: MOC order to use (10 corresponds to a spatial res of 3.5')
-        
+
         Returns:
             Survey footprint in MOC format
         """
-        
+
         if survey not in ['pilot', 'full']:
             raise Exception(
                 f"Survey must be either 'pilot' or 'full', not {survey}"
@@ -235,7 +235,7 @@ class VASTMOCS(object):
             return self._load_pilot_footprint(order=order)
         elif survey == 'full':
             return self._load_full_survey_footprint(order=order)
-            
+
     def query_vizier_vast_pilot(
         self,
         table_id: str,

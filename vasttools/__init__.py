@@ -27,7 +27,7 @@ RELEASED_EPOCHS = {
     "11x": "11x",
     "12": "12",
     "13": "13",
-    "14": "14", # RACS-mid, needs check that it exists, not part of VAST release
+    "14": "14",  # RACS-mid, needs check that it exists, not part of VAST release
     "17": "17",
     "18": "18",
     "19": "19",
@@ -39,8 +39,8 @@ RELEASED_EPOCHS = {
     "25": "25",
     "26": "26",
     "27": "27",
-    "28": "28", # RACS-high, needs check that it exists, not part of VAST release
-    "29": "29", # RACS-low-2, needs check that it exists, not part of VAST release
+    "28": "28",  # RACS-high, needs check that it exists, not part of VAST release
+    "29": "29",  # RACS-low-2, needs check that it exists, not part of VAST release
     "30": "30",
 }
 
@@ -57,7 +57,7 @@ RACS_EPOCHS = [
     '14',
     '28',
     '29'
-    
+
 ]
 
 P1_EPOCHS = [

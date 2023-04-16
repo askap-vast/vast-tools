@@ -418,11 +418,11 @@ class Query:
             if self.vast_full:
                 self.logger.warning("Stokes V tiles are only available for the"
                                     " full VAST survey. Proceed with caution!"
-                )
+                                    )
             else:
                 self.logger.critical("Stokes V tiles are only available for "
                                      "the full VAST survey."
-                )
+                                     )
                 return False
 
         if self.settings['tiles'] and self.settings['islands']:
@@ -438,11 +438,11 @@ class Query:
                 "Image RMS and peak flux error are not available with islands."
                 "Using background_noise as a placeholder for both."
             )
-        
+
         if self.vast_full and not self.settings['tiles']:
             self.logger.critical("COMBINED images are not available for "
                                  "the full VAST survey."
-            )
+                                 )
             return False
 
         return True
@@ -1740,7 +1740,8 @@ class Query:
             if missing.shape[0] > 0:
                 if not self.settings['no_rms']:
                     try:
-                        self.logger.debug("Initialising Image for components RMS estimates")
+                        self.logger.debug(
+                            "Initialising Image for components RMS estimates")
                         self.logger.debug(self.base_folder)
                         image = Image(
                             group.iloc[0].field,
@@ -1918,17 +1919,16 @@ class Query:
             rms_dir,
             rms_file_fmt
         ))
-        
+
         if not image_file.is_file():
             conv_image_file = Path(str(image_file).replace('.restored',
                                                            '.restored.conv')
-                                                           )
+                                   )
             if conv_image_file.is_file():
                 image_file = conv_image_file
                 rms_file = Path(str(rms_file).replace('.restored',
-                                                        '.restored.conv')
-                                                        )
-
+                                                      '.restored.conv')
+                                )
 
         return selavy_file, str(image_file), str(rms_file)
 
@@ -2013,13 +2013,12 @@ class Query:
         Raises:
             Exception: No sources are found within the requested footprint.
         """
-        
 
         if self.racs:
             base_fc = 'RACS'
         else:
             base_fc = 'VAST'
-        
+
         self.logger.info(
             f"Matching queried sources to {base_fc} fields..."
         )
@@ -2090,7 +2089,7 @@ class Query:
 
             self.logger.debug("Finished field matching.")
             self.fields_df = self.fields_df.dropna()
-            
+
             if self.fields_df.empty:
                 raise Exception(
                     "No requested sources are within the requested footprint!")
@@ -2100,7 +2099,7 @@ class Query:
             ).reset_index(drop=True)
 
             field_per_epoch = self.fields_df['field_per_epoch'].tolist()
-            
+
             self.fields_df[
                 ['epoch', 'field', 'sbid', 'dateobs', 'frequency']
             ] = pd.DataFrame(
@@ -2207,7 +2206,7 @@ class Query:
         self.logger.debug(row)
         self.logger.debug("Field names")
         self.logger.debug(fields_names)
-        
+
         seps = row.skycoord.separation(fields_coords)
         accept = seps.deg < self.settings['max_sep']
         fields = np.unique(fields_names[accept])
@@ -2222,7 +2221,7 @@ class Query:
                 "Source '%s' not in the requested epoch footprint.",
                 row['name']
             )
-            return_vals = [np.nan]*7
+            return_vals = [np.nan] * 7
             self.logger.debug(return_vals)
             return return_vals
 
@@ -2234,7 +2233,7 @@ class Query:
         sbids = []
         dateobs = []
         freqs = []
-        
+
         for i in self.settings['epochs']:
             self.logger.debug(f"Epoch {i}")
             if i not in RACS_EPOCHS and self.racs:
@@ -2244,7 +2243,6 @@ class Query:
             else:
                 the_fields = fields
 
-            
             epoch_fields_names = self._epoch_fields.loc[i].index
             stripped = False
             if epoch_fields_names[0].endswith('A'):
@@ -2252,13 +2250,13 @@ class Query:
                 stripped = True
                 epoch_fields_names = epoch_fields_names.str.rstrip('A')
             the_fields = [f.rstrip('A') for f in the_fields]
-                
+
             self.logger.debug("Fields in epoch: ")
             self.logger.debug(epoch_fields_names)
-            
+
             self.logger.debug("The fields: ")
             self.logger.debug(the_fields)
-            
+
             available_fields = [
                 f for f in the_fields if f in epoch_fields_names.to_list()
             ]
@@ -2300,7 +2298,7 @@ class Query:
             if i in RACS_EPOCHS:
                 field = field.replace("VAST", "RACS")
             epochs.append(i)
-            
+
             if stripped:
                 field = f"{field}A"
             sbid_vals = self._epoch_fields.loc[i, field]["SBID"]
@@ -2323,7 +2321,7 @@ class Query:
                        )
         # If len(available_fields) == 0 for all epochs need to return nan
         if len(epochs) == 0:
-            return [np.nan]*7
+            return [np.nan] * 7
 
         return return_vals
 
@@ -2427,13 +2425,13 @@ class Query:
                 self.source_names = self.source_names[~mask]
         else:
             mocs = VASTMOCS()
-            
+
             pilot = self.vast_p1 or self.vast_p2
-            
+
             if pilot:
                 self.logger.debug("Using VAST pilot footprint for masking")
                 footprint_moc = mocs.load_survey_footprint('pilot')
-                
+
             if self.vast_full:
                 self.logger.debug("Using full VAST footprint for masking")
                 full_moc = mocs.load_survey_footprint('full')
@@ -2441,7 +2439,7 @@ class Query:
                     footprint_moc = footprint_moc.union(full_moc)
                 else:
                     footprint_moc = full_moc
-            
+
             self.logger.debug("Masking sources outside footprint")
             mask = footprint_moc.contains(
                 self.coords.ra, self.coords.dec, keep_inside=False
@@ -2511,7 +2509,7 @@ class Query:
                     epochs.remove(racs_epoch)
         else:
             epochs = []
-            if type(req_epochs) == list:
+            if isinstance(req_epochs, list):
                 epoch_iter = req_epochs
             else:
                 epoch_iter = req_epochs.split(',')
@@ -2552,20 +2550,20 @@ class Query:
     def _check_survey(self, epochs: list):
         """
         Check which surveys are being queried (e.g. RACS, pilot/full VAST).
-        
+
         Args:
             epochs: Requested epochs to query
         """
-        
+
         self.racs = False
         self.vast_p1 = False
         self.vast_p2 = False
         self.vast_full = False
-        
-        non_full_epochs = RACS_EPOCHS+P1_EPOCHS+P2_EPOCHS
+
+        non_full_epochs = RACS_EPOCHS + P1_EPOCHS + P2_EPOCHS
         all_epochs = RELEASED_EPOCHS.keys()
-        full_epochs = set(all_epochs)-set(non_full_epochs)
-        
+        full_epochs = set(all_epochs) - set(non_full_epochs)
+
         epochs_set = set(epochs)
         if len(epochs_set & set(RACS_EPOCHS)) > 0:
             self.racs = True
@@ -2575,12 +2573,12 @@ class Query:
             self.vast_p2 = True
         if len(epochs_set & set(full_epochs)) > 0:
             self.vast_full = True
-        
+
         self.logger.debug(f"self.racs: {self.racs}")
         self.logger.debug(f"self.vast_p1: {self.vast_p1}")
         self.logger.debug(f"self.vast_p2: {self.vast_p2}")
         self.logger.debug(f"self.vast_full: {self.vast_full}")
-        
+
     def _get_stokes(self, req_stokes: str) -> str:
         """
         Set the stokes Parameter
