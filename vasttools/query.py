@@ -2085,7 +2085,7 @@ class Query:
                     meta=meta,
                     axis=1,
                     result_type='expand'
-                ).compute(num_workers=self.ncpu, scheduler='single-threaded')
+                ).compute(num_workers=self.ncpu, scheduler='processes')
             )
 
             self.logger.debug("Finished field matching.")
