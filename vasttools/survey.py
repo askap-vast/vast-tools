@@ -56,7 +56,7 @@ def load_field_centres() -> pd.DataFrame:
     return field_centres
 
 
-def _strip_fieldnames(df: pd.DataFrame, colname) -> None:
+def _strip_fieldnames(df: pd.DataFrame, colname: str) -> None:
     """
     Some field names have historically used the interleaving naming scheme,
     but that has changed as of January 2023. This function removes the "A"

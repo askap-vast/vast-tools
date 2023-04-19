@@ -2216,8 +2216,7 @@ class Query:
 
         if fields.shape[0] == 0:
             self.logger.info(
-                "Source '%s' not in the requested epoch footprint.",
-                row['name']
+                f"Source '{row['name']}' not in the requested epoch footprint."
             )
             return_vals = [np.nan] * 7
             self.logger.debug(return_vals)
@@ -2444,8 +2443,7 @@ class Query:
             )
             if mask.any():
                 self.logger.warning(
-                    "Removing %i sources outside the "
-                    "requested survey footprint", sum(mask)
+                    f"Removing {sum(mask)} sources outside the requested survey footprint"
                 )
                 self.coords = self.coords[~mask]
                 self.source_names = self.source_names[~mask]
@@ -2545,7 +2543,7 @@ class Query:
 
         return epochs
 
-    def _check_survey(self, epochs: list):
+    def _check_survey(self, epochs: list) -> None:
         """
         Check which surveys are being queried (e.g. RACS, pilot/full VAST).
 

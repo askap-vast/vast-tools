@@ -166,7 +166,7 @@ class VASTMOCS(object):
 
         return moc
 
-    def _load_pilot_footprint(self, order=10) -> MOC:
+    def _load_pilot_footprint(self, order: int = 10) -> MOC:
         """
         Load the complete footprint of the pilot survey
 
@@ -176,7 +176,7 @@ class VASTMOCS(object):
         Returns:
             MOC containing the pilot survey footprint
         """
-
+        # There are 6 unique 'fields' in the pilot survey hence these are looped over in turn to load
         for i in range(5):
             moc = self.load_pilot_field_moc(i + 1)
             if i == 0:
@@ -186,7 +186,7 @@ class VASTMOCS(object):
 
         return pilot_moc.degrade_to_order(order)
 
-    def _load_full_survey_footprint(self, order=10) -> MOC:
+    def _load_full_survey_footprint(self, order: int = 10) -> MOC:
         """
         Load the complete footprint of the full survey
 
@@ -215,7 +215,7 @@ class VASTMOCS(object):
 
         return survey_moc.degrade_to_order(order)
 
-    def load_survey_footprint(self, survey, order=10) -> MOC:
+    def load_survey_footprint(self, survey, order: int = 10) -> MOC:
         """
         Load the footprint of either the pilot or full VAST surveys
 
