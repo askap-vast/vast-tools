@@ -2218,8 +2218,7 @@ class Query:
 
         if fields.shape[0] == 0:
             self.logger.info(
-                "Source '%s' not in the requested epoch footprint.",
-                row['name']
+                f"Source '{row['name']}' not in the requested epoch footprint."
             )
             return_vals = [np.nan] * 7
             self.logger.debug(return_vals)
