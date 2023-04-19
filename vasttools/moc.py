@@ -176,7 +176,7 @@ class VASTMOCS(object):
         Returns:
             MOC containing the pilot survey footprint
         """
-
+        # There are 6 unique 'fields' in the pilot survey hence these are looped over in turn to load
         for i in range(5):
             moc = self.load_pilot_field_moc(i + 1)
             if i == 0:
