@@ -2200,9 +2200,10 @@ class Query:
         Returns:
             Tuple containing the field information.
         """
-
+        
+        self.logger.debug("Running field matching with following row info:")
         self.logger.debug(row)
-        self.logger.debug("Field names")
+        self.logger.debug("Field names:")
         self.logger.debug(fields_names)
 
         seps = row.skycoord.separation(fields_coords)
