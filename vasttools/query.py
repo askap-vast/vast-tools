@@ -2152,9 +2152,8 @@ class Query:
 
         if self.racs:
             self.logger.info(
-                "%i/%i sources in RACS & VAST Pilot footprint.",
-                self.num_sources_searched,
-                prev_num
+                "{self.num_sources_searched}/{prev_num} "
+                "sources in RACS & VAST footprint."
             )
         else:
             self.logger.info(
