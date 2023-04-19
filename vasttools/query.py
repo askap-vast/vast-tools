@@ -2158,10 +2158,9 @@ class Query:
             )
         else:
             self.logger.info(
-                "%i/%i sources in VAST footprint.",
-                self.num_sources_searched,
-                prev_num
-            )
+                "{self.num_sources_searched}/{prev_num} "
+                "sources in VAST footprint."
+                )
 
         self.fields_df['dateobs'] = pd.to_datetime(
             self.fields_df['dateobs']
