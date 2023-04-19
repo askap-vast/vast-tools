@@ -2218,7 +2218,7 @@ class Query:
             self.logger.info(
                 f"Source '{row['name']}' not in the requested epoch footprint."
             )
-            return_vals = [np.nan] * 7
+            return_vals = [np.nan] * 7 # Return nans in all 7 columns
             self.logger.debug(return_vals)
             return return_vals
 
@@ -2318,7 +2318,7 @@ class Query:
                        )
         # If len(available_fields) == 0 for all epochs need to return nan
         if len(epochs) == 0:
-            return [np.nan] * 7
+            return [np.nan] * 7 # Return nans in all 7 columns
 
         return return_vals
 
