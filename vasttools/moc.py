@@ -186,7 +186,7 @@ class VASTMOCS(object):
 
         return pilot_moc.degrade_to_order(order)
 
-    def _load_full_survey_footprint(self, order=10) -> MOC:
+    def _load_full_survey_footprint(self, order: int = 10) -> MOC:
         """
         Load the complete footprint of the full survey
 
