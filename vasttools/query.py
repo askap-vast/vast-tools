@@ -2546,7 +2546,7 @@ class Query:
 
         return epochs
 
-    def _check_survey(self, epochs: list):
+    def _check_survey(self, epochs: list) -> None:
         """
         Check which surveys are being queried (e.g. RACS, pilot/full VAST).
 
