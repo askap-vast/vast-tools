@@ -166,7 +166,7 @@ class VASTMOCS(object):
 
         return moc
 
-    def _load_pilot_footprint(self, order=10) -> MOC:
+    def _load_pilot_footprint(self, order: int = 10) -> MOC:
         """
         Load the complete footprint of the pilot survey
 
