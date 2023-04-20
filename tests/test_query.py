@@ -1558,3 +1558,48 @@ class TestQuery:
             return_df = return_df.rename(columns={'#': 'distance'})
 
         assert test_query.results.equals(return_df)
+        
+    @pytest.mark.parametrize("epochs, racs, vast_p1, vast_p2, vast_full",
+                             [(["0"], True, False, False, False),
+                              (["1"], False, True, False, False),
+                              (["17"], False, False, True, False),
+                              (["23"], False, False, False, True),
+                              (["0", "14", "28"], True, False, False, False),
+                              (["0", "1"], True, True, False, False),
+                              (["0", "17"], True, False, True, False),
+                              (["0", "23"], True, False, False, True),
+                              (["1", "17"], False, True, True, False),
+                              (["0", "1", "17"], True, True, True, False),
+                              (["0", "1", "17", "23"], True, True, True, True),
+                             ],
+                             ids=('racs-only',
+                                  'p1-only',
+                                  'p2-only',
+                                  'full-only',
+                                  'all-racs',
+                                  'racs+p1',
+                                  'racs+p2',
+                                  'racs+full',
+                                  'pilot-only',
+                                  'racs+pilot',
+                                  'all-data')
+                             )
+    def test__check_survey(
+        self,
+        vast_query_psrj2129,
+        epochs,
+        racs,
+        vast_p1,
+        vast_p2,
+        vast_full
+        ):
+        """
+        """
+        
+        vast_query_psrj2129._check_survey(epochs)
+        
+        assert vast_query_psrj2129.racs == racs
+        assert vast_query_psrj2129.vast_p1 == vast_p1
+        assert vast_query_psrj2129.vast_p2 == vast_p2
+        assert vast_query_psrj2129.vast_full == vast_full
+        
