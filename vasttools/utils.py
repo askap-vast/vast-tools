@@ -683,3 +683,16 @@ def create_moc_from_fits(fits_file: str, max_depth: int = 9) -> MOC:
     gc.collect()
 
     return moc
+
+
+def strip_fieldnames(fieldnames: pd.Series) -> None:
+    """
+    Some field names have historically used the interleaving naming scheme,
+    but that has changed as of January 2023. This function removes the "A"
+    that is on the end of the field names
+
+    Args:
+        fieldnames: Series to strip field names from
+    """
+    
+    fieldnames.str.rstrip('A')

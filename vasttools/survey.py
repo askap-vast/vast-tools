@@ -10,6 +10,8 @@ import logging
 import logging.handlers
 import logging.config
 
+import vasttools.utils as vtu
+
 from astropy.coordinates import Angle, EarthLocation
 from astropy import units as u
 from astropy.coordinates import SkyCoord
@@ -51,22 +53,9 @@ def load_field_centres() -> pd.DataFrame:
 
     field_centres = pd.concat([low_centres, mid_centres])
 
-    field_centres['field'] = _strip_fieldnames(field_centres['field'])
+    field_centres['field'] = vtu.strip_fieldnames(field_centres['field'])
 
     return field_centres
-
-
-def _strip_fieldnames(fieldnames: pd.Series) -> None:
-    """
-    Some field names have historically used the interleaving naming scheme,
-    but that has changed as of January 2023. This function removes the "A"
-    that is on the end of the field names
-
-    Args:
-        fieldnames: Series to strip field names from
-    """
-    
-    fieldnames.str.rstrip('A')
 
 
 def load_fields_file(epoch: str) -> pd.DataFrame:
