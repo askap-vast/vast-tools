@@ -10,7 +10,7 @@ import logging
 import logging.handlers
 import logging.config
 
-import vasttools.utils as vtu
+
 
 from astropy.coordinates import Angle, EarthLocation
 from astropy import units as u
@@ -21,7 +21,9 @@ from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
 from radio_beam import Beam
 from typing import Optional, List, Union
 
+
 from vasttools import RELEASED_EPOCHS, OBSERVED_EPOCHS
+from vasttools.utils import strip_fieldnames
 
 warnings.filterwarnings('ignore', category=AstropyWarning, append=True)
 warnings.filterwarnings(
