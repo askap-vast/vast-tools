@@ -54,7 +54,7 @@ from vasttools.survey import (
 from vasttools.source import Source
 from vasttools.utils import (
     filter_selavy_components, simbad_search, match_planet_to_field,
-    read_selavy
+    read_selavy, strip_fieldnames
 )
 from vasttools.moc import VASTMOCS
 from forced_phot import ForcedPhot
@@ -2246,7 +2246,7 @@ class Query:
             if epoch_fields_names[0].endswith('A'):
                 self.logger.debug("Using stripped field names")
                 stripped = True
-                epoch_fields_names = epoch_fields_names.str.rstrip('A')
+                epoch_fields_names = strip_fieldnames(epoch_fields_names)
             the_fields = [f.rstrip('A') for f in the_fields]
 
             self.logger.debug("Fields in epoch: ")
