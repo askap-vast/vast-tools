@@ -695,4 +695,4 @@ def strip_fieldnames(fieldnames: pd.Series) -> None:
         fieldnames: Series to strip field names from
     """
     
-    fieldnames.str.rstrip('A')
+    return fieldnames.str.rstrip('A')
