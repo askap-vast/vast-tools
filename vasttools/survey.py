@@ -23,7 +23,7 @@ from typing import Optional, List, Union
 
 
 from vasttools import RELEASED_EPOCHS, OBSERVED_EPOCHS
-from vasttools.utils import strip_fieldnames
+import vasttools.utils as vtu
 
 warnings.filterwarnings('ignore', category=AstropyWarning, append=True)
 warnings.filterwarnings(

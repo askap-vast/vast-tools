@@ -40,7 +40,7 @@ except ImportError:
     use_colorlog = False
 
 
-from vasttools.survey import get_askap_observing_location
+import vasttools.survey as vts
 
 
 def get_logger(
@@ -446,7 +446,7 @@ def match_planet_to_field(
         unit=(u.deg, u.deg)
     )
 
-    ol = get_askap_observing_location()
+    ol = vts.get_askap_observing_location()
     with solar_system_ephemeris.set('builtin'):
         planet_coords = get_body(planet, dates, ol)
 
