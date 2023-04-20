@@ -176,11 +176,12 @@ def test_load_field_centres(mocker) -> None:
     pandas_mocker = mocker.patch(
         'vasttools.survey.pd.read_csv'
     )
+    mock_field_df = pd.DataFrame({'field': pd.Series(['VAST_2118-06'])})
     concat_mocker = mocker.patch(
-        'vasttools.survey.pd.concat', return_value=-99
+        'vasttools.survey.pd.concat', return_value=mock_field_df
     )
     fieldstrip_mocker = mocker.patch(
-        'vasttools.survey._strip_fieldnames'
+        'vasttools.utils.strip_fieldnames', return_value=-99,
     )
 
     result = vts.load_field_centres()
@@ -188,7 +189,7 @@ def test_load_field_centres(mocker) -> None:
     importlib_mocker.assert_has_calls(importlib_calls)
     pandas_mocker.assert_has_calls(read_csv_calls)
 
-    assert result == -99
+    pd.testing.assert_frame_equal(result, mock_field_df)
 
 
 def test_load_fields_file(mocker) -> None:
@@ -211,9 +212,6 @@ def test_load_fields_file(mocker) -> None:
     )
     pandas_mocker = mocker.patch(
         'vasttools.survey.pd.read_csv', return_value=-99
-    )
-    fieldstrip_mocker = mocker.patch(
-        'vasttools.survey._strip_fieldnames', return_value=-99
     )
 
     result = vts.load_fields_file(epoch)
