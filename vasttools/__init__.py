@@ -42,6 +42,7 @@ RELEASED_EPOCHS = {
     "28": "28", # RACS-high, needs check that it exists, not part of VAST release
     "29": "29", # RACS-low-2, needs check that it exists, not part of VAST release
     "30": "30",
+    "31": "31",
 }
 
 OBSERVED_EPOCHS = {
