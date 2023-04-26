@@ -960,6 +960,17 @@ test-randomorder = ["pytest-randomly"]
 tox = ["tox"]
 
 [[package]]
+name = "csscompressor"
+version = "0.9.5"
+description = "A python port of YUI CSS Compressor"
+category = "dev"
+optional = false
+python-versions = "*"
+files = [
+    {file = "csscompressor-0.9.5.tar.gz", hash = "sha256:afa22badbcf3120a4f392e4d22f9fff485c044a1feda4a950ecc5eba9dd31a05"},
+]
+
+[[package]]
 name = "cycler"
 version = "0.11.0"
 description = "Composable style cycles"
@@ -1471,14 +1482,14 @@ genshi = ["genshi"]
 lxml = ["lxml"]
 
 [[package]]
-name = "htmlmin"
-version = "0.1.12"
+name = "htmlmin2"
+version = "0.1.13"
 description = "An HTML Minifier"
 category = "dev"
 optional = false
 python-versions = "*"
 files = [
-    {file = "htmlmin-0.1.12.tar.gz", hash = "sha256:50c1ef4630374a5d723900096a961cff426dff46b48f34d194a81bbe14eca178"},
+    {file = "htmlmin2-0.1.13-py3-none-any.whl", hash = "sha256:75609f2a42e64f7ce57dbff28a39890363bde9e7e5885db633317efbdf8c79a2"},
 ]
 
 [[package]]
@@ -2257,14 +2268,14 @@ files = [
 
 [[package]]
 name = "markdown"
-version = "3.4.3"
-description = "Python implementation of John Gruber's Markdown."
+version = "3.3.7"
+description = "Python implementation of Markdown."
 category = "dev"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.6"
 files = [
-    {file = "Markdown-3.4.3-py3-none-any.whl", hash = "sha256:065fd4df22da73a625f14890dd77eb8040edcbd68794bcd35943be14490608b2"},
-    {file = "Markdown-3.4.3.tar.gz", hash = "sha256:8bf101198e004dc93e84a12a7395e31aac6a9c9942848ae1d99b9d72cf9b3520"},
+    {file = "Markdown-3.3.7-py3-none-any.whl", hash = "sha256:f5da449a6e1c989a4cea2631aa8ee67caa5a2ef855d551c88f9e309f4634c621"},
+    {file = "Markdown-3.3.7.tar.gz", hash = "sha256:cbb516f16218e643d8e0a95b309f77eb118cb138d39a4f27851e6a63581db874"},
 ]
 
 [package.dependencies]
@@ -2486,30 +2497,32 @@ files = [
 
 [[package]]
 name = "mkdocs"
-version = "1.3.0"
+version = "1.4.2"
 description = "Project documentation with Markdown."
 category = "dev"
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.7"
 files = [
-    {file = "mkdocs-1.3.0-py3-none-any.whl", hash = "sha256:26bd2b03d739ac57a3e6eed0b7bcc86168703b719c27b99ad6ca91dc439aacde"},
-    {file = "mkdocs-1.3.0.tar.gz", hash = "sha256:b504405b04da38795fec9b2e5e28f6aa3a73bb0960cb6d5d27ead28952bd35ea"},
+    {file = "mkdocs-1.4.2-py3-none-any.whl", hash = "sha256:c8856a832c1e56702577023cd64cc5f84948280c1c0fcc6af4cd39006ea6aa8c"},
+    {file = "mkdocs-1.4.2.tar.gz", hash = "sha256:8947af423a6d0facf41ea1195b8e1e8c85ad94ac95ae307fe11232e0424b11c5"},
 ]
 
 [package.dependencies]
-click = ">=3.3"
+click = ">=7.0"
+colorama = {version = ">=0.4", markers = "platform_system == \"Windows\""}
 ghp-import = ">=1.0"
-importlib-metadata = ">=4.3"
-Jinja2 = ">=2.10.2"
-Markdown = ">=3.2.1"
+importlib-metadata = {version = ">=4.3", markers = "python_version < \"3.10\""}
+jinja2 = ">=2.11.1"
+markdown = ">=3.2.1,<3.4"
 mergedeep = ">=1.3.4"
 packaging = ">=20.5"
-PyYAML = ">=3.10"
+pyyaml = ">=5.1"
 pyyaml-env-tag = ">=0.1"
 watchdog = ">=2.0"
 
 [package.extras]
 i18n = ["babel (>=2.9.0)"]
+min-versions = ["babel (==2.9.0)", "click (==7.0)", "colorama (==0.4)", "ghp-import (==1.0)", "importlib-metadata (==4.3)", "jinja2 (==2.11.1)", "markdown (==3.2.1)", "markupsafe (==2.0.1)", "mergedeep (==1.3.4)", "packaging (==20.5)", "pyyaml (==5.1)", "pyyaml-env-tag (==0.1)", "typing-extensions (==3.10)", "watchdog (==2.0)"]
 
 [[package]]
 name = "mkdocs-autorefs"
@@ -2529,14 +2542,14 @@ mkdocs = ">=1.1"
 
 [[package]]
 name = "mkdocs-gen-files"
-version = "0.3.5"
+version = "0.4.0"
 description = "MkDocs plugin to programmatically generate documentation pages during the build"
 category = "dev"
 optional = false
 python-versions = ">=3.7,<4.0"
 files = [
-    {file = "mkdocs-gen-files-0.3.5.tar.gz", hash = "sha256:d90d9e1676531a0bb96b1287dc28aa41162986de4dc3c00400214724761ff6ef"},
-    {file = "mkdocs_gen_files-0.3.5-py3-none-any.whl", hash = "sha256:69562fddc662482e8f54a00a8b4ede5166ad5384ae4dbb0469f1f338ef3285ca"},
+    {file = "mkdocs-gen-files-0.4.0.tar.gz", hash = "sha256:377bff8ee8e93515916689f483d971643f83a94eed7e92318854da8f344f0163"},
+    {file = "mkdocs_gen_files-0.4.0-py3-none-any.whl", hash = "sha256:3241a4c947ecd11763ca77cc645015305bf71a0e1b9b886801c114fcf9971e71"},
 ]
 
 [package.dependencies]
@@ -2544,14 +2557,14 @@ mkdocs = ">=1.0.3,<2.0.0"
 
 [[package]]
 name = "mkdocs-git-revision-date-localized-plugin"
-version = "0.10.3"
+version = "0.12.1"
 description = "Mkdocs plugin that enables displaying the localized date of the last git modification of a markdown file."
 category = "dev"
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "mkdocs-git-revision-date-localized-plugin-0.10.3.tar.gz", hash = "sha256:c4b3b0ea8b42013c4a2ad0f6f0b59828558c034363bb266b93e411b880904082"},
-    {file = "mkdocs_git_revision_date_localized_plugin-0.10.3-py3-none-any.whl", hash = "sha256:aa5031850412e17613fc9f0e8f822d41b21e3e03a420ea7b768e3268aa2d6a37"},
+    {file = "mkdocs-git-revision-date-localized-plugin-0.12.1.tar.gz", hash = "sha256:29a77224fdee0f125347e32ce18cc6bec0899b92f109399fcdb07ad962b9c2ea"},
+    {file = "mkdocs_git_revision_date_localized_plugin-0.12.1-py3-none-any.whl", hash = "sha256:2b05dcaa0700119d92462ada141be1353b1bf90e5e11331ea32ef61a3009c958"},
 ]
 
 [package.dependencies]
@@ -2561,21 +2574,21 @@ mkdocs = ">=1.0"
 
 [[package]]
 name = "mkdocs-material"
-version = "8.5.4"
+version = "8.5.11"
 description = "Documentation that simply works"
 category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "mkdocs_material-8.5.4-py3-none-any.whl", hash = "sha256:aec2f0f2143109f8388aadf76e6fff749a2b74ebe730d0f674c65b53da89d19d"},
-    {file = "mkdocs_material-8.5.4.tar.gz", hash = "sha256:70dc47820d4765b77968b9119f2957d09b4d8d328d950bee4544ff224d5c7b36"},
+    {file = "mkdocs_material-8.5.11-py3-none-any.whl", hash = "sha256:c907b4b052240a5778074a30a78f31a1f8ff82d7012356dc26898b97559f082e"},
+    {file = "mkdocs_material-8.5.11.tar.gz", hash = "sha256:b0ea0513fd8cab323e8a825d6692ea07fa83e917bb5db042e523afecc7064ab7"},
 ]
 
 [package.dependencies]
 jinja2 = ">=3.0.2"
 markdown = ">=3.2"
-mkdocs = ">=1.3.0"
-mkdocs-material-extensions = ">=1.0.3"
+mkdocs = ">=1.4.0"
+mkdocs-material-extensions = ">=1.1"
 pygments = ">=2.12"
 pymdown-extensions = ">=9.4"
 requests = ">=2.26"
@@ -2594,20 +2607,21 @@ files = [
 
 [[package]]
 name = "mkdocs-minify-plugin"
-version = "0.4.1"
-description = "An MkDocs plugin to minify HTML and/or JS files prior to being written to disk"
+version = "0.6.4"
+description = "An MkDocs plugin to minify HTML, JS or CSS files prior to being written to disk"
 category = "dev"
 optional = false
-python-versions = ">=3.0"
+python-versions = ">=3.7"
 files = [
-    {file = "mkdocs-minify-plugin-0.4.1.tar.gz", hash = "sha256:dd12c178853485281aac3ccdd7c85733462550961fa6cf6d2ce0fdad103c9c9e"},
-    {file = "mkdocs_minify_plugin-0.4.1-py2-none-any.whl", hash = "sha256:8799170c9b3bcc169be60104b80f3a43f9eb585d4d50701e2cbf342d35a46487"},
+    {file = "mkdocs-minify-plugin-0.6.4.tar.gz", hash = "sha256:1906e9687c39ded7d1ca959c76c6e52da6a8d0765e3981ad9812d3a489f1ecdb"},
+    {file = "mkdocs_minify_plugin-0.6.4-py3-none-any.whl", hash = "sha256:c0221053968a68418245228e04b0d5bc7e6b1a1940db721a52c7ec98d898242e"},
 ]
 
 [package.dependencies]
-htmlmin = ">=0.1.4"
-jsmin = ">=3.0.0"
-mkdocs = ">=1.0.4"
+csscompressor = ">=0.9.5"
+htmlmin2 = ">=0.1.13"
+jsmin = ">=3.0.1"
+mkdocs = ">=1.4.1"
 
 [[package]]
 name = "mkdocstrings"
@@ -3343,14 +3357,14 @@ files = [
 
 [[package]]
 name = "platformdirs"
-version = "3.3.0"
+version = "3.4.0"
 description = "A small Python package for determining appropriate platform-specific dirs, e.g. a \"user data dir\"."
 category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "platformdirs-3.3.0-py3-none-any.whl", hash = "sha256:ea61fd7b85554beecbbd3e9b37fb26689b227ffae38f73353cbcc1cf8bd01878"},
-    {file = "platformdirs-3.3.0.tar.gz", hash = "sha256:64370d47dc3fca65b4879f89bdead8197e93e05d696d6d1816243ebae8595da5"},
+    {file = "platformdirs-3.4.0-py3-none-any.whl", hash = "sha256:01437886022decaf285d8972f9526397bfae2ac55480ed372ed6d9eca048870a"},
+    {file = "platformdirs-3.4.0.tar.gz", hash = "sha256:a5e1536e5ea4b1c238a1364da17ff2993d5bd28e15600c2c8224008aff6bbcad"},
 ]
 
 [package.extras]
@@ -3490,33 +3504,37 @@ files = [
 
 [[package]]
 name = "pyarrow"
-version = "3.0.0"
+version = "11.0.0"
 description = "Python library for Apache Arrow"
 category = "main"
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.7"
 files = [
-    {file = "pyarrow-3.0.0-cp36-cp36m-macosx_10_13_x86_64.whl", hash = "sha256:03e2435da817bc2b5d0fad6f2e53305eb36c24004ddfcb2b30e4217a1a80cf22"},
-    {file = "pyarrow-3.0.0-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:2be3a9eab4bfd00024dc3c83fa03de1c1d04a0f47ebaf3dc483cd100546eacbf"},
-    {file = "pyarrow-3.0.0-cp36-cp36m-manylinux2010_x86_64.whl", hash = "sha256:a76031ef19d11db2fef79a97cc69997c97bea35aa07efbe042a177c7e3b1a390"},
-    {file = "pyarrow-3.0.0-cp36-cp36m-manylinux2014_x86_64.whl", hash = "sha256:a07e286e81ceb20f8f0c45f69760d2ebc434fe83794d5f9b44f89fc2dc6dc24d"},
-    {file = "pyarrow-3.0.0-cp36-cp36m-win_amd64.whl", hash = "sha256:cfea99a01d844c3db5e25374a6cdcf3b5ba1698bfe95d41272c295a4581e884c"},
-    {file = "pyarrow-3.0.0-cp37-cp37m-macosx_10_13_x86_64.whl", hash = "sha256:d5666a7fa2668f3ff95df028c2072d59e8b17e73d682068e8505dafa2688f3cc"},
-    {file = "pyarrow-3.0.0-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:3ea6574d1ae2d9bff7e6e1715f64c31bdc01b42387a5c78311a8ce9c09cfe135"},
-    {file = "pyarrow-3.0.0-cp37-cp37m-manylinux2010_x86_64.whl", hash = "sha256:2d5c95eb04a3d2e786e097b53534893eade6c8b3faf10f53a06143384b4446b1"},
-    {file = "pyarrow-3.0.0-cp37-cp37m-manylinux2014_x86_64.whl", hash = "sha256:31e6fc0868963aba4e6b8a3e218c9a5ff347bca870d622da0b3d58269d0c5398"},
-    {file = "pyarrow-3.0.0-cp37-cp37m-win_amd64.whl", hash = "sha256:960a9b0fd599601ddac42f16d5acf049637ec08957359c6741d6eb2bf0dbae97"},
-    {file = "pyarrow-3.0.0-cp38-cp38-macosx_10_13_x86_64.whl", hash = "sha256:2c3353d38d137f1158595b3b18dcef711f3d8fdb57cf7ae2d861d07235064bc1"},
-    {file = "pyarrow-3.0.0-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:72206cde1857d5420601feae75f53921cffab4326b42262a858c7b8be67982b7"},
-    {file = "pyarrow-3.0.0-cp38-cp38-manylinux2010_x86_64.whl", hash = "sha256:dec007a0f7adba86bd170252140ede01646b45c3a470d5862ce00d8e40cd29bd"},
-    {file = "pyarrow-3.0.0-cp38-cp38-manylinux2014_x86_64.whl", hash = "sha256:bf6684fe9e38f8ddb696e38901461eab783ec1d565974ebd5862270320b3e27f"},
-    {file = "pyarrow-3.0.0-cp38-cp38-win_amd64.whl", hash = "sha256:3b46487c45faaea8d1a5aa65002e2832ae2e1c9e68ecb461cda4fa59891cf490"},
-    {file = "pyarrow-3.0.0-cp39-cp39-macosx_10_13_x86_64.whl", hash = "sha256:978bbe8ec9090d1133a25f00f32ed92600f9d315fbfa29a17952bee01f0d7fe5"},
-    {file = "pyarrow-3.0.0-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:b7a8903f2b8a80498725ef5d4a35cd7dd5a98b74e080d42692545e61a6cbfbe4"},
-    {file = "pyarrow-3.0.0-cp39-cp39-manylinux2010_x86_64.whl", hash = "sha256:b1cf92df9f336f31706249e543dc0ffce3c67a78204ce540f1173c6c07dfafec"},
-    {file = "pyarrow-3.0.0-cp39-cp39-manylinux2014_x86_64.whl", hash = "sha256:b08c119cc2b9fcd1567797fedb245a2f4352a3084a22b7298272afe7cf7a4730"},
-    {file = "pyarrow-3.0.0-cp39-cp39-win_amd64.whl", hash = "sha256:5faa2dc73444bdcf042f121383965a47362be1f946303d46e8fd80f8d26cd90c"},
-    {file = "pyarrow-3.0.0.tar.gz", hash = "sha256:4bf8cc43e1db1e0517466209ee8e8f459d9b5e1b4074863317f2a965cf59889e"},
+    {file = "pyarrow-11.0.0-cp310-cp310-macosx_10_14_x86_64.whl", hash = "sha256:40bb42afa1053c35c749befbe72f6429b7b5f45710e85059cdd534553ebcf4f2"},
+    {file = "pyarrow-11.0.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:7c28b5f248e08dea3b3e0c828b91945f431f4202f1a9fe84d1012a761324e1ba"},
+    {file = "pyarrow-11.0.0-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a37bc81f6c9435da3c9c1e767324ac3064ffbe110c4e460660c43e144be4ed85"},
+    {file = "pyarrow-11.0.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ad7c53def8dbbc810282ad308cc46a523ec81e653e60a91c609c2233ae407689"},
+    {file = "pyarrow-11.0.0-cp310-cp310-win_amd64.whl", hash = "sha256:25aa11c443b934078bfd60ed63e4e2d42461682b5ac10f67275ea21e60e6042c"},
+    {file = "pyarrow-11.0.0-cp311-cp311-macosx_10_14_x86_64.whl", hash = "sha256:e217d001e6389b20a6759392a5ec49d670757af80101ee6b5f2c8ff0172e02ca"},
+    {file = "pyarrow-11.0.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:ad42bb24fc44c48f74f0d8c72a9af16ba9a01a2ccda5739a517aa860fa7e3d56"},
+    {file = "pyarrow-11.0.0-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:2d942c690ff24a08b07cb3df818f542a90e4d359381fbff71b8f2aea5bf58841"},
+    {file = "pyarrow-11.0.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f010ce497ca1b0f17a8243df3048055c0d18dcadbcc70895d5baf8921f753de5"},
+    {file = "pyarrow-11.0.0-cp311-cp311-win_amd64.whl", hash = "sha256:2f51dc7ca940fdf17893227edb46b6784d37522ce08d21afc56466898cb213b2"},
+    {file = "pyarrow-11.0.0-cp37-cp37m-macosx_10_14_x86_64.whl", hash = "sha256:1cbcfcbb0e74b4d94f0b7dde447b835a01bc1d16510edb8bb7d6224b9bf5bafc"},
+    {file = "pyarrow-11.0.0-cp37-cp37m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:aaee8f79d2a120bf3e032d6d64ad20b3af6f56241b0ffc38d201aebfee879d00"},
+    {file = "pyarrow-11.0.0-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:410624da0708c37e6a27eba321a72f29d277091c8f8d23f72c92bada4092eb5e"},
+    {file = "pyarrow-11.0.0-cp37-cp37m-win_amd64.whl", hash = "sha256:2d53ba72917fdb71e3584ffc23ee4fcc487218f8ff29dd6df3a34c5c48fe8c06"},
+    {file = "pyarrow-11.0.0-cp38-cp38-macosx_10_14_x86_64.whl", hash = "sha256:f12932e5a6feb5c58192209af1d2607d488cb1d404fbc038ac12ada60327fa34"},
+    {file = "pyarrow-11.0.0-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:41a1451dd895c0b2964b83d91019e46f15b5564c7ecd5dcb812dadd3f05acc97"},
+    {file = "pyarrow-11.0.0-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:becc2344be80e5dce4e1b80b7c650d2fc2061b9eb339045035a1baa34d5b8f1c"},
+    {file = "pyarrow-11.0.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8f40be0d7381112a398b93c45a7e69f60261e7b0269cc324e9f739ce272f4f70"},
+    {file = "pyarrow-11.0.0-cp38-cp38-win_amd64.whl", hash = "sha256:362a7c881b32dc6b0eccf83411a97acba2774c10edcec715ccaab5ebf3bb0835"},
+    {file = "pyarrow-11.0.0-cp39-cp39-macosx_10_14_x86_64.whl", hash = "sha256:ccbf29a0dadfcdd97632b4f7cca20a966bb552853ba254e874c66934931b9841"},
+    {file = "pyarrow-11.0.0-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:3e99be85973592051e46412accea31828da324531a060bd4585046a74ba45854"},
+    {file = "pyarrow-11.0.0-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:69309be84dcc36422574d19c7d3a30a7ea43804f12552356d1ab2a82a713c418"},
+    {file = "pyarrow-11.0.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:da93340fbf6f4e2a62815064383605b7ffa3e9eeb320ec839995b1660d69f89b"},
+    {file = "pyarrow-11.0.0-cp39-cp39-win_amd64.whl", hash = "sha256:caad867121f182d0d3e1a0d36f197df604655d0b466f1bc9bafa903aa95083e4"},
+    {file = "pyarrow-11.0.0.tar.gz", hash = "sha256:5461c57dbdb211a632a48facb9b39bbeb8a7905ec95d768078525283caef5f6d"},
 ]
 
 [package.dependencies]
@@ -4595,26 +4613,36 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 
 [[package]]
 name = "vaex-core"
-version = "4.10.0"
+version = "4.16.1"
 description = "Core of vaex"
 category = "main"
 optional = false
 python-versions = "*"
 files = [
-    {file = "vaex-core-4.10.0.tar.gz", hash = "sha256:5f43cc6941248c8e75632b2a18cd55321df5ca7568713221acaab1832a8cf73f"},
-    {file = "vaex_core-4.10.0-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:a524ceb67ba29ffd27d0071b14f4dd7ba7e4a3a0c86a7211fb3e0e1d251403d6"},
-    {file = "vaex_core-4.10.0-cp36-cp36m-manylinux2010_x86_64.whl", hash = "sha256:fe20be00133729f68b6992e57621a271f4f51a6e3668e4984a09f716909e6f3e"},
-    {file = "vaex_core-4.10.0-cp36-cp36m-win_amd64.whl", hash = "sha256:711b4fc8cd360fe65c20e204bbcef7b36cc5797b8cf4f965937c19f5a547a911"},
-    {file = "vaex_core-4.10.0-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:49f95eca84937e15fa221284fcb3daf5af62b7f6b9b662726d4e00ffabaff6ea"},
-    {file = "vaex_core-4.10.0-cp37-cp37m-manylinux2010_x86_64.whl", hash = "sha256:8c5239ec452d45d25df71a6372eec8532058de98d489f6f7e396d22b79b4a23a"},
-    {file = "vaex_core-4.10.0-cp37-cp37m-win_amd64.whl", hash = "sha256:d1581dd7165272342cf53a721f1baffb0f7f05ad39182caad542de9553d49a2a"},
-    {file = "vaex_core-4.10.0-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:c3a9a5fea386da1be0e9c32fb556f5ec3aa7458a80935f67af87d3a4be1aa145"},
-    {file = "vaex_core-4.10.0-cp38-cp38-manylinux2010_x86_64.whl", hash = "sha256:3acf2579cef44dd4160e5904cc5cae02365e87593640bf4fcea43cda6a2eef54"},
-    {file = "vaex_core-4.10.0-cp38-cp38-win_amd64.whl", hash = "sha256:d5b9fb9c84c3961e1732dc15cf67a3daf42163d7771325b9cc4a6dc2c29312f2"},
-    {file = "vaex_core-4.10.0-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:d9d984b9c6d64b22f2a068cdb942d6e35794826f64c56b8e6bea2bafabd77dd2"},
-    {file = "vaex_core-4.10.0-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:27a7a3c63caedcf27a1a55edbea86801015d0ee7367e7d9b73fc717dfaa4dea8"},
-    {file = "vaex_core-4.10.0-cp39-cp39-manylinux2010_x86_64.whl", hash = "sha256:786ba2065092b967beb3c3e1b4a118ad0ecdf12463c43411be4b9509156ef149"},
-    {file = "vaex_core-4.10.0-cp39-cp39-win_amd64.whl", hash = "sha256:b851fd368d85060f4e5e814762e7e0527f2bdc640592190e9e17cf90654cea41"},
+    {file = "vaex-core-4.16.1.tar.gz", hash = "sha256:ecf863db34247be69ec4684fd40431bd89ae9028c6a42b303e9b2c199492623c"},
+    {file = "vaex_core-4.16.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:77321065ca2f18193242acfa78db4feeeaf61c38d59b3c12cc7ff0cff05d3e5e"},
+    {file = "vaex_core-4.16.1-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:e975131c1087ad5641a534525b9b8936da3fedbd629ef1dce354cd68cbfd0a49"},
+    {file = "vaex_core-4.16.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:99ce524c478f5c573e3af514776d7da0c0ef6f03c76280474d472a3fff6d4886"},
+    {file = "vaex_core-4.16.1-cp310-cp310-musllinux_1_1_x86_64.whl", hash = "sha256:eb48e5cbf45f999818c2f8583dde009aa58468ea47aa47e0c33fbf5cf8517eca"},
+    {file = "vaex_core-4.16.1-cp310-cp310-win_amd64.whl", hash = "sha256:cda76bde6670599956f0f9f46ab882730e1c9b0807ec51d70b2b6c7265910f93"},
+    {file = "vaex_core-4.16.1-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:bf32a5f44a67dd6530fb569f658f9c64786d625ae23dcd202b6576da6b447492"},
+    {file = "vaex_core-4.16.1-cp36-cp36m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5a3046450d4646ddf180056f6a72f00aad2c94868007c2bb1e1b18f73d767e93"},
+    {file = "vaex_core-4.16.1-cp36-cp36m-musllinux_1_1_x86_64.whl", hash = "sha256:c03e162a1ef6f8acc17c5e658e38440e6f011f864b5bcc1d9c2018f0b129eae8"},
+    {file = "vaex_core-4.16.1-cp36-cp36m-win_amd64.whl", hash = "sha256:7ca142e89c39780b3ec91d1601132607477b5787daf00a33b8484723b49ff369"},
+    {file = "vaex_core-4.16.1-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:ef0ace96c69837c687db2b999e55dbb96b92baec7e6726f0ec673e03dca65b62"},
+    {file = "vaex_core-4.16.1-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a62790cefc16f5f381080a24f98bef7f3380b575149c723fc2d1c7e386024e29"},
+    {file = "vaex_core-4.16.1-cp37-cp37m-musllinux_1_1_x86_64.whl", hash = "sha256:2b92ce96b8549cca82c7c2a05ef8ba150a524997efff39ab7d6f0053a3fb2bdc"},
+    {file = "vaex_core-4.16.1-cp37-cp37m-win_amd64.whl", hash = "sha256:df9c454e6e6ccef3710bff6a439b6c7ca225accaeb3a5fa61d13e10cfd4f3d23"},
+    {file = "vaex_core-4.16.1-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:c4d96cdb52fe52353e25dcc466e91126e47196ff689979fef7edc7f7955a84c9"},
+    {file = "vaex_core-4.16.1-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:922de092be8c8f06eaff0b098748b4d88392fcd4a945c9135d65e45fe29e7844"},
+    {file = "vaex_core-4.16.1-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8ad2f2b7ebd8b8ce72b972497267f14469a710edb6ed257e59438d87116962fc"},
+    {file = "vaex_core-4.16.1-cp38-cp38-musllinux_1_1_x86_64.whl", hash = "sha256:f55b2dd0135968fdb7a11f3929d6aa80cb804b9f61aa3eccb3f83137f42b9e82"},
+    {file = "vaex_core-4.16.1-cp38-cp38-win_amd64.whl", hash = "sha256:c36fdc9ad9728bd9de5706af41176ce052eb14ffe53631716e2aea2f8308c5e9"},
+    {file = "vaex_core-4.16.1-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:877034c0f347b5b72549b6c1c73d1e3f6c65f28553d1e58a9a387e8546b22025"},
+    {file = "vaex_core-4.16.1-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:98511e0d2c6bea9871494f851c2b15c63eb0edb663f3b20a1d3fa713a23bdc80"},
+    {file = "vaex_core-4.16.1-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:75b25305d5934ab62c7d5c0efb758b8c0e736f9f39d574b9dd5ac99c8f0ee12f"},
+    {file = "vaex_core-4.16.1-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:48daf1f0e594ea5e560d504df04774f90e4ef84a082e1903f5495d82bb79b2e1"},
+    {file = "vaex_core-4.16.1-cp39-cp39-win_amd64.whl", hash = "sha256:7c51a189b197e8844cd4b65f5371c05016efe31de69fffe910177e7b1a3179e8"},
 ]
 
 [package.dependencies]
@@ -4629,7 +4657,7 @@ nest-asyncio = ">=1.3.3"
 numpy = ">=1.16"
 pandas = "*"
 progressbar2 = "*"
-pyarrow = ">=3.0"
+pyarrow = ">=5.0.0"
 pydantic = ">=1.8.0"
 pyyaml = "*"
 requests = "*"
@@ -4883,4 +4911,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.0,<3.11"
-content-hash = "fade580f9e15c955d27ed1d74bffd24cc8ac8c64de841c7a9b5a60b62bcc8aa5"
+content-hash = "0d873f49712b433e2104ca6916d956c2603c4c814291e9fd88ec78c026dbeb07"
