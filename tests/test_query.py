@@ -57,6 +57,12 @@ def vast_query_psrj2129(pilot_moc_mocker: MOC, mocker) -> vtq.Query:
         'mocpy.MOC.from_fits',
         return_value=pilot_moc_mocker
     )
+
+    mocker_file_validation = mocker.patch(
+        'vasttools.query.Query._validate_files',
+        return_value=True
+    )
+
     psr_coordinate = SkyCoord(322.4387083, -4.4866389, unit=(u.deg, u.deg))
 
     psr_query = vtq.Query(
@@ -271,21 +277,21 @@ def fields_df_expected_result() -> pd.DataFrame:
         if add_files:
             fields_df['selavy'] = [
                 '/testing/folder/EPOCH01/COMBINED/STOKESI_SELAVY'
-                '/VAST_2118-06A.EPOCH01.I.selavy.components.txt',
+                '/selavy-VAST_2118-06A.EPOCH01.I.conv.components.xml',
                 '/testing/folder/EPOCH02/COMBINED/STOKESI_SELAVY'
-                '/VAST_2118-06A.EPOCH02.I.selavy.components.txt'
+                '/selavy-VAST_2118-06A.EPOCH02.I.conv.components.xml',
             ]
             fields_df['image'] = [
                 '/testing/folder/EPOCH01/COMBINED/STOKESI_IMAGES'
-                '/VAST_2118-06A.EPOCH01.I.fits',
+                '/VAST_2118-06A.EPOCH01.I.conv.fits',
                 '/testing/folder/EPOCH02/COMBINED/STOKESI_IMAGES'
-                '/VAST_2118-06A.EPOCH02.I.fits',
+                '/VAST_2118-06A.EPOCH02.I.conv.fits',
             ]
             fields_df['rms'] = [
                 '/testing/folder/EPOCH01/COMBINED/STOKESI_RMSMAPS'
-                '/VAST_2118-06A.EPOCH01.I_rms.fits',
+                '/noiseMap.VAST_2118-06A.EPOCH01.I.conv.fits',
                 '/testing/folder/EPOCH02/COMBINED/STOKESI_RMSMAPS'
-                '/VAST_2118-06A.EPOCH02.I_rms.fits'
+                '/noiseMap.VAST_2118-06A.EPOCH02.I.conv.fits'
             ]
 
         return fields_df
@@ -342,6 +348,7 @@ def selavy_cat() -> pd.DataFrame:
     def _get_selavy_cat(
         contain_pulsar: bool = False,
         search_around: bool = False,
+        search_around_index: bool = False,
         add_detection: bool = False
     ) -> pd.DataFrame:
         """
@@ -356,6 +363,9 @@ def selavy_cat() -> pd.DataFrame:
             search_around: If 'True' then the dataframe is appended to itself
                 such that multiple results are found if a search around query
                 is used.
+            search_around_index: If 'True' then an 'index' column is added
+                to mimic the act of processing the search around query. Only
+                done if 'search_around' is also 'True'.
             add_detection: If `True` then a `detection` column is added that
                 mimics the same column that is added in the query process.
 
@@ -377,7 +387,6 @@ def selavy_cat() -> pd.DataFrame:
 
         selavy_df = pd.DataFrame(
             data={
-                '#': {0: np.nan, 1: np.nan},
                 'island_id': {
                     0: 'SB9668_island_1000',
                     1: 'SB9668_island_1001'
@@ -425,11 +434,14 @@ def selavy_cat() -> pd.DataFrame:
             }
         )
 
-        if search_around:
-            selavy_df = pd.concat([selavy_df, selavy_df.loc[[0, 0, 0]]])
-
         if add_detection:
             selavy_df['detection'] = [True, False]
+
+        if search_around:
+            selavy_df = pd.concat([selavy_df, selavy_df.loc[[0, 0, 0]]])
+            if search_around_index:
+                selavy_df['#'] = np.nan
+                selavy_df['index'] = 0
 
         return selavy_df
     return _get_selavy_cat
@@ -613,6 +625,10 @@ class TestQuery:
                 'vasttools.query.os.path.isdir',
                 return_value=True
             )
+            mocker_data_available = mocker.patch(
+                'vasttools.query.Query._check_data_availability',
+                return_value=True
+            )
 
             mocker_moc_open = mocker.patch(
                 'mocpy.MOC.from_fits',
@@ -652,6 +668,11 @@ class TestQuery:
             'vasttools.query.os.path.isdir',
             return_value=True
         )
+        mocker_data_available = mocker.patch(
+            'vasttools.query.Query._check_data_availability',
+            return_value=True
+        )
+
         test_dir = '/testing/folder'
         epochs = '1,2,3x'
         stokes = 'I'
@@ -706,6 +727,87 @@ class TestQuery:
         )
 
         assert query.settings == expected_settings
+
+    @pytest.mark.parametrize(
+        "epoch_exists,data_dir_exists,images_exist,"
+        "cats_exist,rmsmaps_exist,no_rms,all_available",
+        [
+            (True, True, True, True, True, False, True),
+            (True, True, True, True, True, True, True),
+            (False, True, True, True, True, False, False),
+            (True, False, True, True, True, False, False),
+            (True, True, False, True, True, False, False),
+            (True, True, True, False, True, False, False),
+            (True, True, True, True, False, False, False),
+            (True, True, True, True, False, True, True),
+        ],
+        ids=('all-available',
+             'all-available-no-rms',
+             'no-epoch',
+             'no-data-dir',
+             'no-image-dir',
+             'no-selavy-dir',
+             'no-rms-dir-rms',
+             'no-rms-dir-no-rms'
+             )
+    )
+    def test__check_data_availability(self,
+                                      epoch_exists: bool,
+                                      data_dir_exists: bool,
+                                      images_exist: bool,
+                                      cats_exist: bool,
+                                      rmsmaps_exist: bool,
+                                      no_rms: bool,
+                                      all_available: bool,
+                                      tmp_path
+                                      ) -> None:
+        """
+        Test the data availability check
+
+        Args:
+            epoch_exists: The epoch directory exists.
+            data_dir_exists: The data directory (i.e. COMBINED/TILES) exists.
+            images_exist: The image directory (e.g. STOKESI_IMAGES) exists.
+            cats_exist: The selavy directory (e.g. STOKESI_SELAVY) exists.
+            rmsmaps_exist: The RMS map directory (e.g. STOKESI_RMSMAPS) exists.
+            no_rms: The `no_rms` Query option has been selected.
+            all_available: The expected result from _check_data_availability().
+            tmp_path: Pathlib temporary directory path.
+
+        Returns:
+            None.
+        """
+        stokes = "I"
+        epoch = "10x"
+        data_type = "COMBINED"
+
+        base_dir = tmp_path
+        epoch_dir = base_dir / f"EPOCH{epoch}"
+        data_dir = epoch_dir / data_type
+        image_dir = data_dir / f"STOKES{stokes}_IMAGES"
+        selavy_dir = data_dir / f"STOKES{stokes}_SELAVY"
+        rms_dir = data_dir / f"STOKES{stokes}_RMSMAPS"
+
+        if epoch_exists:
+            epoch_dir.mkdir()
+            if data_dir_exists:
+                data_dir.mkdir()
+                if images_exist:
+                    image_dir.mkdir()
+                if cats_exist:
+                    selavy_dir.mkdir()
+                if rmsmaps_exist:
+                    rms_dir.mkdir()
+
+        query = vtq.Query(
+            epochs=epoch,
+            planets=['Mars'],
+            base_folder=base_dir,
+            stokes=stokes,
+            no_rms=no_rms
+        )
+
+        assert all_available == query._check_data_availability()
 
     def test__field_matching(
         self,
@@ -813,44 +915,66 @@ class TestQuery:
             fields_df_expected_result()
         )
 
-    @pytest.mark.parametrize("tiles, conv, islands, expected_file",
-                             [(True,
+    
+    @pytest.mark.parametrize("stokes, tiles, conv, islands, expected_file",
+                             [('I',
+                               True,
                                False,
                                None,
                                'selavy-image.i.VAST_2118-06A.SB9668.cont'
                                '.taylor.0.restored.components.corrected.xml'
                                ),
-                              (True,
+                              ('I',
+                               True,
                                True,
                                None,
                                'selavy-image.i.VAST_2118-06A.SB9668.cont'
                                '.taylor.0.restored.conv.components.corrected'
                                '.xml'
                                ),
-                              (False,
+                              ('I',
+                               False,
                                None,
                                True,
                                'selavy-VAST_2118-06A.EPOCH01.I.conv'
                                '.islands.xml'
                                ),
-                              (False,
+                              ('I',
+                               False,
                                None,
                                False,
                                'selavy-VAST_2118-06A.EPOCH01.I.conv'
                                '.components.xml'
+                               ),
+                               ('V',
+                                True,
+                                None,
+                                False,
+                                'selavy-image.v.VAST_2118-06A.SB9668.cont'
+                                '.taylor.0.restored.components.corrected.xml'
+                               ),
+                               ('V',
+                                False,
+                                None,
+                                False,
+                                'selavy-VAST_2118-06A.EPOCH01.V.conv'
+                                '.components.xml'
                                )
                               ],
                              ids=('tiles-noconv',
                                   'tiles-conv',
                                   'comb-islands',
-                                  'comb-noislands'
+                                  'comb-noislands',
+                                  'tiles-stokesv',
+                                  'comb-stokesv',
                                   )
                              )
     def test__get_selavy_path(
         self,
         vast_query_psrj2129_fields: vtq.Query,
+        stokes: str,
         tiles: bool,
-        conv: list,
+        conv: bool,
         islands: bool,
         expected_file: str,
         mocker
@@ -861,6 +985,7 @@ class TestQuery:
         Args:
             vast_query_psrj2129_fields: The dummy Query instance that includes
                 a search for PSR J2129-04 with the included found fields data.
+            stokes: Which Stokes paramter to query.
             tiles: Whether to query the TILES or COMBINED data.
             conv: Whether `.conv` is present in the filename.
                 This argument is only relevant if tiles is True
@@ -876,6 +1001,7 @@ class TestQuery:
 
         test_query.settings['tiles'] = tiles
         test_query.settings['islands'] = islands
+        test_query.settings['stokes'] = stokes
 
         row = test_query.fields_df.loc[0]
 
@@ -925,7 +1051,8 @@ class TestQuery:
 
         results = test_query._add_files(test_query.fields_df.loc[0])
 
-        assert results == expected_results
+        for result, expected in zip(results, expected_results):
+            assert result == expected
 
     @pytest.mark.parametrize("corrected, stokes",
                              [(True, "I"),
@@ -1303,7 +1430,7 @@ class TestQuery:
         assert source_call_args[2] == ['1', '2']
         assert source_call_args[3] == ['VAST_2118-06A', 'VAST_2118-06A']
         assert source_call_args[4] == 'I'
-        assert source_call_args[7].equals(sources_df.drop('#', axis=1))
+        assert source_call_args[7].equals(sources_df)
 
     def test__check_for_duplicate_epochs(
         self,
@@ -1326,10 +1453,16 @@ class TestQuery:
 
         assert np.all(expected == result.to_numpy())
 
+    @pytest.mark.parametrize(
+        "search_around",
+        [(False), (True)],
+        ids=('search_around_false', 'search_around_true')
+    )
     def test_find_sources(
         self,
         vast_query_psrj2129_fields: vtq.Query,
         selavy_cat: pd.DataFrame,
+        search_around: bool,
         mocker
     ) -> None:
         """
@@ -1349,13 +1482,24 @@ class TestQuery:
         Returns:
             None
         """
+
+        mocker_validate_files = mocker.patch(
+            'vasttools.query.Query._validate_files',
+            return_value=True
+        )
         test_query = vast_query_psrj2129_fields
+        test_query.settings['search_around'] = search_around
 
         return_df = selavy_cat(
             contain_pulsar=True,
-            add_detection=True
-        ).drop(['#', 'comment'], axis=1)
-        # these are dropped to force a return value.
+            add_detection=True,
+            search_around=search_around,
+            search_around_index=search_around
+        )
+
+        # comment is dropped as what is done in the function
+        # the # column becomes 'distance' in search_around
+        return_df = return_df.drop('comment', axis=1)
 
         dask_from_pandas_mocker = mocker.patch(
             'vasttools.query.dd.from_pandas',
@@ -1373,5 +1517,15 @@ class TestQuery:
         ) = return_df
 
         test_query.find_sources()
+
+        # need to set index and merge with fields_df in the search around
+        # case as this is performed in the find_sources function. Also this
+        # is where the # column is renamed
+        if search_around:
+            return_df = return_df.set_index('index')
+            return_df = test_query.fields_df.merge(
+                return_df, how='inner', left_index=True, right_index=True
+            )
+            return_df = return_df.rename(columns={'#': 'distance'})
 
         assert test_query.results.equals(return_df)

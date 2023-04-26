@@ -44,7 +44,7 @@ from typing import Optional, List, Tuple, Dict, Union
 from pathlib import Path
 
 from vasttools import (
-    RELEASED_EPOCHS, OBSERVED_EPOCHS, ALLOWED_PLANETS, BASE_EPOCHS
+    RELEASED_EPOCHS, OBSERVED_EPOCHS, ALLOWED_PLANETS, BASE_EPOCHS, RACS_EPOCHS
 )
 from vasttools.survey import Fields, Image
 from vasttools.survey import (
@@ -53,7 +53,7 @@ from vasttools.survey import (
 from vasttools.source import Source
 from vasttools.utils import (
     filter_selavy_components, simbad_search, match_planet_to_field,
-    epoch12_user_warning, read_selavy
+    read_selavy
 )
 from vasttools.moc import VASTMOCS
 from forced_phot import ForcedPhot
@@ -201,6 +201,8 @@ class Query:
 
         if source_names is None:
             source_names = []
+        if planets is None:
+            planets = []
 
         self.source_names = np.array(source_names)
         self.simbad_names = None
@@ -229,7 +231,7 @@ class Query:
             )
         self.ncpu = ncpu
 
-        if coords is None and len(source_names) == 0 and planets is None:
+        if coords is None and len(source_names) == 0 and len(planets) == 0:
             raise QueryInitError(
                 "No coordinates or source names have been provided!"
                 " Check inputs and try again!"
@@ -295,17 +297,16 @@ class Query:
                         "SIMBAD search failed!"
                     )
 
-        if planets is not None:
-            planets = [i.lower() for i in planets]
-            valid_planets = sum([i in ALLOWED_PLANETS for i in planets])
+        planets = [i.lower() for i in planets]
+        valid_planets = sum([i in ALLOWED_PLANETS for i in planets])
 
-            if valid_planets != len(planets):
-                self.logger.error(
-                    "Invalid planet object provided!"
-                )
-                raise ValueError(
-                    "Invalid planet object provided!"
-                )
+        if valid_planets != len(planets):
+            self.logger.error(
+                "Invalid planet object provided!"
+            )
+            raise ValueError(
+                "Invalid planet object provided!"
+            )
 
         self.planets = planets
 
@@ -380,6 +381,18 @@ class Query:
                 "\nPlease address and try again."
             ))
 
+        self.logger.info("Checking data availability...")
+        all_data_available = self._check_data_availability()
+        if all_data_available:
+            self.logger.info("All data available!")
+        else:
+            self.logger.warning(
+                "Not all requested data is available! See above for details."
+            )
+            self.logger.warning(
+                "Query will continue run, but proceed with caution."
+            )
+
         if self.coords is not None:
             self.query_df = self._build_catalog()
             if self.query_df.empty:
@@ -391,9 +404,6 @@ class Query:
             self.query_df = None
 
         self.fields_found = False
-
-        # TODO: Remove warning in future release.
-        epoch12_user_warning()
 
     def _validate_settings(self) -> bool:
         """
@@ -420,6 +430,76 @@ class Query:
             )
 
         return True
+
+    def _check_data_availability(self) -> bool:
+        """
+        Used to check that the requested data is available.
+
+        Returns:
+            `True` if all data is available, `False` otherwise.
+        """
+
+        all_available = True
+
+        base_dir = Path(self.base_folder)
+
+        data_type = "COMBINED"
+        corrected_str = ""
+
+        if self.settings['tiles']:
+            data_type = "TILES"
+            if self.corrected_data:
+                corrected_str = "_CORRECTED"
+
+        stokes = self.settings['stokes']
+
+        self.logger.info("Checking data availability...")
+
+        for epoch in self.settings['epochs']:
+            epoch_dir = base_dir / "EPOCH{}".format(RELEASED_EPOCHS[epoch])
+            if not epoch_dir.is_dir():
+                self.logger.critical(f"Epoch {epoch} is unavailable.")
+                self.logger.debug(f"{epoch_dir} does not exist.")
+                all_available = False
+                continue
+
+            data_dir = epoch_dir / data_type
+            if not data_dir.is_dir():
+                self.logger.critical(
+                    f"{data_type} data unavailable for epoch {epoch}"
+                )
+                self.logger.debug(f"{data_dir} does not exist.")
+                all_available = False
+                continue
+
+            image_dir = data_dir / f"STOKES{stokes}_IMAGES{corrected_str}"
+            if not image_dir.is_dir():
+                self.logger.critical(
+                    f"Stokes {stokes} images unavailable for epoch {epoch}"
+                )
+                self.logger.debug(f"{image_dir} does not exist.")
+                all_available = False
+
+            selavy_dir = data_dir / f"STOKES{stokes}_SELAVY{corrected_str}"
+            if not selavy_dir.is_dir():
+                self.logger.critical(
+                    f"Stokes {stokes} catalogues unavailable for epoch {epoch}"
+                )
+                self.logger.debug(f"{selavy_dir} does not exist.")
+                all_available = False
+
+            rms_dir = data_dir / f"STOKES{stokes}_RMSMAPS{corrected_str}"
+            if not rms_dir.is_dir() and not self.settings["no_rms"]:
+                self.logger.critical(
+                    f"Stokes {stokes} RMS maps unavailable for epoch {epoch}"
+                )
+                self.logger.debug(f"{rms_dir} does not exist.")
+                all_available = False
+
+        if all_available:
+            self.logger.info("All requested data is available!")
+
+        return all_available
 
     def _get_all_cutout_data(self, imsize: Angle) -> pd.DataFrame:
         """
@@ -983,7 +1063,7 @@ class Query:
             wcs=image.wcs
         )
 
-        selavy_components = read_selavy(row.selavy, usecols=[
+        selavy_components = read_selavy(row.selavy, cols=[
             'island_id',
             'ra_deg_cont',
             'dec_deg_cont',
@@ -1059,6 +1139,8 @@ class Query:
             result_type='expand'
         )
 
+        self._validate_files()
+
         if self.settings['forced_fits']:
             self.logger.info("Obtaining forced fits...")
             meta = {
@@ -1096,10 +1178,7 @@ class Query:
             else:
                 self.settings['forced_fits'] = False
 
-            self.logger.info("Done.")
-
-        if self.settings['search_around']:
-            meta['index'] = 'i'
+            self.logger.info("Forced fitting finished.")
 
         self.logger.debug("Getting components...")
         results = (
@@ -1110,6 +1189,8 @@ class Query:
                 meta=self._get_selavy_meta(),
             ).compute(num_workers=self.ncpu, scheduler='processes')
         )
+
+        self.logger.debug("Selavy components succesfully added.")
 
         if self.settings['islands']:
             results['rms_image'] = results['background_noise']
@@ -1151,17 +1232,18 @@ class Query:
                 columns={'#': 'distance'}
             )
         else:
+            npart = min(self.ncpu, self.crossmatch_results.name.nunique())
             self.results = (
-                dd.from_pandas(self.crossmatch_results, self.ncpu)
+                dd.from_pandas(self.crossmatch_results, npart)
                 .groupby('name')
                 .apply(
                     self._init_sources,
                     meta=meta,
-                ).compute(num_workers=self.ncpu, scheduler='processes')
+                ).compute(num_workers=npart, scheduler='processes')
             )
             self.results = self.results.dropna()
 
-        self.logger.info("Done.")
+        self.logger.info("Source finding complete!")
 
     def save_search_around_results(self, sort_output: bool = False) -> None:
         """
@@ -1313,11 +1395,10 @@ class Query:
             source_image_type = "COMBINED"
         source_islands = self.settings['islands']
 
-        source_df = group.drop(
-            columns=[
-                '#'
-            ]
-        )
+        if '#' in group.columns:
+            source_df = group.drop('#', axis=1)
+        else:
+            source_df = group
 
         source_df = source_df.sort_values('dateobs').reset_index(drop=True)
 
@@ -1335,6 +1416,7 @@ class Query:
             islands=source_islands,
             forced_fits=self.settings['forced_fits'],
             outdir=source_outdir,
+            corrected_data=self.corrected_data
         )
 
         return thesource
@@ -1471,7 +1553,6 @@ class Query:
 
         if self.settings["islands"]:
             meta = {
-                '#': 'f',
                 'island_id': 'U',
                 'island_name': 'U',
                 'n_components': 'f',
@@ -1515,7 +1596,6 @@ class Query:
             }
         else:
             meta = {
-                '#': 'f',
                 'island_id': 'U',
                 'component_id': 'U',
                 'component_name': 'U',
@@ -1556,6 +1636,10 @@ class Query:
                 'comment': 'f',
                 'detection': '?',
             }
+
+        if self.settings['search_around']:
+            meta['#'] = 'f'
+            meta['index'] = 'i'
 
         return meta
 
@@ -1669,8 +1753,7 @@ class Query:
                 rms_df.index = group[~mask].index.values
 
                 master = pd.concat([master, rms_df], sort=False)
-        if '#' not in master.columns:
-            master.insert(0, "#", '')
+
         return master
 
     def _get_selavy_path(self, epoch_string: str, row: pd.Series) -> str:
@@ -1682,6 +1765,8 @@ class Query:
         Returns:
             The path to the selavy file of interest
         """
+
+        field = row.field.replace('RACS', 'VAST')
 
         if self.settings['islands']:
             cat_type = 'islands'
@@ -1703,9 +1788,9 @@ class Query:
             )
 
             selavy_file_fmt = (
-                "selavy-image.i.{}.SB{}.cont."
+                "selavy-image.{}.{}.SB{}.cont."
                 "taylor.0.restored.conv.{}.xml".format(
-                    row.field, row.sbid, cat_type
+                    self.settings['stokes'].lower(), field, row.sbid, cat_type
                 )
             )
 
@@ -1730,16 +1815,13 @@ class Query:
             )
 
             selavy_file_fmt = "selavy-{}.EPOCH{}.{}.conv.{}.xml".format(
-                row.field,
+                field,
                 RELEASED_EPOCHS[row.epoch],
                 self.settings['stokes'],
                 cat_type
             )
 
             selavy_path = selavy_folder / selavy_file_fmt
-
-        if not selavy_path.exists():
-            selavy_path = str(selavy_path).replace("RACS", "VAST")
 
         return str(selavy_path)
 
@@ -1759,6 +1841,7 @@ class Query:
 
         img_dir = "STOKES{}_IMAGES".format(self.settings['stokes'])
         rms_dir = "STOKES{}_RMSMAPS".format(self.settings['stokes'])
+        field = row.field.replace('RACS', 'VAST')
 
         if self.settings['tiles']:
             dir_name = "TILES"
@@ -1766,7 +1849,7 @@ class Query:
             image_file_fmt = (
                 "image.{}.{}.SB{}.cont"
                 ".taylor.0.restored.fits".format(
-                    self.settings['stokes'].lower(), row.field, row.sbid
+                    self.settings['stokes'].lower(), field, row.sbid
                 )
             )
 
@@ -1782,36 +1865,78 @@ class Query:
             dir_name = "COMBINED"
 
             image_file_fmt = "{}.EPOCH{}.{}.conv.fits".format(
-                row.field,
+                field,
                 RELEASED_EPOCHS[row.epoch],
                 self.settings['stokes'],
             )
 
             rms_file_fmt = "noiseMap.{}.EPOCH{}.{}.conv.fits".format(
-                row.field,
+                field,
                 RELEASED_EPOCHS[row.epoch],
                 self.settings['stokes'],
             )
 
         selavy_file = self._get_selavy_path(epoch_string, row)
 
-        image_file = os.path.join(
+        image_file = Path(os.path.join(
             self.base_folder,
             epoch_string,
             dir_name,
             img_dir,
             image_file_fmt
-        )
+        ))
 
-        rms_file = os.path.join(
+        rms_file = Path(os.path.join(
             self.base_folder,
             epoch_string,
             dir_name,
             rms_dir,
             rms_file_fmt
-        )
+        ))
+        
+        if not image_file.is_file():
+            conv_image_file = Path(str(image_file).replace('.restored',
+                                                           '.restored.conv')
+                                                           )
+            if conv_image_file.is_file():
+                image_file = conv_image_file
+                rms_file = Path(str(image_file).replace('.restored',
+                                                        '.restored.conv')
+                                                        )
 
-        return selavy_file, image_file, rms_file
+
+        return selavy_file, str(image_file), str(rms_file)
+
+    def _validate_files(self) -> None:
+        """
+        Check whether files in sources_df exist, and if not, remove them.
+
+        Returns:
+            None
+        """
+
+        missing_df = pd.DataFrame()
+        missing_df['selavy'] = ~self.sources_df['selavy'].map(os.path.exists)
+        missing_df['image'] = ~self.sources_df['image'].map(os.path.exists)
+        missing_df['rms'] = ~self.sources_df['rms'].map(os.path.exists)
+
+        missing_df['any'] = missing_df.any(axis=1)
+
+        self.logger.debug(missing_df)
+
+        for i, row in missing_df[missing_df['any']].iterrows():
+            sources_row = self.sources_df.iloc[i]
+
+            self.logger.warning(f"Removing {sources_row['name']}: Epoch "
+                                f"{sources_row.epoch} due to missing files")
+            if row.selavy:
+                self.logger.debug(f"{sources_row.selavy} does not exist!")
+            if row.image:
+                self.logger.debug(f"{sources_row.image} does not exist!")
+            if row.rms:
+                self.logger.debug(f"{sources_row.rms} does not exist!")
+
+        self.sources_df = self.sources_df[~missing_df['any']]
 
     def write_find_fields(self, outname: Optional[str] = None) -> None:
         """
@@ -1972,7 +2097,8 @@ class Query:
             self.fields_df = None
 
         # Handle Planets
-        if self.planets is not None:
+        if len(self.planets) > 0:
+            self.logger.info(self.planets)
             planet_fields = self._search_planets()
 
             if self.fields_df is None:
@@ -2010,6 +2136,11 @@ class Query:
         self.fields_df['dateobs'] = pd.to_datetime(
             self.fields_df['dateobs']
         )
+
+        # All field names should start with VAST, not RACS
+        self.fields_df['field'] = self.fields_df['field'].str.replace("RACS",
+                                                                      "VAST"
+                                                                      )
 
         self.logger.info("Done.")
         self.fields_found = True
@@ -2072,7 +2203,7 @@ class Query:
         freqs = []
 
         for i in self.settings['epochs']:
-            if i != '0' and self.racs:
+            if i not in RACS_EPOCHS and self.racs:
                 the_fields = vast_fields
             else:
                 the_fields = fields
@@ -2083,7 +2214,7 @@ class Query:
                 ].index.to_list()
             ]
 
-            if i == '0':
+            if i in RACS_EPOCHS:
                 available_fields = [
                     j.replace("RACS", "VAST") for j in available_fields
                 ]
@@ -2110,7 +2241,7 @@ class Query:
                 field = available_fields[min_field_index]
 
             # Change VAST back to RACS
-            if i == '0':
+            if i in RACS_EPOCHS:
                 field = field.replace("VAST", "RACS")
             epochs.append(i)
             sbid = self._epoch_fields.loc[i, field]["SBID"]
@@ -2291,7 +2422,7 @@ class Query:
             epochs = available_epochs
         elif req_epochs == 'all-vast':
             epochs = available_epochs
-            for racs_epoch in BASE_EPOCHS['RACS']:
+            for racs_epoch in RACS_EPOCHS:
                 if racs_epoch in epochs:
                     epochs.remove(racs_epoch)
         else:
@@ -2320,7 +2451,7 @@ class Query:
 
         # RACS check
         self.racs = False
-        for racs_epoch in BASE_EPOCHS['RACS']:
+        for racs_epoch in RACS_EPOCHS:
             if racs_epoch in epochs:
                 epoch_str = "EPOCH{}".format(racs_epoch.zfill(2))
                 exists = os.path.isdir(os.path.join(self.base_folder,
@@ -2330,18 +2461,15 @@ class Query:
                     self.logger.warning(
                         'RACS {} directory not found!'.format(epoch_str)
                     )
-                    self.logger.warning(
-                        'Removing from requested epochs.'
-                    )
-                    epochs.remove(racs_epoch)
-                    self.racs = False
                 else:
-                    self.logger.warning('RACS data selected!')
-                    self.logger.warning(
-                        'Remember RACS data supplied by VAST is not final '
-                        'and results may vary.'
-                    )
                     self.racs = True
+
+        if self.racs:
+            self.logger.warning('RACS data selected!')
+            self.logger.warning(
+                'Remember RACS data supplied by VAST is not final '
+                'and results may vary.'
+            )
 
         if len(epochs) == 0:
             self.logger.critical("No requested epochs are available")

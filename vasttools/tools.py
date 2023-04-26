@@ -1,19 +1,26 @@
 """Functions and classes related to VAST that have no specific category
 and can be used generically.
 """
+from copy import deepcopy
+from dataclasses import dataclass
+import enum
+import importlib.resources
 import os
+from xml.dom import minidom
 
 import healpy as hp
 import numpy as np
 import pandas as pd
+import matplotlib
 import matplotlib.pyplot as plt
+from svgpath2mpl import parse_path
 
 from pathlib import Path
 from mocpy import MOC
 from mocpy import STMOC
 from astropy.io import fits
 from astropy.time import Time
-from typing import Union
+from typing import Union, Dict, Any, Tuple, Optional
 
 from astropy import units as u
 from astropy.coordinates import SkyCoord, Angle
@@ -627,3 +634,166 @@ def offset_postagestamp_axes(ax: plt.Axes,
     ra_offs.set_axislabel(ra_label)
 
     return
+
+
+class WiseClass(enum.Enum):
+    """WISE object classes defined in the WISE color-color plot."""
+
+    COOL_T_DWARFS = "CoolTDwarfs"
+    STARS = "Stars"
+    ELLIPTICALS = "Ellipticals"
+    SPIRALS = "Spirals"
+    LIRGS = "LIRGs"
+    STARBURSTS = "Starbursts"
+    SEYFERTS = "Seyferts"
+    QSOS = "QSOs"
+    OBSCURED_AGN = "ObscuredAGN"
+
+
+@dataclass
+class WisePatchConfig:
+    """Style and annotation configurations for the patch drawn to represent a
+    WISE object class in the WISE color-color plot.
+
+    Attributes:
+        style (Dict[str, Any]): Any style keyword arguments and values
+            supported by `matplotlib.patches.PathPatch`.
+        annotation_text (str): Text to annotate the patch.
+        annotation_position (Tuple[float, float]): Position in data coordinates
+        for the annotation text.
+    """
+
+    style: Dict[str, Any]
+    annotation_text: str
+    annotation_position: Tuple[float, float]
+
+    def copy(self):
+        return deepcopy(self)
+
+
+WISE_DEFAULT_PATCH_CONFIGS = {
+    WiseClass.COOL_T_DWARFS: WisePatchConfig(
+        style=dict(fc="#cb4627", ec="none"),
+        annotation_text="Cool\nT-Dwarfs",
+        annotation_position=(1.15, 3.0),
+    ),
+    WiseClass.STARS: WisePatchConfig(
+        style=dict(fc="#e8e615", ec="none"),
+        annotation_text="Stars",
+        annotation_position=(0.5, 0.4),
+    ),
+    WiseClass.ELLIPTICALS: WisePatchConfig(
+        style=dict(fc="#95c53d", ec="none"),
+        annotation_text="Ellipticals",
+        annotation_position=(1.0, -0.25),
+    ),
+    WiseClass.SPIRALS: WisePatchConfig(
+        style=dict(fc="#bbdeb5", ec="none", alpha=0.7),
+        annotation_text="Spirals",
+        annotation_position=(2.5, 0.35),
+    ),
+    WiseClass.LIRGS: WisePatchConfig(
+        style=dict(fc="#ecc384", ec="none"),
+        annotation_text="LIRGs",
+        annotation_position=(5.0, -0.1),
+    ),
+    WiseClass.STARBURSTS: WisePatchConfig(
+        style=dict(fc="#e8e615", ec="none", alpha=0.7),
+        annotation_text="ULIRGs\nLINERs\nStarbursts",
+        annotation_position=(4.75, 0.5),
+    ),
+    WiseClass.SEYFERTS: WisePatchConfig(
+        style=dict(fc="#45c7f0", ec="none", alpha=0.7),
+        annotation_text="Seyferts",
+        annotation_position=(3.5, 0.9),
+    ),
+    WiseClass.QSOS: WisePatchConfig(
+        style=dict(fc="#b4e2ec", ec="none"),
+        annotation_text="QSOs",
+        annotation_position=(3.1, 1.25),
+    ),
+    WiseClass.OBSCURED_AGN: WisePatchConfig(
+        style=dict(fc="#faa719", ec="none", alpha=0.8),
+        annotation_text="ULIRGs/LINERs\nObscured AGN",
+        annotation_position=(4.5, 1.75),
+    ),
+}
+
+
+def wise_color_color_plot(
+    patch_style_overrides: Optional[Dict[WiseClass, WisePatchConfig]] = None,
+    annotation_text_size: Union[float, str] = "x-small",
+) -> matplotlib.figure.Figure:
+    """Make an empty WISE color-color plot with common object classes drawn as
+    patches. The patches have default styles that may be overridden. To
+    override a patch style, pass in a dict containing the desired style and
+    annotation settings. The overrides must be complete, i.e. a complete
+    `WisePatchConfig` object must be provided for each `WiseClass` you wish to
+    modify. Partial updates to the style or annotation of individual patches is
+    not supported.
+
+    For example, to change the color of the stars patch to blue:
+    ```python
+    fig = wise_color_color_plot({
+        WiseClass.STARS: WisePatchConfig(
+            style=dict(fc="blue", ec="none"),
+            annotation_text="Stars",
+            annotation_position=(0.5, 0.4),
+        )
+    })
+    ```
+
+    Args:
+        patch_style_overrides (Optional[Dict[WiseClass, WisePatchConfig]],
+            optional): Override the default patch styles for the given WISE
+            object class. If None, use defaults for each patch. Defaults to
+            None.
+        annotation_text_size (Union[float, str]): Font size for the patch
+            annotations. Accepts a font size (float) or a matplotlib font scale
+            string (e.g. "xx-small", "medium", "xx-large"). Defaults to
+            "x-small".
+    Returns:
+        `matplotlib.figure.Figure`: the WISE color-color figure. Access the
+            axes with the `.axes` attribute.
+    """
+    # set the WISE object classification patch styles
+    if patch_style_overrides is not None:
+        patch_styles = WISE_DEFAULT_PATCH_CONFIGS.copy()
+        patch_styles.update(patch_style_overrides)
+    else:
+        patch_styles = WISE_DEFAULT_PATCH_CONFIGS
+
+    # parse the WISE color-color SVG that contains the object class patches
+    with importlib.resources.path(
+        "vasttools.data", "WISE-color-color.svg"
+    ) as svg_path:
+        doc = minidom.parse(str(svg_path))
+    # define the transform from the SVG frame to the plotting frame
+    transform = (
+        matplotlib.transforms.Affine2D().scale(sx=1, sy=-1).translate(-1, 4)
+    )
+
+    fig, ax = plt.subplots()
+    # add WISE object classification patches
+    for svg_path in doc.getElementsByTagName("path"):
+        name = svg_path.getAttribute("id")
+        patch_style = patch_styles[getattr(WiseClass, name)]
+        path_mpl = parse_path(svg_path.getAttribute("d")).transformed(
+            transform
+        )
+        patch = matplotlib.patches.PathPatch(path_mpl, **patch_style.style)
+        ax.add_patch(patch)
+        ax.annotate(
+            patch_style.annotation_text,
+            patch_style.annotation_position,
+            ha="center",
+            fontsize=annotation_text_size,
+        )
+    ax.set_xlim(-1, 6)
+    ax.set_ylim(-0.5, 4)
+    ax.set_aspect(1)
+    ax.set_xlabel("[4.6] - [12] (mag)")
+    ax.set_ylabel("[3.4] - [4.6] (mag)")
+    ax.xaxis.set_major_locator(matplotlib.ticker.MultipleLocator(1))
+    ax.yaxis.set_major_locator(matplotlib.ticker.MultipleLocator(1))
+    return fig

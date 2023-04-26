@@ -1,10 +1,5 @@
 # Query
 
-!!! warning "Version 2.0.0 Epoch 12 Update"
-    In v2.0.0 of vast tools, what was defined as `EPOCH12` has now been redefined as `EPOCH13`.
-    `EPOCH12` is now the epoch that was observed between `11x` and `13` that was processed after these observations.
-    Please refer to the [VAST wiki page](https://github.com/askap-vast/vast-project/wiki/Pilot-Survey-Status-&-Data){:target="_blank"} for the full details (VAST GitHub organization membership required).
-
 The `Query` component of VAST Tools is used to query the VAST Pilot Survey data directly.
 
 !!!warning "Deprecation Warning"
@@ -34,7 +29,7 @@ In full, the `Query` component as the ability to:
 
 !!!warning "Warning: Data Access"
     It is assumed that the machine that is running VAST Tools has access to the VAST Pilot Survey release output.
-    Refer to the [Configuration & Data Access](../../getting_started/configuration/) page for more information.
+    Refer to the [Configuration & Data Access](../../getting_started/configuration/) page for more information. If the user only has access to an incomplete version of the dataset, the code will automatically remove the data that is unavailable, allowing the query to proceed.
 
 !!!tip "Tip: `find_sources` script"
     It is not ideal to perform large queries in a notebook environment.
@@ -251,8 +246,8 @@ Once the `Query` has been defined the settings can be checked by viewing the `Qu
     my_source_names = ["1AXG J134412+0016", "SN 2012dy", "PSR J2129-0429"]
 
     my_query = Query(
-        coords=coords_to_query,
-        source_names=source_names,
+        coords=my_coords,
+        source_names=my_source_names,
         matches_only=True, 
         epochs="all-vast", 
         crossmatch_radius=10., 

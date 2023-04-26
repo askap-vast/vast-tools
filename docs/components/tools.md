@@ -144,3 +144,72 @@ The required arguments to this function are the axis and the central coordinate.
         ![!png output example.](../img/png_output_example.png){: loading=lazy }
     === "Offset coordinates"
         ![!png output example.](../img/png_output_offset_example.png){: loading=lazy }
+
+#### wise_color_color_plot
+
+:fontawesome-regular-file-alt: [Code reference](../../reference/tools/#vasttools.tools.wise_color_color_plot).
+
+This function returns a WISE color-color figure with common object classification regions
+drawn as patches. A set of default object classes are provided, see
+[WiseClass](../../reference/tools/#vasttools.tools.WiseClass).
+
+!!! example "Example: Default WISE color-color figure"
+    Get the default WISE color-color figure and plot a data point.
+
+    ```python
+    from vasttools.tools import wise_color_color_plot
+
+    fig = wise_color_color_plot()
+    ax = fig.axes[0]  # get the axes object
+    # plot a data point in the QSO region
+    ax.plot(3.0, 1.0, color="red", marker="*", markersize=10)
+    ```
+
+    ![!png output example.](../img/wise-color-color-default.png){: loading=lazy }
+
+The default style and text annotation of each object class can be modified by providing a new set
+of configurations as an argument. Only the object classes contained in the passed argument
+are modified, any others retain their default configuration. When overriding a patch style
+or annotation, a complete [WisePatchConfig](../../reference/tools/#vasttools.tools.WisePatchConfig)
+object must be provided, i.e. it must define the style, annotation text, and annotation
+position. Partial overrides are not supported. `WisePatchConfig.style` should be a dict
+containing any keyword arguments and values supported by `matplotlib.patches.PathPatch`.
+
+!!! example "Example: WISE color-color style override"
+    Override the style for the star object class. In this example, the
+    color is changed to blue. By creating a copy of the default patch configuration, we
+    are able to inherit the default annotation text and position. Using a copy also
+    ensures that we do not change the default configurations.
+
+    ```python
+    from vasttools.tools import (
+        wise_color_color_plot, WiseClass, WisePatchConfig, WISE_DEFAULT_PATCH_CONFIGS
+    )
+
+    # copy the default config for the stars object class
+    stars_patch_config = WISE_DEFAULT_PATCH_CONFIGS[WiseClass.STARS].copy()
+    # change the patch face color to blue
+    stars_patch_config.style["fc"] = "blue"
+
+    fig = wise_color_color_plot({WiseClass.STARS: stars_patch_config})
+    ```
+
+    ![!png output example.](../img/wise-color-color-styled.png){: loading=lazy }
+
+To remove a patch, override the face and edge colors to be transparent and set the
+annotation text to an empty string.
+
+!!! example "Example: Remove an object class from a WISE color-color plot"
+    This example removes the cool T-dwarfs patch from the WISE color-color plot by
+    setting the face color and edge color to "none", and the annotation text to "".
+
+    ```python
+    from vasttools.tools import wise_color_color_plot, WiseClass, WisePatchConfig
+
+    cool_patch_config = WisePatchConfig(
+        style=dict(fc="none", ec="none"), annotation_text="", annotation_position=(0, 0)
+    )
+    fig = wise_color_color_plot({WiseClass.COOL_T_DWARFS: cool_patch_config})
+    ```
+
+    ![!png output example.](../img/wise-color-color-uncool.png){: loading=lazy }

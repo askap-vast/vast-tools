@@ -251,7 +251,7 @@ The cutout data is stored in a dataframe as the attribute `Source.cutout_df`.
 :fontawesome-regular-file-alt: [Code reference](../../reference/source/#vasttools.source.Source.make_png).
 
 The main method that generates all the PNG images that is called by other methods.
-Note that this method can only produce a single epoch at a time, and required argument is the epoch of which to plot.
+Note that this method can only produce a single epoch at a time, and required argument is the index of the observation to plot.
 The result is returned a [`matplotlib.pyplot.figure`](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html){:target="_blank"} instance.
 There are a wide variety of options that can style the output plot, please refer to the Code Reference to view them all.
 
@@ -268,17 +268,17 @@ There are a wide variety of options that can style the output plot, please refer
     ```
 
 !!! example
-    Creating a `png` plot for the epoch labelled as `'1'`.
+    Creating a `png` plot for the first observation.
     ```python
-    my_source.make_png('1')
+    my_source.make_png(0)
     ```
 
 By default the axis labels will measure the offset from the central coordinate. However users can instead choose to use absolute coordinates by setting the `offset_axes` argument to `False`.
     
 !!! example
-    Creating a `png` plot for the epoch labelled as `'1'` using absolute coordinates.
+    Creating a `png` plot for the first observation using absolute coordinates.
     ```python
-    my_source.make_png('1', offset_axes=False)
+    my_source.make_png(0, offset_axes=False)
     ```
 ??? example "Example png output"
     === "Offset coordinates"
@@ -408,8 +408,8 @@ If this was not provided the default location is the current directory.
 
 :fontawesome-regular-file-alt: [Code reference](../../reference/source/#vasttools.source.Source.save_fits_cutout).
 
-A method to save the cutout (or postage stamp) of a single epoch in the FITS format.
-The required argument is the epoch label of the epoch to be saved.
+A method to save the cutout (or postage stamp) of a single observation in the FITS format.
+The required argument is the zero-based index of the observation to be saved.
 Refer to the code reference for all other available options. 
 The file will be saved to the directory specified by the argument `outdir` in the instancing of the `Source`.
 If this was not provided the default location is the current directory.
@@ -419,21 +419,21 @@ If this was not provided the default location is the current directory.
     Once the cutout data has been fetched it won't be fetched again unless the `force` argument is set to `True`.
     Hence, if changing the size of the image after already using a method that fetches the cutout data, `force` must be set to `True` for it to be applied.
     ```python
-    my_source.save_fits_cutout('1', size=Angle(30 * u.arcsec), force=True)
+    my_source.save_fits_cutout(0, size=Angle(30 * u.arcsec), force=True)
     ```
 
 !!! example
-    Saving the FITS cutout of the epoch labelled `1`.
+    Saving the FITS cutout of the first observation.
     ```python
-    my_source.save_fits_cutout('1')
+    my_source.save_fits_cutout(0)
     ```
 
 #### save_png_cutout
 
 :fontawesome-regular-file-alt: [Code reference](../../reference/source/#vasttools.source.Source.save_png_cutout).
 
-A method to save the cutout (or postage stamp) of a single epoch as a png image.
-The required argument is the epoch label of the epoch to be saved.
+A method to save the cutout (or postage stamp) of a single observation as a png image.
+The required argument is the zero-based index of the epoch to be saved.
 Refer to the code reference for all other available options. 
 The file will be saved to the directory specified by the argument `outdir` in the instancing of the `Source`.
 If this was not provided the default location is the current directory.
@@ -443,13 +443,13 @@ If this was not provided the default location is the current directory.
     Once the cutout data has been fetched it won't be fetched again unless the `force` argument is set to `True`.
     Hence, if changing the size of the image after already using a method that fetches the cutout data, `force` must be set to `True` for it to be applied.
     ```python
-    my_source.save_png_cutout('1', size=Angle(30 * u.arcsec), force=True)
+    my_source.save_png_cutout(0, size=Angle(30 * u.arcsec), force=True)
     ```
 
 !!! example
-    Saving the png cutout of the epoch labelled `1`.
+    Saving the png cutout of the first observation.
     ```python
-    my_source.save_png_cutout('1')
+    my_source.save_png_cutout(0)
     ```
 
 ??? example "Example png output"
@@ -487,8 +487,8 @@ The result is returned a [`matplotlib.pyplot.figure`](https://matplotlib.org/sta
 
 :fontawesome-regular-file-alt: [Code reference](../../reference/source/#vasttools.source.Source.show_png_cutout).
 
-A method to produce the cutout (or postage stamp) of a single epoch as a png image.
-The required argument is the epoch label of the epoch to be saved.
+A method to produce the cutout (or postage stamp) of a single observation as a png image.
+The required argument is the zero-based index of the observation to be saved.
 Refer to the code reference for all other available options.
 The result is returned a [`matplotlib.pyplot.figure`](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html){:target="_blank"} instance.
 
@@ -497,13 +497,13 @@ The result is returned a [`matplotlib.pyplot.figure`](https://matplotlib.org/sta
     Once the cutout data has been fetched it won't be fetched again unless the `force` argument is set to `True`.
     Hence, if changing the size of the image after already using a method that fetches the cutout data, `force` must be set to `True` for it to be applied.
     ```python
-    my_source.show_png_cutout('1', size=Angle(30 * u.arcsec), force=True)
+    my_source.show_png_cutout(0, size=Angle(30 * u.arcsec), force=True)
     ```
 
 !!! example
-    Saving the png cutout of the epoch labelled `1`.
+    Saving the png cutout of the first observation.
     ```python
-    epoch1_cutout = my_source.show_png_cutout('1')
+    my_cutout = my_source.show_png_cutout(0)
     ```
 
 ??? example "Example png output"
@@ -529,9 +529,9 @@ Results are returned as an [`astropy table`](https://docs.astropy.org/en/stable/
 :fontawesome-regular-file-alt: [Code reference](../../reference/source/#vasttools.source.Source.skyview_contour_plot).
 
 Uses the [`astroquery Skyview Queries`](https://astroquery.readthedocs.io/en/latest/skyview/skyview.html){:target="_blank"} service to download and display a cutout from an available external survey
-and overlay contours of the source from the selected epoch. 
+and overlay contours of the source from the selected observation. 
 The list of available surveys is shown on the linked page for the astroquery Skyview service.
-The required arguments are the epoch to plot and the survey to query for a cutout image.
+The required arguments are the zero-based index of the observation to plot and the survey to query for a cutout image.
 Contours are adjustable using the `contour_levels` argument, which defines the sigma levels of contours to use.
 Refer to the Code Reference for full details on the arguments available.
 The result is returned a [`matplotlib.pyplot.figure`](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html){:target="_blank"} instance.
@@ -541,13 +541,13 @@ The result is returned a [`matplotlib.pyplot.figure`](https://matplotlib.org/sta
     Once the cutout data has been fetched it won't be fetched again unless the `force` argument is set to `True`.
     Hence, if changing the size of the image after already using a method that fetches the cutout data, `force` must be set to `True` for it to be applied.
     ```python
-    my_source.skyview_contour_plot('6x', 'WISE 3.4', size=Angle(30 * u.arcsec), force=True)
+    my_source.skyview_contour_plot(0, 'WISE 3.4', size=Angle(30 * u.arcsec), force=True)
     ```
 
 !!! example
-    Generating a cutout of the source location in the `WISE 3.4` survey along with a contour overlay from the source detection in epoch 6x.
+    Generating a cutout of the source location in the `WISE 3.4` survey along with a contour overlay from the source detection in the first observation.
     ```python
-    wise_3_4_contour_epoch6x = my_source.skyview_contour_plot('6x', 'WISE 3.4')
+    wise_3_4_contour_epoch6x = my_source.skyview_contour_plot(0, 'WISE 3.4')
     ```
 
 ??? example "Example png output"
@@ -557,7 +557,7 @@ The result is returned a [`matplotlib.pyplot.figure`](https://matplotlib.org/sta
 
 :fontawesome-regular-file-alt: [Code reference](../../reference/source/#vasttools.source.Source.write_ann).
 
-Saves the kvis annotation file equal to the generated cutout size for the provided epoch.
+Saves the kvis annotation file equal to the generated cutout size for the provided observation.
 The target source and all surrounding sources are included.
 Refer to the Code Reference for information on all the arguments.
 The file will be saved to the directory specified by the argument `outdir` in the instancing of the `Source`.
@@ -567,9 +567,9 @@ If this was not provided the default location is the current directory.
     To change the size of the cutout, re-fetch the cutout data using the [`get_cutout_data`](#get-cutout-data) method.
 
 !!! example
-    Save the annotation file for the epoch labelled `1`.
+    Save the annotation file for the first observation.
     ```python
-    my_source.write_ann('1')
+    my_source.write_ann(0)
     ```
 
 #### write_measurements
@@ -589,7 +589,7 @@ If this was not provided the default location is the current directory.
 
 :fontawesome-regular-file-alt: [Code reference](../../reference/source/#vasttools.source.Source.write_reg).
 
-Saves the ds9 region file of the generated cutout size for the provided epoch.
+Saves the ds9 region file of the generated cutout size for the provided observation.
 The target source and all surrounding sources are included.
 Refer to the Code Reference for information on all the arguments.
 The file will be saved to the directory specified by the argument `outdir` in the instancing of the `Source`.
@@ -599,7 +599,7 @@ If this was not provided the default location is the current directory.
     To change the size of the cutout, re-fetch the cutout data using the [`get_cutout_data`](#get-cutout-data) method.
 
 !!! example
-    Save the region file for the epoch labelled `1`.
+    Save the region file for the first observation.
     ```python
-    my_source.write_reg('1')
+    my_source.write_reg(0)
     ```

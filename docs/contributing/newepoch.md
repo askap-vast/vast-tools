@@ -59,6 +59,8 @@ To add a new epoch, users should take the below actions.
 
 * Add the new epoch to the `RELEASED_EPOCHS` variable found in [`vasttools.survey`](../../reference/survey).
 
+* If the new epoch is from RACS rather than VAST, add the new epoch to the `RACS_EPOCHS` variable in `vasttools.__init__.py`.
+
 * Add the new epoch to the `path` variable found in [`vasttools.survey.load_fields_file`](../../reference/survey/load_fields_file).
 
 * Make sure the new epoch data is present in the standard release format if the instance of VAST Tools has access to the survey data.

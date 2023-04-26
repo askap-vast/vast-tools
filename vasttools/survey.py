@@ -109,8 +109,8 @@ def load_fields_file(epoch: str) -> pd.DataFrame:
             'vasttools.data.csvs', 'vast_epoch12_info.csv'),
         "13": importlib.resources.path(
             'vasttools.data.csvs', 'vast_epoch13_info.csv'),
-        "14": importlib.resources.path('vasttools.data.csvs',
-                                       'racs_mid_info.csv'),
+        "14": importlib.resources.path(
+            'vasttools.data.csvs', 'racs_mid_info.csv'),
         "17": importlib.resources.path(
             'vasttools.data.csvs', 'vast_epoch17_info.csv'),
         "18": importlib.resources.path(
@@ -119,6 +119,28 @@ def load_fields_file(epoch: str) -> pd.DataFrame:
             'vasttools.data.csvs', 'vast_epoch19_info.csv'),
         "20": importlib.resources.path(
             'vasttools.data.csvs', 'vast_epoch20_info.csv'),
+        "21": importlib.resources.path(
+            'vasttools.data.csvs', 'vast_epoch21_info.csv'),
+        "22": importlib.resources.path(
+            'vasttools.data.csvs', 'vast_epoch22_info.csv'),
+        "23": importlib.resources.path(
+            'vasttools.data.csvs', 'vast_epoch23_info.csv'),
+        "24": importlib.resources.path(
+            'vasttools.data.csvs', 'vast_epoch24_info.csv'),
+        "25": importlib.resources.path(
+            'vasttools.data.csvs', 'vast_epoch25_info.csv'),
+        "26": importlib.resources.path(
+            'vasttools.data.csvs', 'vast_epoch26_info.csv'),
+        "27": importlib.resources.path(
+            'vasttools.data.csvs', 'vast_epoch27_info.csv'),
+        "28": importlib.resources.path(
+            'vasttools.data.csvs', 'racs_high_info.csv'),
+        "29": importlib.resources.path(
+            'vasttools.data.csvs', 'racs_low2_info.csv'),
+        "30": importlib.resources.path(
+            'vasttools.data.csvs', 'vast_epoch30_info.csv'),
+        "31": importlib.resources.path(
+            'vasttools.data.csvs', 'vast_epoch31_info.csv'),
     }
 
     with paths[epoch] as fields_csv:
