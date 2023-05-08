@@ -7,7 +7,7 @@ import pytest
 from astropy.coordinates import Angle, EarthLocation, SkyCoord
 from astropy.io import fits
 from astropy.time import Time
-from pytest_mock import mocker  # noqa: F401
+from pytest_mock import mocker, MockerFixture  # noqa: F401
 from typing import Optional
 
 from vasttools import RELEASED_EPOCHS
@@ -146,7 +146,7 @@ def init_Image() -> vts.Image:
     return _init_Image
 
 
-def test_load_field_centres(mocker) -> None:
+def test_load_field_centres(mocker: MockerFixture) -> None:
     """
     Tests loading the field centres file.
 
@@ -192,7 +192,7 @@ def test_load_field_centres(mocker) -> None:
     pd.testing.assert_frame_equal(result, mock_field_df)
 
 
-def test_load_fields_file(mocker) -> None:
+def test_load_fields_file(mocker: MockerFixture) -> None:
     """
     Tests loading the fields file.
 
@@ -224,7 +224,7 @@ def test_load_fields_file(mocker) -> None:
     assert result == -99
 
 
-def test_load_fields_file_epoch_fail(mocker) -> None:
+def test_load_fields_file_epoch_fail(mocker: MockerFixture) -> None:
     """
     Tests loading the fields file with an invalid epoch.
 
@@ -253,7 +253,7 @@ def test_load_fields_file_epoch_fail(mocker) -> None:
 
 def test_get_fields_per_epoch_info(
     dummy_load_fields_file: pd.DataFrame,
-    mocker
+    mocker: MockerFixture
 ) -> None:
     """
     Tests loading the field per epochs.
@@ -317,7 +317,7 @@ class TestFields:
     def test_fields_init(
         self,
         dummy_load_fields_file: pd.DataFrame,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests initialisation of a Fields object.
@@ -347,7 +347,7 @@ class TestFields:
     def test_fields_init_nan(
         self,
         dummy_load_fields_file: pd.DataFrame,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests initialisation of a Fields object that has a NaN object
@@ -442,7 +442,7 @@ class TestImage:
         corrected,
         conv,
         expected_suffix,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests initialisation of a Image object with no path declaration,
@@ -485,7 +485,7 @@ class TestImage:
     def test_image_init_combined_nopath_stokesv(
         self,
         init_Image: vts.Image,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests initialisation of a Image object with no path declaration,
@@ -517,7 +517,7 @@ class TestImage:
     def test_image_init_tiles_nopath_stokesv(
         self,
         init_Image: vts.Image,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests initialisation of a Image object with no path declaration,
@@ -549,7 +549,10 @@ class TestImage:
         assert image.imgpath == expected_path
         assert image.imgname == expected_filename
 
-    def test_image_init_path(self, init_Image: vts.Image, mocker) -> None:
+    def test_image_init_path(self,
+                             init_Image: vts.Image,
+                             mocker: MockerFixture
+    ) -> None:
         """
         Tests initialisation of a Image object with a path declaration.
 
@@ -576,7 +579,7 @@ class TestImage:
     def test_image_init_image_fail(
         self,
         init_Image: vts.Image,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests initialisation of a Image object where the image cannot be
@@ -605,7 +608,7 @@ class TestImage:
         self,
         init_Image: vts.Image,
         dummy_fits_open: fits.HDUList,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the get_data method of the Image.
@@ -642,7 +645,7 @@ class TestImage:
         self,
         init_Image: vts.Image,
         dummy_fits_open: fits.HDUList,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the fetching of the rms image name where no path has been
@@ -685,7 +688,7 @@ class TestImage:
         self,
         init_Image: vts.Image,
         dummy_fits_open: fits.HDUList,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the fetching of the rms image name where a path has been
@@ -724,7 +727,7 @@ class TestImage:
         self,
         init_Image: vts.Image,
         dummy_fits_open: fits.HDUList,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the measuring of pixel values in the image data given
@@ -773,7 +776,7 @@ class TestImage:
         self,
         init_Image: vts.Image,
         dummy_fits_open: fits.HDUList,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the measuring of pixel values in the rms image data given

@@ -2,7 +2,7 @@ import pathlib
 import pandas as pd
 import pytest
 
-from pytest_mock import mocker  # noqa: F401
+from pytest_mock import mocker, MockerFixture  # noqa: F401
 from typing import Union
 
 from vasttools.moc import VASTMOCS
@@ -102,7 +102,9 @@ def field_moc_filename() -> str:
     return _get_values
 
 
-def test_moc_load_pilot_stmoc(vast_tools_moc: VASTMOCS, mocker) -> None:
+def test_moc_load_pilot_stmoc(vast_tools_moc: VASTMOCS,
+                              mocker: MockerFixture
+    ) -> None:
     """
     Test the loading of the STMOC
 
@@ -132,7 +134,7 @@ def test_moc_load_pilot_stmoc(vast_tools_moc: VASTMOCS, mocker) -> None:
 def test_moc_load_pilot_epoch_moc_str(
     vast_tools_moc: VASTMOCS,
     epoch_moc_filename: str,
-    mocker
+    mocker: MockerFixture
 ) -> None:
     """
     Test the loading of the pilot epoch MOC.
@@ -185,7 +187,7 @@ def test_moc_load_pilot_field_moc(
     field: Union[str, int],
     vast_tools_moc: VASTMOCS,
     field_moc_filename: str,
-    mocker
+    mocker: MockerFixture
 ) -> None:
     """
     Test the loading of the pilot field MOC. Tests field entered as a
@@ -237,7 +239,7 @@ def test_moc_load_pilot_tile_moc(
     itype: str,
     vast_tools_moc: VASTMOCS,
     tile_moc_filename: str,
-    mocker
+    mocker: MockerFixture
 ) -> None:
     """
     Test the loading of the pilot tile MOC. Tests both COMBINED and TILE
@@ -301,7 +303,7 @@ def test_moc_load_pilot_tile_moc_type_fail(vast_tools_moc: VASTMOCS) -> None:
 
 def test_moc_load_pilot_tile_moc_field_fail(
     vast_tools_moc: VASTMOCS,
-    mocker
+    mocker: MockerFixture
 ) -> None:
     """
     Test the failure of loading of the tile MOC by providing a wrong field.
@@ -331,7 +333,7 @@ def test_moc_load_pilot_tile_moc_field_fail(
 
 def test_moc_query_vizier_vast_pilot(
     vast_tools_moc: VASTMOCS,
-    mocker
+    mocker: MockerFixture
 ) -> None:
     """
     Test the vizier MOC query. No call to vizier is actually made.

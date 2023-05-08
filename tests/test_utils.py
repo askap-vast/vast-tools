@@ -6,7 +6,7 @@ import pytest
 from astropy.coordinates import SkyCoord, Angle
 from astropy.table import Table
 from astropy.io import fits
-from pytest_mock import mocker  # noqa: F401
+from pytest_mock import mocker, MockerFixture  # noqa: F401
 
 import vasttools.utils as vtu
 
@@ -473,7 +473,7 @@ def test_gen_skycoord_from_df_colnames(
     assert np.all(coords_skycoord == vtu_sc)
 
 
-def test_check_file(mocker) -> None:
+def test_check_file(mocker: MockerFixture) -> None:
     """
     Tests check file returns correctly.
 
@@ -492,7 +492,7 @@ def test_check_file(mocker) -> None:
     mocker_isfile.assert_called_once_with(test_file)
 
 
-def test_check_racs_exists(mocker) -> None:
+def test_check_racs_exists(mocker: MockerFixture) -> None:
     """
     Tests the RACS check.
 
@@ -509,7 +509,7 @@ def test_check_racs_exists(mocker) -> None:
     assert exists is True
 
 
-def test_create_source_directories(mocker) -> None:
+def test_create_source_directories(mocker: MockerFixture) -> None:
     """
     Tests the source directories creation.
 
@@ -567,7 +567,7 @@ def test_filter_selavy_components(
 
 def test_build_catalog_file(
     catalog_deg_float: pd.DataFrame,
-    mocker,
+    mocker: MockerFixture,
 ) -> None:
     """
     Tests the build catalog function.
@@ -692,7 +692,7 @@ def test_build_SkyCoord_string_hms(
     assert np.all(result == catalog_skycoord_hms)
 
 
-def test_read_selavy_xml(mocker):
+def test_read_selavy_xml(mocker: MockerFixture):
     """
     Tests read_selavy for a file with xml formatting.
     Args:
@@ -711,7 +711,9 @@ def test_read_selavy_xml(mocker):
                                             )
 
 
-def test_read_selavy_xml_usecols(dummy_selavy_components_astropy, mocker):
+def test_read_selavy_xml_usecols(dummy_selavy_components_astropy,
+                                 mocker: MockerFixture
+    ) -> None:
     """
     Tests read_selavy for a file with xml formatting, requesting a subset
     of the available columns.
@@ -741,7 +743,7 @@ def test_read_selavy_xml_usecols(dummy_selavy_components_astropy, mocker):
     assert list(df.columns) == usecols
 
 
-def test_read_selavy_fwf(mocker):
+def test_read_selavy_fwf(mocker: MockerFixture) -> None:
     """
     Tests read_selavy for a file with standard fixed-width formatting.
     Args:
@@ -760,7 +762,7 @@ def test_read_selavy_fwf(mocker):
                                             )
 
 
-def test_read_selavy_csv(mocker):
+def test_read_selavy_csv(mocker) -> None:
     """
     Tests read_selavy for a file with csv formatting.
     Args:
@@ -778,7 +780,7 @@ def test_read_selavy_csv(mocker):
                                             )
 
 
-def test_simbad_search(mocker) -> None:
+def test_simbad_search(mocker: MockerFixture) -> None:
     """
     Test the SIMBAD search.
 
@@ -815,7 +817,7 @@ def test_simbad_search(mocker) -> None:
     assert np.all(result_names == np.array(objects))
 
 
-def test_simbad_search_none(mocker) -> None:
+def test_simbad_search_none(mocker: MockerFixture) -> None:
     """
     Test the SIMBAD search None result.
 
@@ -971,7 +973,7 @@ def test_calculate_m_metric() -> None:
 
 def test_create_moc_from_fits(
     dummy_fits_open: fits.HDUList,
-    mocker
+    mocker: MockerFixture
 ) -> None:
     """
     Tests the generation of a MOC for a single fits file.
@@ -1004,7 +1006,6 @@ def test_create_moc_from_fits(
 
 def test_mocs_with_holes(dummy_fits_open_large,
                          dummy_fits_open_large_hole,
-                         mocker) -> None:
     """
     Tests that gen_mocs_field produces the same output regardless of whether
     there are NaN holes within the image.

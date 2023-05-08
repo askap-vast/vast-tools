@@ -7,7 +7,7 @@ import pytest
 
 from astropy.coordinates import SkyCoord, Angle
 from mocpy import MOC
-from pytest_mock import mocker  # noqa: F401
+from pytest_mock import mocker, MockerFixture  # noqa: F401
 
 import vasttools.query as vtq
 
@@ -30,7 +30,9 @@ def pilot_moc_mocker() -> MOC:
 
 
 @pytest.fixture
-def vast_query_psrj2129(pilot_moc_mocker: MOC, mocker) -> vtq.Query:
+def vast_query_psrj2129(pilot_moc_mocker: MOC,
+                        mocker: MockerFixture
+    ) -> vtq.Query:
     """
     Initialises a Query object with the Pulsar J2129-04 as the search
     subject.
@@ -526,7 +528,7 @@ class TestQuery:
 
         assert str(excinfo.value) == "Invalid planet object provided!"
 
-    def test_init_failure_base_folder(self, mocker) -> None:
+    def test_init_failure_base_folder(self, mocker: MockerFixture) -> None:
         """
         Tests the initialisation failure of a Query object.
 
@@ -582,7 +584,7 @@ class TestQuery:
                                          vast_pilot: bool,
                                          vast_full: bool,
                                          fails: bool,
-                                         mocker) -> None:
+                                         mocker: MockerFixture) -> None:
         """
         Tests the initialisation failure of a Query object.
 
@@ -633,7 +635,7 @@ class TestQuery:
     def test_init_failure_no_sources_in_footprint(
         self,
         pilot_moc_mocker: MOC,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the initialisation failure of a Query object.
@@ -681,7 +683,7 @@ class TestQuery:
             ' are found in the VAST Pilot survey footprint!'
         )
 
-    def test_init_settings(self, mocker) -> None:
+    def test_init_settings(self, mocker: MockerFixture) -> None:
         """
         Tests the initialisation of a Query object.
 
@@ -844,7 +846,7 @@ class TestQuery:
         vast_query_psrj2129: vtq.Query,
         vast_fields_object_dummy: pd.DataFrame,
         field_centres_dummy: pd.DataFrame,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the field matching method of the query object.
@@ -895,7 +897,7 @@ class TestQuery:
         self,
         vast_query_psrj2129: vtq.Query,
         fields_df_expected_result: pd.DataFrame,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the front facing find fields method.
@@ -1006,7 +1008,7 @@ class TestQuery:
         conv: bool,
         islands: bool,
         expected_file: str,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests adding the paths to the combined data in the query.
@@ -1047,7 +1049,7 @@ class TestQuery:
     def test__add_files_combined(
         self,
         vast_query_psrj2129_fields: vtq.Query,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests adding the paths to the combined data in the query.
@@ -1100,7 +1102,7 @@ class TestQuery:
         corrected: bool,
         stokes: str,
         vast_query_psrj2129_fields: vtq.Query,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests adding the paths to the tiles data in the query.
@@ -1176,7 +1178,7 @@ class TestQuery:
         self,
         vast_query_psrj2129_fields: vtq.Query,
         stokes,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests adding the paths to the stokes v combined data in the query.
@@ -1218,7 +1220,7 @@ class TestQuery:
         self,
         vast_query_psrj2129_fields: vtq.Query,
         selavy_cat: pd.DataFrame,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the _get_components method of the Query class where a detection
@@ -1258,7 +1260,7 @@ class TestQuery:
         self,
         vast_query_psrj2129_fields: vtq.Query,
         selavy_cat: pd.DataFrame,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the _get_components method of the Query class where no detection
@@ -1308,7 +1310,7 @@ class TestQuery:
         self,
         vast_query_psrj2129_fields: vtq.Query,
         selavy_cat: pd.DataFrame,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the _get_components method of the Query class where the
@@ -1345,7 +1347,7 @@ class TestQuery:
     def test__get_forced_fits(
         self,
         vast_query_psrj2129_fields: vtq.Query,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the method to get the forced fits of the query.
@@ -1417,7 +1419,7 @@ class TestQuery:
         self,
         vast_query_psrj2129_fields: vtq.Query,
         selavy_cat: pd.DataFrame,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the init sources method that groups the results into vasttools
@@ -1492,7 +1494,7 @@ class TestQuery:
         vast_query_psrj2129_fields: vtq.Query,
         selavy_cat: pd.DataFrame,
         search_around: bool,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Smoke test for the user facing 'find_sources' method.
