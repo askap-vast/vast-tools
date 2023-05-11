@@ -1588,14 +1588,27 @@ class TestQuery:
                              )
     def test__check_survey(
         self,
-        vast_query_psrj2129,
-        epochs,
-        racs,
-        vast_p1,
-        vast_p2,
-        vast_full
-        ):
+        vast_query_psrj2129: vtq.Query,
+        epochs: List[str],
+        racs: bool,
+        vast_p1: bool,
+        vast_p2: bool,
+        vast_full: bool,
+        ) ->:
         """
+        Test the survey check.
+        
+        Args:
+            vast_query_psrj2129: The dummy Query instance that includes
+                a search for PSR J2129-04 with the included found fields data.
+            epochs: List of epochs to check.
+            racs: Whether the epochs include a RACS epoch.
+            vast_p1: Whether the epochs include a VAST-P1 epoch.
+            vast_p2: Whether the epochs include a VAST-P2 epoch.
+            vast_full: Whether the epochs include a full VAST survey epoch.
+
+        Returns:
+            None
         """
         
         vast_query_psrj2129._check_survey(epochs)
