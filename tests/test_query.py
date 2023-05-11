@@ -33,7 +33,7 @@ def pilot_moc_mocker() -> MOC:
 @pytest.fixture
 def vast_query_psrj2129(pilot_moc_mocker: MOC,
                         mocker: MockerFixture
-    ) -> vtq.Query:
+                        ) -> vtq.Query:
     """
     Initialises a Query object with the Pulsar J2129-04 as the search
     subject.
@@ -1561,7 +1561,7 @@ class TestQuery:
             return_df = return_df.rename(columns={'#': 'distance'})
 
         assert test_query.results.equals(return_df)
-        
+
     @pytest.mark.parametrize("epochs, racs, vast_p1, vast_p2, vast_full",
                              [(["0"], True, False, False, False),
                               (["1"], False, True, False, False),
@@ -1574,7 +1574,7 @@ class TestQuery:
                               (["1", "17"], False, True, True, False),
                               (["0", "1", "17"], True, True, True, False),
                               (["0", "1", "17", "23"], True, True, True, True),
-                             ],
+                              ],
                              ids=('racs-only',
                                   'p1-only',
                                   'p2-only',
@@ -1595,10 +1595,10 @@ class TestQuery:
         vast_p1: bool,
         vast_p2: bool,
         vast_full: bool,
-        ) -> None:
+    ) -> None:
         """
         Test the survey check.
-        
+
         Args:
             vast_query_psrj2129: The dummy Query instance that includes
                 a search for PSR J2129-04 with the included found fields data.
@@ -1611,11 +1611,10 @@ class TestQuery:
         Returns:
             None
         """
-        
+
         vast_query_psrj2129._check_survey(epochs)
-        
+
         assert vast_query_psrj2129.racs == racs
         assert vast_query_psrj2129.vast_p1 == vast_p1
         assert vast_query_psrj2129.vast_p2 == vast_p2
         assert vast_query_psrj2129.vast_full == vast_full
-        

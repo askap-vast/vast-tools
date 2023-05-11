@@ -713,7 +713,7 @@ def test_read_selavy_xml(mocker: MockerFixture):
 
 def test_read_selavy_xml_usecols(dummy_selavy_components_astropy,
                                  mocker: MockerFixture
-    ) -> None:
+                                 ) -> None:
     """
     Tests read_selavy for a file with xml formatting, requesting a subset
     of the available columns.
@@ -1080,6 +1080,7 @@ def test__distance_from_edge() -> None:
 
     assert np.all(result == expected)
 
+
 @pytest.mark.parametrize("in_series, out_series",
                          [(pd.Series(['VAST_0000+00A']),
                            pd.Series(['VAST_0000+00'])
@@ -1088,20 +1089,20 @@ def test__distance_from_edge() -> None:
                            pd.Series(['VAST_0000+00'])
                            ),
                           ],
-                          ids=('with-A', 'without-A')
-                          )
+                         ids=('with-A', 'without-A')
+                         )
 def test_strip_fieldnames(in_series, out_series) -> None:
     """
     Test the strip_fieldnames function.
-    
+
     Args:
         in_series: Series to be put into the function.
         out_series: Expected output.
-    
+
     Returns:
         None
     """
-    
+
     stripped = vtu.strip_fieldnames(in_series)
 
     pd.testing.assert_series_equal(stripped, out_series)

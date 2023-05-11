@@ -2159,7 +2159,7 @@ class Query:
             self.logger.info(
                 "{self.num_sources_searched}/{prev_num} "
                 "sources in VAST footprint."
-                )
+            )
 
         self.fields_df['dateobs'] = pd.to_datetime(
             self.fields_df['dateobs']
@@ -2200,7 +2200,7 @@ class Query:
         Returns:
             Tuple containing the field information.
         """
-        
+
         self.logger.debug("Running field matching with following row info:")
         self.logger.debug(row)
         self.logger.debug("Field names:")
@@ -2219,7 +2219,7 @@ class Query:
             self.logger.info(
                 f"Source '{row['name']}' not in the requested epoch footprint."
             )
-            return_vals = [np.nan] * 7 # Return nans in all 7 columns
+            return_vals = [np.nan] * 7  # Return nans in all 7 columns
             self.logger.debug(return_vals)
             return return_vals
 
@@ -2319,7 +2319,7 @@ class Query:
                        )
         # If len(available_fields) == 0 for all epochs need to return nan
         if len(epochs) == 0:
-            return [np.nan] * 7 # Return nans in all 7 columns
+            return [np.nan] * 7  # Return nans in all 7 columns
 
         return return_vals
 
