@@ -8,6 +8,7 @@ import pytest
 from astropy.coordinates import SkyCoord, Angle
 from mocpy import MOC
 from pytest_mock import mocker, MockerFixture  # noqa: F401
+from typing import List
 
 import vasttools.query as vtq
 
@@ -1594,7 +1595,7 @@ class TestQuery:
         vast_p1: bool,
         vast_p2: bool,
         vast_full: bool,
-        ) ->:
+        ) -> None:
         """
         Test the survey check.
         

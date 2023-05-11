@@ -1004,8 +1004,9 @@ def test_create_moc_from_fits(
     assert moc_json == moc_out_json
 
 
-def test_mocs_with_holes(dummy_fits_open_large,
-                         dummy_fits_open_large_hole,
+def test_mocs_with_holes(dummy_fits_open_large: fits.HDUList,
+                         dummy_fits_open_large_hole: fits.HDUList,
+                         mocker: MockerFixture) -> None:
     """
     Tests that gen_mocs_field produces the same output regardless of whether
     there are NaN holes within the image.
@@ -1078,3 +1079,29 @@ def test__distance_from_edge() -> None:
     result = vtu._distance_from_edge(input_array)
 
     assert np.all(result == expected)
+
+@pytest.mark.parametrize("in_series, out_series",
+                         [(pd.Series(['VAST_0000+00A']),
+                           pd.Series(['VAST_0000+00'])
+                           ),
+                          (pd.Series(['VAST_0000+00']),
+                           pd.Series(['VAST_0000+00'])
+                           ),
+                          ],
+                          ids=('with-A', 'without-A')
+                          )
+def test_strip_fieldnames(in_series, out_series) -> None:
+    """
+    Test the strip_fieldnames function.
+    
+    Args:
+        in_series: Series to be put into the function.
+        out_series: Expected output.
+    
+    Returns:
+        None
+    """
+    
+    stripped = vtu.strip_fieldnames(in_series)
+
+    pd.testing.assert_series_equal(stripped, out_series)
