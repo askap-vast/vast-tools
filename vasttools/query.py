@@ -2279,10 +2279,11 @@ class Query:
                 self.logger.debug("Selecting only available field")
 
             else:
+                stripped_available = [f.rstrip('A') for f in available_fields]
                 field_indexes = [
                     field_centre_names[
-                        field_centre_names == f.rstrip('A')
-                    ].index[0] for f in available_fields
+                        field_centre_names == f
+                    ].index[0] for f in stripped_available
                 ]
                 min_field_index = np.argmin(
                     centre_seps[field_indexes].deg
