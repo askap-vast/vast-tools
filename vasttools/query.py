@@ -2511,6 +2511,8 @@ class Query:
             epochs = []
             if isinstance(req_epochs, list):
                 epoch_iter = req_epochs
+            elif isinstance(req_epochs, int):
+                epoch_iter = [req_epochs]
             else:
                 epoch_iter = req_epochs.split(',')
 
