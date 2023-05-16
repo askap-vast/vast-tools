@@ -2511,7 +2511,7 @@ class Query:
             else:
                 epoch_iter = req_epochs.split(',')
 
-            for epoch in req_epochs.split(','):
+            for epoch in epoch_iter:
                 if type(epoch) == int:
                     epoch = str(epoch)
                 if epoch in available_epochs:
@@ -2520,17 +2520,11 @@ class Query:
                     epoch_x = "{epoch}x"
                     if epoch_x in available_epochs:
                         epochs.append(epoch_x)
-                    if self.logger is None:
+                    else:
                         self.logger.info(
                             "Epoch {} is not available. Ignoring.".format(
                                 epoch
                             )
-                        )
-                    else:
-                        warnings.warn(
-                            "Removing Epoch {} as it"
-                            " is not a valid epoch.".format(epoch),
-                            stacklevel=2
                         )
 
         # survey check
