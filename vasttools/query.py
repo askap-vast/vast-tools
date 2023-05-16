@@ -44,7 +44,8 @@ from typing import Optional, List, Tuple, Dict, Union
 from pathlib import Path
 
 from vasttools import (
-    RELEASED_EPOCHS, OBSERVED_EPOCHS, ALLOWED_PLANETS, BASE_EPOCHS, RACS_EPOCHS
+    RELEASED_EPOCHS, OBSERVED_EPOCHS, ALLOWED_PLANETS, BASE_EPOCHS,
+    RACS_EPOCHS, P1_EPOCHS, P2_EPOCHS
 )
 from vasttools.survey import Fields, Image
 from vasttools.survey import (
@@ -53,7 +54,7 @@ from vasttools.survey import (
 from vasttools.source import Source
 from vasttools.utils import (
     filter_selavy_components, simbad_search, match_planet_to_field,
-    read_selavy
+    read_selavy, strip_fieldnames
 )
 from vasttools.moc import VASTMOCS
 from forced_phot import ForcedPhot
@@ -414,20 +415,35 @@ class Query:
         """
 
         if self.settings['tiles'] and self.settings['stokes'].lower() != "i":
-            self.logger.critical("Only Stokes I are supported with tiles!")
-            return False
+            if self.vast_full:
+                self.logger.warning("Stokes V tiles are only available for the"
+                                    " full VAST survey. Proceed with caution!"
+                                    )
+            else:
+                self.logger.critical("Stokes V tiles are only available for "
+                                     "the full VAST survey."
+                                     )
+                return False
 
         if self.settings['tiles'] and self.settings['islands']:
-            self.logger.critical(
-                "Only component catalogues are supported with tiles!"
-            )
-            return False
+            if self.vast_p1 or self.vast_p2 or self.racs:
+                self.logger.critical(
+                    "Only component catalogues are supported with tiles "
+                    "for the selected epochs."
+                )
+                return False
 
         if self.settings['islands']:
             self.logger.warning(
                 "Image RMS and peak flux error are not available with islands."
                 "Using background_noise as a placeholder for both."
             )
+
+        if self.vast_full and not self.settings['tiles']:
+            self.logger.critical("COMBINED images are not available for "
+                                 "the full VAST survey."
+                                 )
+            return False
 
         return True
 
@@ -1124,7 +1140,7 @@ class Query:
         if self.fields_found is False:
             self.find_fields()
 
-        self.logger.info("Finding sources in PILOT data...")
+        self.logger.info("Finding sources in VAST data...")
 
         self.sources_df = self.fields_df.sort_values(
             by=['name', 'dateobs']
@@ -1402,6 +1418,8 @@ class Query:
 
         source_df = source_df.sort_values('dateobs').reset_index(drop=True)
 
+        self.logger.debug("Initialising Source with base folder:")
+        self.logger.debug(source_base_folder)
         thesource = Source(
             source_coord,
             source_name,
@@ -1456,13 +1474,16 @@ class Query:
         field = m['field']
         epoch = m['epoch']
         stokes = m['stokes']
-
+        self.logger.debug("Getting Image for forced fits")
         try:
             img_beam = Image(
                 field,
                 epoch,
                 stokes,
                 self.base_folder,
+                tiles=self.settings["tiles"],
+                path=image,
+                rmspath=rms,
                 corrected_data=self.corrected_data
             )
             img_beam.get_img_data()
@@ -1719,6 +1740,9 @@ class Query:
             if missing.shape[0] > 0:
                 if not self.settings['no_rms']:
                     try:
+                        self.logger.debug(
+                            "Initialising Image for components RMS estimates")
+                        self.logger.debug(self.base_folder)
                         image = Image(
                             group.iloc[0].field,
                             group.iloc[0].epoch,
@@ -1803,6 +1827,8 @@ class Query:
 
             # Some epochs don't have .conv.
             if not selavy_path.is_file():
+                self.logger.debug(f"{selavy_path} is not a file...")
+                self.logger.debug(f"Removing '.conv' from filename")
                 selavy_path = Path(str(selavy_path).replace('.conv', ''))
 
         else:
@@ -1893,17 +1919,16 @@ class Query:
             rms_dir,
             rms_file_fmt
         ))
-        
+
         if not image_file.is_file():
             conv_image_file = Path(str(image_file).replace('.restored',
                                                            '.restored.conv')
-                                                           )
+                                   )
             if conv_image_file.is_file():
                 image_file = conv_image_file
-                rms_file = Path(str(image_file).replace('.restored',
-                                                        '.restored.conv')
-                                                        )
-
+                rms_file = Path(str(rms_file).replace('.restored',
+                                                      '.restored.conv')
+                                )
 
         return selavy_file, str(image_file), str(rms_file)
 
@@ -1988,14 +2013,15 @@ class Query:
         Raises:
             Exception: No sources are found within the requested footprint.
         """
-        self.logger.info(
-            "Matching queried sources to VAST Pilot fields..."
-        )
 
         if self.racs:
             base_fc = 'RACS'
         else:
             base_fc = 'VAST'
+
+        self.logger.info(
+            f"Matching queried sources to {base_fc} fields..."
+        )
 
         base_epoch = BASE_EPOCHS[base_fc]
 
@@ -2014,7 +2040,7 @@ class Query:
 
         # if RACS is being use we convert all the names to 'VAST'
         # to match the VAST field names, makes matching easier.
-        if self.racs:
+        if base_fc != 'VAST':
             field_centres['field'] = [
                 f.replace("RACS", "VAST") for f in field_centres.field
             ]
@@ -2063,6 +2089,7 @@ class Query:
 
             self.logger.debug("Finished field matching.")
             self.fields_df = self.fields_df.dropna()
+
             if self.fields_df.empty:
                 raise Exception(
                     "No requested sources are within the requested footprint!")
@@ -2071,10 +2098,12 @@ class Query:
                 'field_per_epoch'
             ).reset_index(drop=True)
 
+            field_per_epoch = self.fields_df['field_per_epoch'].tolist()
+
             self.fields_df[
                 ['epoch', 'field', 'sbid', 'dateobs', 'frequency']
             ] = pd.DataFrame(
-                self.fields_df['field_per_epoch'].tolist(),
+                field_per_epoch,
                 index=self.fields_df.index
             )
 
@@ -2085,7 +2114,8 @@ class Query:
                 'dates',
                 'freqs'
             ]
-
+            self.logger.debug(self.fields_df['name'])
+            self.logger.debug(self.fields_df['dateobs'])
             self.fields_df = self.fields_df.drop(
                 labels=to_drop, axis=1
             ).sort_values(
@@ -2122,15 +2152,13 @@ class Query:
 
         if self.racs:
             self.logger.info(
-                "%i/%i sources in RACS & VAST Pilot footprint.",
-                self.num_sources_searched,
-                prev_num
+                f"{self.num_sources_searched}/{prev_num} "
+                "sources in RACS & VAST footprint."
             )
         else:
             self.logger.info(
-                "%i/%i sources in VAST Pilot footprint.",
-                self.num_sources_searched,
-                prev_num
+                f"{self.num_sources_searched}/{prev_num} "
+                "sources in VAST footprint."
             )
 
         self.fields_df['dateobs'] = pd.to_datetime(
@@ -2173,29 +2201,31 @@ class Query:
             Tuple containing the field information.
         """
 
+        self.logger.debug("Running field matching with following row info:")
+        self.logger.debug(row)
+        self.logger.debug("Field names:")
+        self.logger.debug(fields_names)
+
         seps = row.skycoord.separation(fields_coords)
         accept = seps.deg < self.settings['max_sep']
         fields = np.unique(fields_names[accept])
-        if self.racs:
+
+        if self.racs or self.vast_full:
             vast_fields = np.array(
                 [f.replace("RACS", "VAST") for f in fields]
             )
 
         if fields.shape[0] == 0:
-            if self.racs:
-                self.logger.info(
-                    "Source '%s' not in RACS & VAST Pilot footprint.",
-                    row['name']
-                )
-            else:
-                self.logger.info(
-                    "Source '%s' not in VAST Pilot footprint.",
-                    row['name']
-                )
-            return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
+            self.logger.info(
+                f"Source '{row['name']}' not in the requested epoch footprint."
+            )
+            return_vals = [np.nan] * 7  # Return nans in all 7 columns
+            self.logger.debug(return_vals)
+            return return_vals
 
         centre_seps = row.skycoord.separation(field_centres)
         primary_field = field_centre_names.iloc[np.argmin(centre_seps.deg)]
+        self.logger.debug(f"Primary field: {primary_field}")
         epochs = []
         field_per_epochs = []
         sbids = []
@@ -2203,16 +2233,33 @@ class Query:
         freqs = []
 
         for i in self.settings['epochs']:
+            self.logger.debug(f"Epoch {i}")
             if i not in RACS_EPOCHS and self.racs:
+                the_fields = vast_fields
+            elif i not in RACS_EPOCHS and self.vast_full:
                 the_fields = vast_fields
             else:
                 the_fields = fields
 
+            epoch_fields_names = self._epoch_fields.loc[i].index
+            stripped = False
+            if epoch_fields_names[0].endswith('A'):
+                self.logger.debug("Using stripped field names")
+                stripped = True
+                epoch_fields_names = strip_fieldnames(epoch_fields_names)
+            the_fields = [f.rstrip('A') for f in the_fields]
+
+            self.logger.debug("Fields in epoch: ")
+            self.logger.debug(epoch_fields_names)
+
+            self.logger.debug("The fields: ")
+            self.logger.debug(the_fields)
+
             available_fields = [
-                f for f in the_fields if f in self._epoch_fields.loc[
-                    i
-                ].index.to_list()
+                f for f in the_fields if f in epoch_fields_names.to_list()
             ]
+            self.logger.debug("Available fields:")
+            self.logger.debug(available_fields)
 
             if i in RACS_EPOCHS:
                 available_fields = [
@@ -2220,18 +2267,21 @@ class Query:
                 ]
 
             if len(available_fields) == 0:
+                self.logger.debug("No fields available")
                 continue
 
             elif primary_field in available_fields:
                 field = primary_field
+                self.logger.debug("Selecting primary field")
 
             elif len(available_fields) == 1:
                 field = available_fields[0]
+                self.logger.debug("Selecting only available field")
 
             else:
                 field_indexes = [
                     field_centre_names[
-                        field_centre_names == f
+                        field_centre_names == f.rstrip('A')
                     ].index[0] for f in available_fields
                 ]
                 min_field_index = np.argmin(
@@ -2239,18 +2289,25 @@ class Query:
                 )
 
                 field = available_fields[min_field_index]
+                self.logger.debug("Selecting closest field")
+            self.logger.debug(f"Selected field: {field}")
 
             # Change VAST back to RACS
             if i in RACS_EPOCHS:
                 field = field.replace("VAST", "RACS")
             epochs.append(i)
-            sbid = self._epoch_fields.loc[i, field]["SBID"]
-            date = self._epoch_fields.loc[i, field]["DATEOBS"]
-            freq = self._epoch_fields.loc[i, field]["OBS_FREQ"]
-            sbids.append(sbid)
-            dateobs.append(date)
-            freqs.append(freq)
-            field_per_epochs.append([i, field, sbid, date, freq])
+
+            if stripped:
+                field = f"{field}A"
+            sbid_vals = self._epoch_fields.loc[i, field]["SBID"]
+            date_vals = self._epoch_fields.loc[i, field]["DATEOBS"]
+            freq_vals = self._epoch_fields.loc[i, field]["OBS_FREQ"]
+
+            for sbid, date, freq in zip(sbid_vals, date_vals, freq_vals):
+                sbids.append(sbid)
+                dateobs.append(date)
+                freqs.append(freq)
+                field_per_epochs.append([i, field, sbid, date, freq])
 
         return_vals = (fields,
                        primary_field,
@@ -2260,6 +2317,9 @@ class Query:
                        dateobs,
                        freqs
                        )
+        # If len(available_fields) == 0 for all epochs need to return nan
+        if len(epochs) == 0:
+            return [np.nan] * 7  # Return nans in all 7 columns
 
         return return_vals
 
@@ -2347,9 +2407,12 @@ class Query:
         Returns:
             Catalogue of source positions.
         """
+        self.logger.debug("Building catalogue")
+
         cols = ['ra', 'dec', 'name', 'skycoord', 'stokes']
 
-        if '0' in self.settings['epochs']:
+        if self.racs:
+            self.logger.debug("Using RACS footprint for masking")
             mask = self.coords.dec.deg > 42
 
             if mask.any():
@@ -2360,18 +2423,33 @@ class Query:
                 self.source_names = self.source_names[~mask]
         else:
             mocs = VASTMOCS()
-            vast_pilot_moc = mocs.load_pilot_epoch_moc('1')
-            mask = vast_pilot_moc.contains(
+
+            pilot = self.vast_p1 or self.vast_p2
+
+            if pilot:
+                self.logger.debug("Using VAST pilot footprint for masking")
+                footprint_moc = mocs.load_survey_footprint('pilot')
+
+            if self.vast_full:
+                self.logger.debug("Using full VAST footprint for masking")
+                full_moc = mocs.load_survey_footprint('full')
+                if pilot:
+                    footprint_moc = footprint_moc.union(full_moc)
+                else:
+                    footprint_moc = full_moc
+
+            self.logger.debug("Masking sources outside footprint")
+            mask = footprint_moc.contains(
                 self.coords.ra, self.coords.dec, keep_inside=False
             )
             if mask.any():
                 self.logger.warning(
-                    "Removing %i sources outside"
-                    " the VAST Pilot Footprint", sum(mask)
+                    f"Removing {sum(mask)} sources outside the requested survey footprint"
                 )
                 self.coords = self.coords[~mask]
                 self.source_names = self.source_names[~mask]
 
+        self.logger.debug("Generating catalog dataframe")
         if self.coords.shape == ():
             catalog = pd.DataFrame(
                 [[
@@ -2393,6 +2471,7 @@ class Query:
             catalog['stokes'] = self.settings['stokes']
 
         if self.simbad_names is not None:
+            self.logger.debug("Handling SIMBAD naming")
             self.simbad_names = self.simbad_names[~mask]
             catalog['simbad_name'] = self.simbad_names
 
@@ -2427,7 +2506,7 @@ class Query:
                     epochs.remove(racs_epoch)
         else:
             epochs = []
-            if type(req_epochs) == list:
+            if isinstance(req_epochs, list):
                 epoch_iter = req_epochs
             else:
                 epoch_iter = req_epochs.split(',')
@@ -2449,20 +2528,8 @@ class Query:
                             stacklevel=2
                         )
 
-        # RACS check
-        self.racs = False
-        for racs_epoch in RACS_EPOCHS:
-            if racs_epoch in epochs:
-                epoch_str = "EPOCH{}".format(racs_epoch.zfill(2))
-                exists = os.path.isdir(os.path.join(self.base_folder,
-                                                    epoch_str)
-                                       )
-                if not exists:
-                    self.logger.warning(
-                        'RACS {} directory not found!'.format(epoch_str)
-                    )
-                else:
-                    self.racs = True
+        # survey check
+        self._check_survey(epochs)
 
         if self.racs:
             self.logger.warning('RACS data selected!')
@@ -2476,6 +2543,38 @@ class Query:
             sys.exit()
 
         return epochs
+
+    def _check_survey(self, epochs: list) -> None:
+        """
+        Check which surveys are being queried (e.g. RACS, pilot/full VAST).
+
+        Args:
+            epochs: Requested epochs to query
+        """
+
+        self.racs = False
+        self.vast_p1 = False
+        self.vast_p2 = False
+        self.vast_full = False
+
+        non_full_epochs = RACS_EPOCHS + P1_EPOCHS + P2_EPOCHS
+        all_epochs = RELEASED_EPOCHS.keys()
+        full_epochs = set(all_epochs) - set(non_full_epochs)
+
+        epochs_set = set(epochs)
+        if len(epochs_set & set(RACS_EPOCHS)) > 0:
+            self.racs = True
+        if len(epochs_set & set(P1_EPOCHS)) > 0:
+            self.vast_p1 = True
+        if len(epochs_set & set(P2_EPOCHS)) > 0:
+            self.vast_p2 = True
+        if len(epochs_set & set(full_epochs)) > 0:
+            self.vast_full = True
+
+        self.logger.debug(f"self.racs: {self.racs}")
+        self.logger.debug(f"self.vast_p1: {self.vast_p1}")
+        self.logger.debug(f"self.vast_p2: {self.vast_p2}")
+        self.logger.debug(f"self.vast_full: {self.vast_full}")
 
     def _get_stokes(self, req_stokes: str) -> str:
         """

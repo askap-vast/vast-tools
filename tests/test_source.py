@@ -10,7 +10,7 @@ from astropy.time import Time
 from astropy.wcs import WCS
 from matplotlib.pyplot import Figure
 from pathlib import Path
-from pytest_mock import mocker  # noqa: F401
+from pytest_mock import mocker, MockerFixture  # noqa: F401
 from radio_beam import Beam
 from typing import Optional
 
@@ -344,7 +344,7 @@ class TestSource:
         simple: bool,
         outfile: Optional[str],
         source_instance: vts.Source,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the initialisation of the source object.
@@ -652,7 +652,7 @@ class TestSource:
         pipeline: bool,
         source_instance: vts.Source,
         dummy_selavy_components: pd.DataFrame,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the get_cutout method on the Source, which fetches the cutout
@@ -755,7 +755,7 @@ class TestSource:
         crossmatch_overlay: bool,
         hide_beam: bool,
         source_instance: vts.Source,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the make_png method, specifically with the options that are
@@ -827,7 +827,7 @@ class TestSource:
         zscale: bool,
         contrast: float,
         source_instance: vts.Source,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the make_png method, specifically with the options that affect
@@ -868,7 +868,7 @@ class TestSource:
         pipeline: bool,
         source_instance: vts.Source,
         dummy_fits: fits.HDUList,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the skyview_contour_plot method.
@@ -902,7 +902,7 @@ class TestSource:
         self,
         pipeline: bool,
         source_instance: vts.Source,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the write ann method.
@@ -999,7 +999,7 @@ class TestSource:
         self,
         pipeline: bool,
         source_instance: vts.Source,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the write reg method.
@@ -1130,7 +1130,10 @@ class TestSource:
         source = source_instance()
         assert expected == source._remove_sbid(input)
 
-    def test_simbad_search(self, source_instance: vts.Source, mocker) -> None:
+    def test_simbad_search(self,
+                           source_instance: vts.Source,
+                           mocker: MockerFixture
+    ) -> None:
         """
         Tests the simbad search method.
 
@@ -1159,7 +1162,10 @@ class TestSource:
         )
         assert result == -99
 
-    def test_ned_search(self, source_instance: vts.Source, mocker) -> None:
+    def test_ned_search(self,
+                        source_instance: vts.Source,
+                        mocker: MockerFixture
+    ) -> None:
         """
         Tests the NED search method.
 
@@ -1188,7 +1194,10 @@ class TestSource:
         )
         assert result == -99
 
-    def test_casda_search(self, source_instance: vts.Source, mocker) -> None:
+    def test_casda_search(self,
+                          source_instance: vts.Source,
+                          mocker: MockerFixture
+    ) -> None:
         """
         Tests the casda search method.
 

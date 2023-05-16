@@ -10,6 +10,8 @@ import logging
 import logging.handlers
 import logging.config
 
+
+
 from astropy.coordinates import Angle, EarthLocation
 from astropy import units as u
 from astropy.coordinates import SkyCoord
@@ -19,7 +21,9 @@ from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
 from radio_beam import Beam
 from typing import Optional, List, Union
 
+
 from vasttools import RELEASED_EPOCHS, OBSERVED_EPOCHS
+import vasttools.utils as vtu
 
 warnings.filterwarnings('ignore', category=AstropyWarning, append=True)
 warnings.filterwarnings(
@@ -50,6 +54,8 @@ def load_field_centres() -> pd.DataFrame:
         mid_centres = pd.read_csv(field_centres_csv)
 
     field_centres = pd.concat([low_centres, mid_centres])
+
+    field_centres['field'] = vtu.strip_fieldnames(field_centres['field'])
 
     return field_centres
 
@@ -166,13 +172,13 @@ def get_fields_per_epoch_info() -> pd.DataFrame:
         epoch_fields = pd.concat([epoch_fields, temp])
 
     epoch_fields = epoch_fields.drop_duplicates(
-        ['FIELD_NAME', 'EPOCH']
+        ['FIELD_NAME', 'EPOCH', 'DATEOBS']
     ).set_index(
         ['EPOCH', 'FIELD_NAME']
     ).drop(columns=[
         'BEAM', 'RA_HMS', 'DEC_DMS', 'DATEEND',
         'NINT', 'BMAJ', 'BMIN', 'BPA'
-    ])
+    ]).sort_index()
 
     return epoch_fields
 
@@ -230,7 +236,7 @@ class Fields:
         self.logger = logging.getLogger('vasttools.survey.Fields')
         self.logger.debug('Created Fields instance')
 
-        if type(epochs) == str:
+        if isinstance(epochs, str):
             epochs = list(epochs)
 
         field_dfs = []
@@ -326,8 +332,10 @@ class Image:
         self.corrected_data = corrected_data
 
         if self.path is None:
+            self.logger.debug("Path not supplied, fetching paths and names")
             self.get_paths_and_names()
         else:
+            self.logger.debug(f"Setting path {self.path}")
             self.imgpath = self.path
             self.imgname = os.path.basename(self.path)
 
@@ -387,6 +395,7 @@ class Image:
             )
 
         self.imgpath = os.path.join(img_folder, self.imgname)
+        self.logger.debug(f"Set image path: {self.imgpath}")
 
     def _check_exists(self) -> bool:
         if os.path.isfile(self.imgpath):
