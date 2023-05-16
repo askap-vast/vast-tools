@@ -2488,6 +2488,9 @@ class Query:
 
         Returns:
             Epochs to query, as a list of strings.
+        
+        Raises:
+            QueryInitError: None of the requested epochs are available
         """
 
         epoch_dict = RELEASED_EPOCHS.copy()
@@ -2517,14 +2520,16 @@ class Query:
                 if epoch in available_epochs:
                     epochs.append(epoch)
                 else:
-                    epoch_x = "{epoch}x"
+                    epoch_x = f"{epoch}x"
+                    self.logger.debug(
+                        f"Epoch {epoch} is not available. Trying {epoch_x}"
+                    )
                     if epoch_x in available_epochs:
                         epochs.append(epoch_x)
+                        self.logger.debug(f"Epoch {epoch_x} available.")
                     else:
                         self.logger.info(
-                            "Epoch {} is not available. Ignoring.".format(
-                                epoch
-                            )
+                            f"Epoch {epoch_x} is not available."
                         )
 
         # survey check
@@ -2538,8 +2543,9 @@ class Query:
             )
 
         if len(epochs) == 0:
-            self.logger.critical("No requested epochs are available")
-            sys.exit()
+            raise QueryInitError(
+                "None of the requested epochs are available"
+            )
 
         return epochs
 
