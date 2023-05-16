@@ -40,7 +40,7 @@ except ImportError:
     use_colorlog = False
 
 
-from vasttools.survey import get_askap_observing_location
+import vasttools.survey as vts
 
 
 def get_logger(
@@ -446,7 +446,7 @@ def match_planet_to_field(
         unit=(u.deg, u.deg)
     )
 
-    ol = get_askap_observing_location()
+    ol = vts.get_askap_observing_location()
     with solar_system_ephemeris.set('builtin'):
         planet_coords = get_body(planet, dates, ol)
 
@@ -683,3 +683,19 @@ def create_moc_from_fits(fits_file: str, max_depth: int = 9) -> MOC:
     gc.collect()
 
     return moc
+
+
+def strip_fieldnames(fieldnames: pd.Series) -> pd.Series:
+    """
+    Some field names have historically used the interleaving naming scheme,
+    but that has changed as of January 2023. This function removes the "A"
+    that is on the end of the field names
+
+    Args:
+        fieldnames: Series to strip field names from
+    
+    Returns:
+        Series with stripped field names
+    """
+    
+    return fieldnames.str.rstrip('A')

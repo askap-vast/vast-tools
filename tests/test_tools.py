@@ -8,7 +8,7 @@ from astropy.coordinates import SkyCoord
 from astropy.time import Time
 from astropy.io import fits
 from astropy.wcs import WCS
-from pytest_mock import mocker  # noqa: F401
+from pytest_mock import mocker, MockerFixture  # noqa: F401
 from pathlib import Path
 from mocpy import MOC, STMOC
 from typing import Union
@@ -210,7 +210,7 @@ def test_add_credible_levels(source_df: pd.DataFrame) -> None:
         credible_levels, rel=1e-1)
 
 
-def test_create_fields_csv(mocker) -> None:
+def test_create_fields_csv(mocker: MockerFixture) -> None:
     """
     Tests creating the fields csv for a single epoch.
 
@@ -275,7 +275,7 @@ def test_add_obs_date(
     image_name: str,
     dummy_fits_open: fits.HDUList,
     dummy_load_fields_file: pd.DataFrame,
-    mocker
+    mocker: MockerFixture
 ) -> None:
     """
     Tests adding observation dates to fits images.
@@ -343,7 +343,7 @@ def test_gen_mocs_image(
         dummy_load_fields_file: pd.DataFrame,
         dummy_moc: MOC,
         write: bool,
-        mocker) -> None:
+        mocker: MockerFixture) -> None:
     """
     Tests the generation of a MOC and STMOC for a single fits file
 
@@ -423,7 +423,7 @@ def test_gen_mocs_image(
 
 def test_gen_mocs_epoch(dummy_moc: MOC,
                         dummy_stmoc: STMOC,
-                        mocker) -> None:
+                        mocker: MockerFixture) -> None:
     """
     Tests the generation of all MOCs and STMOCs for a single epoch.
     Also tests the update of the full STMOC.
@@ -466,7 +466,7 @@ def test_gen_mocs_epoch(dummy_moc: MOC,
     mocker_stmoc_write.assert_has_calls(stmoc_calls)
 
 
-def test_gen_mocs_epoch_outdir_failure(mocker) -> None:
+def test_gen_mocs_epoch_outdir_failure(mocker: MockerFixture) -> None:
     """
     Tests the generation of all MOCs and STMOCs for a single epoch.
     Also tests the update of the full STMOC.
@@ -496,7 +496,7 @@ def test_gen_mocs_epoch_outdir_failure(mocker) -> None:
     assert str(excinfo.value) == exc_str
 
 
-def test_gen_mocs_epoch_stmoc_failure(mocker) -> None:
+def test_gen_mocs_epoch_stmoc_failure(mocker: MockerFixture) -> None:
     """
     Tests the generation of all MOCs and STMOCs for a single epoch.
     Also tests the update of the full STMOC.
@@ -526,7 +526,7 @@ def test_gen_mocs_epoch_stmoc_failure(mocker) -> None:
     assert str(excinfo.value) == exc_str
 
 
-def test__set_epoch_path_failure(mocker) -> None:
+def test__set_epoch_path_failure(mocker: MockerFixture) -> None:
     """
     Tests the set_epoch_path function when `VAST_DATA_DIR` has not been set.
 
