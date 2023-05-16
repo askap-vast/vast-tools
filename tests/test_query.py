@@ -7,7 +7,8 @@ import pytest
 
 from astropy.coordinates import SkyCoord, Angle
 from mocpy import MOC
-from pytest_mock import mocker  # noqa: F401
+from pytest_mock import mocker, MockerFixture  # noqa: F401
+from typing import List
 
 import vasttools.query as vtq
 
@@ -30,7 +31,9 @@ def pilot_moc_mocker() -> MOC:
 
 
 @pytest.fixture
-def vast_query_psrj2129(pilot_moc_mocker: MOC, mocker) -> vtq.Query:
+def vast_query_psrj2129(pilot_moc_mocker: MOC,
+                        mocker: MockerFixture
+                        ) -> vtq.Query:
     """
     Initialises a Query object with the Pulsar J2129-04 as the search
     subject.
@@ -97,13 +100,13 @@ def vast_fields_object_dummy() -> pd.DataFrame:
                 4000: 10000,
             },
             'FIELD_NAME': {
-                1893: 'VAST_2118-06A',
-                1894: 'VAST_2118-06A',
-                1907: 'VAST_2118-06A',
-                3693: 'VAST_2143-06A',
-                3694: 'VAST_2143-06A',
-                3707: 'VAST_2143-06A',
-                4000: 'VAST_0612-06A'
+                1893: 'VAST_2118-06',
+                1894: 'VAST_2118-06',
+                1907: 'VAST_2118-06',
+                3693: 'VAST_2143-06',
+                3694: 'VAST_2143-06',
+                3707: 'VAST_2143-06',
+                4000: 'VAST_0612-06'
             },
             'BEAM': {
                 1893: 21,
@@ -328,7 +331,7 @@ def field_centres_dummy() -> pd.DataFrame:
     """
     field_centres_df = pd.DataFrame(
         data={
-            'field': {89: 'VAST_2118-06A', 94: 'VAST_2143-06A'},
+            'field': {89: 'VAST_2118-06', 94: 'VAST_2143-06'},
             'centre-ra': {89: 319.65155983605507, 94: 325.8598931693551},
             'centre-dec': {89: -6.298205277661648, 94: -6.298205277661648}
         }
@@ -526,7 +529,7 @@ class TestQuery:
 
         assert str(excinfo.value) == "Invalid planet object provided!"
 
-    def test_init_failure_base_folder(self, mocker) -> None:
+    def test_init_failure_base_folder(self, mocker: MockerFixture) -> None:
         """
         Tests the initialisation failure of a Query object.
 
@@ -570,40 +573,70 @@ class TestQuery:
 
         assert str(excinfo.value) == f"Base folder {test_dir} not found!"
 
-    def test_init_failure_stokes_v_tiles(self, mocker) -> None:
+    @pytest.mark.parametrize(
+        "vast_pilot,vast_full,fails",
+        [
+            (True, False, True),
+            (True, True, False),
+            (False, True, False),
+        ]
+    )
+    def test_init_failure_stokes_v_tiles(self,
+                                         vast_pilot: bool,
+                                         vast_full: bool,
+                                         fails: bool,
+                                         mocker: MockerFixture) -> None:
         """
         Tests the initialisation failure of a Query object.
 
         Specifically when Stokes V is requested on tile images.
 
         Args:
+            vast_pilot: Whether to include VAST pilot epochs.
+            vast_full: Whether to include VAST full survey epochs.
+            fails: Whether the initialisation should fail.
             mocker: The pytest-mock mocker object.
 
         Returns:
             None
         """
-        with pytest.raises(vtq.QueryInitError) as excinfo:
-            isdir_mocker = mocker.patch(
-                'vasttools.query.os.path.isdir',
-                return_value=True
+        epochs = []
+        if vast_pilot:
+            epochs.append("1")
+        if vast_full:
+            epochs.append("22")
+
+        isdir_mocker = mocker.patch(
+            'vasttools.query.os.path.isdir',
+            return_value=True
+        )
+        test_dir = '/testing/folder'
+
+        if fails:
+            with pytest.raises(vtq.QueryInitError) as excinfo:
+                query = vtq.Query(
+                    epochs=",".join(epochs),
+                    planets=['Mars'],
+                    base_folder=test_dir,
+                    stokes='v',
+                    use_tiles=True
+                )
+            assert str(excinfo.value).startswith(
+                "Problems found in query settings!"
             )
-            test_dir = '/testing/folder'
+        else:
             query = vtq.Query(
-                epochs='all-vast',
+                epochs=",".join(epochs),
                 planets=['Mars'],
                 base_folder=test_dir,
                 stokes='v',
                 use_tiles=True
             )
 
-        assert str(excinfo.value).startswith(
-            "Problems found in query settings!"
-        )
-
     def test_init_failure_no_sources_in_footprint(
         self,
         pilot_moc_mocker: MOC,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the initialisation failure of a Query object.
@@ -641,7 +674,7 @@ class TestQuery:
             )
 
             query = vtq.Query(
-                epochs='all-vast',
+                epochs='1',
                 coords=test_coords,
                 base_folder=test_dir,
             )
@@ -651,7 +684,7 @@ class TestQuery:
             ' are found in the VAST Pilot survey footprint!'
         )
 
-    def test_init_settings(self, mocker) -> None:
+    def test_init_settings(self, mocker: MockerFixture) -> None:
         """
         Tests the initialisation of a Query object.
 
@@ -814,7 +847,7 @@ class TestQuery:
         vast_query_psrj2129: vtq.Query,
         vast_fields_object_dummy: pd.DataFrame,
         field_centres_dummy: pd.DataFrame,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the field matching method of the query object.
@@ -856,16 +889,16 @@ class TestQuery:
         )
 
         assert np.all(results[0] == np.array(
-            ['VAST_2118-06A', 'VAST_2143-06A']
+            ['VAST_2118-06', 'VAST_2143-06']
         ))
-        assert results[1] == 'VAST_2118-06A'
+        assert results[1] == 'VAST_2118-06'
         assert results[2] == ['1', '2']
 
     def test_find_fields(
         self,
         vast_query_psrj2129: vtq.Query,
         fields_df_expected_result: pd.DataFrame,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the front facing find fields method.
@@ -915,7 +948,6 @@ class TestQuery:
             fields_df_expected_result()
         )
 
-    
     @pytest.mark.parametrize("stokes, tiles, conv, islands, expected_file",
                              [('I',
                                True,
@@ -946,19 +978,19 @@ class TestQuery:
                                'selavy-VAST_2118-06A.EPOCH01.I.conv'
                                '.components.xml'
                                ),
-                               ('V',
-                                True,
-                                None,
-                                False,
-                                'selavy-image.v.VAST_2118-06A.SB9668.cont'
-                                '.taylor.0.restored.components.corrected.xml'
+                              ('V',
+                               True,
+                               None,
+                               False,
+                               'selavy-image.v.VAST_2118-06A.SB9668.cont'
+                               '.taylor.0.restored.components.corrected.xml'
                                ),
-                               ('V',
-                                False,
-                                None,
-                                False,
-                                'selavy-VAST_2118-06A.EPOCH01.V.conv'
-                                '.components.xml'
+                              ('V',
+                               False,
+                               None,
+                               False,
+                               'selavy-VAST_2118-06A.EPOCH01.V.conv'
+                               '.components.xml'
                                )
                               ],
                              ids=('tiles-noconv',
@@ -977,7 +1009,7 @@ class TestQuery:
         conv: bool,
         islands: bool,
         expected_file: str,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests adding the paths to the combined data in the query.
@@ -1018,7 +1050,7 @@ class TestQuery:
     def test__add_files_combined(
         self,
         vast_query_psrj2129_fields: vtq.Query,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests adding the paths to the combined data in the query.
@@ -1071,7 +1103,7 @@ class TestQuery:
         corrected: bool,
         stokes: str,
         vast_query_psrj2129_fields: vtq.Query,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests adding the paths to the tiles data in the query.
@@ -1147,7 +1179,7 @@ class TestQuery:
         self,
         vast_query_psrj2129_fields: vtq.Query,
         stokes,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests adding the paths to the stokes v combined data in the query.
@@ -1189,7 +1221,7 @@ class TestQuery:
         self,
         vast_query_psrj2129_fields: vtq.Query,
         selavy_cat: pd.DataFrame,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the _get_components method of the Query class where a detection
@@ -1229,7 +1261,7 @@ class TestQuery:
         self,
         vast_query_psrj2129_fields: vtq.Query,
         selavy_cat: pd.DataFrame,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the _get_components method of the Query class where no detection
@@ -1279,7 +1311,7 @@ class TestQuery:
         self,
         vast_query_psrj2129_fields: vtq.Query,
         selavy_cat: pd.DataFrame,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the _get_components method of the Query class where the
@@ -1316,7 +1348,7 @@ class TestQuery:
     def test__get_forced_fits(
         self,
         vast_query_psrj2129_fields: vtq.Query,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the method to get the forced fits of the query.
@@ -1388,7 +1420,7 @@ class TestQuery:
         self,
         vast_query_psrj2129_fields: vtq.Query,
         selavy_cat: pd.DataFrame,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the init sources method that groups the results into vasttools
@@ -1463,7 +1495,7 @@ class TestQuery:
         vast_query_psrj2129_fields: vtq.Query,
         selavy_cat: pd.DataFrame,
         search_around: bool,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Smoke test for the user facing 'find_sources' method.
@@ -1529,3 +1561,60 @@ class TestQuery:
             return_df = return_df.rename(columns={'#': 'distance'})
 
         assert test_query.results.equals(return_df)
+
+    @pytest.mark.parametrize("epochs, racs, vast_p1, vast_p2, vast_full",
+                             [(["0"], True, False, False, False),
+                              (["1"], False, True, False, False),
+                              (["17"], False, False, True, False),
+                              (["23"], False, False, False, True),
+                              (["0", "14", "28"], True, False, False, False),
+                              (["0", "1"], True, True, False, False),
+                              (["0", "17"], True, False, True, False),
+                              (["0", "23"], True, False, False, True),
+                              (["1", "17"], False, True, True, False),
+                              (["0", "1", "17"], True, True, True, False),
+                              (["0", "1", "17", "23"], True, True, True, True),
+                              ],
+                             ids=('racs-only',
+                                  'p1-only',
+                                  'p2-only',
+                                  'full-only',
+                                  'all-racs',
+                                  'racs+p1',
+                                  'racs+p2',
+                                  'racs+full',
+                                  'pilot-only',
+                                  'racs+pilot',
+                                  'all-data')
+                             )
+    def test__check_survey(
+        self,
+        vast_query_psrj2129: vtq.Query,
+        epochs: List[str],
+        racs: bool,
+        vast_p1: bool,
+        vast_p2: bool,
+        vast_full: bool,
+    ) -> None:
+        """
+        Test the survey check.
+
+        Args:
+            vast_query_psrj2129: The dummy Query instance that includes
+                a search for PSR J2129-04 with the included found fields data.
+            epochs: List of epochs to check.
+            racs: Whether the epochs include a RACS epoch.
+            vast_p1: Whether the epochs include a VAST-P1 epoch.
+            vast_p2: Whether the epochs include a VAST-P2 epoch.
+            vast_full: Whether the epochs include a full VAST survey epoch.
+
+        Returns:
+            None
+        """
+
+        vast_query_psrj2129._check_survey(epochs)
+
+        assert vast_query_psrj2129.racs == racs
+        assert vast_query_psrj2129.vast_p1 == vast_p1
+        assert vast_query_psrj2129.vast_p2 == vast_p2
+        assert vast_query_psrj2129.vast_full == vast_full

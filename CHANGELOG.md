@@ -7,8 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased](https://github.com/askap-vast/vast-tools/compare/v2.0.0...HEAD)
 
 #### Added
-
-- Added access to epoch 30 [#419](https://github.com/askap-vast/vast-tools/pull/414)
+- Added access to epoch 32 [#429](https://github.com/askap-vast/vast-tools/pull/429)
+- Added access to epoch 31 [#427](https://github.com/askap-vast/vast-tools/pull/427)
+- Added access to epoch 30 [#419](https://github.com/askap-vast/vast-tools/pull/419)
 - Added access to epoch 27 [#414](https://github.com/askap-vast/vast-tools/pull/414)
 - Added access to epochs 22, 23, 24, 25, 26, 28 (RACS-high), 29 (RACS-low-2) [#406](https://github.com/askap-vast/vast-tools/pull/406)
 - Added `_validate files` to `query.Query` class to ensure that only accessible data is queried [#370](https://github.com/askap-vast/vast-tools/pull/370)
@@ -76,8 +77,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#429](https://github.com/askap-vast/vast-tools/pull/429): feat: Added access to epoch 32
+- [#427](https://github.com/askap-vast/vast-tools/pull/427): feat: Added access to epoch 31
 - [#425](https://github.com/askap-vast/vast-tools/pull/425): fix: Bumped pytest and lint github workflow from ubuntu-18.04 -> ubuntu-20.04 
-- [#419](https://github.com/askap-vast/vast-tools/pull/414): feat: Added access to epoch 30
+- [#419](https://github.com/askap-vast/vast-tools/pull/419): feat: Added access to epoch 30
 - [#416](https://github.com/askap-vast/vast-tools/pull/416): fix: Update match_planet_to_field to handle empty groups
 - [#414](https://github.com/askap-vast/vast-tools/pull/414): feat: Added access to epoch 27
 - [#412](https://github.com/askap-vast/vast-tools/pull/412): fix: Added `corrected_data` to `Source` class to ensure correct image paths are used

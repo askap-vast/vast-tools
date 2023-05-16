@@ -102,6 +102,19 @@ This loads the STMOC of all the VAST pilot observations, returning a `mocpy.MOC`
     stmoc = vast_moc.load_pilot_stmoc()
     ```
 
+#### load_survey_footprint
+
+:fontawesome-regular-file-alt: [Code reference](../../reference/moc/#vasttools.moc.VASTMOCS.load_survey_footprint).
+
+This loads a MOC of the footprint of either the pilot or full VAST survey.
+
+!!!example
+    Loading the survey footprint MOC:
+    ```python
+    pilot_moc = vast_moc.load_survey_footprint('pilot')
+    full_moc = vast_moc.load_survey_footprint('full')
+    ```
+
 #### query_vizier_vast_pilot
 
 :fontawesome-regular-file-alt: [Code reference](../../reference/moc/#vasttools.moc.VASTMOCS.query_vizier_vast_pilot).
