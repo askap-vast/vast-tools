@@ -2455,7 +2455,8 @@ class Query:
             )
             if mask.any():
                 self.logger.warning(
-                    f"Removing {sum(mask)} sources outside the requested survey footprint"
+                    f"Removing {sum(mask)} sources outside the requested"
+                    f" survey footprint"
                 )
                 self.coords = self.coords[~mask]
                 self.source_names = self.source_names[~mask]
