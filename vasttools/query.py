@@ -178,7 +178,7 @@ class Query:
                 fields, not querying data. Defaults to False.
             corrected_data: Access the corrected data. Only relevant if
                 `tiles` is `True`. Defaults to `True`.
-            query_all_fields: If `True`, return all data at the requested 
+            search_all_fields: If `True`, return all data at the requested 
                 positions regardless of field. If `False`, only return data
                 from the best (closest) field in each epoch.
 
@@ -360,7 +360,7 @@ class Query:
         self.settings['forced_allow_nan'] = forced_allow_nan
 
         self.settings['output_dir'] = output_dir
-        self.settings['query_all_fields'] = query_all_fields
+        self.settings['search_all_fields'] = search_all_fields
 
         # Going to need this so load it now
         self._epoch_fields = get_fields_per_epoch_info()
@@ -2275,7 +2275,7 @@ class Query:
                 self.logger.debug("No fields available")
                 continue
 
-            if self.settings['query_all_fields']:
+            if self.settings['search_all_fields']:
                 selected_fields = available_fields
             
             elif primary_field in available_fields:
@@ -2318,6 +2318,7 @@ class Query:
                     sbids.append(sbid)
                     dateobs.append(date)
                     freqs.append(freq)
+                    epochs.append(i)
                     field_per_epochs.append([i, field, sbid, date, freq])
 
         return_vals = (fields,
