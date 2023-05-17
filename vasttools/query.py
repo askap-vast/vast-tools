@@ -178,7 +178,7 @@ class Query:
                 fields, not querying data. Defaults to False.
             corrected_data: Access the corrected data. Only relevant if
                 `tiles` is `True`. Defaults to `True`.
-            search_all_fields: If `True`, return all data at the requested 
+            search_all_fields: If `True`, return all data at the requested
                 positions regardless of field. If `False`, only return data
                 from the best (closest) field in each epoch.
 
@@ -2277,7 +2277,7 @@ class Query:
 
             if self.settings['search_all_fields']:
                 selected_fields = available_fields
-            
+
             elif primary_field in available_fields:
                 selected_fields = [primary_field]
                 self.logger.debug("Selecting primary field")
@@ -2301,12 +2301,11 @@ class Query:
 
             self.logger.debug(f"Selected fields: {selected_fields}")
 
-            
             # Change VAST back to RACS
             if i in RACS_EPOCHS:
                 selected_fields = [f.replace("VAST", "RACS")
                                    for f in selected_fields
-                                  ]
+                                   ]
             for field in selected_fields:
                 if stripped:
                     field = f"{field}A"

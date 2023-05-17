@@ -875,8 +875,7 @@ class TestQuery:
         Returns:
             None
         """
-        
-        
+
         field_sc = SkyCoord(
             vast_fields_object_dummy["RA_HMS"],
             vast_fields_object_dummy["DEC_DMS"],
@@ -891,7 +890,7 @@ class TestQuery:
         field_centre_names = field_centres_dummy.field
 
         row = vast_query_psrj2129.query_df.iloc[0]
-        
+
         expected_field_names = ['VAST_2118-06', 'VAST_2143-06']
         expected_primary_field = 'VAST_2118-06'
         expected_epochs = ['1', '2']
@@ -909,7 +908,7 @@ class TestQuery:
             field_centres_sc,
             field_centre_names
         )
-        
+
         assert np.all(results[0] == np.array(expected_field_names))
         assert results[1] == expected_primary_field
         assert results[2] == expected_epochs
