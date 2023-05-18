@@ -412,6 +412,11 @@ class TestFields:
             Angle(dummy_load_fields_file["RA_HMS"], unit=u.hourangle),
             Angle(dummy_load_fields_file["DEC_DMS"], unit=u.deg)
         )
+        
+        load_fields_skycoords_mocker = mocker.patch(
+            'vasttools.survey.load_fields_skycoords',
+            return_value=expected_skycoord
+        )
 
         fields_result = vts.Fields('1')
 
@@ -440,6 +445,10 @@ class TestFields:
         load_fields_file_mocker = mocker.patch(
             'vasttools.survey.load_fields_file',
             return_value=mock_result
+        )
+        load_fields_skycoords_mocker = mocker.patch(
+            'vasttools.survey.load_fields_skycoords',
+            return_value=-99
         )
 
         fields_result = vts.Fields('1')

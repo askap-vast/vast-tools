@@ -253,7 +253,10 @@ class Fields:
         self.fields.dropna(inplace=True)
         self.fields.reset_index(drop=True, inplace=True)
 
-        self.direction = concatenate(field_scs)
+        if len(field_scs) == 1:
+            self.direction = field_scs[0]
+        else:
+            self.direction = concatenate(field_scs)
 
 
 class Image:
