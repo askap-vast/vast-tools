@@ -844,11 +844,13 @@ class TestQuery:
 
         assert all_available == query._check_data_availability()
 
-    @pytest.mark.parametrize("scenario",
-                             [('search-all-fields'),
-                              ('primary-field-available'),
-                              ],
-                             )
+    @pytest.mark.parametrize(
+        "scenario",
+        [
+            ('search-all-fields'),
+            ('primary-field-available'),
+        ],
+    )
     def test__field_matching(
         self,
         vast_query_psrj2129: vtq.Query,
