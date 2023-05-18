@@ -6,6 +6,7 @@ from dataclasses import dataclass
 import enum
 import importlib.resources
 import os
+import pickle
 from xml.dom import minidom
 
 import healpy as hp
@@ -242,7 +243,7 @@ def _create_fields_df(epoch_num: str,
     if not vast_db.exists():
         raise Exception("{} does not exist!".format(vast_db))
 
-    if type(epoch_num) is str:
+    if isinstance(epoch_num, str):
         epoch_num = int(epoch_num.replace('x', ''))
 
     descrip_df = pd.read_csv(vast_db / 'description.csv', index_col='EPOCH')
@@ -326,10 +327,18 @@ def _create_fields_df(epoch_num: str,
     return epoch_csv
 
 
-def create_fields_csv(epoch_num: str,
-                      db_path: str,
-                      outdir: Union[str, Path] = '.'
-                      ) -> None:
+def _create_fields_sc(fields_df: pd.DataFrame):
+    fields_sc = SkyCoord(
+        Angle(fields_df["RA_HMS"], unit=u.hourangle),
+        Angle(fields_df["DEC_DMS"], unit=u.deg)
+    )
+    return fields_sc
+
+
+def create_fields_metadata(epoch_num: str,
+                           db_path: str,
+                           outdir: Union[str, Path] = '.'
+                           ) -> None:
     """
     Create and write the fields csv for a single epoch.
 
@@ -352,9 +361,16 @@ def create_fields_csv(epoch_num: str,
     if not outdir.exists():
         raise Exception("{} does not exist!".format(outdir))
 
+    fields_outfile = f'vast_epoch{epoch_num}_info.csv'
+    sc_outfile = f'vast_epoch{epoch_num}_fields_sc.pickle'
+
     fields_df = _create_fields_df(epoch_num, db_path)
-    outfile = 'vast_epoch{}_info.csv'.format(epoch_num)
-    fields_df.to_csv(outdir / outfile, index=False)
+    fields_sc = _create_fields_sc(fields_df)
+
+    fields_df.to_csv(outdir / fields_outfile, index=False)
+
+    with open(outdir / sc_outfile, 'wb') as picklefile:
+        pickle.dump(fields_sc, picklefile)
 
 
 def add_obs_date(epoch: str,
