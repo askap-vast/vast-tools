@@ -327,7 +327,7 @@ def _create_fields_df(epoch_num: str,
     return epoch_csv
 
 
-def _create_fields_sc(fields_df: pd.DataFrame) -> astropy.coordinates.SkyCoord:
+def _create_fields_sc(fields_df: pd.DataFrame) -> SkyCoord:
     """
     Create the fields direction Skycoord objects from the fields_df dataframe.
     
@@ -371,11 +371,13 @@ def create_fields_metadata(epoch_num: str,
     if not outdir.exists():
         raise Exception("{} does not exist!".format(outdir))
 
-    fields_outfile = f'vast_epoch{epoch_num}_info.csv'
-    sc_outfile = f'vast_epoch{epoch_num}_fields_sc.pickle'
-
     fields_df = _create_fields_df(epoch_num, db_path)
     fields_sc = _create_fields_sc(fields_df)
+    
+    if len(epoch_num.rstrip('x')) == 1:
+        epoch_num = f'0{epoch_num}'
+    fields_outfile = f'vast_epoch{epoch_num}_info.csv'
+    sc_outfile = f'vast_epoch{epoch_num}_fields_sc.pickle'
 
     fields_df.to_csv(outdir / fields_outfile, index=False)
 

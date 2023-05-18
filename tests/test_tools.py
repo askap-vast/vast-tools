@@ -210,7 +210,7 @@ def test_add_credible_levels(source_df: pd.DataFrame) -> None:
         credible_levels, rel=1e-1)
 
 
-def test_create_fields_csv(mocker: MockerFixture) -> None:
+def test_create_fields_metadata(mocker: MockerFixture) -> None:
     """
     Tests creating the fields csv for a single epoch.
 
@@ -229,16 +229,32 @@ def test_create_fields_csv(mocker: MockerFixture) -> None:
         'vasttools.tools._create_fields_df',
         return_value=pd.DataFrame()
     )
+    mocker_fields_sc = mocker.patch(
+        'vasttools.tools._create_fields_sc',
+        return_value=-99
+    )
     mocker_to_csv = mocker.patch(
         'pandas.DataFrame.to_csv'
     )
-
+    mocker_pickle_dump= mocker.patch(
+        'pickle.dump'
+    )
+    
+    mocker_open = mocker.patch('builtins.open', new_callable=mocker.mock_open())
+    
     epoch_num = '2'
-    outfile = 'vast_epoch{}_info.csv'.format(epoch_num)
+    csv_outfile = f'vast_epoch{int(epoch_num):02}_info.csv'
+    sc_outfile = f'vast_epoch{int(epoch_num):02}_fields_sc.pickle'
 
-    vtt.create_fields_csv(epoch_num, TEST_DATA_DIR / 'surveys_db')
+    vtt.create_fields_metadata(epoch_num, TEST_DATA_DIR / 'surveys_db')
 
-    mocker_to_csv.assert_called_once_with(Path(outfile), index=False)
+    mocker_to_csv.assert_called_once_with(Path(csv_outfile), index=False)
+    
+    mocker_open.assert_called_once_with(Path(sc_outfile), 'wb')
+    mocker_pickle_dump.assert_called_once_with(mocker_fields_sc.return_value,
+                                               mocker_open.return_value
+                                               )
+    
 
 
 def test__create_fields_df() -> None:
