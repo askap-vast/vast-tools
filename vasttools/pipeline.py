@@ -103,7 +103,7 @@ class PipeRun(object):
         measurements: Union[pd.DataFrame, vaex.dataframe.DataFrame],
         measurement_pairs_file: List[str],
         vaex_meas: bool = False,
-        n_workers: int = cpu_count() - 1,
+        n_workers: int = HOST_NCPU - 1,
         scheduler: str = 'processes'
     ) -> None:
         """
@@ -826,7 +826,8 @@ class PipeAnalysis(PipeRun):
         measurements: Union[pd.DataFrame, vaex.dataframe.DataFrame],
         measurement_pairs_file: str,
         vaex_meas: bool = False,
-        n_workers: int = cpu_count() - 1
+        n_workers: int = HOST_NCPU - 1
+        scheduler: str = 'processes',
     ) -> None:
         """
         Constructor method.
@@ -861,13 +862,17 @@ class PipeAnalysis(PipeRun):
                 vaex from an arrow file. `False` means the measurements are
                 loaded into a pandas DataFrame.
             n_workers: Number of workers (cpus) available.
+            scheduler: Dask scheduling option to use. Options are "processes"
+                (parallel processing) or "single-threaded". Defaults to 
+                "single-threaded".
 
         Returns:
             None
         """
         super().__init__(
             name, images, skyregions, relations, sources, associations,
-            bands, measurements, measurement_pairs_file, vaex_meas, n_workers
+            bands, measurements, measurement_pairs_file, vaex_meas, n_workers,
+            scheduler
         )
 
     def _filter_meas_pairs_df(
@@ -1132,13 +1137,13 @@ class PipeAnalysis(PipeRun):
         }
 
         sources_df_fluxes = (
-            dd.from_pandas(measurements_df_temp, HOST_NCPU)
+            dd.from_pandas(measurements_df_temp, self.n_workers)
             .groupby('source')
             .apply(
                 pipeline_get_variable_metrics,
                 meta=col_dtype
             )
-            .compute(num_workers=HOST_NCPU - 1, scheduler=self.scheduler)
+            .compute(num_workers=self.n_workers, scheduler=self.scheduler)
         )
 
         # Switch to pandas at this point to perform join
@@ -2466,7 +2471,7 @@ class Pipeline(object):
 
     def load_runs(
         self, run_names: List[str], name: Optional[str] = None,
-        n_workers: int = cpu_count() - 1
+        n_workers: int = HOST_NCPU - 1
     ) -> PipeAnalysis:
         """
         Wrapper to load multiple runs in one command.
@@ -2498,7 +2503,7 @@ class Pipeline(object):
         return piperun
 
     def load_run(
-        self, run_name: str, n_workers: int = cpu_count() - 1
+        self, run_name: str, n_workers: int = HOST_NCPU - 1
     ) -> PipeAnalysis:
         """
         Process and load a pipeline run.
