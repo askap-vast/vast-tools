@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased](https://github.com/askap-vast/vast-tools/compare/v2.0.0...HEAD)
 
 #### Added
+- Added option to specify which dask scheduler to use to Query, PipeRun, PipeAnalysis objects, and argument to find_sources.py [#430](https://github.com/askap-vast/vast-tools/pull/430)
 - Added access to epoch 32 [#429](https://github.com/askap-vast/vast-tools/pull/429)
 - Added access to epoch 31 [#427](https://github.com/askap-vast/vast-tools/pull/427)
 - Added access to epoch 30 [#419](https://github.com/askap-vast/vast-tools/pull/419)
@@ -28,6 +29,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Changed
 
+- Updated Query._get_epochs to allow lists and ints [#421](https://github.com/askap-vast/vast-tools/pull/421)
 - Bumped pytest and lint github workflow from ubuntu-18.04 -> ubuntu-20.04 [#425](https://github.com/askap-vast/vast-tools/pull/425)
 - Changed path generation to allow for image/rms/background files to contain ".conv" [#410](https://github.com/askap-vast/vast-tools/pull/410)
 - Changed handling of data product generation from epoch-based to index-based [#403](https://github.com/askap-vast/vast-tools/pull/403)
@@ -49,6 +51,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Fixed
 
+- Updated Query._get_epochs to exit nicely when no epochs are available [#421](https://github.com/askap-vast/vast-tools/pull/421)
 - Update match_planet_to_field to handle empty groups [#416](https://github.com/askap-vast/vast-tools/pull/416)
 - Added `corrected_data` to `Source` class to ensure correct image paths are used [#412](https://github.com/askap-vast/vast-tools/pull/412)
 - Fixed handling of Stokes Q/U/V selavy files [#410](https://github.com/askap-vast/vast-tools/pull/410)
@@ -77,6 +80,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#430](https://github.com/askap-vast/vast-tools/pull/430): feat: Allow users to specify which dask scheduler to use for multi-processing
+- [#421](https://github.com/askap-vast/vast-tools/pull/421): feat, fix, docs: Updated Query._get_epochs to exit nicely when no epochs available & to allow lists and ints to be passed.
 - [#429](https://github.com/askap-vast/vast-tools/pull/429): feat: Added access to epoch 32
 - [#427](https://github.com/askap-vast/vast-tools/pull/427): feat: Added access to epoch 31
 - [#425](https://github.com/askap-vast/vast-tools/pull/425): fix: Bumped pytest and lint github workflow from ubuntu-18.04 -> ubuntu-20.04 
