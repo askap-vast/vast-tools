@@ -1,6 +1,7 @@
 """Functions and classes related to loading and searching of the survey data.
 """
 import os
+import pickle
 import pandas as pd
 import warnings
 import importlib.resources
@@ -14,7 +15,7 @@ import logging.config
 
 from astropy.coordinates import Angle, EarthLocation
 from astropy import units as u
-from astropy.coordinates import SkyCoord
+from astropy.coordinates import SkyCoord, concatenate
 from astropy.io import fits
 from astropy.wcs import WCS
 from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
@@ -129,6 +130,32 @@ def load_fields_file(epoch: str) -> pd.DataFrame:
 
     return fields_df
 
+def load_fields_skycoords(epoch: str) -> pd.DataFrame:
+    """
+    Args:
+        epoch: Epoch to load. Can be entered with or without zero padding.
+            E.g. '3x', '9' or '03x' '09'.
+
+    Returns:
+        DataFrame containing the field information of the epoch.
+
+    Raises:
+        ValueError: Raised when epoch requested is not released.
+    """
+    if epoch not in RELEASED_EPOCHS:
+        if len(str(epoch)) > 2 and epoch.startswith('0'):
+            epoch = epoch[1:]
+        if epoch not in RELEASED_EPOCHS:
+            if epoch not in OBSERVED_EPOCHS:
+                raise ValueError(
+                    f'Epoch {epoch} is not available or is not a valid epoch.'
+                )
+
+    path = _get_resource_path(epoch, 'pickle')
+
+    fields_sc = pickle.load(path)
+
+    return fields_sc
 
 def get_fields_per_epoch_info() -> pd.DataFrame:
     """
@@ -213,9 +240,11 @@ class Fields:
             epochs = list(epochs)
 
         field_dfs = []
+        field_scs = []
         for epoch in epochs:
             self.logger.debug(f"Loading epoch {epoch}")
             field_dfs.append(load_fields_file(epoch))
+            field_scs.append(load_fields_skycoords(epoch))
 
         self.fields = pd.concat(field_dfs)
 
@@ -224,10 +253,7 @@ class Fields:
         self.fields.dropna(inplace=True)
         self.fields.reset_index(drop=True, inplace=True)
 
-        self.direction = SkyCoord(
-            Angle(self.fields["RA_HMS"], unit=u.hourangle),
-            Angle(self.fields["DEC_DMS"], unit=u.deg)
-        )
+        self.direction = concatenate(field_scs)
 
 
 class Image:
