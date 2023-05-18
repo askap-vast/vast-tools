@@ -198,7 +198,7 @@ def parse_args() -> argparse.Namespace:
         '--clobber',
         action="store_true",
         help=("Overwrite the output directory if it already exists."))
-    parse.add_argument(
+    parser.add_argument(
         '--scheduler',
         default='processes',
         choices=['processes', 'single-threaded'],
