@@ -77,7 +77,7 @@ def _get_resource_path(epoch: str, resource_type: str) -> str:
     else:
         if len(epoch) == 1:
             epoch = f'0{epoch}'
-        prefix = f"vast_epoch{epoch"
+        prefix = f"vast_epoch{epoch}"
         
     if resource_type == "csv":
         resource_dir = "vasttools.data.csvs"
