@@ -180,7 +180,7 @@ class Query:
                 `tiles` is `True`. Defaults to `True`.
             scheduler: Dask scheduling option to use. Options are "processes"
                 (parallel processing) or "single-threaded". Defaults to 
-                "single-threaded"
+                "single-threaded".
 
         Returns:
             None
