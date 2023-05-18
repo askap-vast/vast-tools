@@ -214,7 +214,7 @@ def test__get_resource_path(epoch: str,
     Tests fetching the resource path
 
     Args:
-        epoch: Epoch to test
+        epoch: Epoch to test.
         resource_type: The type of resource to fetch.
         resource_dir: The expected resource directory.
         resource_name: The expected resource name.
@@ -267,6 +267,36 @@ def test_load_fields_file(mocker: MockerFixture) -> None:
     )
     assert result == -99
 
+def test_load_fields_skycoords(mocker: MockerFixture) -> None:
+    """
+    Tests loading the fields file.
+
+    Args:
+        mocker: Pytest mock mocker object.
+
+    Returns:
+        None
+    """
+    epoch = '1'
+    resource_dir = pathlib.Path('vasttools.data.pickles')
+    resource_path = resource_dir / 'vast_epoch01_fields_sc.pickle'
+
+    get_resource_path_mocker = mocker.patch(
+        'vasttools.survey._get_resource_path',
+        return_value=resource_path
+    )
+    pickle_mocker = mocker.patch(
+        'vasttools.survey.pickle.load', return_value=-99
+    )
+
+    result = vts.load_fields_skycoords(epoch)
+
+    expected_calls = [mocker.call(epoch, 'pickle')]
+    get_resource_path_mocker.assert_has_calls(expected_calls)
+    pickle_mocker.assert_called_once_with(
+        get_resource_path_mocker.return_value
+    )
+    assert result == -99
 
 def test_load_fields_file_epoch_fail(mocker: MockerFixture) -> None:
     """
