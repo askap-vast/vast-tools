@@ -76,8 +76,8 @@ def _get_resource_path(epoch: str, resource_type: str) -> str:
     if epoch in special_epoch_prefixes.keys():
         prefix = special_epoch_prefixes[epoch]
     else:
-        if len(epoch) == 1:
-            epoch = f'0{epoch}'
+        if len(epoch_num.rstrip('x')) == 1:
+            epoch_num = f'0{epoch_num}'
         prefix = f"vast_epoch{epoch}"
         
     if resource_type == "csv":
