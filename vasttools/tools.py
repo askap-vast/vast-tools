@@ -327,7 +327,17 @@ def _create_fields_df(epoch_num: str,
     return epoch_csv
 
 
-def _create_fields_sc(fields_df: pd.DataFrame):
+def _create_fields_sc(fields_df: pd.DataFrame) -> astropy.coordinates.SkyCoord:
+    """
+    Create the fields direction Skycoord objects from the fields_df dataframe.
+    
+    Args:
+        fields_df: Fields dataframe.
+    
+    Returns:
+        Skycoord containing the beam centres
+    """
+    
     fields_sc = SkyCoord(
         Angle(fields_df["RA_HMS"], unit=u.hourangle),
         Angle(fields_df["DEC_DMS"], unit=u.deg)
