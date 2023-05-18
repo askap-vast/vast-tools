@@ -684,14 +684,13 @@ class TestQuery:
             ' are found in the VAST Pilot survey footprint!'
         )
 
-    def test_init_failure_invalid_schduler(self,
+    def test_init_failure_invalid_scheduler(self,
                                            mocker: MockerFixture
                                            ) -> None:
         """
-        Tests the initialisation of a Query object.
+        Tests the initialisation failure of a Query object.
 
-        Tests that all provided settings are set correctly in the final Query
-        object.
+        Specifically when the requested dask scheduler is invalid.
 
         Args:
             mocker: The pytest-mock mocker object.
