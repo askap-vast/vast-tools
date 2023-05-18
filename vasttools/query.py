@@ -179,7 +179,7 @@ class Query:
             corrected_data: Access the corrected data. Only relevant if
                 `tiles` is `True`. Defaults to `True`.
             scheduler: Dask scheduling option to use. Options are "processes"
-                (parallel processing) or "single-threaded". Defaults to 
+                (parallel processing) or "single-threaded". Defaults to
                 "single-threaded".
 
         Returns:
@@ -199,6 +199,7 @@ class Query:
             QueryInitError: Base folder cannot be found.
             QueryInitError: Base folder cannot be found.
             QueryInitError: Problems found in query settings.
+            QueryInitError: Invalid scheduler option requested.
         """
         self.logger = logging.getLogger('vasttools.find_sources.Query')
 
@@ -366,7 +367,6 @@ class Query:
             raise QueryInitError(
                 f"{scheduler} is not a suitable scheduler option. Please "
                 f"select from {scheduler_options}"
-                )
             )
         self.settings['scheduler'] = scheduler
 
@@ -573,7 +573,9 @@ class Query:
                 self._grouped_fetch_cutouts,
                 imsize=imsize,
                 meta=meta,
-            ).compute(num_workers=self.ncpu, scheduler=self.settings['scheduler'])
+            ).compute(num_workers=self.ncpu,
+                      scheduler=self.settings['scheduler']
+                      )
         )
 
         if not cutouts.empty:
@@ -1198,7 +1200,9 @@ class Query:
                     ),
                     allow_nan=self.settings['forced_allow_nan'],
                     meta=meta,
-                ).compute(num_workers=self.ncpu, scheduler=self.settings['scheduler'])
+                ).compute(num_workers=self.ncpu,
+                          scheduler=self.settings['scheduler']
+                          )
             )
 
             if not f_results.empty:
@@ -1216,7 +1220,9 @@ class Query:
             .apply(
                 self._get_components,
                 meta=self._get_selavy_meta(),
-            ).compute(num_workers=self.ncpu, scheduler=self.settings['scheduler'])
+            ).compute(num_workers=self.ncpu,
+                      scheduler=self.settings['scheduler']
+                      )
         )
 
         self.logger.debug("Selavy components succesfully added.")
@@ -1268,7 +1274,9 @@ class Query:
                 .apply(
                     self._init_sources,
                     meta=meta,
-                ).compute(num_workers=npart, scheduler=self.settings['scheduler'])
+                ).compute(num_workers=npart,
+                          scheduler=self.settings['scheduler']
+                          )
             )
             self.results = self.results.dropna()
 
@@ -1304,7 +1312,9 @@ class Query:
                 self._write_search_around_results,
                 sort_output=sort_output,
                 meta=meta,
-            ).compute(num_workers=self.ncpu, scheduler=self.settings['scheduler'])
+            ).compute(num_workers=self.ncpu,
+                      scheduler=self.settings['scheduler']
+                      )
         )
 
     def _write_search_around_results(
@@ -2097,7 +2107,9 @@ class Query:
                     meta=meta,
                     axis=1,
                     result_type='expand'
-                ).compute(num_workers=self.ncpu, scheduler=self.settings['scheduler'])
+                ).compute(num_workers=self.ncpu,
+                          scheduler=self.settings['scheduler']
+                          )
             )
 
             self.logger.debug("Finished field matching.")
@@ -2390,7 +2402,9 @@ class Query:
             .apply(
                 match_planet_to_field,
                 meta=meta,
-            ).compute(num_workers=self.ncpu, scheduler=self.settings['scheduler'])
+            ).compute(num_workers=self.ncpu,
+                      scheduler=self.settings['scheduler']
+                      )
         )
 
         results = results.reset_index(drop=True).drop(
@@ -2457,7 +2471,8 @@ class Query:
             )
             if mask.any():
                 self.logger.warning(
-                    f"Removing {sum(mask)} sources outside the requested survey footprint"
+                    f"Removing {sum(mask)} sources outside the requested "
+                    f"survey footprint."
                 )
                 self.coords = self.coords[~mask]
                 self.source_names = self.source_names[~mask]

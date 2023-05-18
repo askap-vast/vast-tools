@@ -137,7 +137,7 @@ class PipeRun(object):
             n_workers: Number of workers (cpus) available. Default is
                 determined by running `cpu_count()`.
             scheduler: Dask scheduling option to use. Options are "processes"
-                (parallel processing) or "single-threaded". Defaults to 
+                (parallel processing) or "single-threaded". Defaults to
                 "single-threaded".
 
         Returns:
@@ -863,7 +863,7 @@ class PipeAnalysis(PipeRun):
                 loaded into a pandas DataFrame.
             n_workers: Number of workers (cpus) available.
             scheduler: Dask scheduling option to use. Options are "processes"
-                (parallel processing) or "single-threaded". Defaults to 
+                (parallel processing) or "single-threaded". Defaults to
                 "single-threaded".
 
         Returns:
