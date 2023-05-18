@@ -60,6 +60,42 @@ def load_field_centres() -> pd.DataFrame:
     return field_centres
 
 
+def _get_resource_path(epoch: str, resource_type: str) -> str:
+    valid_resource_types = ["csv", "pickle"]
+    if resource_type not in valid_resource_types:
+        raise ValueError(f"{resource_type} is not a valid resource type")
+    
+    special_epoch_prefixes = {"0": "racs_low",
+                              "14": "racs_mid",
+                              "28": "racs_high",
+                              "29": "racs_low2",
+                              }
+
+    
+    if epoch in special_epoch_prefixes.keys():
+        prefix = special_epoch_prefixes[epoch]
+    else:
+        if len(epoch) == 1:
+            epoch = f'0{epoch}'
+        prefix = f"vast_epoch{epoch"
+        
+    if resource_type == "csv":
+        resource_dir = "vasttools.data.csvs"
+        resource_suffix = "_info.csv"
+    elif resource_type == "pickle":
+        resource_dir = "vasttools.data.pickles"
+        resource_suffix = "_fields_sc.pickle"
+    
+    print(resource_dir, f"{prefix}{resource_suffix}")
+    path = importlib.resources.path(resource_dir, f"{prefix}{resource_suffix}")
+
+    if not os.path.isfile(path):
+        raise ValueError(f"Error fetching Epoch {epoch} {resource_type} file."
+                         f" {resource_path} does not exist!")
+    
+    return path
+        
+    
 def load_fields_file(epoch: str) -> pd.DataFrame:
     """
     Load the csv field file of the requested epoch as a pandas dataframe.
@@ -86,72 +122,9 @@ def load_fields_file(epoch: str) -> pd.DataFrame:
                     f'Epoch {epoch} is not available or is not a valid epoch.'
                 )
 
-    paths = {
-        "0": importlib.resources.path(
-            'vasttools.data.csvs', 'racs_low_info.csv'),
-        "1": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch01_info.csv'),
-        "2": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch02_info.csv'),
-        "3x": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch03x_info.csv'),
-        "4x": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch04x_info.csv'),
-        "5x": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch05x_info.csv'),
-        "6x": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch06x_info.csv'),
-        "7x": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch07x_info.csv'),
-        "8": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch08_info.csv'),
-        "9": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch09_info.csv'),
-        "10x": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch10x_info.csv'),
-        "11x": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch11x_info.csv'),
-        "12": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch12_info.csv'),
-        "13": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch13_info.csv'),
-        "14": importlib.resources.path(
-            'vasttools.data.csvs', 'racs_mid_info.csv'),
-        "17": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch17_info.csv'),
-        "18": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch18_info.csv'),
-        "19": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch19_info.csv'),
-        "20": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch20_info.csv'),
-        "21": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch21_info.csv'),
-        "22": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch22_info.csv'),
-        "23": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch23_info.csv'),
-        "24": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch24_info.csv'),
-        "25": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch25_info.csv'),
-        "26": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch26_info.csv'),
-        "27": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch27_info.csv'),
-        "28": importlib.resources.path(
-            'vasttools.data.csvs', 'racs_high_info.csv'),
-        "29": importlib.resources.path(
-            'vasttools.data.csvs', 'racs_low2_info.csv'),
-        "30": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch30_info.csv'),
-        "31": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch31_info.csv'),
-        "32": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch32_info.csv'),
-    }
+    path = _get_resource_path(epoch, 'csv')
 
-    with paths[epoch] as fields_csv:
+    with path as fields_csv:
         fields_df = pd.read_csv(fields_csv, comment='#')
 
     return fields_df
