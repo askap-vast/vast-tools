@@ -684,6 +684,41 @@ class TestQuery:
             ' are found in the VAST Pilot survey footprint!'
         )
 
+    def test_init_failure_invalid_scheduler(self,
+                                           mocker: MockerFixture
+                                           ) -> None:
+        """
+        Tests the initialisation failure of a Query object.
+
+        Specifically when the requested dask scheduler is invalid.
+
+        Args:
+            mocker: The pytest-mock mocker object.
+
+        Returns:
+            None
+        """
+        isdir_mocker = mocker.patch(
+            'vasttools.query.os.path.isdir',
+            return_value=True
+        )
+        mocker_data_available = mocker.patch(
+            'vasttools.query.Query._check_data_availability',
+            return_value=True
+        )
+
+        with pytest.raises(vtq.QueryInitError) as excinfo:
+            query = vtq.Query(
+                planets=['Mars'],
+                scheduler='bad-option',
+                base_folder='/testing/folder'
+            )
+
+        assert str(excinfo.value) == (
+            "bad-option is not a suitable scheduler option. Please "
+            "select from ['processes', 'single-threaded']"
+        )
+
     def test_init_settings(self, mocker: MockerFixture) -> None:
         """
         Tests the initialisation of a Query object.
@@ -721,6 +756,7 @@ class TestQuery:
         forced_cluster_threshold = 7.5
         output_dir = '/output/here'
         incl_observed = False
+        scheduler = 'processes'
 
         expected_settings = {
             'epochs': ["1", "2", "3x"],
@@ -737,7 +773,8 @@ class TestQuery:
             'output_dir': output_dir,
             'search_around': False,
             'tiles': use_tiles,
-            'incl_observed': False
+            'incl_observed': False,
+            'scheduler': 'processes'
         }
 
         query = vtq.Query(
@@ -756,7 +793,8 @@ class TestQuery:
             forced_allow_nan=forced_allow_nan,
             forced_cluster_threshold=forced_cluster_threshold,
             output_dir=output_dir,
-            incl_observed=incl_observed
+            incl_observed=incl_observed,
+            scheduler=scheduler
         )
 
         assert query.settings == expected_settings

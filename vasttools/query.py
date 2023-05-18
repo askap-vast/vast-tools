@@ -128,7 +128,8 @@ class Query:
         forced_cluster_threshold: float = 1.5,
         forced_allow_nan: bool = False,
         incl_observed: bool = False,
-        corrected_data: bool = True
+        corrected_data: bool = True,
+        scheduler: str = 'processes',
     ) -> None:
         """
         Constructor method.
@@ -177,6 +178,9 @@ class Query:
                 fields, not querying data. Defaults to False.
             corrected_data: Access the corrected data. Only relevant if
                 `tiles` is `True`. Defaults to `True`.
+            scheduler: Dask scheduling option to use. Options are "processes"
+                (parallel processing) or "single-threaded". Defaults to
+                "single-threaded".
 
         Returns:
             None
@@ -195,6 +199,7 @@ class Query:
             QueryInitError: Base folder cannot be found.
             QueryInitError: Base folder cannot be found.
             QueryInitError: Problems found in query settings.
+            QueryInitError: Invalid scheduler option requested.
         """
         self.logger = logging.getLogger('vasttools.find_sources.Query')
 
@@ -356,6 +361,14 @@ class Query:
         self.settings['forced_allow_nan'] = forced_allow_nan
 
         self.settings['output_dir'] = output_dir
+
+        scheduler_options = ['processes', 'single-threaded']
+        if scheduler not in scheduler_options:
+            raise QueryInitError(
+                f"{scheduler} is not a suitable scheduler option. Please "
+                f"select from {scheduler_options}"
+            )
+        self.settings['scheduler'] = scheduler
 
         # Going to need this so load it now
         self._epoch_fields = get_fields_per_epoch_info()
@@ -560,7 +573,9 @@ class Query:
                 self._grouped_fetch_cutouts,
                 imsize=imsize,
                 meta=meta,
-            ).compute(num_workers=self.ncpu, scheduler='processes')
+            ).compute(num_workers=self.ncpu,
+                      scheduler=self.settings['scheduler']
+                      )
         )
 
         if not cutouts.empty:
@@ -1185,7 +1200,9 @@ class Query:
                     ),
                     allow_nan=self.settings['forced_allow_nan'],
                     meta=meta,
-                ).compute(num_workers=self.ncpu, scheduler='processes')
+                ).compute(num_workers=self.ncpu,
+                          scheduler=self.settings['scheduler']
+                          )
             )
 
             if not f_results.empty:
@@ -1203,7 +1220,9 @@ class Query:
             .apply(
                 self._get_components,
                 meta=self._get_selavy_meta(),
-            ).compute(num_workers=self.ncpu, scheduler='processes')
+            ).compute(num_workers=self.ncpu,
+                      scheduler=self.settings['scheduler']
+                      )
         )
 
         self.logger.debug("Selavy components succesfully added.")
@@ -1255,7 +1274,9 @@ class Query:
                 .apply(
                     self._init_sources,
                     meta=meta,
-                ).compute(num_workers=npart, scheduler='processes')
+                ).compute(num_workers=npart,
+                          scheduler=self.settings['scheduler']
+                          )
             )
             self.results = self.results.dropna()
 
@@ -1291,7 +1312,9 @@ class Query:
                 self._write_search_around_results,
                 sort_output=sort_output,
                 meta=meta,
-            ).compute(num_workers=self.ncpu, scheduler='processes')
+            ).compute(num_workers=self.ncpu,
+                      scheduler=self.settings['scheduler']
+                      )
         )
 
     def _write_search_around_results(
@@ -2084,7 +2107,9 @@ class Query:
                     meta=meta,
                     axis=1,
                     result_type='expand'
-                ).compute(num_workers=self.ncpu, scheduler='processes')
+                ).compute(num_workers=self.ncpu,
+                          scheduler=self.settings['scheduler']
+                          )
             )
 
             self.logger.debug("Finished field matching.")
@@ -2377,7 +2402,9 @@ class Query:
             .apply(
                 match_planet_to_field,
                 meta=meta,
-            ).compute(num_workers=self.ncpu, scheduler='processes')
+            ).compute(num_workers=self.ncpu,
+                      scheduler=self.settings['scheduler']
+                      )
         )
 
         results = results.reset_index(drop=True).drop(
@@ -2444,7 +2471,8 @@ class Query:
             )
             if mask.any():
                 self.logger.warning(
-                    f"Removing {sum(mask)} sources outside the requested survey footprint"
+                    f"Removing {sum(mask)} sources outside the requested "
+                    f"survey footprint."
                 )
                 self.coords = self.coords[~mask]
                 self.source_names = self.source_names[~mask]

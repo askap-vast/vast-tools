@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased](https://github.com/askap-vast/vast-tools/compare/v2.0.0...HEAD)
 
 #### Added
+- Added option to specify which dask scheduler to use to Query, PipeRun, PipeAnalysis objects, and argument to find_sources.py [#430](https://github.com/askap-vast/vast-tools/pull/430)
 - Added access to epoch 32 [#429](https://github.com/askap-vast/vast-tools/pull/429)
 - Added access to epoch 31 [#427](https://github.com/askap-vast/vast-tools/pull/427)
 - Added access to epoch 30 [#419](https://github.com/askap-vast/vast-tools/pull/419)
@@ -79,6 +80,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#430](https://github.com/askap-vast/vast-tools/pull/430): feat: Allow users to specify which dask scheduler to use for multi-processing
 - [#421](https://github.com/askap-vast/vast-tools/pull/421): feat, fix, docs: Updated Query._get_epochs to exit nicely when no epochs available & to allow lists and ints to be passed.
 - [#429](https://github.com/askap-vast/vast-tools/pull/429): feat: Added access to epoch 32
 - [#427](https://github.com/askap-vast/vast-tools/pull/427): feat: Added access to epoch 31
