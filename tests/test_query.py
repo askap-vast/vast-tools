@@ -710,7 +710,8 @@ class TestQuery:
         with pytest.raises(vtq.QueryInitError) as excinfo:
             query = vtq.Query(
                 planets=['Mars'],
-                scheduler='bad-option'
+                scheduler='bad-option',
+                base_folder='/testing/folder'
             )
 
         assert str(excinfo.value) == (
