@@ -340,7 +340,7 @@ def create_fields_metadata(epoch_num: str,
                            outdir: Union[str, Path] = '.'
                            ) -> None:
     """
-    Create and write the fields csv for a single epoch.
+    Create and write the fields csv and skycoord pickle for a single epoch.
 
     Args:
         epoch_num: Epoch number of interest.
