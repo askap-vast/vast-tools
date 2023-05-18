@@ -8,7 +8,7 @@ import pytest
 from astropy.coordinates import SkyCoord, Angle
 from mocpy import MOC
 from pytest_mock import mocker, MockerFixture  # noqa: F401
-from typing import List
+from typing import List, Union
 
 import vasttools.query as vtq
 
@@ -1618,3 +1618,64 @@ class TestQuery:
         assert vast_query_psrj2129.vast_p1 == vast_p1
         assert vast_query_psrj2129.vast_p2 == vast_p2
         assert vast_query_psrj2129.vast_full == vast_full
+
+    @pytest.mark.parametrize("req_epochs, epochs_expected",
+                             [("0", ["0"]),
+                              ("3x", ["3x"]),
+                              ("3", ["3x"]),
+                              ("0,1", ["0", "1"]),
+                              ("0,3x", ["0", "3x"]),
+                              ("0,3", ["0", "3x"]),
+                              ([0,1], ["0", "1"]),
+                              (0, ["0"]),
+                              (["0", "1"], ["0", "1"]),
+                              (["0", 1], ["0", "1"]),
+                              ([1, "3x"], ["1", "3x"]),
+                              ([1, "3"], ["1", "3x"]),
+                              ("all", ["0", "1", "3x"]),
+                              ("all-vast", ["1", "3x"]),
+                              ],
+                             ids=('single-str',
+                                  'single-str-x-provided',
+                                  'single-str-x-missing',
+                                  'multiple-str',
+                                  'multiple-str-x-provided',
+                                  'multiple-str-x-missing',
+                                  'single-int',
+                                  'int-list',
+                                  'str-list',
+                                  'mixed-list',
+                                  'mixed-list-x-provided',
+                                  'mixed-list-x-missing',
+                                  'all',
+                                  'all-vast'
+                                  )
+                              )
+    
+    def test__get_epochs(
+        self,
+        vast_query_psrj2129: vtq.Query,
+        req_epochs: Union[str, List[str], List[int]],
+        epochs_expected,
+        mocker: MockerFixture,
+        ) -> None:
+        """
+        Test the get_epochs function.
+        
+        Args:
+            vast_query_psrj2129: The dummy Query instance that includes
+                a search for PSR J2129-04 with the included found fields data.
+            req_epochs: The requested epochs.
+            epochs_expected: The expected output of the function.
+            
+        Returns:
+            None
+        """
+        mocked_released_epochs = {"0":"00", "1":"01", "3x":"03x"}
+        
+        mocker.patch("vasttools.query.RELEASED_EPOCHS",
+                     new=mocked_released_epochs
+                     )
+        
+        returned_epochs = vast_query_psrj2129._get_epochs(req_epochs)
+        assert returned_epochs == epochs_expected

@@ -110,7 +110,7 @@ class Query:
         self,
         coords: Optional[SkyCoord] = None,
         source_names: Optional[List[str]] = None,
-        epochs: Union[str, List[str]] = "1",
+        epochs: Union[str, List[str], List[int]] = "1",
         stokes: str = "I",
         crossmatch_radius: float = 5.0,
         max_sep: float = 1.0,
@@ -2478,7 +2478,7 @@ class Query:
         return catalog
 
     def _get_epochs(self,
-                    req_epochs: Union[str, List[str]]
+                    req_epochs: Union[str, List[str], List[int]]
                     ) -> List[str]:
         """
         Parse the list of epochs to query.
@@ -2488,6 +2488,9 @@ class Query:
 
         Returns:
             Epochs to query, as a list of strings.
+        
+        Raises:
+            QueryInitError: None of the requested epochs are available
         """
 
         epoch_dict = RELEASED_EPOCHS.copy()
@@ -2508,24 +2511,27 @@ class Query:
             epochs = []
             if isinstance(req_epochs, list):
                 epoch_iter = req_epochs
+            elif isinstance(req_epochs, int):
+                epoch_iter = [req_epochs]
             else:
                 epoch_iter = req_epochs.split(',')
 
-            for epoch in req_epochs.split(','):
+            for epoch in epoch_iter:
+                if type(epoch) == int:
+                    epoch = str(epoch)
                 if epoch in available_epochs:
                     epochs.append(epoch)
                 else:
-                    if self.logger is None:
-                        self.logger.info(
-                            "Epoch {} is not available. Ignoring.".format(
-                                epoch
-                            )
-                        )
+                    epoch_x = f"{epoch}x"
+                    self.logger.debug(
+                        f"Epoch {epoch} is not available. Trying {epoch_x}"
+                    )
+                    if epoch_x in available_epochs:
+                        epochs.append(epoch_x)
+                        self.logger.debug(f"Epoch {epoch_x} available.")
                     else:
-                        warnings.warn(
-                            "Removing Epoch {} as it"
-                            " is not a valid epoch.".format(epoch),
-                            stacklevel=2
+                        self.logger.info(
+                            f"Epoch {epoch_x} is not available."
                         )
 
         # survey check
@@ -2539,8 +2545,9 @@ class Query:
             )
 
         if len(epochs) == 0:
-            self.logger.critical("No requested epochs are available")
-            sys.exit()
+            raise QueryInitError(
+                "None of the requested epochs are available"
+            )
 
         return epochs
 
