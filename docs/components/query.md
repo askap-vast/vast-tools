@@ -167,16 +167,22 @@ These `Query` keyword arguments control the data that is used to perform the que
 **`epochs`**  
 A list of epochs or a comma-separated string of epochs to search.
 Do not use zero padded values when entering the epochs.
-The values `all` and `all-vast` are also valid, selecting Epoch 0 + VAST data and just VAST data, respectively.
+The values `all` and `all-vast` are also valid, selecting all RACS & VAST data or just VAST data, respectively.
+
+The pilot survey used an `x` to designate an epoch that was only partially observed. This can be supplied, but is not necessary.
 
 !!! example "Example: Defining the epochs parameter"
     === "Comma-separated string"
         ```python
         my_query = Query(..., epochs="1,2,6x,8,9")
         ```
-    === "List"
+    === "List of strings"
         ```python
         my_query = Query(..., epochs=["1","2","6x","8","9"])
+        ```
+    === "List of ints"
+        ```python
+        my_query = Query(..., epochs=[1,2,6,8,9])
         ```
 
 **`stokes`**  
