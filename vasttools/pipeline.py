@@ -826,7 +826,7 @@ class PipeAnalysis(PipeRun):
         measurements: Union[pd.DataFrame, vaex.dataframe.DataFrame],
         measurement_pairs_file: str,
         vaex_meas: bool = False,
-        n_workers: int = HOST_NCPU - 1
+        n_workers: int = HOST_NCPU - 1,
         scheduler: str = 'processes',
     ) -> None:
         """
