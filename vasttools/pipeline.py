@@ -103,7 +103,8 @@ class PipeRun(object):
         measurements: Union[pd.DataFrame, vaex.dataframe.DataFrame],
         measurement_pairs_file: List[str],
         vaex_meas: bool = False,
-        n_workers: int = cpu_count() - 1
+        n_workers: int = cpu_count() - 1,
+        scheduler: str = 'processes'
     ) -> None:
         """
         Constructor method.
@@ -135,6 +136,9 @@ class PipeRun(object):
                 loaded into a pandas DataFrame.
             n_workers: Number of workers (cpus) available. Default is
                 determined by running `cpu_count()`.
+            scheduler: Dask scheduling option to use. Options are "processes"
+                (parallel processing) or "single-threaded". Defaults to 
+                "single-threaded".
 
         Returns:
             None
@@ -153,6 +157,7 @@ class PipeRun(object):
         self.n_workers = n_workers
         self._vaex_meas = vaex_meas
         self._loaded_two_epoch_metrics = False
+        self.scheduler = scheduler
 
         self.logger = logging.getLogger('vasttools.pipeline.PipeRun')
         self.logger.debug('Created PipeRun instance')
@@ -652,7 +657,7 @@ class PipeRun(object):
                 match_planet_to_field,
                 meta=meta
             ).compute(
-                scheduler='processes',
+                scheduler=self.scheduler,
                 n_workers=self.n_workers
             )
         )
@@ -1133,7 +1138,7 @@ class PipeAnalysis(PipeRun):
                 pipeline_get_variable_metrics,
                 meta=col_dtype
             )
-            .compute(num_workers=HOST_NCPU - 1, scheduler='processes')
+            .compute(num_workers=HOST_NCPU - 1, scheduler=self.scheduler)
         )
 
         # Switch to pandas at this point to perform join
