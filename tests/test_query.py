@@ -756,6 +756,7 @@ class TestQuery:
         forced_cluster_threshold = 7.5
         output_dir = '/output/here'
         incl_observed = False
+        search_all_fields = False
         scheduler = 'processes'
 
         expected_settings = {
@@ -774,7 +775,8 @@ class TestQuery:
             'search_around': False,
             'tiles': use_tiles,
             'incl_observed': False,
-            'scheduler': 'processes'
+            'search_all_fields': False,
+            'scheduler': 'processes',
         }
 
         query = vtq.Query(
@@ -880,12 +882,20 @@ class TestQuery:
 
         assert all_available == query._check_data_availability()
 
+    @pytest.mark.parametrize(
+        "scenario",
+        [
+            ('search-all-fields'),
+            ('primary-field-available'),
+        ],
+    )
     def test__field_matching(
         self,
         vast_query_psrj2129: vtq.Query,
         vast_fields_object_dummy: pd.DataFrame,
         field_centres_dummy: pd.DataFrame,
-        mocker: MockerFixture
+        scenario: str,
+        mocker: MockerFixture,
     ) -> None:
         """
         Tests the field matching method of the query object.
@@ -899,11 +909,13 @@ class TestQuery:
             vast_fields_object_dummy: The dummy fields available to perform
                 the search against.
             field_centres_dummy: The dummy field centres file.
+            scenario: The scenario to test
             mocker: The pytest-mock mocker object.
 
         Returns:
             None
         """
+
         field_sc = SkyCoord(
             vast_fields_object_dummy["RA_HMS"],
             vast_fields_object_dummy["DEC_DMS"],
@@ -918,6 +930,17 @@ class TestQuery:
         field_centre_names = field_centres_dummy.field
 
         row = vast_query_psrj2129.query_df.iloc[0]
+
+        expected_field_names = ['VAST_2118-06', 'VAST_2143-06']
+        expected_primary_field = 'VAST_2118-06'
+        expected_epochs = ['1', '2']
+        expected_num_obs = 2
+
+        if scenario == 'search-all-fields':
+            vast_query_psrj2129.settings['search_all_fields'] = True
+            expected_epochs = ['1', '1', '2', '2']
+            expected_num_obs = 4
+
         results = vast_query_psrj2129._field_matching(
             row,
             field_sc,
@@ -926,11 +949,10 @@ class TestQuery:
             field_centre_names
         )
 
-        assert np.all(results[0] == np.array(
-            ['VAST_2118-06', 'VAST_2143-06']
-        ))
-        assert results[1] == 'VAST_2118-06'
-        assert results[2] == ['1', '2']
+        assert np.all(results[0] == np.array(expected_field_names))
+        assert results[1] == expected_primary_field
+        assert results[2] == expected_epochs
+        assert len(results[3]) == expected_num_obs
 
     def test_find_fields(
         self,

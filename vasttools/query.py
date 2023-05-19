@@ -129,6 +129,7 @@ class Query:
         forced_allow_nan: bool = False,
         incl_observed: bool = False,
         corrected_data: bool = True,
+        search_all_fields: bool = False,
         scheduler: str = 'processes',
     ) -> None:
         """
@@ -178,6 +179,9 @@ class Query:
                 fields, not querying data. Defaults to False.
             corrected_data: Access the corrected data. Only relevant if
                 `tiles` is `True`. Defaults to `True`.
+            search_all_fields: If `True`, return all data at the requested
+                positions regardless of field. If `False`, only return data
+                from the best (closest) field in each epoch.
             scheduler: Dask scheduling option to use. Options are "processes"
                 (parallel processing) or "single-threaded". Defaults to
                 "single-threaded".
@@ -361,6 +365,7 @@ class Query:
         self.settings['forced_allow_nan'] = forced_allow_nan
 
         self.settings['output_dir'] = output_dir
+        self.settings['search_all_fields'] = search_all_fields
 
         scheduler_options = ['processes', 'single-threaded']
         if scheduler not in scheduler_options:
@@ -2295,8 +2300,11 @@ class Query:
                 self.logger.debug("No fields available")
                 continue
 
+            if self.settings['search_all_fields']:
+                selected_fields = available_fields
+
             elif primary_field in available_fields:
-                field = primary_field
+                selected_fields = [primary_field]
                 self.logger.debug("Selecting primary field")
 
             elif len(available_fields) == 1:
@@ -2313,26 +2321,29 @@ class Query:
                     centre_seps[field_indexes].deg
                 )
 
-                field = available_fields[min_field_index]
+                selected_fields = [available_fields[min_field_index]]
                 self.logger.debug("Selecting closest field")
-            self.logger.debug(f"Selected field: {field}")
+
+            self.logger.debug(f"Selected fields: {selected_fields}")
 
             # Change VAST back to RACS
             if i in RACS_EPOCHS:
-                field = field.replace("VAST", "RACS")
-            epochs.append(i)
+                selected_fields = [f.replace("VAST", "RACS")
+                                   for f in selected_fields
+                                   ]
+            for field in selected_fields:
+                if stripped:
+                    field = f"{field}A"
+                sbid_vals = self._epoch_fields.loc[i, field]["SBID"]
+                date_vals = self._epoch_fields.loc[i, field]["DATEOBS"]
+                freq_vals = self._epoch_fields.loc[i, field]["OBS_FREQ"]
 
-            if stripped:
-                field = f"{field}A"
-            sbid_vals = self._epoch_fields.loc[i, field]["SBID"]
-            date_vals = self._epoch_fields.loc[i, field]["DATEOBS"]
-            freq_vals = self._epoch_fields.loc[i, field]["OBS_FREQ"]
-
-            for sbid, date, freq in zip(sbid_vals, date_vals, freq_vals):
-                sbids.append(sbid)
-                dateobs.append(date)
-                freqs.append(freq)
-                field_per_epochs.append([i, field, sbid, date, freq])
+                for sbid, date, freq in zip(sbid_vals, date_vals, freq_vals):
+                    sbids.append(sbid)
+                    dateobs.append(date)
+                    freqs.append(freq)
+                    epochs.append(i)
+                    field_per_epochs.append([i, field, sbid, date, freq])
 
         return_vals = (fields,
                        primary_field,
