@@ -74,8 +74,8 @@ def _get_resource_path(epoch: str, resource_type: str) -> str:
     if epoch in special_epoch_prefixes.keys():
         prefix = special_epoch_prefixes[epoch]
     else:
-        if len(epoch_num.rstrip('x')) == 1:
-            epoch_num = f'0{epoch_num}'
+        if len(epoch.rstrip('x')) == 1:
+            epoch = f'0{epoch}'
         prefix = f"vast_epoch{epoch}"
 
     if resource_type == "csv":
@@ -85,8 +85,11 @@ def _get_resource_path(epoch: str, resource_type: str) -> str:
         resource_dir = "vasttools.data.pickles"
         resource_suffix = "_fields_sc.pickle"
 
-    print(resource_dir, f"{prefix}{resource_suffix}")
-    path = importlib.resources.path(resource_dir, f"{prefix}{resource_suffix}")
+    resource = importlib.resources.path(resource_dir,
+                                        f"{prefix}{resource_suffix}"
+                                        )
+    with resource as p:
+        path = p
 
     if not os.path.isfile(path):
         raise ValueError(f"Error fetching Epoch {epoch} {resource_type} file."
@@ -152,7 +155,8 @@ def load_fields_skycoords(epoch: str) -> pd.DataFrame:
 
     path = _get_resource_path(epoch, 'pickle')
 
-    fields_sc = pickle.load(path)
+    with open(path, 'rb') as pickle_file:
+        fields_sc = pickle.load(pickle_file)
 
     return fields_sc
 

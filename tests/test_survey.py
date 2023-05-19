@@ -243,10 +243,7 @@ def test__get_resource_path(epoch: str,
     Returns:
         None
     """
-    #importlib_mocker = mocker.patch(
-    #    'importlib.resources.path',
-    #    return_value='/path/to/resource'
-    #)
+
     isfile_mocker = mocker.patch(
         'os.path.isfile',
         return_value=True
@@ -255,7 +252,6 @@ def test__get_resource_path(epoch: str,
     result = vts._get_resource_path(epoch, resource_type)
 
     expected_calls = [mocker.call(resource_dir, resource_name)]
-    #importlib_mocker.assert_has_calls(expected_calls)
 
 
 def test_load_fields_file(mocker: MockerFixture) -> None:
@@ -307,6 +303,7 @@ def test_load_fields_skycoords(mocker: MockerFixture) -> None:
         'vasttools.survey._get_resource_path',
         return_value=resource_path
     )
+    mocker_open = mocker.patch('builtins.open', new_callable=mocker.mock_open)
     pickle_mocker = mocker.patch(
         'vasttools.survey.pickle.load', return_value=-99
     )
@@ -316,7 +313,7 @@ def test_load_fields_skycoords(mocker: MockerFixture) -> None:
     expected_calls = [mocker.call(epoch, 'pickle')]
     get_resource_path_mocker.assert_has_calls(expected_calls)
     pickle_mocker.assert_called_once_with(
-        get_resource_path_mocker.return_value
+        mocker_open.return_value
     )
     assert result == -99
 
