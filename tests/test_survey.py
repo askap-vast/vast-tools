@@ -194,11 +194,31 @@ def test_load_field_centres(mocker: MockerFixture) -> None:
 
 @pytest.mark.parametrize(
     "epoch,resource_type, resource_dir, resource_name",
-    [('1', 'csv', 'vasttools.data.csvs', 'vast_epoch01_info.csv'),
-     ('1', 'pickle', 'vasttools.data.pickles', 'vast_epoch01_fields_sc.pickle'),
-     ('0', 'csv', 'vasttools.data.csvs', 'racs_low_info.csv'),
-     ('0', 'pickle', 'vasttools.data.pickles', 'racs_low_fields_sc.pickle')
-     ],
+    [
+        ('1',
+         'csv',
+         'vasttools.data.csvs',
+         'vast_epoch01_info.csv'
+         ),
+
+        ('1',
+         'pickle',
+         'vasttools.data.pickles',
+         'vast_epoch01_fields_sc.pickle'
+         ),
+
+        ('0',
+         'csv',
+         'vasttools.data.csvs',
+         'racs_low_info.csv'
+         ),
+
+        ('0',
+         'pickle',
+         'vasttools.data.pickles',
+         'racs_low_fields_sc.pickle'
+         )
+    ],
     ids=('vast-csv',
          'vast-pickle',
          'racs-csv',
