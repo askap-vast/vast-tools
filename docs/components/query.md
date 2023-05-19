@@ -203,6 +203,10 @@ Query the island catalogues produced by the [`selavy`](https://www.atnf.csiro.au
 Only return results that have a source match. 
 I.e. no forced fit or upper limit measurements will be returned.
 
+**`search_all_fields`**
+Return all data available at the source location. If not selected, only the data associated with the best (i.e. closest)
+field will be returned.
+
 #### Planet Search
 
 Planets are included in the `Query` search by using the `planets` keyword argument.
@@ -274,7 +278,8 @@ Once the `Query` has been defined the settings can be checked by viewing the `Qu
      'search_around': False,
      'sort_output': False,
      'forced_fits': False,
-     'output_dir': 'source-search-example-output'}
+     'output_dir': 'source-search-example-output',
+     'search_all_fields': False,}
     ```
 
 ### Running a Query

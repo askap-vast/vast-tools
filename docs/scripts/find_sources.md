@@ -56,21 +56,25 @@ All output is placed in an output directory of which the name can be set with th
 Can be run on any Stokes parameter, but only one at a time.
 
 ```console
-usage: find_sources [-h] [--coords COORDS] [--source-names SOURCE_NAMES] [--ncpu NCPU] [--epochs EPOCHS]
-                       [--imsize IMSIZE] [--maxsep MAXSEP] [--out-folder OUT_FOLDER]
-                       [--crossmatch-radius CROSSMATCH_RADIUS] [--use-tiles] [--islands] [--base-folder BASE_FOLDER]
-                       [--stokes {I,Q,U,V}] [--quiet] [--forced-fits]
-                       [--forced-cluster-threshold FORCED_CLUSTER_THRESHOLD] [--forced-allow-nan]
-                       [--crossmatch-only] [--selavy-simple] [--process-matches] [--debug] [--no-background-rms]
-                       [--planets PLANETS] [--find-fields] [--search-around-coordinates] [--clobber] [--sort-output]
-                       [--nice NICE] [--crossmatch-radius-overlay] [--no-fits] [--plot-dpi PLOT_DPI] [--create-png]
-                       [--png-selavy-overlay] [--png-linear-percentile PNG_LINEAR_PERCENTILE] [--png-use-zscale]
-                       [--png-zscale-contrast PNG_ZSCALE_CONTRAST] [--png-hide-beam] [--png-no-island-labels]
-                       [--png-no-colorbar] [--png-disable-autoscaling] [--ann] [--reg] [--lightcurves]
-                       [--lc-use-int-flux] [--lc-no-plotting] [--lc-min-points LC_MIN_POINTS]
-                       [--lc-min-detections LC_MIN_DETECTIONS] [--lc-mjd] [--lc-start-date LC_START_DATE]
-                       [--lc-grid] [--lc-yaxis-start {auto,0}] [--lc-use-forced-for-limits]
-                       [--lc-use-forced-for-all] [--lc-hide-legend]
+usage: find_sources [-h] [--coords COORDS] [--source-names SOURCE_NAMES] [--ncpu NCPU]
+                    [--epochs EPOCHS] [--imsize IMSIZE] [--maxsep MAXSEP]
+                    [--out-folder OUT_FOLDER] [--crossmatch-radius CROSSMATCH_RADIUS]
+                    [--search-all-fields] [--use-tiles] [--uncorrected-data] [--islands]
+                    [--base-folder BASE_FOLDER] [--stokes {I,Q,U,V}] [--quiet] [--forced-fits]
+                    [--forced-cluster-threshold FORCED_CLUSTER_THRESHOLD] [--forced-allow-nan]
+                    [--crossmatch-only] [--selavy-simple] [--process-matches] [--debug]
+                    [--no-background-rms] [--planets PLANETS] [--find-fields]
+                    [--search-around-coordinates] [--clobber] [--sort-output] [--nice NICE]
+                    [--crossmatch-radius-overlay] [--no-fits] [--plot-dpi PLOT_DPI]
+                    [--create-png] [--png-selavy-overlay]
+                    [--png-linear-percentile PNG_LINEAR_PERCENTILE] [--png-use-zscale]
+                    [--png-zscale-contrast PNG_ZSCALE_CONTRAST] [--png-hide-beam]
+                    [--png-no-island-labels] [--png-no-colorbar] [--png-disable-autoscaling]
+                    [--png-absolute-axes] [--ann] [--reg] [--lightcurves] [--lc-use-int-flux]
+                    [--lc-no-plotting] [--lc-min-points LC_MIN_POINTS]
+                    [--lc-min-detections LC_MIN_DETECTIONS] [--lc-mjd]
+                    [--lc-start-date LC_START_DATE] [--lc-grid] [--lc-yaxis-start {auto,0}]
+                    [--lc-use-forced-for-limits] [--lc-use-forced-for-all] [--lc-hide-legend]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -93,7 +97,9 @@ optional arguments:
                         Name of the output directory to place all results in. (default:
                         find_sources_output_20200904_23:59:27)
   --crossmatch-radius CROSSMATCH_RADIUS
-                        Crossmatch radius in arcseconds (default: 15.0)
+                        Crossmatch radius in arcseconds (default: 10.0)
+  --search-all-fields   Return all data at the requested location(s) regardless of field
+                        (default: False)
   --use-tiles           Use the individual tiles instead of combined mosaics. (default: False)
   --islands             Search islands instead of components. (default: False)
   --base-folder BASE_FOLDER

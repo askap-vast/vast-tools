@@ -103,6 +103,11 @@ def parse_args() -> argparse.Namespace:
         help='Crossmatch radius in arcseconds',
         default=10.0)
     parser.add_argument(
+        '--search-all-fields',
+        action="store_true",
+        help='Return all data at the requested location(s) regardless of field'
+        )
+    parser.add_argument(
         '--use-tiles',
         action="store_true",
         help='Use the individual tiles instead of combined mosaics.')
@@ -516,6 +521,7 @@ def main() -> None:
         forced_allow_nan=args.forced_allow_nan,
         incl_observed=args.find_fields,
         corrected_data=not args.uncorrected_data,
+        search_all_fields=args.search_all_fields,
         scheduler=args.scheduler,
     )
 
