@@ -194,16 +194,16 @@ def test_load_field_centres(mocker: MockerFixture) -> None:
 
 @pytest.mark.parametrize(
     "epoch,resource_type, resource_dir, resource_name",
-    [('1','csv', 'vasttools.data.csvs', 'vast_epoch01_info.csv'),
-     ('1','pickle', 'vasttools.data.pickles', 'vast_epoch01_fields_sc.pickle'),
-     ('0','csv', 'vasttools.data.csvs', 'racs_low_info.csv'),
-     ('0','pickle', 'vasttools.data.pickles', 'racs_low_fields_sc.pickle')
-    ],
+    [('1', 'csv', 'vasttools.data.csvs', 'vast_epoch01_info.csv'),
+     ('1', 'pickle', 'vasttools.data.pickles', 'vast_epoch01_fields_sc.pickle'),
+     ('0', 'csv', 'vasttools.data.csvs', 'racs_low_info.csv'),
+     ('0', 'pickle', 'vasttools.data.pickles', 'racs_low_fields_sc.pickle')
+     ],
     ids=('vast-csv',
          'vast-pickle',
          'racs-csv',
          'racs-pickle',)
-     )
+)
 def test__get_resource_path(epoch: str,
                             resource_type: str,
                             resource_dir: str,
@@ -226,17 +226,18 @@ def test__get_resource_path(epoch: str,
     importlib_mocker = mocker.patch(
         'importlib.resources.path',
         return_value='/path/to/resource'
-        )
+    )
     isfile_mocker = mocker.patch(
         'os.path.isfile',
         return_value=True
-        )
+    )
 
     result = vts._get_resource_path(epoch, resource_type)
 
     expected_calls = [mocker.call(resource_dir, resource_name)]
     importlib_mocker.assert_has_calls(expected_calls)
-    
+
+
 def test_load_fields_file(mocker: MockerFixture) -> None:
     """
     Tests loading the fields file.
@@ -266,6 +267,7 @@ def test_load_fields_file(mocker: MockerFixture) -> None:
         get_resource_path_mocker.return_value, comment='#'
     )
     assert result == -99
+
 
 def test_load_fields_skycoords(mocker: MockerFixture) -> None:
     """
@@ -297,6 +299,7 @@ def test_load_fields_skycoords(mocker: MockerFixture) -> None:
         get_resource_path_mocker.return_value
     )
     assert result == -99
+
 
 def test_load_fields_file_epoch_fail(mocker: MockerFixture) -> None:
     """
@@ -412,7 +415,7 @@ class TestFields:
             Angle(dummy_load_fields_file["RA_HMS"], unit=u.hourangle),
             Angle(dummy_load_fields_file["DEC_DMS"], unit=u.deg)
         )
-        
+
         load_fields_skycoords_mocker = mocker.patch(
             'vasttools.survey.load_fields_skycoords',
             return_value=expected_skycoord
@@ -635,7 +638,7 @@ class TestImage:
     def test_image_init_path(self,
                              init_Image: vts.Image,
                              mocker: MockerFixture
-    ) -> None:
+                             ) -> None:
         """
         Tests initialisation of a Image object with a path declaration.
 

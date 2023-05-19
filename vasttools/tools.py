@@ -330,14 +330,14 @@ def _create_fields_df(epoch_num: str,
 def _create_fields_sc(fields_df: pd.DataFrame) -> SkyCoord:
     """
     Create the fields direction Skycoord objects from the fields_df dataframe.
-    
+
     Args:
         fields_df: Fields dataframe.
-    
+
     Returns:
         Skycoord containing the beam centres
     """
-    
+
     fields_sc = SkyCoord(
         Angle(fields_df["RA_HMS"], unit=u.hourangle),
         Angle(fields_df["DEC_DMS"], unit=u.deg)
@@ -373,7 +373,7 @@ def create_fields_metadata(epoch_num: str,
 
     fields_df = _create_fields_df(epoch_num, db_path)
     fields_sc = _create_fields_sc(fields_df)
-    
+
     if len(epoch_num.rstrip('x')) == 1:
         epoch_num = f'0{epoch_num}'
     fields_outfile = f'vast_epoch{epoch_num}_info.csv'

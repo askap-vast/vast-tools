@@ -236,12 +236,12 @@ def test_create_fields_metadata(mocker: MockerFixture) -> None:
     mocker_to_csv = mocker.patch(
         'pandas.DataFrame.to_csv'
     )
-    mocker_pickle_dump= mocker.patch(
+    mocker_pickle_dump = mocker.patch(
         'pickle.dump'
     )
-    
+
     mocker_open = mocker.patch('builtins.open', new_callable=mocker.mock_open)
-    
+
     epoch_num = '2'
     csv_outfile = f'vast_epoch{int(epoch_num):02}_info.csv'
     sc_outfile = f'vast_epoch{int(epoch_num):02}_fields_sc.pickle'
@@ -249,10 +249,12 @@ def test_create_fields_metadata(mocker: MockerFixture) -> None:
     vtt.create_fields_metadata(epoch_num, TEST_DATA_DIR / 'surveys_db')
 
     mocker_to_csv.assert_called_once_with(Path(csv_outfile), index=False)
-    
+
     mocker_open.assert_called_once_with(Path(sc_outfile), 'wb')
-    
-    mocker_pickle_dump.assert_called_once_with(mocker_fields_sc.return_value, mocker_open.return_value)
+
+    mocker_pickle_dump.assert_called_once_with(
+        mocker_fields_sc.return_value, mocker_open.return_value)
+
 
 def test__create_fields_df() -> None:
     """

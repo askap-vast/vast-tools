@@ -12,7 +12,6 @@ import logging.handlers
 import logging.config
 
 
-
 from astropy.coordinates import Angle, EarthLocation
 from astropy import units as u
 from astropy.coordinates import SkyCoord, concatenate
@@ -65,38 +64,37 @@ def _get_resource_path(epoch: str, resource_type: str) -> str:
     valid_resource_types = ["csv", "pickle"]
     if resource_type not in valid_resource_types:
         raise ValueError(f"{resource_type} is not a valid resource type")
-    
+
     special_epoch_prefixes = {"0": "racs_low",
                               "14": "racs_mid",
                               "28": "racs_high",
                               "29": "racs_low2",
                               }
 
-    
     if epoch in special_epoch_prefixes.keys():
         prefix = special_epoch_prefixes[epoch]
     else:
         if len(epoch_num.rstrip('x')) == 1:
             epoch_num = f'0{epoch_num}'
         prefix = f"vast_epoch{epoch}"
-        
+
     if resource_type == "csv":
         resource_dir = "vasttools.data.csvs"
         resource_suffix = "_info.csv"
     elif resource_type == "pickle":
         resource_dir = "vasttools.data.pickles"
         resource_suffix = "_fields_sc.pickle"
-    
+
     print(resource_dir, f"{prefix}{resource_suffix}")
     path = importlib.resources.path(resource_dir, f"{prefix}{resource_suffix}")
 
     if not os.path.isfile(path):
         raise ValueError(f"Error fetching Epoch {epoch} {resource_type} file."
                          f" {resource_path} does not exist!")
-    
+
     return path
-        
-    
+
+
 def load_fields_file(epoch: str) -> pd.DataFrame:
     """
     Load the csv field file of the requested epoch as a pandas dataframe.
@@ -130,6 +128,7 @@ def load_fields_file(epoch: str) -> pd.DataFrame:
 
     return fields_df
 
+
 def load_fields_skycoords(epoch: str) -> pd.DataFrame:
     """
     Args:
@@ -156,6 +155,7 @@ def load_fields_skycoords(epoch: str) -> pd.DataFrame:
     fields_sc = pickle.load(path)
 
     return fields_sc
+
 
 def get_fields_per_epoch_info() -> pd.DataFrame:
     """
