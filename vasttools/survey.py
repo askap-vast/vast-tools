@@ -149,6 +149,8 @@ def load_fields_file(epoch: str) -> pd.DataFrame:
             'vasttools.data.csvs', 'vast_epoch31_info.csv'),
         "32": importlib.resources.path(
             'vasttools.data.csvs', 'vast_epoch32_info.csv'),
+        "33": importlib.resources.path(
+            'vasttools.data.csvs', 'vast_epoch33_info.csv'),
     }
 
     with paths[epoch] as fields_csv:
