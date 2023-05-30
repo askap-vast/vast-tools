@@ -1004,7 +1004,7 @@ class Source:
             ext = f".{ext}"
 
         source_name = self.name.replace(" ", "_").replace("/", "_")
-        
+
         if self.pipeline:
             outfile = f"{source_name}_{index}{ext}"
         else:
@@ -1415,7 +1415,14 @@ class Source:
 
         if save:
             if outfile is None:
-                outfile = self._get_save_name(epoch, ".png")
+                outfile = "{}_cutouts.png".format(self.name.replace(
+                    " ", "_"
+                ).replace(
+                    "/", "_"
+                ))
+
+            elif not outfile.endswith(".png"):
+                outfile += ".png"
 
             if self.outdir != ".":
                 outfile = os.path.join(
@@ -1423,7 +1430,7 @@ class Source:
                     outfile
                 )
 
-            plt.savefig(outfile, bbox_inches=True, dpi=plot_dpi)
+            plt.savefig(outfile, bbox_inches='tight', dpi=plot_dpi)
 
             plt.close()
 
