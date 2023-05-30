@@ -54,6 +54,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Fixed
 
+- Correctly handle show_all_png_cutouts(save=True) file naming [#437](https://github.com/askap-vast/vast-tools/pull/437)
 - Ensure selected_fields is defined for all field matching cases [#435](https://github.com/askap-vast/vast-tools/pull/435)
 - Updated Query._get_epochs to exit nicely when no epochs are available [#421](https://github.com/askap-vast/vast-tools/pull/421)
 - Update match_planet_to_field to handle empty groups [#416](https://github.com/askap-vast/vast-tools/pull/416)
@@ -84,6 +85,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#437](https://github.com/askap-vast/vast-tools/pull/437): fix: Correctly handle show_all_png_cutouts(save=True) file naming
 - [#435](https://github.com/askap-vast/vast-tools/pull/435): fix: Ensure selected_fields is defined for all field matching cases
 - [#434](https://github.com/askap-vast/vast-tools/pull/434): feat: Added access to epoch 33
 - [#418](https://github.com/askap-vast/vast-tools/pull/418): feat: Added option to return all data at the available position rather than one field per epoch.
