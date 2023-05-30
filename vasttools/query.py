@@ -2308,7 +2308,7 @@ class Query:
                 self.logger.debug("Selecting primary field")
 
             elif len(available_fields) == 1:
-                field = available_fields[0]
+                selected_fields = [available_fields[0]]
                 self.logger.debug("Selecting only available field")
 
             else:
