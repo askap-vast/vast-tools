@@ -54,6 +54,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Fixed
 
+- Ensure selected_fields is defined for all field matching cases [#435](https://github.com/askap-vast/vast-tools/pull/435)
 - Updated Query._get_epochs to exit nicely when no epochs are available [#421](https://github.com/askap-vast/vast-tools/pull/421)
 - Update match_planet_to_field to handle empty groups [#416](https://github.com/askap-vast/vast-tools/pull/416)
 - Added `corrected_data` to `Source` class to ensure correct image paths are used [#412](https://github.com/askap-vast/vast-tools/pull/412)
@@ -83,6 +84,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#435](https://github.com/askap-vast/vast-tools/pull/435): fix: Ensure selected_fields is defined for all field matching cases
 - [#434](https://github.com/askap-vast/vast-tools/pull/434): feat: Added access to epoch 33
 - [#418](https://github.com/askap-vast/vast-tools/pull/418): feat: Added option to return all data at the available position rather than one field per epoch.
 - [#430](https://github.com/askap-vast/vast-tools/pull/430): feat: Allow users to specify which dask scheduler to use for multi-processing
