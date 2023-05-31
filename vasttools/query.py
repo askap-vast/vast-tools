@@ -145,7 +145,7 @@ class Query:
             stokes: Stokes parameter to query.
             crossmatch_radius: Crossmatch radius in arcsec, defaults to 5.0.
             max_sep: Maximum separation of source from beam centre
-                in degrees, defaults to 1.4.
+                in degrees, defaults to 1.5.
             use_tiles: Query tiles rather than combined mosaics,
                 defaults to `False`.
             use_islands: Use selavy islands rather than components,
