@@ -151,7 +151,7 @@ There are two options that control how the crossmatching to the VAST catalogues 
 This is the radius, in arcsec, to which a VAST Pilot source is considered a match to the search coordinate.
 
 **`max_sep`**  
-The maximum distance, in degrees, from the centre of an individual beam (36 beams make up an ASKAP tile) to determine if a match is possible. This defaults to 1.4 degrees.
+The maximum distance, in degrees, from the centre of an individual beam (36 beams make up an ASKAP tile) to determine if a match is possible. This defaults to 1.5 degrees.
 
 !!!note "Note: Field Selection"
     When the query is made, if the source is found in two separate overlapping fields, all fields will be noted as a match but field used will be that which has
@@ -270,7 +270,7 @@ Once the `Query` has been defined the settings can be checked by viewing the `Qu
     {'epochs': ['1', '2', '3x', '4x', '5x', '6x', '7x', '8', '9', '10x', '11x'],
      'stokes': 'I',
      'crossmatch_radius': <Angle 10. arcsec>,
-     'max_sep': 1.4,
+     'max_sep': 1.5,
      'islands': False,
      'tiles': False,
      'no_rms': False,

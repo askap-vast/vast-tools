@@ -113,7 +113,7 @@ class Query:
         epochs: Union[str, List[str], List[int]] = "1",
         stokes: str = "I",
         crossmatch_radius: float = 5.0,
-        max_sep: float = 1.4,
+        max_sep: float = 1.5,
         use_tiles: bool = False,
         use_islands: bool = False,
         base_folder: Optional[str] = None,
