@@ -55,6 +55,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Fixed
 
+- Updated default value of Query.max_sep to 1.5 degrees [#440](https://github.com/askap-vast/vast-tools/pull/440)
 - Correctly handle show_all_png_cutouts(save=True) file naming [#437](https://github.com/askap-vast/vast-tools/pull/437)
 - Ensure selected_fields is defined for all field matching cases [#435](https://github.com/askap-vast/vast-tools/pull/435)
 - Updated Query._get_epochs to exit nicely when no epochs are available [#421](https://github.com/askap-vast/vast-tools/pull/421)
@@ -86,6 +87,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#440](https://github.com/askap-vast/vast-tools/pull/440): fix: Updated default value of Query.max_sep to 1.5 degrees
 - [#438](https://github.com/askap-vast/vast-tools/pull/438): feat: Updated RACS dec limit to +50
 - [#437](https://github.com/askap-vast/vast-tools/pull/437): fix: Correctly handle show_all_png_cutouts(save=True) file naming
 - [#435](https://github.com/askap-vast/vast-tools/pull/435): fix: Ensure selected_fields is defined for all field matching cases
