@@ -113,7 +113,7 @@ class Query:
         epochs: Union[str, List[str], List[int]] = "1",
         stokes: str = "I",
         crossmatch_radius: float = 5.0,
-        max_sep: float = 1.0,
+        max_sep: float = 1.4,
         use_tiles: bool = False,
         use_islands: bool = False,
         base_folder: Optional[str] = None,
@@ -145,7 +145,7 @@ class Query:
             stokes: Stokes parameter to query.
             crossmatch_radius: Crossmatch radius in arcsec, defaults to 5.0.
             max_sep: Maximum separation of source from beam centre
-                in degrees, defaults to 1.0.
+                in degrees, defaults to 1.4.
             use_tiles: Query tiles rather than combined mosaics,
                 defaults to `False`.
             use_islands: Use selavy islands rather than components,
