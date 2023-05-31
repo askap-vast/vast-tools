@@ -2451,7 +2451,7 @@ class Query:
 
         if self.racs:
             self.logger.debug("Using RACS footprint for masking")
-            mask = self.coords.dec.deg > 42
+            mask = self.coords.dec.deg > 50
 
             if mask.any():
                 self.logger.warning(
