@@ -1056,8 +1056,8 @@ class Source:
                 outfile
             )
 
-        self.logger.debug("Cutout data: ")
-        self.logger.debug(cutout_data)
+        #self.logger.debug("Cutout data: ")
+        #self.logger.debug(cutout_data)
         if cutout_data is None:
             cutout_row = self.cutout_df.iloc[index]
         else:
@@ -1157,10 +1157,13 @@ class Source:
                 self.get_cutout_data(size)
 
         self.logger.debug("Saving fits cutouts...")
-        self.logger.debug("Measurements dataframe:")
-        self.logger.debug(self.measurements)
-        self.logger.debug("Looping over measurements index...")
-        for i in self.measurements.index:
+        
+        if cutout_data is None:
+            indices = self.measurements.index
+        else:
+            indices = cutout_data.index
+        
+        for i in indices:
             self.logger.debug(f"index: {i}")
             self.save_fits_cutout(i, cutout_data=cutout_data)
 

@@ -29,6 +29,7 @@ from astropy.coordinates import SkyCoord
 from astropy.io import fits
 from astropy.wcs import WCS
 from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
+from astropy.nddata.utils import NoOverlapError
 
 from functools import partial
 
@@ -738,7 +739,7 @@ class Query:
                 self.logger.debug("Cutout info:")
                 self.logger.debug(cutout_df[['index','name','dateobs']])
 
-        exit()
+        #exit()
         self.logger.info(
             'Saving source products, please be paitent for large queries...'
         )
@@ -1054,8 +1055,7 @@ class Query:
         self.logger.debug("Inside grouped_fetch_cutouts")
         self.logger.debug(image_file)
 
-        #try:
-        if True:
+        try:
             image = Image(
                 group.iloc[0].field,
                 group.iloc[0].epoch,
@@ -1088,7 +1088,7 @@ class Query:
             cutout_data['dateobs'] = group['dateobs'].values
 
             del image
-        """except Exception as e:
+        except Exception as e:
             self.logger.warning("Caught exception inside _grouped_fetch_cutouts")
             self.logger.warning(e)
             cutout_data = pd.DataFrame(columns=[
@@ -1099,7 +1099,10 @@ class Query:
                 'beam',
                 'name',
                 'dateobs'
-            ])"""
+            ])
+        
+        # Drop the cutouts that raised a NoOverlapError
+        cutout_data.dropna(inplace=True)
 
         return cutout_data
 
@@ -1121,12 +1124,18 @@ class Query:
             selavy components and beam information.
         """
 
-        cutout = Cutout2D(
-            image.data,
-            position=row.skycoord,
-            size=size,
-            wcs=image.wcs
-        )
+        try:
+            cutout = Cutout2D(
+                image.data,
+                position=row.skycoord,
+                size=size,
+                wcs=image.wcs
+            )
+        except NoOverlapError:
+            self.logger.warning("Unable to create cutout.")
+            self.logger.warning(f"Image: {row.image}")
+            self.logger.warning(f"Coordinate: {row.skycoord}")
+            return None
 
         selavy_components = read_selavy(row.selavy, cols=[
             'island_id',
