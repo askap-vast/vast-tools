@@ -113,7 +113,7 @@ class Query:
         epochs: Union[str, List[str], List[int]] = "1",
         stokes: str = "I",
         crossmatch_radius: float = 5.0,
-        max_sep: float = 1.0,
+        max_sep: float = 1.5,
         use_tiles: bool = False,
         use_islands: bool = False,
         base_folder: Optional[str] = None,
@@ -145,7 +145,7 @@ class Query:
             stokes: Stokes parameter to query.
             crossmatch_radius: Crossmatch radius in arcsec, defaults to 5.0.
             max_sep: Maximum separation of source from beam centre
-                in degrees, defaults to 1.0.
+                in degrees, defaults to 1.5.
             use_tiles: Query tiles rather than combined mosaics,
                 defaults to `False`.
             use_islands: Use selavy islands rather than components,
@@ -2308,7 +2308,7 @@ class Query:
                 self.logger.debug("Selecting primary field")
 
             elif len(available_fields) == 1:
-                field = available_fields[0]
+                selected_fields = [available_fields[0]]
                 self.logger.debug("Selecting only available field")
 
             else:
@@ -2451,7 +2451,7 @@ class Query:
 
         if self.racs:
             self.logger.debug("Using RACS footprint for masking")
-            mask = self.coords.dec.deg > 42
+            mask = self.coords.dec.deg > 50
 
             if mask.any():
                 self.logger.warning(
