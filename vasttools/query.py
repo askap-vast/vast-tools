@@ -240,6 +240,7 @@ class Query:
                 )
             )
         self.ncpu = ncpu
+        self.logger.debug(f"Using {self.ncpu} CPUs")
 
         if coords is None and len(source_names) == 0 and len(planets) == 0:
             raise QueryInitError(
@@ -431,6 +432,9 @@ class Query:
         Returns:
             `True` if settings are acceptable, `False` otherwise.
         """
+        
+        self.logger.debug("Using settings: ")
+        self.logger.debug(self.settings)
 
         if self.settings['tiles'] and self.settings['stokes'].lower() != "i":
             if self.vast_full:
@@ -725,6 +729,16 @@ class Query:
             to_process = [(s, None) for s in self.results.values]
             cutouts_df = None
 
+        for (source, cutout_df) in to_process:
+            meas = source.measurements
+            #if len(meas) != len(cutout_df):
+            if True:
+                self.logger.debug(source.name)
+                self.logger.debug(meas[['name', 'dateobs', 'image']])
+                self.logger.debug("Cutout info:")
+                self.logger.debug(cutout_df[['index','name','dateobs']])
+
+        exit()
         self.logger.info(
             'Saving source products, please be paitent for large queries...'
         )
@@ -766,40 +780,45 @@ class Query:
             plot_dpi=plot_dpi
         )
 
-        original_sigint_handler = signal.signal(
-            signal.SIGINT, signal.SIG_IGN
-        )
-        signal.signal(signal.SIGINT, original_sigint_handler)
-        workers = Pool(processes=self.ncpu, maxtasksperchild=100)
+        if self.settings['scheduler'] == 'processes':
+            original_sigint_handler = signal.signal(
+                signal.SIGINT, signal.SIG_IGN
+            )
+            signal.signal(signal.SIGINT, original_sigint_handler)
+            workers = Pool(processes=self.ncpu, maxtasksperchild=100)
 
-        try:
-            workers.map(
-                produce_source_products_multi,
-                to_process,
-            )
-        except KeyboardInterrupt:
-            self.logger.error(
-                "Caught KeyboardInterrupt, terminating workers."
-            )
-            workers.terminate()
-            sys.exit()
-        except Exception as e:
-            self.logger.error(
-                "Encountered error!."
-            )
-            self.logger.error(
-                e
-            )
-            workers.terminate()
-            sys.exit()
-        finally:
-            self.logger.debug("Closing workers.")
-            # Using terminate below as close was prone to hanging
-            # when join is called. I believe the hang comes from
-            # a child processes not getting returned properly
-            # because of the large number of file I/O.
-            workers.terminate()
-            workers.join()
+            try:
+                workers.map(
+                    produce_source_products_multi,
+                    to_process,
+                )
+            except KeyboardInterrupt:
+                self.logger.error(
+                    "Caught KeyboardInterrupt, terminating workers."
+                )
+                workers.terminate()
+                sys.exit()
+            except Exception as e:
+                self.logger.error(
+                    "Encountered error!."
+                )
+                self.logger.error(
+                    e
+                )
+                workers.terminate()
+                sys.exit()
+            finally:
+                self.logger.debug("Closing workers.")
+                # Using terminate below as close was prone to hanging
+                # when join is called. I believe the hang comes from
+                # a child processes not getting returned properly
+                # because of the large number of file I/O.
+                workers.terminate()
+                workers.join()
+        elif self.settings['scheduler'] == 'single-threaded' or self.ncpu == 1:
+            for result in map(produce_source_products_multi, to_process):
+                pass
+            
 
     def _produce_source_products(
         self,
@@ -904,6 +923,8 @@ class Query:
         """
 
         source, cutout_data = i
+        
+        self.logger.debug(f"Producing source products for {source.name}")
 
         if fits:
             source.save_all_fits_cutouts(cutout_data=cutout_data)
@@ -1030,8 +1051,11 @@ class Query:
             Dataframe containing the cutout data for the group.
         """
         image_file = group.iloc[0]['image']
+        self.logger.debug("Inside grouped_fetch_cutouts")
+        self.logger.debug(image_file)
 
-        try:
+        #try:
+        if True:
             image = Image(
                 group.iloc[0].field,
                 group.iloc[0].epoch,
@@ -1041,8 +1065,10 @@ class Query:
                 tiles=self.settings['tiles'],
                 corrected_data=self.corrected_data
             )
+            self.logger.debug("Generated Image object")
 
             image.get_img_data()
+            self.logger.debug("Got image data")
 
             cutout_data = group.apply(
                 self._get_cutout,
@@ -1056,12 +1082,15 @@ class Query:
                 3: "selavy_overlay",
                 4: "beam"
             })
+            self.logger.debug("Generated cutout_data df")
 
             cutout_data['name'] = group['name'].values
             cutout_data['dateobs'] = group['dateobs'].values
 
             del image
-        except Exception as e:
+        """except Exception as e:
+            self.logger.warning("Caught exception inside _grouped_fetch_cutouts")
+            self.logger.warning(e)
             cutout_data = pd.DataFrame(columns=[
                 'data',
                 'wcs',
@@ -1070,7 +1099,7 @@ class Query:
                 'beam',
                 'name',
                 'dateobs'
-            ])
+            ])"""
 
         return cutout_data
 

@@ -1048,12 +1048,16 @@ class Source:
 
         if outfile is None:
             outfile = self._get_save_name(index, ".fits")
+            self.logger.debug(f"Set output filename to {outfile}")
+            
         if self.outdir != ".":
             outfile = os.path.join(
                 self.outdir,
                 outfile
             )
 
+        self.logger.debug("Cutout data: ")
+        self.logger.debug(cutout_data)
         if cutout_data is None:
             cutout_row = self.cutout_df.iloc[index]
         else:
@@ -1066,6 +1070,7 @@ class Source:
 
         # Write the cutout to a new FITS file
         hdu_stamp.writeto(outfile, overwrite=True)
+        self.logger.debug(f"Wrote to {outfile}")
 
         del hdu_stamp
 
@@ -1151,7 +1156,12 @@ class Source:
             if cutout_data is None:
                 self.get_cutout_data(size)
 
+        self.logger.debug("Saving fits cutouts...")
+        self.logger.debug("Measurements dataframe:")
+        self.logger.debug(self.measurements)
+        self.logger.debug("Looping over measurements index...")
         for i in self.measurements.index:
+            self.logger.debug(f"index: {i}")
             self.save_fits_cutout(i, cutout_data=cutout_data)
 
     def save_all_png_cutouts(
