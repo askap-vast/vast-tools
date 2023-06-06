@@ -452,7 +452,7 @@ class Image:
         else:
             self.rms_fail = True
             self.logger.error(
-                "{} does not exist! Unable to get noise maps.".format(
+                "{} does not exist! Unable to get noise map.".format(
                     self.rmspath))
             return
 
@@ -461,32 +461,76 @@ class Image:
             self.rms_wcs = WCS(self.rms_header, naxis=2)
             self.rms_data = hdul[0].data.squeeze()
 
+    def get_bkg_img(self) -> None:
+        """
+        Load the background map corresponding to the image.
+
+        Returns:
+            None
+        """
+        if self.bkgpath is None:
+            self.bkgname = "meanMap.{}".format(self.imgname)
+            self.bkgpath = self.imgpath.replace(
+                "_IMAGES", "_RMSMAPS"
+            ).replace(self.imgname, self.rmsname)
+
+        if os.path.isfile(self.bkgpath):
+            self.bkg_fail = False
+        else:
+            self.bkg_fail = True
+            self.logger.error(
+                "{} does not exist! Unable to get background map.".format(
+                    self.rmspath))
+            return
+
+        with fits.open(self.bkgpath) as hdul:
+            self.bkg_header = hdul[0].header
+            self.bkg_wcs = WCS(self.bkg_header, naxis=2)
+            self.bkg_data = hdul[0].data.squeeze()
+
     def measure_coord_pixel_values(
         self,
         coords: SkyCoord,
-        rms: bool = False
+        img: bool = True,
+        rms: bool = False,
+        bkg: bool = False
     ) -> np.ndarray:
-        """Measures the pixel values at the provided coordinate values.
+        """
+        Measures the pixel values at the provided coordinate values.
 
         Args:
             coords: Coordinate of interest.
+            img: Query the image, defaults to `True`.
             rms: Query the RMS image, defaults to `False`.
+            bkg: Query the background image, defaults to `False`.
 
         Returns:
             Pixel values stored in an array at the coords locations.
+        
+        Raises:
+            ValueError: Exactly one of img, rms or bkg must be `True`
         """
-        if rms is True:
+        if sum([img,rms,bkg]) != 1:
+            raise ValueError("Exactly one of img, rms or bkg must be True")
+
+        if img:
+            if not self._loaded_data:
+                self.get_img_data()
+            thewcs = self.wcs
+            thedata = self.data
+        elif rms:
             if self.rms_header is None:
                 self.get_rms_img()
 
             thewcs = self.rms_wcs
             thedata = self.rms_data
+        elif bkg:
+            if self.bkg_header is None:
+                self.get_bkg_img()
 
-        else:
-            if not self._loaded_data:
-                self.get_img_data()
-            thewcs = self.wcs
-            thedata = self.data
+            thewcs = self.bkg_wcs
+            thedata = self.bkg_data
+            
 
         array_coords = thewcs.world_to_array_index(coords)
         array_coords = np.array([
