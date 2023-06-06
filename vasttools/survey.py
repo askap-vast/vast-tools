@@ -277,6 +277,7 @@ class Image:
             [radio_beam](https://radio-beam.readthedocs.io/en/latest/)
             documentation for more information.
         rmspath (str): The path to the rms file on the system.
+        bkgpath (str): The path to the bkg file on the system.
         rms_header (astropy.io.fits.Header): The header of the RMS image
         rmsname (str): The name of the RMS image.
         rms_fail (bool): Becomes `True` if the RMS image is not found.
@@ -292,6 +293,7 @@ class Image:
         sbid: Optional[str] = None,
         path: Optional[str] = None,
         rmspath: Optional[str] = None,
+        bkgpath: Optional[str] = None,
         rms_header: Optional[fits.Header] = None,
         corrected_data: bool = True
     ) -> None:
@@ -311,6 +313,8 @@ class Image:
             path: Path to the image file if already known, defaults to None.
             rmspath: The path to the corresponding rms image file if known,
                 defaults to None.
+            bkgpath: The path to the corresponding bkg image file if known,
+                defaults to None.
             rms_header: Header of rms FITS image if already obtained,
                 defaults to None.
             corrected_data: Access the corrected data. Only relevant if
@@ -329,6 +333,7 @@ class Image:
         self.rms_header = rms_header
         self.path = path
         self.rmspath = rmspath
+        self.bkgpath = bkgpath
         self.tiles = tiles
         self.base_folder = base_folder
         self.corrected_data = corrected_data
@@ -472,7 +477,7 @@ class Image:
             self.bkgname = "meanMap.{}".format(self.imgname)
             self.bkgpath = self.imgpath.replace(
                 "_IMAGES", "_RMSMAPS"
-            ).replace(self.imgname, self.rmsname)
+            ).replace(self.imgname, self.bkgname)
 
         if os.path.isfile(self.bkgpath):
             self.bkg_fail = False

@@ -1048,16 +1048,12 @@ class Source:
 
         if outfile is None:
             outfile = self._get_save_name(index, ".fits")
-            self.logger.debug(f"Set output filename to {outfile}")
             
         if self.outdir != ".":
             outfile = os.path.join(
                 self.outdir,
                 outfile
             )
-
-        #self.logger.debug("Cutout data: ")
-        #self.logger.debug(cutout_data)
         if cutout_data is None:
             cutout_row = self.cutout_df.iloc[index]
         else:
@@ -1066,6 +1062,50 @@ class Source:
         hdu_stamp = fits.PrimaryHDU(
             data=cutout_row.data,
             header=cutout_row.header
+        )
+
+        # Write the cutout to a new FITS file
+        hdu_stamp.writeto(outfile, overwrite=True)
+        self.logger.debug(f"Wrote to {outfile}")
+
+        del hdu_stamp
+
+    def _save_noisemap_cutout(
+        self,
+        index: int,
+        cutout_data: pd.DataFrame,
+        noisemap_type: str,
+        outfile: Optional[str] = None,
+    ) -> None:
+        """
+        Saves the FITS file cutout of the requested observation.
+
+        Args:
+            index: The index of the requested observation.
+            cutout_data: The external cutout data to be used.
+            noisemap_type: The type of noisemap to use. Must be 'rms' or 'bkg'.
+            outfile: File to save to, defaults to None.
+
+        Returns:
+            None
+
+        Raises:
+            ValueError: If the source does not contain the requested index.
+        """
+
+        if outfile is None:
+            outfile = self._get_save_name(index, f"{noisemap_type}.fits")
+            
+        if self.outdir != ".":
+            outfile = os.path.join(
+                self.outdir,
+                outfile
+            )
+        cutout_row = cutout_data.iloc[index]
+
+        hdu_stamp = fits.PrimaryHDU(
+            data=cutout_row[f'{noisemap_type}_data'],
+            header=cutout_row[f'{noisemap_type}_header']
         )
 
         # Write the cutout to a new FITS file
@@ -1164,9 +1204,34 @@ class Source:
             indices = cutout_data.index
         
         for i in indices:
-            self.logger.debug(f"index: {i}")
             self.save_fits_cutout(i, cutout_data=cutout_data)
 
+    def _save_all_noisemap_cutouts(
+        self,
+        cutout_data: pd.DataFrame,
+        rms: bool = True,
+        bkg: bool = True,
+    ) -> None:
+        """
+        Save all cutouts of the source to fits file
+
+        Args:
+            cutout_data: The external data to be used.
+            rms: Create rms map cutouts.
+            bkg: Create bkg map cutouts.
+
+        Returns:
+            None
+        """
+
+        self.logger.debug("Saving noisemap cutouts...")
+        
+        for i in cutout_data.index:
+            if rms:
+                self._save_noisemap_cutout(i, cutout_data, 'rms')
+            if bkg:
+                self._save_noisemap_cutout(i, cutout_data, 'bkg')
+    
     def save_all_png_cutouts(
         self,
         selavy: bool = True,

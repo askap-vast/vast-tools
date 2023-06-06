@@ -580,14 +580,14 @@ class Query:
             'header': 'O',
             'selavy_overlay': 'O',
             'beam': 'O',
-            'name': 'U',
-            'dateobs': 'datetime64[ns]',
             'rms_data': 'O',
             'rms_wcs': 'O',
             'rms_header': 'O',
             'bkg_data': 'O',
             'bkg_wcs': 'O',
             'bkg_header': 'O',
+            'name': 'U',
+            'dateobs': 'datetime64[ns]',
         }
 
         cutouts = (
@@ -614,6 +614,8 @@ class Query:
     def _gen_all_source_products(
         self,
         fits: bool = True,
+        rms: bool = False,
+        bkg: bool = False,
         png: bool = False,
         ann: bool = False,
         reg: bool = False,
@@ -654,6 +656,10 @@ class Query:
 
         Args:
             fits: Create and save fits cutouts, defaults to `True`.
+            rms: Create and save fits cutouts of the rms images,
+                defaults to `True`.
+            bkg: Create and save fits cutouts of the bkg images,
+                defaults to `True`.
             png: Create and save png postagestamps, defaults to `False`.
             ann: Create and save kvis annotation files for all components,
                 defaults to `False`
@@ -719,11 +725,15 @@ class Query:
                 ' used.'
             )
 
-        if sum([fits, png, ann, reg]) > 0:
+        if sum([fits, rms, bkg, png, ann, reg]) > 0:
             self.logger.info(
                 "Fetching cutout data for sources..."
             )
-            cutouts_df = self._get_all_cutout_data(imsize)
+            cutouts_df = self._get_all_cutout_data(imsize,
+                                                   img=fits,
+                                                   rms=rms,
+                                                   bkg=bkg,
+                                                   )
             self.logger.info('Done.')
             if cutouts_df.empty:
                 fits = False
@@ -754,6 +764,8 @@ class Query:
         produce_source_products_multi = partial(
             self._produce_source_products,
             fits=fits,
+            rms=rms,
+            bkg=bkg,
             png=png,
             ann=ann,
             reg=reg,
@@ -832,6 +844,8 @@ class Query:
         self,
         i: Tuple[Source, pd.DataFrame],
         fits: bool = True,
+        rms: bool = False,
+        bkg: bool = False,
         png: bool = False,
         ann: bool = False,
         reg: bool = False,
@@ -871,6 +885,10 @@ class Query:
         Args:
             i: Tuple containing source and cutout data.
             fits: Create and save fits cutouts, defaults to `True`.
+            rms: Create and save fits cutouts of the rms images,
+                defaults to `True`.
+            bkg: Create and save fits cutouts of the bkg images,
+                defaults to `True`.
             png: Create and save png postagestamps, defaults to `False`.
             ann: Create and save kvis annotation files for all components,
                 defaults to `False`.
@@ -936,6 +954,8 @@ class Query:
 
         if fits:
             source.save_all_fits_cutouts(cutout_data=cutout_data)
+        if sum([rms, bkg]) > 1:
+            source._save_all_noisemap_cutouts(cutout_data, rms=rms, bkg=bkg)
 
         if png:
             source.save_all_png_cutouts(
@@ -1044,7 +1064,12 @@ class Query:
         return s
 
     def _grouped_fetch_cutouts(
-        self, group: pd.DataFrame, imsize: Angle
+        self,
+        group: pd.DataFrame,
+        imsize: Angle,
+        img: bool = True,
+        rms: bool = False,
+        bkg: bool = False
     ) -> pd.DataFrame:
         """
         Function that handles fetching the cutout data per
@@ -1054,6 +1079,9 @@ class Query:
         Args:
             group: Catalogue of sources grouped by field.
             imsize: Size of the requested cutout.
+            img: Fetch image data, defaults to `True`.
+            rms: Fetch rms data, defaults to `False`.
+            bkg: Fetch bkg data, defaults to `False`.
 
         Returns:
             Dataframe containing the cutout data for the group.
@@ -1072,24 +1100,94 @@ class Query:
                 corrected_data=self.corrected_data
             )
             
-            image.get_img_data()
+            if img:
+                image.get_img_data()
+                img_cutout_data = group.apply(
+                    self._get_cutout,
+                    args=(image, imsize),
+                    axis=1,
+                    result_type='expand'
+                ).rename(columns={
+                    0: "data",
+                    1: "wcs",
+                    2: "header",
+                    3: "selavy_overlay",
+                    4: "beam"
+                })
+            else:
+                img_cutout_data = pd.DataFrame([[None]*5]*len(group),
+                    columns=[
+                        'data',
+                        'wcs',
+                        'header',
+                        'selavy_overlay',
+                        'beam',
+                    ]
+                )
+            if rms:
+                image.get_rms_img()
+                rms_cutout_data = group.apply(
+                    self._get_cutout,
+                    args=(image, imsize),
+                    img=False,
+                    rms=True,
+                    axis=1,
+                    result_type='expand'
+                ).rename(columns={
+                    0: "rms_data",
+                    1: "rms_wcs",
+                    2: "rms_header",
+                }).drop(columns=[3, 4])
+            else:
+                rms_cutout_data = pd.DataFrame([[None]*3]*len(group),
+                    columns=[
+                        'rms_data',
+                        'rms_wcs',
+                        'rms_header',
+                    ]
+                )
+                
+            if bkg:
+                image.get_bkg_img()
+                bkg_cutout_data = group.apply(
+                    self._get_cutout,
+                    args=(image, imsize),
+                    img=False,
+                    bkg=True,
+                    axis=1,
+                    result_type='expand'
+                ).rename(columns={
+                    0: "bkg_data",
+                    1: "bkg_wcs",
+                    2: "bkg_header",
+                }).drop(columns=[3, 4])
+            else:
+                bkg_cutout_data = pd.DataFrame([[None]*3]*len(group),
+                    columns=[
+                        'bkg_data',
+                        'bkg_wcs',
+                        'bkg_header',
+                    ]
+                )
+                
+            self.logger.debug("Generated all cutout data")
             
-            cutout_data = group.apply(
-                self._get_cutout,
-                args=(image, imsize),
-                axis=1,
-                result_type='expand'
-            ).rename(columns={
-                0: "data",
-                1: "wcs",
-                2: "header",
-                3: "selavy_overlay",
-                4: "beam"
-            })
-            self.logger.debug("Generated cutout_data df")
+            to_concat = [img_cutout_data, rms_cutout_data, bkg_cutout_data]
+            cutout_data = pd.concat(to_concat, axis=1).dropna(how='all')
+            
+            self.logger.debug("Concatenated into cutout_data")
+            
+            if bkg_cutout_data['bkg_data'].values == rms_cutout_data['rms_data'].values:
+                self.logger.warning("Background and RMS data are identical!")
+            
+            self.logger.debug(cutout_data.columns)
+            self.logger.debug(len(cutout_data))
+            self.logger.debug(group['name'].values)
 
             cutout_data['name'] = group['name'].values
+            self.logger.debug(cutout_data['name'])
             cutout_data['dateobs'] = group['dateobs'].values
+            self.logger.debug(cutout_data['dateobs'])
 
             del image
         except Exception as e:
@@ -1102,7 +1200,13 @@ class Query:
                 'selavy_overlay',
                 'beam',
                 'name',
-                'dateobs'
+                'dateobs',
+                'rms_data',
+                'rms_wcs',
+                'rms_header',
+                'bkg_data',
+                'bkg_wcs',
+                'bkg_header',
             ])
         
         # Drop the cutouts that raised a NoOverlapError
@@ -1111,8 +1215,13 @@ class Query:
         return cutout_data
 
     def _get_cutout(
-        self, row: pd.Series, image: Image,
-        size: Angle = Angle(5. * u.arcmin)
+        self,
+        row: pd.Series,
+        image: Image,
+        size: Angle = Angle(5. * u.arcmin),
+        img: bool = True,
+        rms: bool = False,
+        bkg: bool = False
     ) -> Tuple[pd.DataFrame, WCS, fits.Header, pd.DataFrame, Beam]:
         """
         Create cutout centered on a source location
@@ -1122,56 +1231,86 @@ class Query:
                 interest
             image: Image to create cutout from.
             size: Size of the cutout, defaults to Angle(5.*u.arcmin).
+            img: Make a cutout from the image data, defaults to `True`.
+            rms: Make a cutout from the rms data, defaults to `False`.
+            bkg: Make a cutout from the bkg data, defaults to `False`.
 
         Returns:
             Tuple containing cutout data, WCS, image header, associated
             selavy components and beam information.
+        
+        Raises:
+            ValueError: Exactly one of img, rms or bkg must be `True`
         """
+        
+        if sum([img,rms,bkg]) != 1:
+            raise ValueError("Exactly one of img, rms or bkg must be True")
+
+        if img:
+            thedata = image.data
+            thewcs = image.wcs
+            theheader = image.header.copy()
+            thepath = image.imgpath
+        elif rms:
+            thedata = image.rms_data
+            thewcs = image.rms_wcs
+            theheader = image.rms_header.copy()
+            thepath = image.rmspath
+        elif bkg:
+            thedata = image.bkg_data
+            thewcs = image.bkg_wcs
+            theheader = image.bkg_header.copy()
+            thepath = image.bkgpath
+        
+        self.logger.debug(f"Using data from {thepath}")
 
         try:
             cutout = Cutout2D(
-                image.data,
+                thedata,
                 position=row.skycoord,
                 size=size,
-                wcs=image.wcs
+                wcs=thewcs
             )
         except NoOverlapError:
             self.logger.warning(f"Unable to create cutout for {row['name']}.")
-            self.logger.warning(f"Image: {row.image}")
+            self.logger.warning(f"Image path: {thepath}")
             self.logger.warning(f"Coordinate: {row.skycoord.to_string()}")
             return (None, None, None, None, None)
 
-        selavy_components = read_selavy(row.selavy, cols=[
-            'island_id',
-            'ra_deg_cont',
-            'dec_deg_cont',
-            'maj_axis',
-            'min_axis',
-            'pos_ang'
-        ])
+        if img:
+            selavy_components = read_selavy(row.selavy, cols=[
+                'island_id',
+                'ra_deg_cont',
+                'dec_deg_cont',
+                'maj_axis',
+                'min_axis',
+                'pos_ang'
+            ])
 
-        selavy_coords = SkyCoord(
-            selavy_components.ra_deg_cont.values,
-            selavy_components.dec_deg_cont.values,
-            unit=(u.deg, u.deg)
-        )
+            selavy_coords = SkyCoord(
+                selavy_components.ra_deg_cont.values,
+                selavy_components.dec_deg_cont.values,
+                unit=(u.deg, u.deg)
+            )
 
-        selavy_components = filter_selavy_components(
-            selavy_components,
-            selavy_coords,
-            size,
-            row.skycoord
-        )
+            selavy_components = filter_selavy_components(
+                selavy_components,
+                selavy_coords,
+                size,
+                row.skycoord
+            )
+            
+            del selavy_coords
+            
+            beam = image.beam
+        else:
+            beam = None
+            selavy_components = None
 
-        header = image.header.copy()
-        header.update(cutout.wcs.to_header())
-
-        beam = image.beam
-
-        del selavy_coords
+        theheader.update(cutout.wcs.to_header())
 
         return (
-            cutout.data, cutout.wcs, header, selavy_components, beam
+            cutout.data, cutout.wcs, theheader, selavy_components, beam
         )
 
     def find_sources(self) -> None:
