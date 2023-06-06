@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Added
 
+- Added automatic generation of resource (csvs/pickles) paths [#431](https://github.com/askap-vast/vast-tools/pull/431)
+- Added `SkyCoord` pickle functionality (creation, loading and implementation) [#431](https://github.com/askap-vast/vast-tools/pull/431)
 - Added access to epoch 33 [#434](https://github.com/askap-vast/vast-tools/pull/434)
 - Added "search_all_fields" option to Query and find_sources, which returns all data available at the source location rather than just that associated with the closest/best field [#418](https://github.com/askap-vast/vast-tools/pull/418)
 - Added option to specify which dask scheduler to use to Query, PipeRun, PipeAnalysis objects, and argument to find_sources.py [#430](https://github.com/askap-vast/vast-tools/pull/430)
@@ -32,6 +34,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Changed
 
+- Changed `Fields.direction` to be loaded from pickle rather than generated at each call [#431](https://github.com/askap-vast/vast-tools/pull/431)
 - Updated RACS dec limit to +50 [#438](https://github.com/askap-vast/vast-tools/pull/438)
 - Updated Query._get_epochs to allow lists and ints [#421](https://github.com/askap-vast/vast-tools/pull/421)
 - Bumped pytest and lint github workflow from ubuntu-18.04 -> ubuntu-20.04 [#425](https://github.com/askap-vast/vast-tools/pull/425)
@@ -88,6 +91,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#431](https://github.com/askap-vast/vast-tools/pull/431): feat, docs, tests: Store beam centre SkyCoords as serialised objects rather than generating them on the fly
 - [#449](https://github.com/askap-vast/vast-tools/pull/449): fix: Updated github pytest workflow to use Gr1N/setup-poetry@v8
 - [#440](https://github.com/askap-vast/vast-tools/pull/440): fix: Updated default value of Query.max_sep to 1.5 degrees
 - [#438](https://github.com/askap-vast/vast-tools/pull/438): feat: Updated RACS dec limit to +50

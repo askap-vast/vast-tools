@@ -119,6 +119,18 @@ Returns a pandas dataframe containing three columns:
     | 1014 | RACS_2359-25A |   0.000611873 | -25.1363     |
     | 1015 | RACS_2359-43A |   0.00902694  | -43.8906     |
 
+#### load_fields_skycoords
+:fontawesome-regular-file-alt: [Code reference](../../reference/survey/#vasttools.survey.load_fields_skycoords).
+
+Ths function allows the user to load `SkyCoord` objects for all beam centres for a given epoch.
+
+!!! example
+    ```python
+    from vasttools.survey import load_fields_skycoords
+    
+    epoch_1_scs = load_fields_skycoords('1')
+    ```
+
 #### load_fields_file
 
 :fontawesome-regular-file-alt: [Code reference](../../reference/survey/#vasttools.survey.load_fields_file).

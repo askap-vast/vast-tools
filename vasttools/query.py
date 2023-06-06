@@ -2527,7 +2527,7 @@ class Query:
 
         Returns:
             Epochs to query, as a list of strings.
-        
+
         Raises:
             QueryInitError: None of the requested epochs are available
         """

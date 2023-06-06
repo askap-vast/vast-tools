@@ -685,8 +685,8 @@ class TestQuery:
         )
 
     def test_init_failure_invalid_scheduler(self,
-                                           mocker: MockerFixture
-                                           ) -> None:
+                                            mocker: MockerFixture
+                                            ) -> None:
         """
         Tests the initialisation failure of a Query object.
 
@@ -1686,7 +1686,7 @@ class TestQuery:
                               ("0,1", ["0", "1"]),
                               ("0,3x", ["0", "3x"]),
                               ("0,3", ["0", "3x"]),
-                              ([0,1], ["0", "1"]),
+                              ([0, 1], ["0", "1"]),
                               (0, ["0"]),
                               (["0", "1"], ["0", "1"]),
                               (["0", 1], ["0", "1"]),
@@ -1710,32 +1710,31 @@ class TestQuery:
                                   'all',
                                   'all-vast'
                                   )
-                              )
-    
+                             )
     def test__get_epochs(
         self,
         vast_query_psrj2129: vtq.Query,
         req_epochs: Union[str, List[str], List[int]],
         epochs_expected,
         mocker: MockerFixture,
-        ) -> None:
+    ) -> None:
         """
         Test the get_epochs function.
-        
+
         Args:
             vast_query_psrj2129: The dummy Query instance that includes
                 a search for PSR J2129-04 with the included found fields data.
             req_epochs: The requested epochs.
             epochs_expected: The expected output of the function.
-            
+
         Returns:
             None
         """
-        mocked_released_epochs = {"0":"00", "1":"01", "3x":"03x"}
-        
+        mocked_released_epochs = {"0": "00", "1": "01", "3x": "03x"}
+
         mocker.patch("vasttools.query.RELEASED_EPOCHS",
                      new=mocked_released_epochs
                      )
-        
+
         returned_epochs = vast_query_psrj2129._get_epochs(req_epochs)
         assert returned_epochs == epochs_expected
