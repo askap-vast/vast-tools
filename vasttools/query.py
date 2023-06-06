@@ -540,12 +540,20 @@ class Query:
 
         return all_available
 
-    def _get_all_cutout_data(self, imsize: Angle) -> pd.DataFrame:
+    def _get_all_cutout_data(self,
+                             imsize: Angle,
+                             img: bool = True,
+                             rms: bool = False,
+                             bkg: bool = False
+                             ) -> pd.DataFrame:
         """
         Get cutout data and selavy components for all sources.
 
         Args:
             imsize: Size of the requested cutout.
+            img: Fetch image data, defaults to `True`.
+            rms: Fetch rms data, defaults to `False`.
+            bkg: Fetch bkg data, defaults to `False`.
 
         Returns:
             Dataframe containing the cutout data of all measurements in
@@ -573,7 +581,13 @@ class Query:
             'selavy_overlay': 'O',
             'beam': 'O',
             'name': 'U',
-            'dateobs': 'datetime64[ns]'
+            'dateobs': 'datetime64[ns]',
+            'rms_data': 'O',
+            'rms_wcs': 'O',
+            'rms_header': 'O',
+            'bkg_data': 'O',
+            'bkg_wcs': 'O',
+            'bkg_header': 'O',
         }
 
         cutouts = (
@@ -583,6 +597,9 @@ class Query:
                 self._grouped_fetch_cutouts,
                 imsize=imsize,
                 meta=meta,
+                img=img,
+                rms=rms,
+                bkg=bkg,
             ).compute(num_workers=self.ncpu,
                       scheduler=self.settings['scheduler']
                       )
@@ -730,16 +747,6 @@ class Query:
             to_process = [(s, None) for s in self.results.values]
             cutouts_df = None
 
-        for (source, cutout_df) in to_process:
-            meas = source.measurements
-            #if len(meas) != len(cutout_df):
-            if True:
-                self.logger.debug(source.name)
-                self.logger.debug(meas[['name', 'dateobs', 'image']])
-                self.logger.debug("Cutout info:")
-                self.logger.debug(cutout_df[['index','name','dateobs']])
-
-        #exit()
         self.logger.info(
             'Saving source products, please be paitent for large queries...'
         )
@@ -1052,8 +1059,7 @@ class Query:
             Dataframe containing the cutout data for the group.
         """
         image_file = group.iloc[0]['image']
-        self.logger.debug("Inside grouped_fetch_cutouts")
-        self.logger.debug(image_file)
+        self.logger.debug(f"Fetching cutouts from {image_file}")
 
         try:
             image = Image(
@@ -1065,11 +1071,9 @@ class Query:
                 tiles=self.settings['tiles'],
                 corrected_data=self.corrected_data
             )
-            self.logger.debug("Generated Image object")
-
+            
             image.get_img_data()
-            self.logger.debug("Got image data")
-
+            
             cutout_data = group.apply(
                 self._get_cutout,
                 args=(image, imsize),
@@ -1132,10 +1136,10 @@ class Query:
                 wcs=image.wcs
             )
         except NoOverlapError:
-            self.logger.warning("Unable to create cutout.")
+            self.logger.warning(f"Unable to create cutout for {row['name']}.")
             self.logger.warning(f"Image: {row.image}")
-            self.logger.warning(f"Coordinate: {row.skycoord}")
-            return None
+            self.logger.warning(f"Coordinate: {row.skycoord.to_string()}")
+            return (None, None, None, None, None)
 
         selavy_components = read_selavy(row.selavy, cols=[
             'island_id',
