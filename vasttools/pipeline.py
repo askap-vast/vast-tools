@@ -1226,7 +1226,6 @@ class PipeAnalysis(PipeRun):
         ).rename(columns={'to_source_id': 'n_relations'})
 
         sources_df = sources_df.join(sources_df_relations)
-
         # nearest neighbour
         sources_sky_coord = gen_skycoord_from_df(
             sources_df, ra_col='wavg_ra', dec_col='wavg_dec'
