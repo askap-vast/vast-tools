@@ -921,6 +921,8 @@ class TestImage:
 
         expected_values = np.array([8115, 4849, 691], dtype=np.float32)
 
-        values = image.measure_coord_pixel_values(coords_to_measure, rms=True)
+        values = image.measure_coord_pixel_values(coords_to_measure,
+                                                  rms=True,
+                                                  img=False)
 
         assert np.all(values == expected_values)
