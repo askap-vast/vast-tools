@@ -192,6 +192,68 @@ def test_load_field_centres(mocker: MockerFixture) -> None:
     pd.testing.assert_frame_equal(result, mock_field_df)
 
 
+@pytest.mark.parametrize(
+    "epoch,resource_type, resource_dir, resource_name",
+    [
+        ('1',
+         'csv',
+         'vasttools.data.csvs',
+         'vast_epoch01_info.csv'
+         ),
+
+        ('1',
+         'pickle',
+         'vasttools.data.pickles',
+         'vast_epoch01_fields_sc.pickle'
+         ),
+
+        ('0',
+         'csv',
+         'vasttools.data.csvs',
+         'racs_low_info.csv'
+         ),
+
+        ('0',
+         'pickle',
+         'vasttools.data.pickles',
+         'racs_low_fields_sc.pickle'
+         )
+    ],
+    ids=('vast-csv',
+         'vast-pickle',
+         'racs-csv',
+         'racs-pickle',)
+)
+def test__get_resource_path(epoch: str,
+                            resource_type: str,
+                            resource_dir: str,
+                            resource_name: str,
+                            mocker: MockerFixture
+                            ) -> None:
+    """
+    Tests fetching the resource path
+
+    Args:
+        epoch: Epoch to test.
+        resource_type: The type of resource to fetch.
+        resource_dir: The expected resource directory.
+        resource_name: The expected resource name.
+        mocker: Pytest mock mocker object.
+
+    Returns:
+        None
+    """
+
+    isfile_mocker = mocker.patch(
+        'os.path.isfile',
+        return_value=True
+    )
+
+    result = vts._get_resource_path(epoch, resource_type)
+
+    expected_calls = [mocker.call(resource_dir, resource_name)]
+
+
 def test_load_fields_file(mocker: MockerFixture) -> None:
     """
     Tests loading the fields file.
@@ -202,13 +264,12 @@ def test_load_fields_file(mocker: MockerFixture) -> None:
     Returns:
         None
     """
-    assumed_path = "vasttools.data.csvs"
-    assumed_filename = 'vast_epoch01_info.csv'
     epoch = '1'
+    resource_path = pathlib.Path('vasttools.data.csvs/vast_epoch01_info.csv')
 
-    importlib_mocker = mocker.patch(
-        'importlib.resources.path',
-        return_value=pathlib.Path(assumed_filename)
+    get_resource_path_mocker = mocker.patch(
+        'vasttools.survey._get_resource_path',
+        return_value=resource_path
     )
     pandas_mocker = mocker.patch(
         'vasttools.survey.pd.read_csv', return_value=-99
@@ -216,10 +277,43 @@ def test_load_fields_file(mocker: MockerFixture) -> None:
 
     result = vts.load_fields_file(epoch)
 
-    expected_calls = [mocker.call(assumed_path, assumed_filename)]
-    importlib_mocker.assert_has_calls(expected_calls)
+    expected_calls = [mocker.call(epoch, 'csv')]
+    get_resource_path_mocker.assert_has_calls(expected_calls)
     pandas_mocker.assert_called_once_with(
-        importlib_mocker.return_value, comment='#'
+        get_resource_path_mocker.return_value, comment='#'
+    )
+    assert result == -99
+
+
+def test_load_fields_skycoords(mocker: MockerFixture) -> None:
+    """
+    Tests loading the fields file.
+
+    Args:
+        mocker: Pytest mock mocker object.
+
+    Returns:
+        None
+    """
+    epoch = '1'
+    resource_dir = pathlib.Path('vasttools.data.pickles')
+    resource_path = resource_dir / 'vast_epoch01_fields_sc.pickle'
+
+    get_resource_path_mocker = mocker.patch(
+        'vasttools.survey._get_resource_path',
+        return_value=resource_path
+    )
+    mocker_open = mocker.patch('builtins.open', new_callable=mocker.mock_open)
+    pickle_mocker = mocker.patch(
+        'vasttools.survey.pickle.load', return_value=-99
+    )
+
+    result = vts.load_fields_skycoords(epoch)
+
+    expected_calls = [mocker.call(epoch, 'pickle')]
+    get_resource_path_mocker.assert_has_calls(expected_calls)
+    pickle_mocker.assert_called_once_with(
+        mocker_open.return_value
     )
     assert result == -99
 
@@ -339,6 +433,11 @@ class TestFields:
             Angle(dummy_load_fields_file["DEC_DMS"], unit=u.deg)
         )
 
+        load_fields_skycoords_mocker = mocker.patch(
+            'vasttools.survey.load_fields_skycoords',
+            return_value=expected_skycoord
+        )
+
         fields_result = vts.Fields('1')
 
         assert fields_result.fields.equals(dummy_load_fields_file)
@@ -366,6 +465,10 @@ class TestFields:
         load_fields_file_mocker = mocker.patch(
             'vasttools.survey.load_fields_file',
             return_value=mock_result
+        )
+        load_fields_skycoords_mocker = mocker.patch(
+            'vasttools.survey.load_fields_skycoords',
+            return_value=-99
         )
 
         fields_result = vts.Fields('1')
@@ -552,7 +655,7 @@ class TestImage:
     def test_image_init_path(self,
                              init_Image: vts.Image,
                              mocker: MockerFixture
-    ) -> None:
+                             ) -> None:
         """
         Tests initialisation of a Image object with a path declaration.
 
