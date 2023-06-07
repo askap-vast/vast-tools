@@ -25,7 +25,7 @@ and most importantly, providing a method to interactively explore results from t
 
 !!!note "Relationship to the VAST Pipeline"
     The VAST Pipeline has superseded a lot of the initial features of VAST Tools, such as querying the VAST Pilot data directly for source matches (known as a 'Query').
-    While these methods still exist in the package, it is always highly recommended to use the VAST Pipeline data products as the base for any searches.
+    While these methods still exist in the package, it is always highly recommended to use the VAST Pipeline data products when searching for Stokes I sources.
 
 ## VAST Tools Structure
 
@@ -45,4 +45,4 @@ However, below is a brief summary of their function:
 
 From version 2.0, VAST Tools was primarily designed for usage via Notebooks, 
 however some packaged scripts still remain for performing large scale queries that would be impractical inside of a notebook.
-Full details can be found in the [Scripts](../scripts/build_lightcurves.md) section of the documentation.
+Full details can be found in the [Scripts](../scripts/) section of the documentation.
