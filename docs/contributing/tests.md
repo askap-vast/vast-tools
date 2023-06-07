@@ -10,7 +10,7 @@ The [`pytest-mock`](https://github.com/pytest-dev/pytest-mock/){:target="_blank"
 !!! warning "Complex Testing"
     Some aspects of the codebase are challenging to test comprehensively due to the complexity of the tasks.
     Many perform dataframe operations or require specific data to test.
-    The testing introduced in version 2.0.0 tests makes sure the main components but some 'smoke tests' are present and could be improved.
+    The testing introduced in version 3.0.0 tests makes sure the main components but some 'smoke tests' are present and could be improved.
 
 ## Tests Structure
 
@@ -20,9 +20,10 @@ The tests can be found in the `tests` directory, which contains the following fi
 tests
 ├── data
 │   ├── surveys_db
-│   │   └──epoch_2
-│   │      ├──beam_inf_10342-VAST_2253-43A.csv
-│   │      └──field_data.csv
+│   │   ├── epoch_2
+│   │   │   ├── beam_inf_10342-VAST_2253-43A.csv
+│   │   │   └── field_data.csv
+│   │   └── description.csv
 │   ├── psr-j2129-04-pipe-meas.csv
 │   ├── psr-j2129-04-query-meas.csv
 │   ├── test_images.csv
@@ -33,6 +34,7 @@ tests
 │   ├── test_skymap_gw190814.fits.gz
 │   ├── test_sources.csv
 │   └── vast_epoch2_info.csv
+├── test_init.py
 ├── test_moc.py
 ├── test_pipeline.py
 ├── test_query.py
