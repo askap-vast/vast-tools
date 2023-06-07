@@ -16,6 +16,7 @@ import pandas as pd
 import astropy
 import mocpy
 import matplotlib
+import logging
 import matplotlib.pyplot as plt
 
 from typing import List, Tuple
@@ -102,7 +103,8 @@ class PipeRun(object):
         measurements: Union[pd.DataFrame, vaex.dataframe.DataFrame],
         measurement_pairs_file: List[str],
         vaex_meas: bool = False,
-        n_workers: int = cpu_count() - 1
+        n_workers: int = HOST_NCPU - 1,
+        scheduler: str = 'processes'
     ) -> None:
         """
         Constructor method.
@@ -134,6 +136,9 @@ class PipeRun(object):
                 loaded into a pandas DataFrame.
             n_workers: Number of workers (cpus) available. Default is
                 determined by running `cpu_count()`.
+            scheduler: Dask scheduling option to use. Options are "processes"
+                (parallel processing) or "single-threaded". Defaults to
+                "single-threaded".
 
         Returns:
             None
@@ -152,6 +157,10 @@ class PipeRun(object):
         self.n_workers = n_workers
         self._vaex_meas = vaex_meas
         self._loaded_two_epoch_metrics = False
+        self.scheduler = scheduler
+
+        self.logger = logging.getLogger('vasttools.pipeline.PipeRun')
+        self.logger.debug('Created PipeRun instance')
 
     def combine_with_run(
         self, other_PipeRun, new_name: Optional[str] = None
@@ -648,7 +657,7 @@ class PipeRun(object):
                 match_planet_to_field,
                 meta=meta
             ).compute(
-                scheduler='processes',
+                scheduler=self.scheduler,
                 n_workers=self.n_workers
             )
         )
@@ -817,7 +826,8 @@ class PipeAnalysis(PipeRun):
         measurements: Union[pd.DataFrame, vaex.dataframe.DataFrame],
         measurement_pairs_file: str,
         vaex_meas: bool = False,
-        n_workers: int = cpu_count() - 1
+        n_workers: int = HOST_NCPU - 1,
+        scheduler: str = 'processes',
     ) -> None:
         """
         Constructor method.
@@ -852,13 +862,17 @@ class PipeAnalysis(PipeRun):
                 vaex from an arrow file. `False` means the measurements are
                 loaded into a pandas DataFrame.
             n_workers: Number of workers (cpus) available.
+            scheduler: Dask scheduling option to use. Options are "processes"
+                (parallel processing) or "single-threaded". Defaults to
+                "single-threaded".
 
         Returns:
             None
         """
         super().__init__(
             name, images, skyregions, relations, sources, associations,
-            bands, measurements, measurement_pairs_file, vaex_meas, n_workers
+            bands, measurements, measurement_pairs_file, vaex_meas, n_workers,
+            scheduler
         )
 
     def _filter_meas_pairs_df(
@@ -1123,13 +1137,13 @@ class PipeAnalysis(PipeRun):
         }
 
         sources_df_fluxes = (
-            dd.from_pandas(measurements_df_temp, HOST_NCPU)
+            dd.from_pandas(measurements_df_temp, self.n_workers)
             .groupby('source')
             .apply(
                 pipeline_get_variable_metrics,
                 meta=col_dtype
             )
-            .compute(num_workers=HOST_NCPU - 1, scheduler='processes')
+            .compute(num_workers=self.n_workers, scheduler=self.scheduler)
         )
 
         # Switch to pandas at this point to perform join
@@ -1239,10 +1253,10 @@ class PipeAnalysis(PipeRun):
         ], axis=1)
 
         # correct the RA wrapping
-        ra_wrap_mask = sources_df['wavg_ra'] >= 360.
-        sources_df.at[
+        ra_wrap_mask = (sources_df['wavg_ra'] >= 360.).to_numpy()
+        sources_df.loc[
             ra_wrap_mask, 'wavg_ra'
-        ] = sources_df[ra_wrap_mask].wavg_ra.values - 360.
+        ] = sources_df.loc[ra_wrap_mask]["wavg_ra"].to_numpy() - 360.
 
         # Switch relations column to int
         sources_df['n_relations'] = sources_df['n_relations'].astype(int)
@@ -2128,6 +2142,25 @@ class PipeAnalysis(PipeRun):
         Returns:
             Bokeh grid object containing figure.
         """
+
+        if use_int_flux:
+            x_label = 'eta_int'
+            y_label = 'v_int'
+            title = "Int. Flux"
+        else:
+            x_label = 'eta_peak'
+            y_label = 'v_peak'
+            title = 'Peak Flux'
+
+        bokeh_df = df
+        negative_v = bokeh_df[y_label] <= 0
+        if negative_v.any():
+            indices = bokeh_df[negative_v].index
+            self.logger.warning("Negative V encountered. Removing...")
+            self.logger.debug(f"Negative V indices: {indices.values}")
+
+            bokeh_df = bokeh_df.drop(indices)
+
         # generate fitted curve data for plotting
         eta_x = np.linspace(
             norm.ppf(0.001, loc=eta_fit_mean, scale=eta_fit_sigma),
@@ -2160,15 +2193,6 @@ class PipeAnalysis(PipeRun):
             df["n_selavy"].max(),
         )
 
-        if use_int_flux:
-            x_label = 'eta_int'
-            y_label = 'v_int'
-            title = "Int. Flux"
-        else:
-            x_label = 'eta_peak'
-            y_label = 'v_peak'
-            title = 'Peak Flux'
-
         fig.scatter(
             x=x_label, y=y_label, color=cmap,
             marker="circle", size=5, source=df
@@ -2187,7 +2211,7 @@ class PipeAnalysis(PipeRun):
             tools="",
         )
         x_hist_data, x_hist_edges = np.histogram(
-            np.log10(df["eta_peak"]), density=True, bins=50,
+            np.log10(bokeh_df[x_label]), density=True, bins=50,
         )
         x_hist.quad(
             top=x_hist_data,
@@ -2215,7 +2239,7 @@ class PipeAnalysis(PipeRun):
             tools="",
         )
         y_hist_data, y_hist_edges = np.histogram(
-            np.log10(df["v_peak"]), density=True, bins=50,
+            np.log10(bokeh_df[y_label]), density=True, bins=50,
         )
         y_hist.quad(
             right=y_hist_data,
@@ -2447,7 +2471,7 @@ class Pipeline(object):
 
     def load_runs(
         self, run_names: List[str], name: Optional[str] = None,
-        n_workers: int = cpu_count() - 1
+        n_workers: int = HOST_NCPU - 1
     ) -> PipeAnalysis:
         """
         Wrapper to load multiple runs in one command.
@@ -2479,7 +2503,7 @@ class Pipeline(object):
         return piperun
 
     def load_run(
-        self, run_name: str, n_workers: int = cpu_count() - 1
+        self, run_name: str, n_workers: int = HOST_NCPU - 1
     ) -> PipeAnalysis:
         """
         Process and load a pipeline run.

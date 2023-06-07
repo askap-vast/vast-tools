@@ -7,7 +7,7 @@ import pytest
 from astropy.coordinates import Angle, EarthLocation, SkyCoord
 from astropy.io import fits
 from astropy.time import Time
-from pytest_mock import mocker  # noqa: F401
+from pytest_mock import mocker, MockerFixture  # noqa: F401
 from typing import Optional
 
 from vasttools import RELEASED_EPOCHS
@@ -146,7 +146,7 @@ def init_Image() -> vts.Image:
     return _init_Image
 
 
-def test_load_field_centres(mocker) -> None:
+def test_load_field_centres(mocker: MockerFixture) -> None:
     """
     Tests loading the field centres file.
 
@@ -176,8 +176,12 @@ def test_load_field_centres(mocker) -> None:
     pandas_mocker = mocker.patch(
         'vasttools.survey.pd.read_csv'
     )
+    mock_field_df = pd.DataFrame({'field': pd.Series(['VAST_2118-06'])})
     concat_mocker = mocker.patch(
-        'vasttools.survey.pd.concat', return_value=-99
+        'vasttools.survey.pd.concat', return_value=mock_field_df
+    )
+    fieldstrip_mocker = mocker.patch(
+        'vasttools.utils.strip_fieldnames', return_value=-99,
     )
 
     result = vts.load_field_centres()
@@ -185,10 +189,72 @@ def test_load_field_centres(mocker) -> None:
     importlib_mocker.assert_has_calls(importlib_calls)
     pandas_mocker.assert_has_calls(read_csv_calls)
 
-    assert result == -99
+    pd.testing.assert_frame_equal(result, mock_field_df)
 
 
-def test_load_fields_file(mocker) -> None:
+@pytest.mark.parametrize(
+    "epoch,resource_type, resource_dir, resource_name",
+    [
+        ('1',
+         'csv',
+         'vasttools.data.csvs',
+         'vast_epoch01_info.csv'
+         ),
+
+        ('1',
+         'pickle',
+         'vasttools.data.pickles',
+         'vast_epoch01_fields_sc.pickle'
+         ),
+
+        ('0',
+         'csv',
+         'vasttools.data.csvs',
+         'racs_low_info.csv'
+         ),
+
+        ('0',
+         'pickle',
+         'vasttools.data.pickles',
+         'racs_low_fields_sc.pickle'
+         )
+    ],
+    ids=('vast-csv',
+         'vast-pickle',
+         'racs-csv',
+         'racs-pickle',)
+)
+def test__get_resource_path(epoch: str,
+                            resource_type: str,
+                            resource_dir: str,
+                            resource_name: str,
+                            mocker: MockerFixture
+                            ) -> None:
+    """
+    Tests fetching the resource path
+
+    Args:
+        epoch: Epoch to test.
+        resource_type: The type of resource to fetch.
+        resource_dir: The expected resource directory.
+        resource_name: The expected resource name.
+        mocker: Pytest mock mocker object.
+
+    Returns:
+        None
+    """
+
+    isfile_mocker = mocker.patch(
+        'os.path.isfile',
+        return_value=True
+    )
+
+    result = vts._get_resource_path(epoch, resource_type)
+
+    expected_calls = [mocker.call(resource_dir, resource_name)]
+
+
+def test_load_fields_file(mocker: MockerFixture) -> None:
     """
     Tests loading the fields file.
 
@@ -198,13 +264,12 @@ def test_load_fields_file(mocker) -> None:
     Returns:
         None
     """
-    assumed_path = "vasttools.data.csvs"
-    assumed_filename = 'vast_epoch01_info.csv'
     epoch = '1'
+    resource_path = pathlib.Path('vasttools.data.csvs/vast_epoch01_info.csv')
 
-    importlib_mocker = mocker.patch(
-        'importlib.resources.path',
-        return_value=pathlib.Path(assumed_filename)
+    get_resource_path_mocker = mocker.patch(
+        'vasttools.survey._get_resource_path',
+        return_value=resource_path
     )
     pandas_mocker = mocker.patch(
         'vasttools.survey.pd.read_csv', return_value=-99
@@ -212,15 +277,48 @@ def test_load_fields_file(mocker) -> None:
 
     result = vts.load_fields_file(epoch)
 
-    expected_calls = [mocker.call(assumed_path, assumed_filename)]
-    importlib_mocker.assert_has_calls(expected_calls)
+    expected_calls = [mocker.call(epoch, 'csv')]
+    get_resource_path_mocker.assert_has_calls(expected_calls)
     pandas_mocker.assert_called_once_with(
-        importlib_mocker.return_value, comment='#'
+        get_resource_path_mocker.return_value, comment='#'
     )
     assert result == -99
 
 
-def test_load_fields_file_epoch_fail(mocker) -> None:
+def test_load_fields_skycoords(mocker: MockerFixture) -> None:
+    """
+    Tests loading the fields file.
+
+    Args:
+        mocker: Pytest mock mocker object.
+
+    Returns:
+        None
+    """
+    epoch = '1'
+    resource_dir = pathlib.Path('vasttools.data.pickles')
+    resource_path = resource_dir / 'vast_epoch01_fields_sc.pickle'
+
+    get_resource_path_mocker = mocker.patch(
+        'vasttools.survey._get_resource_path',
+        return_value=resource_path
+    )
+    mocker_open = mocker.patch('builtins.open', new_callable=mocker.mock_open)
+    pickle_mocker = mocker.patch(
+        'vasttools.survey.pickle.load', return_value=-99
+    )
+
+    result = vts.load_fields_skycoords(epoch)
+
+    expected_calls = [mocker.call(epoch, 'pickle')]
+    get_resource_path_mocker.assert_has_calls(expected_calls)
+    pickle_mocker.assert_called_once_with(
+        mocker_open.return_value
+    )
+    assert result == -99
+
+
+def test_load_fields_file_epoch_fail(mocker: MockerFixture) -> None:
     """
     Tests loading the fields file with an invalid epoch.
 
@@ -249,7 +347,7 @@ def test_load_fields_file_epoch_fail(mocker) -> None:
 
 def test_get_fields_per_epoch_info(
     dummy_load_fields_file: pd.DataFrame,
-    mocker
+    mocker: MockerFixture
 ) -> None:
     """
     Tests loading the field per epochs.
@@ -313,7 +411,7 @@ class TestFields:
     def test_fields_init(
         self,
         dummy_load_fields_file: pd.DataFrame,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests initialisation of a Fields object.
@@ -335,6 +433,11 @@ class TestFields:
             Angle(dummy_load_fields_file["DEC_DMS"], unit=u.deg)
         )
 
+        load_fields_skycoords_mocker = mocker.patch(
+            'vasttools.survey.load_fields_skycoords',
+            return_value=expected_skycoord
+        )
+
         fields_result = vts.Fields('1')
 
         assert fields_result.fields.equals(dummy_load_fields_file)
@@ -343,7 +446,7 @@ class TestFields:
     def test_fields_init_nan(
         self,
         dummy_load_fields_file: pd.DataFrame,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests initialisation of a Fields object that has a NaN object
@@ -362,6 +465,10 @@ class TestFields:
         load_fields_file_mocker = mocker.patch(
             'vasttools.survey.load_fields_file',
             return_value=mock_result
+        )
+        load_fields_skycoords_mocker = mocker.patch(
+            'vasttools.survey.load_fields_skycoords',
+            return_value=-99
         )
 
         fields_result = vts.Fields('1')
@@ -438,7 +545,7 @@ class TestImage:
         corrected,
         conv,
         expected_suffix,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests initialisation of a Image object with no path declaration,
@@ -481,7 +588,7 @@ class TestImage:
     def test_image_init_combined_nopath_stokesv(
         self,
         init_Image: vts.Image,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests initialisation of a Image object with no path declaration,
@@ -513,7 +620,7 @@ class TestImage:
     def test_image_init_tiles_nopath_stokesv(
         self,
         init_Image: vts.Image,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests initialisation of a Image object with no path declaration,
@@ -545,7 +652,10 @@ class TestImage:
         assert image.imgpath == expected_path
         assert image.imgname == expected_filename
 
-    def test_image_init_path(self, init_Image: vts.Image, mocker) -> None:
+    def test_image_init_path(self,
+                             init_Image: vts.Image,
+                             mocker: MockerFixture
+                             ) -> None:
         """
         Tests initialisation of a Image object with a path declaration.
 
@@ -572,7 +682,7 @@ class TestImage:
     def test_image_init_image_fail(
         self,
         init_Image: vts.Image,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests initialisation of a Image object where the image cannot be
@@ -601,7 +711,7 @@ class TestImage:
         self,
         init_Image: vts.Image,
         dummy_fits_open: fits.HDUList,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the get_data method of the Image.
@@ -638,7 +748,7 @@ class TestImage:
         self,
         init_Image: vts.Image,
         dummy_fits_open: fits.HDUList,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the fetching of the rms image name where no path has been
@@ -681,7 +791,7 @@ class TestImage:
         self,
         init_Image: vts.Image,
         dummy_fits_open: fits.HDUList,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the fetching of the rms image name where a path has been
@@ -720,7 +830,7 @@ class TestImage:
         self,
         init_Image: vts.Image,
         dummy_fits_open: fits.HDUList,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the measuring of pixel values in the image data given
@@ -769,7 +879,7 @@ class TestImage:
         self,
         init_Image: vts.Image,
         dummy_fits_open: fits.HDUList,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the measuring of pixel values in the rms image data given

@@ -103,6 +103,11 @@ def parse_args() -> argparse.Namespace:
         help='Crossmatch radius in arcseconds',
         default=10.0)
     parser.add_argument(
+        '--search-all-fields',
+        action="store_true",
+        help='Return all data at the requested location(s) regardless of field'
+        )
+    parser.add_argument(
         '--use-tiles',
         action="store_true",
         help='Use the individual tiles instead of combined mosaics.')
@@ -198,6 +203,13 @@ def parse_args() -> argparse.Namespace:
         '--clobber',
         action="store_true",
         help=("Overwrite the output directory if it already exists."))
+    parser.add_argument(
+        '--scheduler',
+        default='processes',
+        choices=['processes', 'single-threaded'],
+        help=("Dask scheduling option to use. Options are 'processes' "
+              "(parallel processing) or 'single-threaded'.")
+        )
     parser.add_argument(
         '--sort-output',
         action="store_true",
@@ -508,7 +520,9 @@ def main() -> None:
         forced_cluster_threshold=args.forced_cluster_threshold,
         forced_allow_nan=args.forced_allow_nan,
         incl_observed=args.find_fields,
-        corrected_data=not args.uncorrected_data
+        corrected_data=not args.uncorrected_data,
+        search_all_fields=args.search_all_fields,
+        scheduler=args.scheduler,
     )
 
     if args.find_fields:

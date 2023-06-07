@@ -1,10 +1,5 @@
 # MOCs
 
-!!! warning "Version 2.0.0 Epoch 12 Update"
-    In v2.0.0 of vast tools, what was defined as `EPOCH12` has now been redefined as `EPOCH13`.
-    `EPOCH12` is now the epoch that was observed between `11x` and `13` that was processed after these observations.
-    Please refer to the [VAST wiki page](https://github.com/askap-vast/vast-project/wiki/Pilot-Survey-Status-&-Data){:target="_blank"} for the full details (VAST GitHub organization membership required).
-
 MOC stands for Multi-Order Coverage map and is a standard in astronomy for showing survey coverage (see [here](http://cds.unistra.fr/adass2018/){:target="_blank"} for a tutorial on both HiPS and MOCS).
 MOCs of the VAST pilot survey are packaged into VAST Tools and are available to load for use within an analysis.
 
@@ -105,6 +100,19 @@ This loads the STMOC of all the VAST pilot observations, returning a `mocpy.MOC`
     Loading the STMOC:
     ```python
     stmoc = vast_moc.load_pilot_stmoc()
+    ```
+
+#### load_survey_footprint
+
+:fontawesome-regular-file-alt: [Code reference](../../reference/moc/#vasttools.moc.VASTMOCS.load_survey_footprint).
+
+This loads a MOC of the footprint of either the pilot or full VAST survey.
+
+!!!example
+    Loading the survey footprint MOC:
+    ```python
+    pilot_moc = vast_moc.load_survey_footprint('pilot')
+    full_moc = vast_moc.load_survey_footprint('full')
     ```
 
 #### query_vizier_vast_pilot

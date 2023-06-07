@@ -10,7 +10,7 @@ from astropy.time import Time
 from astropy.wcs import WCS
 from matplotlib.pyplot import Figure
 from pathlib import Path
-from pytest_mock import mocker  # noqa: F401
+from pytest_mock import mocker, MockerFixture  # noqa: F401
 from radio_beam import Beam
 from typing import Optional
 
@@ -344,7 +344,7 @@ class TestSource:
         simple: bool,
         outfile: Optional[str],
         source_instance: vts.Source,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the initialisation of the source object.
@@ -529,12 +529,16 @@ class TestSource:
                 expected_values[freq]['1_y'] = temp_df[flux_col].to_numpy()
             else:
                 temp_df = meas_df[meas_df['detection'] == False]
-                expected_values[freq]['0_x'] = temp_df['dateobs'].to_numpy()
+                expected_values[freq]['0_x'] = pd.to_datetime(
+                    temp_df['dateobs']
+                )
                 upper_lims = temp_df['rms_image'].to_numpy() * 5.
                 expected_values[freq]['0_y'] = upper_lims
 
                 temp_df = meas_df[meas_df['detection'] == True]
-                expected_values[freq]['2_x'] = temp_df['dateobs'].to_numpy()
+                expected_values[freq]['2_x'] = pd.to_datetime(
+                    temp_df['dateobs']
+                )
                 expected_values[freq]['2_y'] = temp_df[flux_col].to_numpy()
 
         freq_counter = 0
@@ -617,14 +621,14 @@ class TestSource:
 
         if use_forced_for_limits:
             temp_df = meas_df[meas_df['detection'] == False]
-            expected_values['0_x'] = temp_df['dateobs'].to_numpy()
+            expected_values['0_x'] = pd.to_datetime(temp_df['dateobs'])
             expected_values['0_y'] = temp_df['f_flux_peak'].to_numpy()
 
             temp_df = meas_df[meas_df['detection'] == True]
-            expected_values['2_x'] = temp_df['dateobs'].to_numpy()
+            expected_values['2_x'] = pd.to_datetime(temp_df['dateobs'])
             expected_values['2_y'] = temp_df['flux_peak'].to_numpy()
         else:
-            expected_values['0_x'] = meas_df['dateobs'].to_numpy()
+            expected_values['0_x'] = pd.to_datetime(meas_df['dateobs'])
             expected_values['0_y'] = meas_df['f_flux_peak'].to_numpy()
 
         for i, line in enumerate(lightcurve.axes[0].lines):
@@ -648,7 +652,7 @@ class TestSource:
         pipeline: bool,
         source_instance: vts.Source,
         dummy_selavy_components: pd.DataFrame,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the get_cutout method on the Source, which fetches the cutout
@@ -704,8 +708,8 @@ class TestSource:
     @pytest.mark.parametrize(
         "pipeline,expected",
         [
-            (False, 'PSR_J2129-04_EPOCH01.fits'),
-            (True, 'PSR_J2129-04_EPOCH1.fits')
+            (False, 'PSR_J2129-04_VAST_2118-06A_SB9668.fits'),
+            (True, 'PSR_J2129-04_0.fits')
         ]
     )
     def test__get_save_name(
@@ -727,7 +731,7 @@ class TestSource:
         """
         source = source_instance(pipeline=pipeline)
 
-        outname = source._get_save_name('1', '.fits')
+        outname = source._get_save_name(0, '.fits')
 
         assert outname == expected
 
@@ -751,7 +755,7 @@ class TestSource:
         crossmatch_overlay: bool,
         hide_beam: bool,
         source_instance: vts.Source,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the make_png method, specifically with the options that are
@@ -784,7 +788,7 @@ class TestSource:
         source = source_instance(pipeline=pipeline, add_cutout_data=True)
 
         png_plot = source.make_png(
-            '1',
+            0,
             selavy=selavy,
             no_islands=no_islands,
             no_colorbar=no_colorbar,
@@ -798,9 +802,9 @@ class TestSource:
 
         if title is None:
             if pipeline:
-                title = 'PSR J2129-04 Epoch 1 2019-08-27 13:38:38'
+                title = 'PSR J2129-04 2019-08-27 13:38:38'
             else:
-                title = 'PSR J2129-04 Epoch 1 2019-08-27 18:52:00'
+                title = 'PSR J2129-04 2019-08-27 18:52:00'
 
         assert isinstance(png_plot, Figure)
         assert result_title == title
@@ -823,7 +827,7 @@ class TestSource:
         zscale: bool,
         contrast: float,
         source_instance: vts.Source,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the make_png method, specifically with the options that affect
@@ -849,7 +853,7 @@ class TestSource:
         source = source_instance(pipeline=pipeline, add_cutout_data=True)
 
         png_plot = source.make_png(
-            '1',
+            0,
             percentile=percentile,
             zscale=zscale,
             contrast=contrast
@@ -864,7 +868,7 @@ class TestSource:
         pipeline: bool,
         source_instance: vts.Source,
         dummy_fits: fits.HDUList,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the skyview_contour_plot method.
@@ -888,7 +892,7 @@ class TestSource:
             return_value=[dummy_fits]
         )
 
-        result = source.skyview_contour_plot('1', 'suveycode')
+        result = source.skyview_contour_plot(0, 'suveycode')
 
         assert isinstance(result, Figure)
         plt.close(result)
@@ -898,7 +902,7 @@ class TestSource:
         self,
         pipeline: bool,
         source_instance: vts.Source,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the write ann method.
@@ -924,7 +928,7 @@ class TestSource:
         )
 
         if pipeline:
-            filename = 'PSR_J2129-04_EPOCH1.ann'
+            filename = 'PSR_J2129-04_0.ann'
             expected = (
                 "COORD W\n"
                 "PA SKY\n"
@@ -950,7 +954,7 @@ class TestSource:
                 "TEXT 315.56781 -0.299919 island_1004\n"
             )
         else:
-            filename = 'PSR_J2129-04_EPOCH01.ann'
+            filename = 'PSR_J2129-04_VAST_2118-06A_SB9668.ann'
             expected = (
                 "COORD W\n"
                 "PA SKY\n"
@@ -976,7 +980,7 @@ class TestSource:
                 "TEXT 315.56781 -0.299919 island_1004\n"
             )
 
-        source.write_ann('1')
+        source.write_ann(0)
 
         write_calls = (
             mocker_file_open.return_value.__enter__().write.call_args_list
@@ -995,7 +999,7 @@ class TestSource:
         self,
         pipeline: bool,
         source_instance: vts.Source,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the write reg method.
@@ -1021,7 +1025,7 @@ class TestSource:
         )
 
         if pipeline:
-            filename = 'PSR_J2129-04_EPOCH1.reg'
+            filename = 'PSR_J2129-04_0.reg'
             expected = (
                 "# Region file format: DS9 version 4.0\n"
                 "global color=green font=\"helvetica 10 normal\" "
@@ -1052,7 +1056,7 @@ class TestSource:
                 "# color=green\n"
             )
         else:
-            filename = 'PSR_J2129-04_EPOCH01.reg'
+            filename = 'PSR_J2129-04_VAST_2118-06A_SB9668.reg'
             expected = (
                 "# Region file format: DS9 version 4.0\n"
                 "global color=green font=\"helvetica 10 normal\" select=1 "
@@ -1083,7 +1087,7 @@ class TestSource:
                 "# color=green\n"
             )
 
-        source.write_reg('1')
+        source.write_reg(0)
 
         write_calls = (
             mocker_file_open.return_value.__enter__().write.call_args_list
@@ -1126,7 +1130,10 @@ class TestSource:
         source = source_instance()
         assert expected == source._remove_sbid(input)
 
-    def test_simbad_search(self, source_instance: vts.Source, mocker) -> None:
+    def test_simbad_search(self,
+                           source_instance: vts.Source,
+                           mocker: MockerFixture
+    ) -> None:
         """
         Tests the simbad search method.
 
@@ -1155,7 +1162,10 @@ class TestSource:
         )
         assert result == -99
 
-    def test_ned_search(self, source_instance: vts.Source, mocker) -> None:
+    def test_ned_search(self,
+                        source_instance: vts.Source,
+                        mocker: MockerFixture
+    ) -> None:
         """
         Tests the NED search method.
 
@@ -1184,7 +1194,10 @@ class TestSource:
         )
         assert result == -99
 
-    def test_casda_search(self, source_instance: vts.Source, mocker) -> None:
+    def test_casda_search(self,
+                          source_instance: vts.Source,
+                          mocker: MockerFixture
+    ) -> None:
         """
         Tests the casda search method.
 

@@ -1,6 +1,7 @@
 """Functions and classes related to loading and searching of the survey data.
 """
 import os
+import pickle
 import pandas as pd
 import warnings
 import importlib.resources
@@ -10,16 +11,19 @@ import logging
 import logging.handlers
 import logging.config
 
+
 from astropy.coordinates import Angle, EarthLocation
 from astropy import units as u
-from astropy.coordinates import SkyCoord
+from astropy.coordinates import SkyCoord, concatenate
 from astropy.io import fits
 from astropy.wcs import WCS
 from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
 from radio_beam import Beam
 from typing import Optional, List, Union
 
+
 from vasttools import RELEASED_EPOCHS, OBSERVED_EPOCHS
+import vasttools.utils as vtu
 
 warnings.filterwarnings('ignore', category=AstropyWarning, append=True)
 warnings.filterwarnings(
@@ -51,7 +55,47 @@ def load_field_centres() -> pd.DataFrame:
 
     field_centres = pd.concat([low_centres, mid_centres])
 
+    field_centres['field'] = vtu.strip_fieldnames(field_centres['field'])
+
     return field_centres
+
+
+def _get_resource_path(epoch: str, resource_type: str) -> str:
+    valid_resource_types = ["csv", "pickle"]
+    if resource_type not in valid_resource_types:
+        raise ValueError(f"{resource_type} is not a valid resource type")
+
+    special_epoch_prefixes = {"0": "racs_low",
+                              "14": "racs_mid",
+                              "28": "racs_high",
+                              "29": "racs_low2",
+                              }
+
+    if epoch in special_epoch_prefixes.keys():
+        prefix = special_epoch_prefixes[epoch]
+    else:
+        if len(epoch.rstrip('x')) == 1:
+            epoch = f'0{epoch}'
+        prefix = f"vast_epoch{epoch}"
+
+    if resource_type == "csv":
+        resource_dir = "vasttools.data.csvs"
+        resource_suffix = "_info.csv"
+    elif resource_type == "pickle":
+        resource_dir = "vasttools.data.pickles"
+        resource_suffix = "_fields_sc.pickle"
+
+    resource = importlib.resources.path(resource_dir,
+                                        f"{prefix}{resource_suffix}"
+                                        )
+    with resource as p:
+        path = p
+
+    if not os.path.isfile(path):
+        raise ValueError(f"Error fetching Epoch {epoch} {resource_type} file."
+                         f" {resource_path} does not exist!")
+
+    return path
 
 
 def load_fields_file(epoch: str) -> pd.DataFrame:
@@ -80,51 +124,41 @@ def load_fields_file(epoch: str) -> pd.DataFrame:
                     f'Epoch {epoch} is not available or is not a valid epoch.'
                 )
 
-    paths = {
-        "0": importlib.resources.path(
-            'vasttools.data.csvs', 'racs_low_info.csv'),
-        "1": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch01_info.csv'),
-        "2": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch02_info.csv'),
-        "3x": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch03x_info.csv'),
-        "4x": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch04x_info.csv'),
-        "5x": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch05x_info.csv'),
-        "6x": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch06x_info.csv'),
-        "7x": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch07x_info.csv'),
-        "8": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch08_info.csv'),
-        "9": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch09_info.csv'),
-        "10x": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch10x_info.csv'),
-        "11x": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch11x_info.csv'),
-        "12": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch12_info.csv'),
-        "13": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch13_info.csv'),
-        "14": importlib.resources.path('vasttools.data.csvs',
-                                       'racs_mid_info.csv'),
-        "17": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch17_info.csv'),
-        "18": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch18_info.csv'),
-        "19": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch19_info.csv'),
-        "20": importlib.resources.path(
-            'vasttools.data.csvs', 'vast_epoch20_info.csv'),
-    }
+    path = _get_resource_path(epoch, 'csv')
 
-    with paths[epoch] as fields_csv:
+    with path as fields_csv:
         fields_df = pd.read_csv(fields_csv, comment='#')
 
     return fields_df
+
+
+def load_fields_skycoords(epoch: str) -> pd.DataFrame:
+    """
+    Args:
+        epoch: Epoch to load. Can be entered with or without zero padding.
+            E.g. '3x', '9' or '03x' '09'.
+
+    Returns:
+        DataFrame containing the field information of the epoch.
+
+    Raises:
+        ValueError: Raised when epoch requested is not released.
+    """
+    if epoch not in RELEASED_EPOCHS:
+        if len(str(epoch)) > 2 and epoch.startswith('0'):
+            epoch = epoch[1:]
+        if epoch not in RELEASED_EPOCHS:
+            if epoch not in OBSERVED_EPOCHS:
+                raise ValueError(
+                    f'Epoch {epoch} is not available or is not a valid epoch.'
+                )
+
+    path = _get_resource_path(epoch, 'pickle')
+
+    with open(path, 'rb') as pickle_file:
+        fields_sc = pickle.load(pickle_file)
+
+    return fields_sc
 
 
 def get_fields_per_epoch_info() -> pd.DataFrame:
@@ -142,13 +176,13 @@ def get_fields_per_epoch_info() -> pd.DataFrame:
         epoch_fields = pd.concat([epoch_fields, temp])
 
     epoch_fields = epoch_fields.drop_duplicates(
-        ['FIELD_NAME', 'EPOCH']
+        ['FIELD_NAME', 'EPOCH', 'DATEOBS']
     ).set_index(
         ['EPOCH', 'FIELD_NAME']
     ).drop(columns=[
         'BEAM', 'RA_HMS', 'DEC_DMS', 'DATEEND',
         'NINT', 'BMAJ', 'BMIN', 'BPA'
-    ])
+    ]).sort_index()
 
     return epoch_fields
 
@@ -206,13 +240,15 @@ class Fields:
         self.logger = logging.getLogger('vasttools.survey.Fields')
         self.logger.debug('Created Fields instance')
 
-        if type(epochs) == str:
+        if isinstance(epochs, str):
             epochs = list(epochs)
 
         field_dfs = []
+        field_scs = []
         for epoch in epochs:
             self.logger.debug(f"Loading epoch {epoch}")
             field_dfs.append(load_fields_file(epoch))
+            field_scs.append(load_fields_skycoords(epoch))
 
         self.fields = pd.concat(field_dfs)
 
@@ -221,10 +257,10 @@ class Fields:
         self.fields.dropna(inplace=True)
         self.fields.reset_index(drop=True, inplace=True)
 
-        self.direction = SkyCoord(
-            Angle(self.fields["RA_HMS"], unit=u.hourangle),
-            Angle(self.fields["DEC_DMS"], unit=u.deg)
-        )
+        if len(field_scs) == 1:
+            self.direction = field_scs[0]
+        else:
+            self.direction = concatenate(field_scs)
 
 
 class Image:
@@ -302,8 +338,10 @@ class Image:
         self.corrected_data = corrected_data
 
         if self.path is None:
+            self.logger.debug("Path not supplied, fetching paths and names")
             self.get_paths_and_names()
         else:
+            self.logger.debug(f"Setting path {self.path}")
             self.imgpath = self.path
             self.imgname = os.path.basename(self.path)
 
@@ -363,6 +401,7 @@ class Image:
             )
 
         self.imgpath = os.path.join(img_folder, self.imgname)
+        self.logger.debug(f"Set image path: {self.imgpath}")
 
     def _check_exists(self) -> bool:
         if os.path.isfile(self.imgpath):

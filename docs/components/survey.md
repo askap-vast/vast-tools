@@ -1,10 +1,5 @@
 # Survey
 
-!!! warning "Version 2.0.0 Epoch 12 Update"
-    In v2.0.0 of vast tools, what was defined as `EPOCH12` has now been redefined as `EPOCH13`.
-    `EPOCH12` is now the epoch that was observed between `11x` and `13` that was processed after these observations.
-    Please refer to the [VAST wiki page](https://github.com/askap-vast/vast-project/wiki/Pilot-Survey-Status-&-Data){:target="_blank"} for the full details (VAST GitHub organization membership required).
-
 The `Survey` component offers convenient data on the VAST Pilot Survey or the ASKAP telescope.
 
 These include:
@@ -123,6 +118,18 @@ Returns a pandas dataframe containing three columns:
     |  ... | ...           |  ...          |  ...         |
     | 1014 | RACS_2359-25A |   0.000611873 | -25.1363     |
     | 1015 | RACS_2359-43A |   0.00902694  | -43.8906     |
+
+#### load_fields_skycoords
+:fontawesome-regular-file-alt: [Code reference](../../reference/survey/#vasttools.survey.load_fields_skycoords).
+
+Ths function allows the user to load `SkyCoord` objects for all beam centres for a given epoch.
+
+!!! example
+    ```python
+    from vasttools.survey import load_fields_skycoords
+    
+    epoch_1_scs = load_fields_skycoords('1')
+    ```
 
 #### load_fields_file
 
