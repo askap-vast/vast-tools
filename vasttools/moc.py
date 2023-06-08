@@ -149,11 +149,16 @@ class VASTMOCS(object):
             )
 
         field_centres = load_field_centres()
-        if field not in field_centres['field'].to_numpy():
-            raise Exception(
-                "Field {} not recognised".format(field)
-            )
+        field_list = field_centres['field'].to_numpy()
+        if field not in field_list:
+            field_stripped = field.rstrip('A')
+            if field_stripped not in field_list:
+                raise Exception(
+                    "Field {} not recognised".format(field)
+                )
 
+        if not field.endswith('A'):
+            field = f'{field}A'
         moc_name = f'{field}.EPOCH01.I.moc.fits'
 
         with importlib.resources.path(
