@@ -445,7 +445,7 @@ def match_planet_to_field(
         group['centre-dec'].values,
         unit=(u.deg, u.deg)
     )
-
+    
     ol = vts.get_askap_observing_location()
     with solar_system_ephemeris.set('builtin'):
         planet_coords = get_body(planet, dates, ol)
@@ -453,7 +453,7 @@ def match_planet_to_field(
     seps = planet_coords.separation(
         fields_skycoord
     )
-
+    
     group['ra'] = planet_coords.ra.deg
     group['dec'] = planet_coords.dec.deg
     group['sep'] = seps.deg

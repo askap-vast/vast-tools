@@ -400,7 +400,6 @@ class Query:
                 "\nPlease address and try again."
             ))
 
-        self.logger.info("Checking data availability...")
         all_data_available = self._check_data_availability()
         if all_data_available:
             self.logger.info("All data available!")
@@ -2158,7 +2157,7 @@ class Query:
 
         # Handle Planets
         if len(self.planets) > 0:
-            self.logger.info(self.planets)
+            self.logger.debug(f"Searching for planets: {self.planets}")
             planet_fields = self._search_planets()
 
             if self.fields_df is None:
@@ -2370,11 +2369,13 @@ class Query:
         field_centres = load_field_centres()
 
         planet_epoch_fields = self._epoch_fields.loc[epochs].reset_index()
+        stripped_field_names = planet_epoch_fields.FIELD_NAME.str.rstrip('A')
+        planet_epoch_fields['STRIPPED_FIELD_NAME'] = stripped_field_names
 
         planet_epoch_fields = planet_epoch_fields.merge(
-            field_centres, left_on='FIELD_NAME',
+            field_centres, left_on='STRIPPED_FIELD_NAME',
             right_on='field', how='left'
-        ).drop('field', axis=1).rename(
+        ).drop(['field','OBS_FREQ', 'STRIPPED_FIELD_NAME'], axis=1).rename(
             columns={'EPOCH': 'epoch'}
         )
 
@@ -2393,7 +2394,7 @@ class Query:
 
         template = template.explode('planet')
         template['planet'] = template['planet'].str.capitalize()
-
+        
         meta = {
             'epoch': 'U',
             'FIELD_NAME': 'U',
