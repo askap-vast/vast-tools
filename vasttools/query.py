@@ -1230,6 +1230,7 @@ class Query:
         )
 
         self.logger.debug("Selavy components succesfully added.")
+        self.logger.debug(results)
 
         if self.settings['islands']:
             results['rms_image'] = results['background_noise']
@@ -1257,6 +1258,9 @@ class Query:
         self.crossmatch_results = self.sources_df.merge(
             results, how=how, left_index=True, right_index=True
         )
+        self.logger.debug("Crossmatch results:")
+        self.logger.debug(self.crossmatch_results)
+        
 
         meta = {'name': 'O'}
 
@@ -1265,6 +1269,7 @@ class Query:
                 'detection': any
             }).sum()
         )
+        self.logger.debug(f"{self.num_sources_detected} sources detected:")
 
         if self.settings['search_around']:
             self.results = self.crossmatch_results.rename(
@@ -1400,9 +1405,12 @@ class Query:
             Source of interest.
         """
         group = group.sort_values(by='dateobs')
+        
+        if group.empty:
+            return
 
         m = group.iloc[0]
-
+        
         if self.settings['matches_only']:
             if group['detection'].sum() == 0:
                 self.logger.warning(
@@ -1708,11 +1716,13 @@ class Query:
         selavy_file = str(group.name)
 
         if selavy_file is None:
+            self.logger.warning("Selavy file is None. Returning None.")
             return
 
         master = pd.DataFrame()
 
         selavy_df = read_selavy(selavy_file)
+        self.logger.debug(f"Selavy df head: {selavy_df.head()}")
 
         if self.settings['stokes'] != "I":
             head, tail = os.path.split(selavy_file)
@@ -1732,11 +1742,13 @@ class Query:
             selavy_df.dec_deg_cont,
             unit=(u.deg, u.deg)
         )
+        self.logger.debug(f"Selavy coords: {selavy_coords}")
         group_coords = SkyCoord(
             group.ra,
             group.dec,
             unit=(u.deg, u.deg)
         )
+        self.logger.debug(f"Group coords: {group_coords}")
 
         if self.settings['search_around']:
             idxselavy, idxc, d2d, _ = group_coords.search_around_sky(
