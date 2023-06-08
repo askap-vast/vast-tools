@@ -1260,7 +1260,6 @@ class Query:
         )
         self.logger.debug("Crossmatch results:")
         self.logger.debug(self.crossmatch_results)
-        
 
         meta = {'name': 'O'}
 
@@ -1405,12 +1404,12 @@ class Query:
             Source of interest.
         """
         group = group.sort_values(by='dateobs')
-        
+
         if group.empty:
             return
 
         m = group.iloc[0]
-        
+
         if self.settings['matches_only']:
             if group['detection'].sum() == 0:
                 self.logger.warning(
@@ -1742,13 +1741,12 @@ class Query:
             selavy_df.dec_deg_cont,
             unit=(u.deg, u.deg)
         )
-        self.logger.debug(f"Selavy coords: {selavy_coords}")
+
         group_coords = SkyCoord(
             group.ra,
             group.dec,
             unit=(u.deg, u.deg)
         )
-        self.logger.debug(f"Group coords: {group_coords}")
 
         if self.settings['search_around']:
             idxselavy, idxc, d2d, _ = group_coords.search_around_sky(
@@ -2387,7 +2385,7 @@ class Query:
         planet_epoch_fields = planet_epoch_fields.merge(
             field_centres, left_on='STRIPPED_FIELD_NAME',
             right_on='field', how='left'
-        ).drop(['field','OBS_FREQ', 'STRIPPED_FIELD_NAME'], axis=1).rename(
+        ).drop(['field', 'OBS_FREQ', 'STRIPPED_FIELD_NAME'], axis=1).rename(
             columns={'EPOCH': 'epoch'}
         )
 
@@ -2406,7 +2404,7 @@ class Query:
 
         template = template.explode('planet')
         template['planet'] = template['planet'].str.capitalize()
-        
+
         meta = {
             'epoch': 'U',
             'FIELD_NAME': 'U',
@@ -2569,7 +2567,7 @@ class Query:
                 epoch_iter = req_epochs.split(',')
 
             for epoch in epoch_iter:
-                if type(epoch) == int:
+                if isinstance(epoch, int):
                     epoch = str(epoch)
                 if epoch in available_epochs:
                     epochs.append(epoch)

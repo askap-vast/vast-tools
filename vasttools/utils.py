@@ -445,7 +445,7 @@ def match_planet_to_field(
         group['centre-dec'].values,
         unit=(u.deg, u.deg)
     )
-    
+
     ol = vts.get_askap_observing_location()
     with solar_system_ephemeris.set('builtin'):
         planet_coords = get_body(planet, dates, ol)
@@ -453,7 +453,7 @@ def match_planet_to_field(
     seps = planet_coords.separation(
         fields_skycoord
     )
-    
+
     group['ra'] = planet_coords.ra.deg
     group['dec'] = planet_coords.dec.deg
     group['sep'] = seps.deg
@@ -548,7 +548,7 @@ def pipeline_get_eta_metric(df: pd.DataFrame, peak: bool = False) -> float:
     suffix = 'peak' if peak else 'int'
     weights = 1. / df[f'flux_{suffix}_err'].values**2
     fluxes = df[f'flux_{suffix}'].values
-    eta = (df.shape[0] / (df.shape[0]-1)) * (
+    eta = (df.shape[0] / (df.shape[0] - 1)) * (
         (weights * fluxes**2).mean() - (
             (weights * fluxes).mean()**2 / weights.mean()
         )
@@ -693,9 +693,9 @@ def strip_fieldnames(fieldnames: pd.Series) -> pd.Series:
 
     Args:
         fieldnames: Series to strip field names from
-    
+
     Returns:
         Series with stripped field names
     """
-    
+
     return fieldnames.str.rstrip('A')
