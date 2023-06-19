@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Added
 
+- Added epoch 36 [#455](https://github.com/askap-vast/vast-tools/pull/455)
+- Added epochs 34 and 35 [#454](https://github.com/askap-vast/vast-tools/pull/454)
 - Added automatic generation of resource (csvs/pickles) paths [#431](https://github.com/askap-vast/vast-tools/pull/431)
 - Added `SkyCoord` pickle functionality (creation, loading and implementation) [#431](https://github.com/askap-vast/vast-tools/pull/431)
 - Added access to epoch 33 [#434](https://github.com/askap-vast/vast-tools/pull/434)
@@ -92,6 +94,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#455](https://github.com/askap-vast/vast-tools/pull/455): feat: Added epoch 36
+- [#454](https://github.com/askap-vast/vast-tools/pull/454): feat: Added epochs 34 and 35
 - [#452](https://github.com/askap-vast/vast-tools/pull/452): fix: Updated VASTMOCS to correctly handle fields with/without 'A' suffix
 - [#431](https://github.com/askap-vast/vast-tools/pull/431): feat, docs, tests: Store beam centre SkyCoords as serialised objects rather than generating them on the fly
 - [#449](https://github.com/askap-vast/vast-tools/pull/449): fix: Updated github pytest workflow to use Gr1N/setup-poetry@v8
