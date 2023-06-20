@@ -232,6 +232,14 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help='Do not save the FITS cutouts.')
     parser.add_argument(
+        '--rms-cutouts',
+        action="store_true",
+        help='Create FITS files containing noisemap cutouts.')
+    parser.add_argument(
+        '--bkg-cutouts',
+        action="store_true",
+        help='Create FITS files containing meanmap cutouts.')
+    parser.add_argument(
         '--plot-dpi',
         type=int,
         help="Specify the DPI of all saved figures.",
@@ -556,12 +564,16 @@ def main() -> None:
                 )
             if args.crossmatch_only:
                 fits = False
+                rms = False
+                bkg = False
                 png = False
                 ann = False
                 reg = False
                 lightcurve = False
             else:
                 fits = (not args.no_fits)
+                rms = args.rms_cutouts
+                bkg = args.bkg_cutouts
                 png = args.create_png
                 ann = args.ann
                 reg = args.reg
@@ -569,6 +581,8 @@ def main() -> None:
 
             query._gen_all_source_products(
                 fits=fits,
+                rms=rms,
+                bkg=bkg,
                 png=png,
                 ann=ann,
                 reg=reg,
