@@ -110,6 +110,7 @@ def init_Image() -> vts.Image:
         tiles: bool = False,
         base_folder: str = '/mocked/basefolder/',
         rmspath: Optional[str] = None,
+        bkgpath: Optional[str] = None,
         corrected_data: bool = True
     ) -> vts.Image:
         """
@@ -123,6 +124,7 @@ def init_Image() -> vts.Image:
             tiles: Whether the image is tiles or combined.
             base_folder: Base folder of data.
             rmspath: Path of the rms image.
+            bkgpath: Path of the bkg image.
             corrected_data: Access the corrected data. Only relevant if
                 `tiles` is `True`. Defaults to `True`.
 
@@ -138,6 +140,7 @@ def init_Image() -> vts.Image:
             sbid=9667,
             path=path,
             rmspath=rmspath,
+            bkgpath=bkgpath,
             corrected_data=corrected_data
         )
 
@@ -823,11 +826,11 @@ class TestImage:
         )
 
         image = init_Image()
-        image.get_bk_img()
+        image.get_bkg_img()
 
-        assert image.rmspath == expected_path
-        assert image.rmsname == expected_filename
-        assert image.rms_fail is False
+        assert image.bkgpath == expected_path
+        assert image.bkgname == expected_filename
+        assert image.bkg_fail is False
         mock_fits_open.assert_called_once_with(expected_path)
     
     def test_image_get_rms_img_path(
@@ -901,11 +904,11 @@ class TestImage:
             f"rmsmaps/{expected_filename}"
         )
 
-        image = init_Image(rmspath=expected_path)
+        image = init_Image(bkgpath=expected_path)
         image.get_bkg_img()
 
-        assert image.rmspath == expected_path
-        assert image.rms_fail is False
+        assert image.bkgpath == expected_path
+        assert image.bkg_fail is False
         mock_fits_open.assert_called_once_with(expected_path)
     
     def test_image_measure_coord_pixel_values(
