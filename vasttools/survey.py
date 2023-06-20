@@ -284,7 +284,9 @@ class Image:
         bkgpath (str): The path to the bkg file on the system.
         rms_header (astropy.io.fits.Header): The header of the RMS image
         rmsname (str): The name of the RMS image.
+        bkgname (str): The name of the BKG image.
         rms_fail (bool): Becomes `True` if the RMS image is not found.
+        bkg_fail (bool): Becomes `True` if the BKG image is not found.
     """
 
     def __init__(
