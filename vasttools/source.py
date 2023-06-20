@@ -1090,9 +1090,11 @@ class Source:
             None
 
         Raises:
-            ValueError: If the source does not contain the requested index.
+            ValueError: If the noisemap_type is not 'rms' or 'bkg'
         """
 
+        if noisemap_type is not in ['rms', 'bkg']:
+            raise ValueError("noisemap_type must be 'rms' or 'bkg'")
         if outfile is None:
             outfile = self._get_save_name(index, f"{noisemap_type}.fits")
             
