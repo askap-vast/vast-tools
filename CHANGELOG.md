@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Added
 
+- Added epoch 37 [#458](https://github.com/askap-vast/vast-tools/pull/458)
 - Added epoch 36 [#455](https://github.com/askap-vast/vast-tools/pull/455)
 - Added epochs 34 and 35 [#454](https://github.com/askap-vast/vast-tools/pull/454)
 - Added automatic generation of resource (csvs/pickles) paths [#431](https://github.com/askap-vast/vast-tools/pull/431)
@@ -96,6 +97,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#458](https://github.com/askap-vast/vast-tools/pull/458): feat: Added epoch 37
 - [#453](https://github.com/askap-vast/vast-tools/pull/453): fix: Fix planet matching to correctly handle field names with/without 'A' suffix, and correctly handle empty df in init_sources
 - [#455](https://github.com/askap-vast/vast-tools/pull/455): feat: Added epoch 36
 - [#454](https://github.com/askap-vast/vast-tools/pull/454): feat: Added epochs 34 and 35
