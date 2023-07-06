@@ -318,6 +318,12 @@ Search for a match to one source and create a FITS postage stamp of 5 arcminutes
 find_sources "22:37:5.6000 +34:24:31.90" --imsize 5.0 --source-names "SN 2014C" --out-folder example_source
 ```
 
+The same as above, but with RMS and background map cutouts too.
+
+```
+find_sources "22:37:5.6000 +34:24:31.90" --imsize 5.0 --source-names "SN 2014C" --out-folder example_source --rms-cutouts --bkg-cutouts
+```
+
 To include a png output with selavy overlay:
 
 ```
