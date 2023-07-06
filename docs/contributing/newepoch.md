@@ -117,7 +117,6 @@ The following steps will allow users to add epoch 99 to the package, from start 
     ```git add vasttools/data/csvs/vast_epoch99_info.csv
     git add vasttools/data/pickles/vast_epoch99_fields_sc.pickle
     git add __init__.py
-    git add vasttools/survey.py
     git add vasttools/data/mocs/VAST_PILOT_EPOCH99.moc.fits
     git add vasttools/data/mocs/VAST_PILOT.stmoc.fits
     ```
