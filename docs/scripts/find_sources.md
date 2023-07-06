@@ -301,7 +301,9 @@ ra,dec,name
 The following files are or can be produced (for tiles the `combined` will be replaced with `tile`):
 
 * `{source_name}_measurements.csv` - csv file containing the crossmatch results per source. For detections, the source information included is taken direct from the selavy catalogues (see the [selavy documentation](https://www.atnf.csiro.au/computing/software/askapsoft/sdp/docs/current/analysis/postprocessing.html#component-catalogue)). All fluxes are in mJy. Upper limits and forced fits (if both/either are selected) are also included here.
-* `{source_name}.EPOCH{NN}.{STOKES}_combined.fits` - Cutout FITS file of the source referenced in the name (if requested).
+* `{source_name}.EPOCH{NN}.{STOKES}_combined.fits` - Cutout FITS image file of the source referenced in the name (if requested).
+* `{source_name}.EPOCH{NN}.{STOKES}_combined.rms.fits` - Cutout FITS noisemap file of the source referenced in the name (if requested).
+* `{source_name}.EPOCH{NN}.{STOKES}_combined.bkg.fits` - Cutout FITS background file of the source referenced in the name (if requested).
 * `{source_name}.EPOCH{NN}.{STOKES}_combined.png` - Matplotlib png figure of the above cutout of the source referenced in the name (if requested).
 * `{source_name}.EPOCH{NN}.{STOKES}_combined.ann` - Kvis annotation file for use with the FITS file (if requested).
 * `{source_name}.EPOCH{NN}.{STOKES}_combined.reg` - DS9 region file for use with the FITS file (if requested).
