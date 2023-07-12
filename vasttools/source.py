@@ -1325,7 +1325,7 @@ class Source:
         for i in range(num_plots):
             cutout_row = self.cutout_df.iloc[i]
             print(cutout_row)
-            print(cutout_wcs)
+            print(cutout_row.wcs)
             measurement_row = self.measurements.iloc[i]
             target_coords = np.array(
                 ([[
