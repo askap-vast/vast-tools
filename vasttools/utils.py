@@ -344,7 +344,8 @@ def read_selavy(
 
     # Force all flux values to be positive
     for colname in ['flux_peak', 'flux_peak_err', 'flux_int', 'flux_int_err']:
-        df[colname] = df[colname].abs()
+        if colname in df.columns:
+            df[colname] = df[colname].abs()
     return df
 
 
