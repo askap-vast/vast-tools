@@ -402,7 +402,6 @@ class Query:
                 "\nPlease address and try again."
             ))
 
-        self.logger.info("Checking data availability...")
         all_data_available = self._check_data_availability()
         if all_data_available:
             self.logger.info("All data available!")
@@ -1412,6 +1411,7 @@ class Query:
         )
 
         self.logger.debug("Selavy components succesfully added.")
+        self.logger.debug(results)
 
         if self.settings['islands']:
             results['rms_image'] = results['background_noise']
@@ -1439,6 +1439,8 @@ class Query:
         self.crossmatch_results = self.sources_df.merge(
             results, how=how, left_index=True, right_index=True
         )
+        self.logger.debug("Crossmatch results:")
+        self.logger.debug(self.crossmatch_results)
 
         meta = {'name': 'O'}
 
@@ -1447,6 +1449,7 @@ class Query:
                 'detection': any
             }).sum()
         )
+        self.logger.debug(f"{self.num_sources_detected} sources detected:")
 
         if self.settings['search_around']:
             self.results = self.crossmatch_results.rename(
@@ -1582,6 +1585,9 @@ class Query:
             Source of interest.
         """
         group = group.sort_values(by='dateobs')
+
+        if group.empty:
+            return
 
         m = group.iloc[0]
 
@@ -1890,11 +1896,13 @@ class Query:
         selavy_file = str(group.name)
 
         if selavy_file is None:
+            self.logger.warning("Selavy file is None. Returning None.")
             return
 
         master = pd.DataFrame()
 
         selavy_df = read_selavy(selavy_file)
+        self.logger.debug(f"Selavy df head: {selavy_df.head()}")
 
         if self.settings['stokes'] != "I":
             head, tail = os.path.split(selavy_file)
@@ -1914,6 +1922,7 @@ class Query:
             selavy_df.dec_deg_cont,
             unit=(u.deg, u.deg)
         )
+
         group_coords = SkyCoord(
             group.ra,
             group.dec,
@@ -2339,7 +2348,7 @@ class Query:
 
         # Handle Planets
         if len(self.planets) > 0:
-            self.logger.info(self.planets)
+            self.logger.debug(f"Searching for planets: {self.planets}")
             planet_fields = self._search_planets()
 
             if self.fields_df is None:
@@ -2551,11 +2560,13 @@ class Query:
         field_centres = load_field_centres()
 
         planet_epoch_fields = self._epoch_fields.loc[epochs].reset_index()
+        stripped_field_names = planet_epoch_fields.FIELD_NAME.str.rstrip('A')
+        planet_epoch_fields['STRIPPED_FIELD_NAME'] = stripped_field_names
 
         planet_epoch_fields = planet_epoch_fields.merge(
-            field_centres, left_on='FIELD_NAME',
+            field_centres, left_on='STRIPPED_FIELD_NAME',
             right_on='field', how='left'
-        ).drop('field', axis=1).rename(
+        ).drop(['field', 'OBS_FREQ', 'STRIPPED_FIELD_NAME'], axis=1).rename(
             columns={'EPOCH': 'epoch'}
         )
 
@@ -2737,7 +2748,7 @@ class Query:
                 epoch_iter = req_epochs.split(',')
 
             for epoch in epoch_iter:
-                if type(epoch) == int:
+                if isinstance(epoch, int):
                     epoch = str(epoch)
                 if epoch in available_epochs:
                     epochs.append(epoch)

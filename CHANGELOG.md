@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Added
 
+- Added epoch 37 [#458](https://github.com/askap-vast/vast-tools/pull/458)
 - Added epoch 36 [#455](https://github.com/askap-vast/vast-tools/pull/455)
 - Added epochs 34 and 35 [#454](https://github.com/askap-vast/vast-tools/pull/454)
 - Added automatic generation of resource (csvs/pickles) paths [#431](https://github.com/askap-vast/vast-tools/pull/431)
@@ -60,6 +61,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Fixed
 
+- Fix planet matching to correctly handle field names with/without 'A' suffix [#453](https://github.com/askap-vast/vast-tools/pull/453)
+- Correctly handle empty df in Query.init_sources() [#453](https://github.com/askap-vast/vast-tools/pull/453)
 - Updated VASTMOCS to correctly handle fields with/without 'A' suffix [#452](https://github.com/askap-vast/vast-tools/pull/452)
 - Updated github pytest workflow to use Gr1N/setup-poetry@v8 [#449](https://github.com/askap-vast/vast-tools/pull/449)
 - Updated default value of Query.max_sep to 1.5 degrees [#440](https://github.com/askap-vast/vast-tools/pull/440)
@@ -94,6 +97,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#458](https://github.com/askap-vast/vast-tools/pull/458): feat: Added epoch 37
+- [#453](https://github.com/askap-vast/vast-tools/pull/453): fix: Fix planet matching to correctly handle field names with/without 'A' suffix, and correctly handle empty df in init_sources
 - [#455](https://github.com/askap-vast/vast-tools/pull/455): feat: Added epoch 36
 - [#454](https://github.com/askap-vast/vast-tools/pull/454): feat: Added epochs 34 and 35
 - [#452](https://github.com/askap-vast/vast-tools/pull/452): fix: Updated VASTMOCS to correctly handle fields with/without 'A' suffix
