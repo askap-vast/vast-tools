@@ -61,6 +61,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Fixed
 
+- Fix read_selavy to force all flux & flux_err values to be positive [#463](https://github.com/askap-vast/vast-tools/pull/463)
 - Fix planet matching to correctly handle field names with/without 'A' suffix [#453](https://github.com/askap-vast/vast-tools/pull/453)
 - Correctly handle empty df in Query.init_sources() [#453](https://github.com/askap-vast/vast-tools/pull/453)
 - Updated VASTMOCS to correctly handle fields with/without 'A' suffix [#452](https://github.com/askap-vast/vast-tools/pull/452)
@@ -97,6 +98,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#463](https://github.com/askap-vast/vast-tools/pull/463): fix: Fix read_selavy to force all flux & flux_err values to be positive
 - [#458](https://github.com/askap-vast/vast-tools/pull/458): feat: Added epoch 37
 - [#453](https://github.com/askap-vast/vast-tools/pull/453): fix: Fix planet matching to correctly handle field names with/without 'A' suffix, and correctly handle empty df in init_sources
 - [#455](https://github.com/askap-vast/vast-tools/pull/455): feat: Added epoch 36

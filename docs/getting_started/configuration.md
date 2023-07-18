@@ -19,10 +19,6 @@ The path to the VAST Pipeline directory containing the pipeline runs.
 VAST Tools requires access to the observational data to fully function. 
 The sections below describe precisely what data is required for which area of VAST Tools.
 
-!!! warning "Warning: VAST Pilot Data Release Compatibility"
-    As of v2.0.0, the current supported VAST Pilot Data release version is v1.2.1.
-    The data release versions are detailed on the [VAST wiki](https://github.com/askap-vast/vast-project/wiki/Pilot-Survey-Status-&-Data#data-release-notes){:target="_blank"} (askap-vast GitHub membership required to access).
-
 ### Query: VAST Pilot Data
 
 The `Query` component of the VAST Tools, that queries the VAST Pilot survey directly, requires the data as released by the VAST team.
@@ -50,8 +46,7 @@ VAST_PILOT_DATA/
 ```
 
 !!! note "Note: RACS Data"
-    VAST Tools has support for Epoch 0, which was an early version of the [`Rapid ASKAP Continuum Survey (RACS)`](https://research.csiro.au/racs/){:target="_blank"}, that did not contain flux corrections and other improvements.
-    As of 2021 it is recommended to use official RACS data products.
+    VAST Tools supports data from the [`Rapid ASKAP Continuum Survey (RACS)`](https://research.csiro.au/racs/){:target="_blank"}, including observations that have not been publicly released. We strongly recommend using official RACS data products where possible, but currently VAST tools supports accessing data from unreleased RACS observations (based on publicly available information from the RACS survey database), if the user has downloaded that data themselves.
 
 #### Minimum Data Requirement
 

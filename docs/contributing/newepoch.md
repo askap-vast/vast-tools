@@ -59,7 +59,7 @@ To add a new epoch, users should take the below actions.
 
 * Replace the current version of `VAST_PILOT.stmoc.fits` in `vasttools/data/mocs/` with the updated version containing the observations from the new epoch.
 
-* Add the new epoch to the `RELEASED_EPOCHS` variable found in [`vasttools.survey`](../../reference/survey).
+* Add the new epoch to the `RELEASED_EPOCHS` variable found in `vasttools.__init__.py`.
 
 * If the new epoch is from RACS rather than VAST, add the new epoch to the `RACS_EPOCHS` variable in `vasttools.__init__.py`.
 
@@ -117,7 +117,6 @@ The following steps will allow users to add epoch 99 to the package, from start 
     ```git add vasttools/data/csvs/vast_epoch99_info.csv
     git add vasttools/data/pickles/vast_epoch99_fields_sc.pickle
     git add __init__.py
-    git add vasttools/survey.py
     git add vasttools/data/mocs/VAST_PILOT_EPOCH99.moc.fits
     git add vasttools/data/mocs/VAST_PILOT.stmoc.fits
     ```
