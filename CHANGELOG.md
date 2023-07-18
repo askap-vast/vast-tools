@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Added
 
+- Added warning when querying corrected data [#465](https://github.com/askap-vast/vast-tools/pull/465)
 - Added epochs 38, 39 and 40 [#466](https://github.com/askap-vast/vast-tools/pull/466)
 - Added epoch 37 [#458](https://github.com/askap-vast/vast-tools/pull/458)
 - Added epoch 36 [#455](https://github.com/askap-vast/vast-tools/pull/455)
@@ -99,6 +100,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#465](https://github.com/askap-vast/vast-tools/pull/465): feat: Added warning when querying corrected data
 - [#466](https://github.com/askap-vast/vast-tools/pull/466): feat: Added epochs 38, 39 and 40 
 - [#463](https://github.com/askap-vast/vast-tools/pull/463): fix: Fix read_selavy to force all flux & flux_err values to be positive
 - [#458](https://github.com/askap-vast/vast-tools/pull/458): feat: Added epoch 37
