@@ -184,15 +184,15 @@ Note the space between the coodinates and the quotation marks.
 
 E.g.
 ```
-find_sources --coords "22:37:5.6000 +34:24:31.90"
+find_sources --coords "21:29:45.29 -04:29:11.9"
 ```
 ```
-find_sources --coords "339.2733333 34.4088611"
+find_sources --coords "322.4387083 -4.4866389"
 ```
 
 It's recommended to provide a source name using the option `--source-names`, e.g.
 ```
-find_sources --coords "22:37:5.6000 +34:24:31.90" --source-names "SN 2014C"
+find_sources --coords "21:29:45.29 -04:29:11.9" --source-names "PSR J2129-04"
 ```
 
 
@@ -202,20 +202,20 @@ Same format as above but now separate coodinates with `,`:
 * `"HH:MM:SS.ss +/-DD:MM:SS.ss,HH:MM:SS.ss +/-DD:MM:SS.ss,HH:MM:SS.ss +/-DD:MM:SS.ss"`
 * `"DDD.ddd +/-DD.ddd,DDD.ddd +/-DD.ddd,DDD.ddd +/-DD.ddd"`
 
-Note there is no space between the commas.
+Note there is no space on either side of the commas.
 
 E.g. 
 ```
-find_sources --coords "22:37:5.6000 +34:24:31.90,22:37:5.6000 -34:24:31.90,13:37:5.6000 -84:24:31.90"
+find_sources --coords "21:29:45.29 -04:29:11.9,00:00:00 -10:00:00,00:00:00 +10:00:00"
 ```
 ```
-find_sources --coords "339.2733333 34.4088611,154.2733333 -34.4088611,20.2733333 -54.4088611"
+find_sources --coords "322.4387083 -4.4866389,0.0 -10.0,0.0 +10.0"
 ```
 
 Source names can still be defined using the option `--source-names` with the same comma notation e.g.
 
 ```
-find_sources --coords "22:37:5.6000 +34:24:31.90,22:37:5.6000 -34:24:31.90,13:37:5.6000 -84:24:31.90" --source-names "SN 2014C,SN 2012C,SN2019B"
+find_sources --coords "21:29:45.29 -04:29:11.9,00:00:00 -10:00:00,00:00:00 +10:00:00" --source-names "PSR J2129-04,dummy1,dummy2"
 ```
 
 ### Input CSV file
@@ -233,36 +233,41 @@ ra,dec,name
 123.45,-67.89,source name
 ```
 
+or
+
+```
+ra,dec,name
+12:34:56.7,-89:01:23.4,source name
+```
+
 ## Outputs
 
 The following files are or can be produced (for tiles the `combined` will be replaced with `tile`):
 
 * `{source_name}_measurements.csv` - csv file containing the crossmatch results per source. For detections, the source information included is taken direct from the selavy catalogues (see the [selavy documentation](https://www.atnf.csiro.au/computing/software/askapsoft/sdp/docs/current/analysis/postprocessing.html#component-catalogue)). All fluxes are in mJy. Upper limits and forced fits (if both/either are selected) are also included here.
-* `{source_name}.EPOCH{NN}.{STOKES}_combined.fits` - Cutout FITS file of the source referenced in the name (if requested).
-* `{source_name}.EPOCH{NN}.{STOKES}_combined.png` - Matplotlib png figure of the above cutout of the source referenced in the name (if requested).
-* `{source_name}.EPOCH{NN}.{STOKES}_combined.ann` - Kvis annotation file for use with the FITS file (if requested).
-* `{source_name}.EPOCH{NN}.{STOKES}_combined.reg` - DS9 region file for use with the FITS file (if requested).
+* `{source_name}_{FIELD_NAME}_SB{SBID}.fits` - Cutout FITS file of the source referenced in the name (if requested).
+* `{source_name}_{FIELD_NAME}_SB{SBID}.png` - Matplotlib png figure of the above cutout of the source referenced in the name (if requested).
+* `{source_name}_{FIELD_NAME}_SB{SBID}.ann` - Kvis annotation file for use with the FITS file (if requested).
+* `{source_name}_{FIELD_NAME}_SB{SBID}.reg` - DS9 region file for use with the FITS file (if requested).
 * `{source_name}_lc.png` - Lightcurve png plot (if requested).
 * `find_fields_result.csv` - Output of the find fields option containing the input sources and the matched VAST Pilot Survey field (find-fields only).
-
-`X` refers to the out-folder name.
 
 ## Examples
 
 Search for a match to one source and create a FITS postage stamp of 5 arcminutes across. Will place the output in `example_source`.
 
 ```
-find_sources "22:37:5.6000 +34:24:31.90" --imsize 5.0 --source-names "SN 2014C" --out-folder example_source
+find_sources --coords "21:29:45.29 -04:29:11.9" --imsize 5.0 --source-names "PSR J2129-04" --out-folder example_source
 ```
 
 To include a png output with selavy overlay:
 
 ```
-find_sources "22:37:5.6000 +34:24:31.90" --imsize 5.0 --source-names "SN 2014C" --out-folder example_source --create-png --png-selavy-overlay
+find_sources --coords "21:29:45.29 -04:29:11.9" --imsize 5.0 --source-names "PSR J2129-04" --out-folder example_source --create-png --png-selavy-overlay
 ```
 Now search in Stokes V to a different directory and also include a kvis annotation file and an extra coodinate:
 ```
-find_sources "22:37:5.6000 +34:24:31.90,22:37:5.6000 +44:24:31.90" --imsize 5.0 --source-names "SN 2014C,SN 2019I" --out-folder example_source_stokesv_ --create-png --png-selavy-overlay --stokes="V" --ann
+find_sources --coords "21:29:45.29 -04:29:11.9,00:00:00 -01:00:00.0" --imsize 5.0 --source-names "PSR J2129-04,dummy" --out-folder example_source_stokesv_ --create-png --png-selavy-overlay --stokes="V" --ann
 ```
 Search through a csv of coordinates, make pngs, use zscale with a contrast of 0.2, create annotation and region files.:
 ```

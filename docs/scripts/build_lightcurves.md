@@ -1,6 +1,6 @@
 # build\_lightcurves
 
-This script allows you to quickly build lightcurves of sources you have extracted using `find_sources.py`. While in v2.0 `find_sources.py` can now output lightcurve plots directly, this script can be helpful to run the lightcurve plotting again on a complete `find_sources.py` output.
+This script allows you to quickly build lightcurves of sources you have extracted using `find_sources.py`. As of v2.0.0 `find_sources.py` can now output lightcurve plots directly, this script can be helpful to run the lightcurve plotting again on a complete `find_sources.py` output.
 
 Peak fluxes are used by default, integrated fluxes can be used by using the `--use-int-flux` flag.
 
@@ -41,5 +41,4 @@ optional arguments:
   --hide-legend         Don't show the legend on the final plot. (default: False)
   --plot-dpi PLOT_DPI   Specify the DPI of all saved figures. (default: 150)
   --nice NICE           Set nice level. (default: 5)
-
 ```

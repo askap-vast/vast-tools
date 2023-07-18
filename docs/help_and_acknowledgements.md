@@ -10,12 +10,16 @@ General enquiries may also be sent via email to the VAST project Principal Inves
 * [Tara Murphy](mailto:tara.murphy@sydney.edu.au)
 * [David Kaplan](mailto:kaplan@uwm.edu)
 
+or alternatively, the VAST Project Scientists:
+
+* [Dougal Dobie](mailto:ddobie@swin.edu.au)
+* [Laura Driessen](mailto:laura.driessen@sydney.edu.au)
+
 ## Contributors
 
 * Adam Stewart – [Sydney Institute for Astronomy](https://sifa.sydney.edu.au/)
 * Dougal Dobie – [Swinburne University of Technology/OzGrav](https://www.ozgrav.org)
 * Andrew O'Brien – [Department of Physics, University of Wisconsin-Milwaukee](https://uwm.edu/physics/research/astronomy-gravitation-cosmology/)
-* Tara Murphy – [Sydney Institute for Astronomy](https://sifa.sydney.edu.au/)
 * David Kaplan – [Department of Physics, University of Wisconsin-Milwaukee](https://uwm.edu/physics/research/astronomy-gravitation-cosmology/)
 
 ## Acknowledgements
