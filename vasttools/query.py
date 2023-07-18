@@ -461,6 +461,12 @@ class Query:
                                  "the full VAST survey."
                                  )
             return False
+        
+        if self.settings['tiles'] and self.settings['corrected_data'] and self.vast_full:
+            self.logger.warning(
+                "Corrected data does not yet exist for the full VAST survey."
+                "Pass corrected_data=False to access full survey data."
+            )
 
         return True
 
