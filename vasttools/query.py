@@ -185,7 +185,7 @@ class Query:
                 from the best (closest) field in each epoch.
             scheduler: Dask scheduling option to use. Options are "processes"
                 (parallel processing) or "single-threaded". Defaults to
-                "single-threaded".
+                "processes".
 
         Returns:
             None
