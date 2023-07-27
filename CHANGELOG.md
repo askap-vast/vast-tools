@@ -64,6 +64,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Fixed
 
+- Removed duplicates in field matching [#472](https://github.com/askap-vast/vast-tools/pull/472)
 - Fix read_selavy to force all flux & flux_err values to be positive [#463](https://github.com/askap-vast/vast-tools/pull/463)
 - Fix planet matching to correctly handle field names with/without 'A' suffix [#453](https://github.com/askap-vast/vast-tools/pull/453)
 - Correctly handle empty df in Query.init_sources() [#453](https://github.com/askap-vast/vast-tools/pull/453)
@@ -101,6 +102,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#472](https://github.com/askap-vast/vast-tools/pull/472): fix: Remove duplicates in field matching
 - [#470](https://github.com/askap-vast/vast-tools/pull/470): feat: Added epoch 41
 - [#465](https://github.com/askap-vast/vast-tools/pull/465): feat: Added warning when querying corrected data
 - [#466](https://github.com/askap-vast/vast-tools/pull/466): feat: Added epochs 38, 39 and 40 
