@@ -110,6 +110,7 @@ def init_Image() -> vts.Image:
         tiles: bool = False,
         base_folder: str = '/mocked/basefolder/',
         rmspath: Optional[str] = None,
+        bkgpath: Optional[str] = None,
         corrected_data: bool = True
     ) -> vts.Image:
         """
@@ -123,6 +124,7 @@ def init_Image() -> vts.Image:
             tiles: Whether the image is tiles or combined.
             base_folder: Base folder of data.
             rmspath: Path of the rms image.
+            bkgpath: Path of the bkg image.
             corrected_data: Access the corrected data. Only relevant if
                 `tiles` is `True`. Defaults to `True`.
 
@@ -138,6 +140,7 @@ def init_Image() -> vts.Image:
             sbid=9667,
             path=path,
             rmspath=rmspath,
+            bkgpath=bkgpath,
             corrected_data=corrected_data
         )
 
@@ -787,6 +790,49 @@ class TestImage:
         assert image.rms_fail is False
         mock_fits_open.assert_called_once_with(expected_path)
 
+    def test_image_get_bkg_img_combined_nopath(
+        self,
+        init_Image: vts.Image,
+        dummy_fits_open: fits.HDUList,
+        mocker: MockerFixture
+    ) -> None:
+        """
+        Tests the fetching of the rms image name where no path has been
+        declared.
+
+        No need to test tiles as it does the same replacements.
+
+        The same dummy fits is used for the rms loading.
+
+        Args:
+            init_Image: The Image pytest fixture.
+            dummy_fits_open: The dummy fits object.
+            mocker: Pytest mock mocker object.
+
+        Returns:
+            None
+        """
+        mock_isfile = mocker.patch('os.path.isfile', return_value=True)
+        mock_fits_open = mocker.patch(
+            'vasttools.survey.fits.open',
+            return_value=dummy_fits_open
+        )
+
+        # Use the defaults on the init_Image fixture.
+        expected_filename = "meanMap.VAST_0012+00.EPOCH01.I.conv.fits"
+        expected_path = (
+            "/mocked/basefolder/EPOCH01/COMBINED/"
+            f"STOKESI_RMSMAPS/{expected_filename}"
+        )
+
+        image = init_Image()
+        image.get_bkg_img()
+
+        assert image.bkgpath == expected_path
+        assert image.bkgname == expected_filename
+        assert image.bkg_fail is False
+        mock_fits_open.assert_called_once_with(expected_path)
+    
     def test_image_get_rms_img_path(
         self,
         init_Image: vts.Image,
@@ -826,6 +872,45 @@ class TestImage:
         assert image.rms_fail is False
         mock_fits_open.assert_called_once_with(expected_path)
 
+    def test_image_get_bkg_img_path(
+        self,
+        init_Image: vts.Image,
+        dummy_fits_open: fits.HDUList,
+        mocker: MockerFixture
+    ) -> None:
+        """
+        Tests the fetching of the rms image name where a path has been
+        declared.
+
+        The same dummy fits is used for the rms loading.
+
+        Args:
+            init_Image: The Image pytest fixture.
+            dummy_fits_open: The dummy fits object.
+            mocker: Pytest mock mocker object.
+
+        Returns:
+            None
+        """
+        mock_isfile = mocker.patch('os.path.isfile', return_value=True)
+        mock_fits_open = mocker.patch(
+            'vasttools.survey.fits.open',
+            return_value=dummy_fits_open
+        )
+
+        expected_filename = "image1_bkg.fits"
+        expected_path = (
+            "/mocked/basefolder/my/data/"
+            f"rmsmaps/{expected_filename}"
+        )
+
+        image = init_Image(bkgpath=expected_path)
+        image.get_bkg_img()
+
+        assert image.bkgpath == expected_path
+        assert image.bkg_fail is False
+        mock_fits_open.assert_called_once_with(expected_path)
+    
     def test_image_measure_coord_pixel_values(
         self,
         init_Image: vts.Image,
@@ -921,6 +1006,8 @@ class TestImage:
 
         expected_values = np.array([8115, 4849, 691], dtype=np.float32)
 
-        values = image.measure_coord_pixel_values(coords_to_measure, rms=True)
+        values = image.measure_coord_pixel_values(coords_to_measure,
+                                                  rms=True,
+                                                  img=False)
 
         assert np.all(values == expected_values)
