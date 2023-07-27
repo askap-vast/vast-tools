@@ -185,7 +185,7 @@ class Query:
                 from the best (closest) field in each epoch.
             scheduler: Dask scheduling option to use. Options are "processes"
                 (parallel processing) or "single-threaded". Defaults to
-                "single-threaded".
+                "processes".
 
         Returns:
             None
@@ -2474,7 +2474,7 @@ class Query:
                 self.logger.debug("Using stripped field names")
                 stripped = True
                 epoch_fields_names = strip_fieldnames(epoch_fields_names)
-            the_fields = [f.rstrip('A') for f in the_fields]
+            the_fields = list(set([f.rstrip('A') for f in the_fields]))
 
             self.logger.debug("Fields in epoch: ")
             self.logger.debug(epoch_fields_names)
