@@ -40,6 +40,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Changed
 
+- Changed default behaviour of Image.measure_coord_pixel_values to have `img=False` [#476](https://github.com/askap-vast/vast-tools/pull/476)
 - Changed `Fields.direction` to be loaded from pickle rather than generated at each call [#431](https://github.com/askap-vast/vast-tools/pull/431)
 - Updated RACS dec limit to +50 [#438](https://github.com/askap-vast/vast-tools/pull/438)
 - Updated Query._get_epochs to allow lists and ints [#421](https://github.com/askap-vast/vast-tools/pull/421)
@@ -64,6 +65,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Fixed
 
+- Fixed missing RMS measurements for non-detections [#476](https://github.com/askap-vast/vast-tools/pull/476)
 - Removed duplicates in field matching [#472](https://github.com/askap-vast/vast-tools/pull/472)
 - Fix read_selavy to force all flux & flux_err values to be positive [#463](https://github.com/askap-vast/vast-tools/pull/463)
 - Fix planet matching to correctly handle field names with/without 'A' suffix [#453](https://github.com/askap-vast/vast-tools/pull/453)
@@ -102,6 +104,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#476](https://github.com/askap-vast/vast-tools/pull/476): fix: Fixed missing RMS measurements for non-detections 
 - [#472](https://github.com/askap-vast/vast-tools/pull/472): fix: Remove duplicates in field matching
 - [#470](https://github.com/askap-vast/vast-tools/pull/470): feat: Added epoch 41
 - [#465](https://github.com/askap-vast/vast-tools/pull/465): feat: Added warning when querying corrected data
