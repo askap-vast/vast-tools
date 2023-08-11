@@ -502,9 +502,9 @@ class Image:
     def measure_coord_pixel_values(
         self,
         coords: SkyCoord,
-        img: bool = True,
-        rms: bool = False,
-        bkg: bool = False
+        img: Optional[bool] = False,
+        rms: Optional[bool] = False,
+        bkg: Optional[bool] = False
     ) -> np.ndarray:
         """
         Measures the pixel values at the provided coordinate values.
