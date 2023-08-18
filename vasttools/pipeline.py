@@ -162,6 +162,17 @@ class PipeRun(object):
         self.logger = logging.getLogger('vasttools.pipeline.PipeRun')
         self.logger.debug('Created PipeRun instance')
 
+    def _check_measuremnt_pairs_file(self):
+        self.measurement_pairs_exists = True
+        
+        for filepath in self.measurement_pairs_file:
+            if not os.path.isfile(filepath):
+                self.logger.warning("Measurement pairs file ({filepath}) does"
+                                    " not exist. You will be unable to access"
+                                    " measurement pairs or two-epoch metrics."
+                                    )
+                self.measurement_pairs_exists = False
+            
     def combine_with_run(
         self, other_PipeRun, new_name: Optional[str] = None
     ):
@@ -224,8 +235,14 @@ class PipeRun(object):
 
         # need to keep access to all the different pairs files
         # for two epoch metrics.
-        for i in other_PipeRun.measurement_pairs_file:
-            self.measurement_pairs_file.append(i)
+        if self.measurement_pairs_exists:
+            for i in other_PipeRun.measurement_pairs_file:
+                self.measurement_pairs_file.append(i)
+            self._check_measurement_pairs_file()
+        else:
+            self.logger.warning("Not combining measurement pairs because they "
+                                " do not exist for the original run."
+                                )
 
         del sources_to_add
 
@@ -421,7 +438,16 @@ class PipeRun(object):
 
         Returns:
             None
+        
+        Raises:
+            AttributeError: Measurement pairs do not exist for this run.
         """
+        
+        if not self.measurement_pairs_exists:
+            raise AttributeError("Unable to load two epoch metrics because "
+                                 "measurement pairs do not exist for this run."
+                                 )
+
         image_ids = self.images.sort_values(by='datetime').index.tolist()
 
         pairs_df = pd.DataFrame.from_dict(
@@ -890,6 +916,7 @@ class PipeAnalysis(PipeRun):
         Returns:
             The filtered measurement pairs dataframe.
         """
+
         if not self._loaded_two_epoch_metrics:
             self.load_two_epoch_metrics()
 
@@ -1042,6 +1069,11 @@ class PipeAnalysis(PipeRun):
             The regenerated sources_df.  A `pandas.core.frame.DataFrame`
             instance.
         """
+        
+        # Two epoch metrics
+        if not self._loaded_two_epoch_metrics:
+            self.load_two_epoch_metrics()
+
         if not self._vaex_meas:
             measurements_df = vaex.from_pandas(measurements_df)
 
@@ -1154,10 +1186,6 @@ class PipeAnalysis(PipeRun):
         sources_df = sources_df.join(
             self.sources[['new', 'new_high_sigma']],
         )
-
-        # Two epoch metrics
-        if not self._loaded_two_epoch_metrics:
-            self.load_two_epoch_metrics()
 
         if measurement_pairs_df is None:
             measurement_pairs_df = self._filter_meas_pairs_df(
@@ -1646,7 +1674,14 @@ class PipeAnalysis(PipeRun):
             Exception: 'plot_type' is not recognised.
             Exception: `plot_style` is not recognised.
             Exception: Pair with entered ID does not exist.
+            AttributeError: Measurement pairs do not exist for this run.
         """
+
+        if not self.measurement_pairs_exists:
+            raise AttributeError("Cannot plot two epoch metrics because "
+                                 "measurement pairs do not exist for this run."
+                                 )
+
         if not self._loaded_two_epoch_metrics:
             raise Exception(
                 "The two epoch metrics must first be loaded to use the"
@@ -1737,7 +1772,12 @@ class PipeAnalysis(PipeRun):
         Raises:
             Exception: The two epoch metrics must be loaded before using this
                 function.
+            AttributeError: Measurement pairs do not exist for this run.
         """
+        if not self.measurement_pairs_exists:
+            raise AttributeError("Unable to run two epoch analysis because "
+                                 "measurement pairs do not exist for this run."
+                                 )
         if not self._loaded_two_epoch_metrics:
             raise Exception(
                 "The two epoch metrics must first be loaded to use the"
