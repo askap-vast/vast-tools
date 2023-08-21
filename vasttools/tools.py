@@ -433,14 +433,17 @@ def add_obs_date(epoch: str,
         duration = field_end - field_start
 
         hdu = fits.open(filename, mode="update")
-        hdu[0].header["DATE-OBS"] = field_start.fits
-        hdu[0].header["MJD-OBS"] = field_start.mjd
-        hdu[0].header["DATE-BEG"] = field_start.fits
-        hdu[0].header["DATE-END"] = field_end.fits
-        hdu[0].header["MJD-BEG"] = field_start.mjd
-        hdu[0].header["MJD-END"] = field_end.mjd
-        hdu[0].header["TELAPSE"] = duration.sec
-        hdu[0].header["TIMEUNIT"] = "s"
+        hdu_index = 0
+        if filename.endswith('.fits.fz'):
+            hdu_index = 1
+        hdu[hdu_index].header["DATE-OBS"] = field_start.fits
+        hdu[hdu_index].header["MJD-OBS"] = field_start.mjd
+        hdu[hdu_index].header["DATE-BEG"] = field_start.fits
+        hdu[hdu_index].header["DATE-END"] = field_end.fits
+        hdu[hdu_index].header["MJD-BEG"] = field_start.mjd
+        hdu[hdu_index].header["MJD-END"] = field_end.mjd
+        hdu[hdu_index].header["TELAPSE"] = duration.sec
+        hdu[hdu_index].header["TIMEUNIT"] = "s"
         hdu.close()
 
 

@@ -431,7 +431,7 @@ class Image:
         if self.image_fail:
             return
 
-        with fits.open(self.imgpath) as hdul:
+        with vtu.open_fits(self.imgpath) as hdul:
             self.header = hdul[0].header
             self.wcs = WCS(self.header, naxis=2)
             self.data = hdul[0].data.squeeze()
@@ -467,7 +467,7 @@ class Image:
                     self.rmspath))
             return
 
-        with fits.open(self.rmspath) as hdul:
+        with vtu.open_fits(self.rmspath) as hdul:
             self.rms_header = hdul[0].header
             self.rms_wcs = WCS(self.rms_header, naxis=2)
             self.rms_data = hdul[0].data.squeeze()

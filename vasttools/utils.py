@@ -664,7 +664,7 @@ def create_moc_from_fits(fits_file: str, max_depth: int = 9) -> MOC:
     if not os.path.isfile(fits_file):
         raise Exception("{} does not exist".format(fits_file))
 
-    with fits.open(fits_file) as vast_fits:
+    with open_fits(fits_file) as vast_fits:
         data = vast_fits[0].data
         if data.ndim == 4:
             data = data[0, 0, :, :]
