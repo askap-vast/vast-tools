@@ -494,7 +494,7 @@ class Image:
                     self.rmspath))
             return
 
-        with fits.open(self.bkgpath) as hdul:
+        with vtu.open_fits(self.bkgpath) as hdul:
             self.bkg_header = hdul[0].header
             self.bkg_wcs = WCS(self.bkg_header, naxis=2)
             self.bkg_data = hdul[0].data.squeeze()
