@@ -26,6 +26,7 @@ from astropy.io import fits
 from astropy.wcs import WCS
 from multiprocessing_logging import install_mp_handler
 from typing import Optional, Union, Tuple, List
+from pathlib import Path
 from mocpy import MOC
 
 # crosshair imports
