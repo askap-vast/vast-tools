@@ -731,7 +731,7 @@ class TestImage:
         """
         mock_isfile = mocker.patch('os.path.isfile', return_value=True)
         mock_fits_open = mocker.patch(
-            'vasttools.survey.fits.open',
+            'vasttools.utils.open_fits',
             return_value=dummy_fits_open
         )
 
@@ -771,7 +771,7 @@ class TestImage:
         """
         mock_isfile = mocker.patch('os.path.isfile', return_value=True)
         mock_fits_open = mocker.patch(
-            'vasttools.survey.fits.open',
+            'vasttools.utils.open_fits',
             return_value=dummy_fits_open
         )
 
@@ -814,7 +814,7 @@ class TestImage:
         """
         mock_isfile = mocker.patch('os.path.isfile', return_value=True)
         mock_fits_open = mocker.patch(
-            'vasttools.survey.fits.open',
+            'vasttools.utils.open_fits',
             return_value=dummy_fits_open
         )
 
@@ -855,7 +855,7 @@ class TestImage:
         """
         mock_isfile = mocker.patch('os.path.isfile', return_value=True)
         mock_fits_open = mocker.patch(
-            'vasttools.survey.fits.open',
+            'vasttools.utils.open_fits',
             return_value=dummy_fits_open
         )
 
@@ -894,7 +894,7 @@ class TestImage:
         """
         mock_isfile = mocker.patch('os.path.isfile', return_value=True)
         mock_fits_open = mocker.patch(
-            'vasttools.survey.fits.open',
+            'vasttools.utils.open_fits',
             return_value=dummy_fits_open
         )
 
@@ -934,7 +934,7 @@ class TestImage:
         """
         mock_isfile = mocker.patch('os.path.isfile', return_value=True)
         mock_fits_open = mocker.patch(
-            'vasttools.survey.fits.open',
+            'vasttools.utils.open_fits',
             return_value=dummy_fits_open
         )
 
@@ -983,7 +983,7 @@ class TestImage:
         """
         mock_isfile = mocker.patch('os.path.isfile', return_value=True)
         mock_fits_open = mocker.patch(
-            'vasttools.survey.fits.open',
+            'vasttools.utils.open_fits',
             return_value=dummy_fits_open
         )
 
