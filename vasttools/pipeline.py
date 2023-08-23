@@ -162,7 +162,7 @@ class PipeRun(object):
         self.logger = logging.getLogger('vasttools.pipeline.PipeRun')
         self.logger.debug('Created PipeRun instance')
         
-        self.measurement_pairs_exists = self._check_measurement_pairs_file()
+        self._measurement_pairs_exists = self._check_measurement_pairs_file()
 
     def _check_measurement_pairs_file(self):
         measurement_pairs_exists = True
@@ -239,12 +239,20 @@ class PipeRun(object):
 
         # need to keep access to all the different pairs files
         # for two epoch metrics.
-        if self.measurement_pairs_exists:
+        orig_run_pairs_exist = self._measurement_pairs_exists
+        other_run_pairs_exist = other_PipeRun.measurement_pairs_exists
+
+        if orig_run_pairs_exist and other_run_pairs_exist:
             for i in other_PipeRun.measurement_pairs_file:
                 self.measurement_pairs_file.append(i)
-            measurement_pairs_exists = self._check_measurement_pairs_file()
-            self.measurement_pairs_exists = measurement_pairs_exists
-        else:
+        
+        elif orig_run_pairs_exist:
+            self.logger.warning("Not combining measurement pairs because they "
+                                " do not exist for the new run."
+                                )
+            self._measurement_pairs_exists = False
+
+        elif other_run_pairs_exist:
             self.logger.warning("Not combining measurement pairs because they "
                                 " do not exist for the original run."
                                 )
@@ -448,7 +456,7 @@ class PipeRun(object):
             AttributeError: Measurement pairs do not exist for this run.
         """
         
-        if not self.measurement_pairs_exists:
+        if not self._measurement_pairs_exists:
             raise AttributeError("Unable to load two epoch metrics because "
                                  "measurement pairs do not exist for this run."
                                  )
@@ -1682,7 +1690,7 @@ class PipeAnalysis(PipeRun):
             AttributeError: Measurement pairs do not exist for this run.
         """
 
-        if not self.measurement_pairs_exists:
+        if not self._measurement_pairs_exists:
             raise AttributeError("Cannot plot two epoch metrics because "
                                  "measurement pairs do not exist for this run."
                                  )
@@ -1779,7 +1787,7 @@ class PipeAnalysis(PipeRun):
                 function.
             AttributeError: Measurement pairs do not exist for this run.
         """
-        if not self.measurement_pairs_exists:
+        if not self._measurement_pairs_exists:
             raise AttributeError("Unable to run two epoch analysis because "
                                  "measurement pairs do not exist for this run."
                                  )
