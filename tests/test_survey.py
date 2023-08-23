@@ -731,7 +731,7 @@ class TestImage:
         """
         mock_isfile = mocker.patch('os.path.isfile', return_value=True)
         mock_fits_open = mocker.patch(
-            'vasttools.survey.fits.open',
+            'vasttools.utils.open_fits',
             return_value=dummy_fits_open
         )
 
@@ -771,7 +771,7 @@ class TestImage:
         """
         mock_isfile = mocker.patch('os.path.isfile', return_value=True)
         mock_fits_open = mocker.patch(
-            'vasttools.survey.fits.open',
+            'vasttools.utils.open_fits',
             return_value=dummy_fits_open
         )
 
@@ -814,7 +814,7 @@ class TestImage:
         """
         mock_isfile = mocker.patch('os.path.isfile', return_value=True)
         mock_fits_open = mocker.patch(
-            'vasttools.survey.fits.open',
+            'vasttools.utils.open_fits',
             return_value=dummy_fits_open
         )
 
@@ -855,7 +855,7 @@ class TestImage:
         """
         mock_isfile = mocker.patch('os.path.isfile', return_value=True)
         mock_fits_open = mocker.patch(
-            'vasttools.survey.fits.open',
+            'vasttools.utils.open_fits',
             return_value=dummy_fits_open
         )
 
@@ -894,7 +894,7 @@ class TestImage:
         """
         mock_isfile = mocker.patch('os.path.isfile', return_value=True)
         mock_fits_open = mocker.patch(
-            'vasttools.survey.fits.open',
+            'vasttools.utils.open_fits',
             return_value=dummy_fits_open
         )
 
@@ -934,7 +934,7 @@ class TestImage:
         """
         mock_isfile = mocker.patch('os.path.isfile', return_value=True)
         mock_fits_open = mocker.patch(
-            'vasttools.survey.fits.open',
+            'vasttools.utils.open_fits',
             return_value=dummy_fits_open
         )
 
@@ -956,7 +956,7 @@ class TestImage:
 
         expected_values = np.array([8559, 824, 5006], dtype=np.float32)
 
-        values = image.measure_coord_pixel_values(coords_to_measure)
+        values = image.measure_coord_pixel_values(coords_to_measure, img=True)
 
         assert np.all(values == expected_values)
 
@@ -983,7 +983,7 @@ class TestImage:
         """
         mock_isfile = mocker.patch('os.path.isfile', return_value=True)
         mock_fits_open = mocker.patch(
-            'vasttools.survey.fits.open',
+            'vasttools.utils.open_fits',
             return_value=dummy_fits_open
         )
 
@@ -1007,7 +1007,6 @@ class TestImage:
         expected_values = np.array([8115, 4849, 691], dtype=np.float32)
 
         values = image.measure_coord_pixel_values(coords_to_measure,
-                                                  rms=True,
-                                                  img=False)
+                                                  rms=True)
 
         assert np.all(values == expected_values)
