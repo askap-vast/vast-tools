@@ -990,7 +990,7 @@ class TestPipeAnalysis:
         
         Args:
             pairs_existence: A list of booleans corresponding to whether a
-                pairs file exists. 
+                pairs file exists.
             dummy_PipeAnalysis_base: The base dummy PipeAnalysis object.
             mocker: The pytest-mock mocker object.
         
