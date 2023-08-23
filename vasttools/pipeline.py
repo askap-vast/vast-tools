@@ -240,7 +240,7 @@ class PipeRun(object):
         # need to keep access to all the different pairs files
         # for two epoch metrics.
         orig_run_pairs_exist = self._measurement_pairs_exists
-        other_run_pairs_exist = other_PipeRun.measurement_pairs_exists
+        other_run_pairs_exist = other_PipeRun._measurement_pairs_exists
 
         if orig_run_pairs_exist and other_run_pairs_exist:
             for i in other_PipeRun.measurement_pairs_file:
