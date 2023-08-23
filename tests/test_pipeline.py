@@ -382,6 +382,10 @@ def dummy_PipeAnalysis(
     dask_read_parquet_mocker.return_value.compute.return_value = (
         dummy_pipeline_measurements()
     )
+    measurement_pairs_existence_mocker = mocker.patch(
+        'vasttools.pipeline.PipeRun._check_measurement_pairs_file',
+        return_value=True
+    )
 
     pipe = dummy_pipeline_object
     run_name = 'test_run'
