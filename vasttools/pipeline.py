@@ -169,9 +169,9 @@ class PipeRun(object):
         
         for filepath in self.measurement_pairs_file:
             if not os.path.isfile(filepath):
-                self.logger.warning("Measurement pairs file ({filepath}) does"
-                                    " not exist. You will be unable to access"
-                                    " measurement pairs or two-epoch metrics."
+                self.logger.warning(f"Measurement pairs file ({filepath}) does"
+                                    f" not exist. You will be unable to access"
+                                    f" measurement pairs or two-epoch metrics."
                                     )
                 measurement_pairs_exists = False
 
