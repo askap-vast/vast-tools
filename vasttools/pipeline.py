@@ -161,9 +161,11 @@ class PipeRun(object):
 
         self.logger = logging.getLogger('vasttools.pipeline.PipeRun')
         self.logger.debug('Created PipeRun instance')
+        
+        self.measurement_pairs_exists = self._check_measurement_pairs_file()
 
-    def _check_measuremnt_pairs_file(self):
-        self.measurement_pairs_exists = True
+    def _check_measurement_pairs_file(self):
+        measurement_pairs_exists = True
         
         for filepath in self.measurement_pairs_file:
             if not os.path.isfile(filepath):
@@ -171,7 +173,9 @@ class PipeRun(object):
                                     " not exist. You will be unable to access"
                                     " measurement pairs or two-epoch metrics."
                                     )
-                self.measurement_pairs_exists = False
+                measurement_pairs_exists = False
+
+        return measurement_pairs_exists
             
     def combine_with_run(
         self, other_PipeRun, new_name: Optional[str] = None
@@ -238,7 +242,8 @@ class PipeRun(object):
         if self.measurement_pairs_exists:
             for i in other_PipeRun.measurement_pairs_file:
                 self.measurement_pairs_file.append(i)
-            self._check_measurement_pairs_file()
+            measurement_pairs_exists = self._check_measurement_pairs_file()
+            self.measurement_pairs_exists = measurement_pairs_exists
         else:
             self.logger.warning("Not combining measurement pairs because they "
                                 " do not exist for the original run."
