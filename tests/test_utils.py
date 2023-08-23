@@ -988,7 +988,7 @@ def test_create_moc_from_fits(
     """
 
     mocker_fits_open = mocker.patch(
-        'vasttools.utils.fits.open',
+        'vasttools.utils.open_fits',
         return_value=dummy_fits_open
     )
     mocker_fits_open = mocker.patch(
@@ -1027,13 +1027,13 @@ def test_mocs_with_holes(dummy_fits_open_large: fits.HDUList,
     )
 
     mocker_fits_open = mocker.patch(
-        'vasttools.utils.fits.open',
+        'vasttools.utils.open_fits',
         return_value=dummy_fits_open_large
     )
     full_moc = vtu.create_moc_from_fits('test.fits')
 
     mocker_fits_open = mocker.patch(
-        'vasttools.utils.fits.open',
+        'vasttools.utils.open_fits',
         return_value=dummy_fits_open_large_hole
     )
     hole_moc = vtu.create_moc_from_fits('test.fits')
