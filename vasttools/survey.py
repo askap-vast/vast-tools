@@ -435,6 +435,7 @@ class Image:
             self.header = hdul[0].header
             self.wcs = WCS(self.header, naxis=2)
             self.data = hdul[0].data.squeeze()
+            del hdul[0].data
 
         try:
             self.beam = Beam.from_fits_header(self.header)
