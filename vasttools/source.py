@@ -798,7 +798,7 @@ class Source:
         header = copy.deepcopy(image.header)
         header.update(cutout.wcs.to_header())
         
-        beam = copy.deepcopy(image.beam)
+        beam = image.beam
         
         del cutout
         del image
