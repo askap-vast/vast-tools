@@ -31,9 +31,6 @@ warnings.filterwarnings(
     category=AstropyDeprecationWarning,
     append=True
 )
-from memory_profiler import profile
-import gc
-import copy
 
 
 def load_field_centres() -> pd.DataFrame:
@@ -424,7 +421,6 @@ class Image:
                 )
             )
 
-    @profile
     def get_img_data(self) -> None:
         """
         Load the data from the image, including the beam.
@@ -450,7 +446,7 @@ class Image:
 
         self._loaded_data = True
         
-        gc.collect()
+        #gc.collect()
 
     def get_rms_img(self) -> None:
         """

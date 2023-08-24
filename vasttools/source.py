@@ -58,8 +58,6 @@ crosshair()
 # Switch matplotlib backend.
 matplotlib.pyplot.switch_backend('Agg')
 
-from memory_profiler import profile
-
 class SourcePlottingError(Exception):
     """
     A custom exception for plotting errors.
@@ -753,7 +751,6 @@ class Source:
 
         self._checked_norms = True
 
-    @profile
     def _get_cutout(
         self, row: pd.Series, size: Angle = Angle(5. * u.arcmin)
     ) -> Tuple[np.ndarray, WCS, fits.Header, pd.DataFrame, Beam]:
@@ -798,7 +795,7 @@ class Source:
         cutout_data = copy.deepcopy(cutout.data)
         cutout_wcs = copy.deepcopy(cutout.wcs)
         
-        header = copy.copy(image.header)
+        header = copy.deepcopy(image.header)
         header.update(cutout.wcs.to_header())
         
         beam = copy.deepcopy(image.beam)
