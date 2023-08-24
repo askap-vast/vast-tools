@@ -431,7 +431,7 @@ class Image:
         if self.image_fail:
             return
 
-        with vtu.open_fits(self.imgpath, memmap=False) as hdul:
+        with vtu.open_fits(self.imgpath) as hdul:
             self.header = hdul[0].header
             self.wcs = WCS(self.header, naxis=2)
             self.data = hdul[0].data.squeeze()
