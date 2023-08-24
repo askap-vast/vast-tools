@@ -446,7 +446,7 @@ class Image:
 
         self._loaded_data = True
         
-        gc.collect()
+        #gc.collect()
 
     def get_rms_img(self) -> None:
         """
