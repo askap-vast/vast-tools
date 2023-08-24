@@ -14,6 +14,7 @@ import os
 import pandas as pd
 import warnings
 import gc
+import copy
 
 from astropy.visualization import LinearStretch
 from astropy.visualization import PercentileInterval
@@ -57,6 +58,7 @@ crosshair()
 # Switch matplotlib backend.
 matplotlib.pyplot.switch_backend('Agg')
 
+from memory_profiler import profile
 
 class SourcePlottingError(Exception):
     """
@@ -646,6 +648,7 @@ class Source:
 
             return fig
 
+
     def get_cutout_data(self, size: Optional[Angle] = None) -> None:
         """
         Function to fetch the cutout data for that source
@@ -750,6 +753,7 @@ class Source:
 
         self._checked_norms = True
 
+    @profile
     def _get_cutout(
         self, row: pd.Series, size: Angle = Angle(5. * u.arcmin)
     ) -> Tuple[np.ndarray, WCS, fits.Header, pd.DataFrame, Beam]:
@@ -791,11 +795,15 @@ class Source:
             wcs=image.wcs
         )
         
-        header = image.header.copy()
+        cutout_data = copy.deepcopy(cutout.data)
+        cutout_wcs = copy.deepcopy(cutout.wcs)
+        
+        header = copy.copy(image.header)
         header.update(cutout.wcs.to_header())
         
-        beam = image.beam
+        beam = copy.deepcopy(image.beam)
         
+        del cutout
         del image
 
         if self.pipeline:
@@ -842,11 +850,9 @@ class Source:
         )
 
         del selavy_coords
-        
-        gc.collect()
 
         return (
-            cutout.data, cutout.wcs, header, selavy_components, beam
+            cutout_data, cutout_wcs, header, selavy_components, beam
         )
 
     def show_png_cutout(
