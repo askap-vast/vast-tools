@@ -13,6 +13,7 @@ import numpy as np
 import os
 import pandas as pd
 import warnings
+import gc
 
 from astropy.visualization import LinearStretch
 from astropy.visualization import PercentileInterval
@@ -762,6 +763,9 @@ class Source:
         Returns:
             Tuple containing the cutout data.
         """
+        
+        self._size = size
+        
         if self.pipeline:
             image = Image(
                 row.field, row.epoch, self.stokes, self.base_folder,
@@ -786,6 +790,13 @@ class Source:
             size=size,
             wcs=image.wcs
         )
+        
+        header = image.header.copy()
+        header.update(cutout.wcs.to_header())
+        
+        beam = image.beam
+        
+        del image
 
         if self.pipeline:
             selavy_components = pd.read_parquet(
@@ -830,15 +841,9 @@ class Source:
             row.skycoord
         )
 
-        header = image.header.copy()
-        header.update(cutout.wcs.to_header())
-
-        beam = image.beam
-
-        self._size = size
-
-        del image
         del selavy_coords
+        
+        gc.collect()
 
         return (
             cutout.data, cutout.wcs, header, selavy_components, beam
