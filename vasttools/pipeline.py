@@ -62,6 +62,12 @@ class PipelineDirectoryError(Exception):
     """
     pass
 
+class MeasPairsDoNotExistError(Exception):
+    """
+    An error to indicate that the measurement pairs do not exist for a run.
+    """
+    pass
+
 
 class PipeRun(object):
     """
@@ -437,6 +443,13 @@ class PipeRun(object):
 
         return thesource
 
+    def _raise_if_no_pairs(self):
+        if not self._measurement_pairs_exists:
+             raise MeasPairsDoNotExistError("This method cannot be used as "
+                                            "the measurement pairs are not "
+                                            "available for this pipeline run."
+                                            )
+
     def load_two_epoch_metrics(self) -> None:
         """
         Loads the two epoch metrics dataframe, usually stored as either
@@ -451,15 +464,13 @@ class PipeRun(object):
 
         Returns:
             None
-        
+
         Raises:
-            AttributeError: Measurement pairs do not exist for this run.
+            MeasPairsDoNotExistError: The measurement pairs file(s) do not
+                exist for this run
         """
         
-        if not self._measurement_pairs_exists:
-            raise AttributeError("Unable to load two epoch metrics because "
-                                 "measurement pairs do not exist for this run."
-                                 )
+        self._raise_if_no_pairs()
 
         image_ids = self.images.sort_values(by='datetime').index.tolist()
 
@@ -1081,8 +1092,14 @@ class PipeAnalysis(PipeRun):
         Returns:
             The regenerated sources_df.  A `pandas.core.frame.DataFrame`
             instance.
+        
+        Raises:
+            MeasPairsDoNotExistError: The measurement pairs file(s) do not
+                exist for this run
         """
         
+        self.raise_if_no_pairs()
+
         # Two epoch metrics
         if not self._loaded_two_epoch_metrics:
             self.load_two_epoch_metrics()
@@ -1687,13 +1704,11 @@ class PipeAnalysis(PipeRun):
             Exception: 'plot_type' is not recognised.
             Exception: `plot_style` is not recognised.
             Exception: Pair with entered ID does not exist.
-            AttributeError: Measurement pairs do not exist for this run.
+            MeasPairsDoNotExistError: The measurement pairs file(s) do not
+                exist for this run
         """
 
-        if not self._measurement_pairs_exists:
-            raise AttributeError("Cannot plot two epoch metrics because "
-                                 "measurement pairs do not exist for this run."
-                                 )
+        self.raise_if_no_pairs()
 
         if not self._loaded_two_epoch_metrics:
             raise Exception(
@@ -1785,12 +1800,12 @@ class PipeAnalysis(PipeRun):
         Raises:
             Exception: The two epoch metrics must be loaded before using this
                 function.
-            AttributeError: Measurement pairs do not exist for this run.
+            MeasPairsDoNotExistError: The measurement pairs file(s) do not
+                exist for this run
         """
-        if not self._measurement_pairs_exists:
-            raise AttributeError("Unable to run two epoch analysis because "
-                                 "measurement pairs do not exist for this run."
-                                 )
+        
+        self.raise_if_no_pairs()
+
         if not self._loaded_two_epoch_metrics:
             raise Exception(
                 "The two epoch metrics must first be loaded to use the"
