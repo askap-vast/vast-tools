@@ -13,7 +13,6 @@ import numpy as np
 import os
 import pandas as pd
 import warnings
-import gc
 import copy
 
 from astropy.visualization import LinearStretch
