@@ -517,11 +517,11 @@ class Image:
 
         Returns:
             Pixel values stored in an array at the coords locations.
-        
+
         Raises:
             ValueError: Exactly one of img, rms or bkg must be `True`
         """
-        if sum([img,rms,bkg]) != 1:
+        if sum([img, rms, bkg]) != 1:
             raise ValueError("Exactly one of img, rms or bkg must be True")
 
         if img:
@@ -541,7 +541,6 @@ class Image:
 
             thewcs = self.bkg_wcs
             thedata = self.bkg_data
-            
 
         array_coords = thewcs.world_to_array_index(coords)
         array_coords = np.array([
