@@ -435,7 +435,6 @@ class Image:
             self.header = hdul[0].header
             self.wcs = WCS(self.header, naxis=2)
             self.data = hdul[0].data.squeeze()
-            
 
         try:
             self.beam = Beam.from_fits_header(self.header)
@@ -445,8 +444,6 @@ class Image:
             self.beam = None
 
         self._loaded_data = True
-        
-        #gc.collect()
 
     def get_rms_img(self) -> None:
         """
@@ -520,11 +517,11 @@ class Image:
 
         Returns:
             Pixel values stored in an array at the coords locations.
-        
+
         Raises:
             ValueError: Exactly one of img, rms or bkg must be `True`
         """
-        if sum([img,rms,bkg]) != 1:
+        if sum([img, rms, bkg]) != 1:
             raise ValueError("Exactly one of img, rms or bkg must be True")
 
         if img:
@@ -544,7 +541,6 @@ class Image:
 
             thewcs = self.bkg_wcs
             thedata = self.bkg_data
-            
 
         array_coords = thewcs.world_to_array_index(coords)
         array_coords = np.array([
