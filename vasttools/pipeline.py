@@ -1098,7 +1098,7 @@ class PipeAnalysis(PipeRun):
                 exist for this run
         """
         
-        self.raise_if_no_pairs()
+        self._raise_if_no_pairs()
 
         # Two epoch metrics
         if not self._loaded_two_epoch_metrics:
@@ -1708,7 +1708,7 @@ class PipeAnalysis(PipeRun):
                 exist for this run
         """
 
-        self.raise_if_no_pairs()
+        self._raise_if_no_pairs()
 
         if not self._loaded_two_epoch_metrics:
             raise Exception(
@@ -1804,7 +1804,7 @@ class PipeAnalysis(PipeRun):
                 exist for this run
         """
         
-        self.raise_if_no_pairs()
+        self._raise_if_no_pairs()
 
         if not self._loaded_two_epoch_metrics:
             raise Exception(
