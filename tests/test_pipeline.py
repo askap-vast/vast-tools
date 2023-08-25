@@ -350,12 +350,12 @@ def load_parquet_side_effect(
 
 
 @pytest.fixture
-def dummy_PipeAnalysis(
+def dummy_PipeAnalysis_base(
     dummy_pipeline_object: vtp.Pipeline,
     mocker: MockerFixture
 ) -> vtp.PipeAnalysis:
     """
-    A dummy PipeAnalysis object used in testing.
+    The base dummy PipeAnalysis object used in testing.
 
     Because the raw pipeline outputs are processed in the load run function
     it is easier to test while creating the object each time. It is a little
@@ -388,6 +388,37 @@ def dummy_PipeAnalysis(
     run = pipe.load_run(run_name)
 
     return run
+
+
+@pytest.fixture
+def dummy_PipeAnalysis(
+    dummy_PipeAnalysis_base: vtp.PipeAnalysis,
+    mocker: MockerFixture
+) -> vtp.PipeAnalysis:
+    """
+    The dummy PipeAnalysis object used for most testing.
+
+    Because the raw pipeline outputs are processed in the load run function
+    it is easier to test while creating the object each time. It is a little
+    inefficient and really the pipeline process should be refactored slightly
+    to support better testing.
+
+    Args:
+        dummy_PipeAnalysis_base: The base vtp.PipeAnalysis fixture
+        mocker: The pytest mock mocker object.
+
+    Returns:
+        The vtp.PipeAnalysis instance.
+    """
+
+    measurement_pairs_existence_mocker = mocker.patch(
+        'vasttools.pipeline.PipeRun._check_measurement_pairs_file',
+        return_value=True
+    )
+
+    dummy_PipeAnalysis_base._measurement_pairs_exists = True
+
+    return dummy_PipeAnalysis_base
 
 
 @pytest.fixture
@@ -933,6 +964,55 @@ class TestPipeAnalysis:
     the pipeline component.
     """
 
+    @pytest.mark.parametrize(
+        "pairs_existence",
+        [
+            [True],
+            [False],
+            [True,True],
+            [False,False],
+            [True,False],
+        ],
+        ids=("single-exists",
+             "single-no-exists",
+             "multiple-all-exists",
+             "multiple-no-exists",
+             "multiple-some-exists",
+             )
+     )
+    def test__check_measurement_pairs_file(self,
+        pairs_existence: List[bool],
+        dummy_PipeAnalysis_base: vtp.PipeAnalysis,
+        mocker: MockerFixture
+        ) -> None:
+        """
+        Tests the _check_measurement_pairs_file method.
+        
+        Args:
+            pairs_existence: A list of booleans corresponding to whether a
+                pairs file exists.
+            dummy_PipeAnalysis_base: The base dummy PipeAnalysis object.
+            mocker: The pytest-mock mocker object.
+        
+        Returns:
+            None
+        """
+        mocker_isfile = mocker.patch(
+            "os.path.isfile",
+            side_effect=pairs_existence
+        )
+        
+        fake_pairs_file = [""]*len(pairs_existence)
+        
+        dummy_PipeAnalysis_base.measurement_pairs_file = fake_pairs_file
+        
+        returned_val = dummy_PipeAnalysis_base._check_measurement_pairs_file()
+        
+        all_exist = sum(pairs_existence) == len(pairs_existence)
+        
+        assert returned_val == all_exist
+        
+    
     def test_combine_with_run(
         self,
         dummy_PipeAnalysis: vtp.PipeAnalysis

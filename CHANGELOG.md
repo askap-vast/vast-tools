@@ -66,6 +66,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Fixed
 
+- Exit nicely when users try to use measurement pairs but they do not exist [#478](https://github.com/askap-vast/vast-tools/pull/478)
 - Ensure that full image data does not persist when creating FITS cutouts from compressed HDUs [#483](https://github.com/askap-vast/vast-tools/pull/483)
 - Fixed missing RMS measurements for non-detections [#476](https://github.com/askap-vast/vast-tools/pull/476)
 - Removed duplicates in field matching [#472](https://github.com/askap-vast/vast-tools/pull/472)
@@ -106,6 +107,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#478](https://github.com/askap-vast/vast-tools/pull/478): fix: Account for pipeline runs with no measurement pairs file 
 - [#483](https://github.com/askap-vast/vast-tools/pull/483): fix: Ensure that full image data does not persist when creating FITS cutouts from compressed HDUs
 - [#480](https://github.com/askap-vast/vast-tools/pull/480): feat: Added open_fits function to handle compressed image HDUs
 - [#476](https://github.com/askap-vast/vast-tools/pull/476): fix: Fixed missing RMS measurements for non-detections 
