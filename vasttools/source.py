@@ -13,6 +13,7 @@ import numpy as np
 import os
 import pandas as pd
 import warnings
+import copy
 
 from astropy.visualization import LinearStretch
 from astropy.visualization import PercentileInterval
@@ -762,6 +763,9 @@ class Source:
         Returns:
             Tuple containing the cutout data.
         """
+
+        self._size = size
+
         if self.pipeline:
             image = Image(
                 row.field, row.epoch, self.stokes, self.base_folder,
@@ -786,6 +790,17 @@ class Source:
             size=size,
             wcs=image.wcs
         )
+
+        cutout_data = copy.deepcopy(cutout.data)
+        cutout_wcs = copy.deepcopy(cutout.wcs)
+
+        header = copy.deepcopy(image.header)
+        header.update(cutout.wcs.to_header())
+
+        beam = image.beam
+
+        del cutout
+        del image
 
         if self.pipeline:
             selavy_components = pd.read_parquet(
@@ -830,18 +845,10 @@ class Source:
             row.skycoord
         )
 
-        header = image.header.copy()
-        header.update(cutout.wcs.to_header())
-
-        beam = image.beam
-
-        self._size = size
-
-        del image
         del selavy_coords
 
         return (
-            cutout.data, cutout.wcs, header, selavy_components, beam
+            cutout_data, cutout_wcs, header, selavy_components, beam
         )
 
     def show_png_cutout(
@@ -1048,7 +1055,7 @@ class Source:
 
         if outfile is None:
             outfile = self._get_save_name(index, ".fits")
-            
+
         if self.outdir != ".":
             outfile = os.path.join(
                 self.outdir,
@@ -1097,7 +1104,7 @@ class Source:
             raise ValueError("noisemap_type must be 'rms' or 'bkg'")
         if outfile is None:
             outfile = self._get_save_name(index, f"{noisemap_type}.fits")
-            
+
         if self.outdir != ".":
             outfile = os.path.join(
                 self.outdir,
@@ -1199,12 +1206,12 @@ class Source:
                 self.get_cutout_data(size)
 
         self.logger.debug("Saving fits cutouts...")
-        
+
         if cutout_data is None:
             indices = self.measurements.index
         else:
             indices = cutout_data.index
-        
+
         for i in indices:
             self.save_fits_cutout(i, cutout_data=cutout_data)
 
@@ -1227,13 +1234,13 @@ class Source:
         """
 
         self.logger.debug("Saving noisemap cutouts...")
-        
+
         for i in cutout_data.index:
             if rms:
                 self._save_noisemap_cutout(i, cutout_data, 'rms')
             if bkg:
                 self._save_noisemap_cutout(i, cutout_data, 'bkg')
-    
+
     def save_all_png_cutouts(
         self,
         selavy: bool = True,
