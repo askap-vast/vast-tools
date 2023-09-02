@@ -388,6 +388,9 @@ def simbad_search(
 
     Returns:
         Coordinates and source names. Each will be NoneType if search fails.
+
+    Raises:
+        Exception: Simbad table length exceeds number of objects queried.
     """
     if logger is None:
         logger = logging.getLogger()
@@ -405,6 +408,12 @@ def simbad_search(
         c = SkyCoord(ra, dec, unit=(u.deg, u.deg))
 
         simbad_names = np.array(result_table['TYPED_ID'])
+
+        if len(simbad_names) > len(objects):
+            raise Exception("Returned Simbad table is longer than the number "
+                            "of queried objects. You likely have a malformed "
+                            "object name in your query."
+                            )
 
         return c, simbad_names
 
