@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased](https://github.com/askap-vast/vast-tools/compare/v2.0.0...HEAD)
 
 #### Added
+
+- Raise exception when simbad name query returns more names than there are objects queried [#490](https://github.com/askap-vast/vast-tools/pull/490)
 - Added open_fits function to correctly handle compressed image HDUs [#480](https://github.com/askap-vast/vast-tools/pull/480)
 - Added epoch 41 [#470](https://github.com/askap-vast/vast-tools/pull/470)
 - Added warning when querying corrected data [#465](https://github.com/askap-vast/vast-tools/pull/465)
@@ -107,6 +109,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#490](https://github.com/askap-vast/vast-tools/pull/490): feat: Raise exception when simbad name query returns more names than there are objects queried
 - [#478](https://github.com/askap-vast/vast-tools/pull/478): fix: Account for pipeline runs with no measurement pairs file 
 - [#483](https://github.com/askap-vast/vast-tools/pull/483): fix: Ensure that full image data does not persist when creating FITS cutouts from compressed HDUs
 - [#480](https://github.com/askap-vast/vast-tools/pull/480): feat: Added open_fits function to handle compressed image HDUs
