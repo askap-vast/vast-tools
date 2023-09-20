@@ -3,22 +3,6 @@
 VAST Tools contains packaged observing information and MOC files for each epoch of the VAST Pilot Survey that is available.
 When a new epoch is ready to be added to VAST Tools the following must be completed.
 
-## Future Epochs Warning
-
-!!! warning 
-    This package provides complete access to Phase I of the VAST Pilot Survey, which has been conducted at a single frequency.
-    As such,  the individual tile observations from which the epochs were constructed were standardised and had the same footprint.
-    For example, the field `VAST_0216-06A` had the same footprint in every epoch.
-    Some epochs of the Phase II survey will be carried out at a higher frequency and hence, will have different footprints and field centres. The current version of the package *cannot* be used to access these observations.
-    To handle this, VAST Tools must be updated to:
-      
-      * Be able to determine which footprint of the tile is requried if the tiles have the same central name and pointing at a different frequency.
-      * Update the `vasttools/data/mocs/COMBINED` and `vasttools/data/mocs/TILES` with MOCS of the new footprints.
-      * Add new 'field' MOC files in `vasttools/data/mocs/` to provide new VAST Pilot Survey defined fields if necessary.
-      * Update the file `vasttools/data/csv/vast_field_centres.csv` if required.
-      
-    In addition, users should be aware that the `max_sep` parameter in the [`Query`](../../components/query) component may need tweaking.
-
 ## Generating the VAST Tools metadata
 
 ### Epoch information csv files
