@@ -251,7 +251,7 @@ The cutout data is stored in a dataframe as the attribute `Source.cutout_df`.
 :fontawesome-regular-file-alt: [Code reference](../../reference/source/#vasttools.source.Source.make_png).
 
 The main method that generates all the PNG images that is called by other methods.
-Note that this method can only produce a single epoch at a time, and required argument is the index of the observation to plot.
+Note that this method can only produce a single epoch at a time, and the required argument is the index of the observation to plot.
 The result is returned a [`matplotlib.pyplot.figure`](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html){:target="_blank"} instance.
 There are a wide variety of options that can style the output plot, please refer to the Code Reference to view them all.
 
