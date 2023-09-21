@@ -2,7 +2,6 @@
 """
 # Source class
 
-import gc
 import logging.config
 import logging.handlers
 import logging
@@ -13,30 +12,27 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import pandas as pd
-import signal
 import warnings
+import copy
 
 from astropy.visualization import LinearStretch
-from astropy.visualization import AsymmetricPercentileInterval
 from astropy.visualization import PercentileInterval
 from astropy.visualization import ZScaleInterval, ImageNormalize
-from mpl_toolkits.axes_grid1.anchored_artists import (AnchoredEllipse,
-                                                      AnchoredSizeBar)
+from mpl_toolkits.axes_grid1.anchored_artists import AnchoredEllipse
 from astropy.coordinates import Angle
 from astropy.visualization.wcsaxes import SphericalCircle
 from matplotlib.collections import PatchCollection
 from astropy.wcs.utils import proj_plane_pixel_scales
 from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
+from matplotlib.container import ErrorbarContainer
+from matplotlib.collections import LineCollection
 from matplotlib.patches import Ellipse
-from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
-from astropy.wcs.utils import skycoord_to_pixel
 from astropy.io import fits
 from astropy.coordinates import SkyCoord
 from astropy.nddata.utils import Cutout2D
 from astropy import units as u
 from astropy.time import Time
-from astropy.timeseries import TimeSeries
 from astropy.table import Table
 from astroquery.simbad import Simbad
 from astroquery.ned import Ned
@@ -52,10 +48,9 @@ from typing import List, Tuple, Optional, Union
 
 from radio_beam import Beam
 
-from vasttools import RELEASED_EPOCHS
-from vasttools.utils import crosshair
 from vasttools.survey import Image
-from vasttools.utils import filter_selavy_components
+from vasttools.utils import crosshair, filter_selavy_components, read_selavy
+from vasttools.tools import offset_postagestamp_axes
 
 # run crosshair to set up the marker.
 crosshair()
@@ -96,6 +91,8 @@ class Source:
         base_folder (str): The directory where the data (fits files) is held.
         image_type (str): 'TILES' or 'COMBINED'.
         tiles (bool): `True` if `image_type` == `TILES`.
+        corrected_data (bool): Access the corrected data. Only relevant if
+            `tiles` is `True`. Defaults to `True`.
         detections (int): The number of selavy detections the source contains.
         limits (int):
             The number of upper limits the source contains. Will be set to
@@ -125,6 +122,7 @@ class Source:
         planet: bool = False,
         pipeline: bool = False,
         tiles: bool = False,
+        corrected_data: bool = True,
         forced_fits: bool = False,
     ) -> None:
         """
@@ -153,6 +151,8 @@ class Source:
                 VAST Pipeline run, defaults to `False`.
             tiles: Set to 'True` if the source is from a tile images,
                 defaults to `False`.
+            corrected_data: Access the corrected data. Only relevant if
+                `tiles` is `True`. Defaults to `True`.
             forced_fits: Set to `True` if forced fits are included in the
                 source measurements, defaults to `False`.
 
@@ -188,6 +188,7 @@ class Source:
         else:
             self.tiles = False
 
+        self.corrected_data = corrected_data
         if self.pipeline:
             self.detections = self.measurements[
                 self.measurements.forced == False
@@ -400,25 +401,20 @@ class Source:
             raise SourcePlottingError(msg)
 
         # remove empty values
-        measurements = self.measurements
+        measurements_df = self.measurements
         if not self.pipeline and not (
             use_forced_for_limits or use_forced_for_all
         ):
-            measurements = self.measurements[
+            measurements_df = self.measurements[
                 self.measurements['rms_image'] != -99
             ]
 
-        if measurements.empty:
+        if measurements_df.empty:
             msg = f"{self.name} has no measurements!"
             self.logger.error(msg)
             raise SourcePlottingError(msg)
 
-        plot_dates = measurements['dateobs']
-        if mjd:
-            plot_dates = Time(plot_dates.to_numpy()).mjd
-        elif start_date:
-            plot_dates = (plot_dates-start_date)/pd.Timedelta(1, unit='d')
-
+        # Build figure and labels
         fig = plt.figure(figsize=figsize)
         ax = fig.add_subplot(111)
         plot_title = self.name
@@ -439,101 +435,136 @@ class Source:
 
         if self.stokes != "I":
             label = "Absolute " + label
-            measurements[flux_col] = measurements[flux_col].abs()
+            measurements_df[flux_col] = measurements_df[flux_col].abs()
 
         ax.set_ylabel(label)
 
-        self.logger.debug("Plotting upper limit")
-        if self.pipeline:
-            upper_lim_mask = measurements.forced
-        else:
-            upper_lim_mask = measurements.detection == False
-            if use_forced_for_all:
-                upper_lim_mask = np.array([False for i in upper_lim_mask])
-        upper_lims = measurements[
-            upper_lim_mask
-        ]
-        if self.pipeline:
-            if peak_flux:
-                value_col = 'flux_peak'
-                err_value_col = 'flux_peak_err'
-            else:
-                value_col = 'flux_int'
-                err_value_col = 'flux_int_err'
-            marker = "D"
-            uplims = False
-            sigma_thresh = 1.0
-            label = 'Forced'
-            markerfacecolor = 'w'
-        else:
-            if use_forced_for_limits:
-                value_col = 'f_flux_peak'
-                err_value_col = 'f_flux_peak_err'
-                uplims = False
-                marker = "D"
-                sigma_thresh = 1.0
-                markerfacecolor = 'w'
-                label = "Forced"
-            else:
-                value_col = err_value_col = 'rms_image'
-                marker = "_"
-                uplims = True
-                markerfacecolor = 'k'
-                label = 'Upper limit'
-        if upper_lim_mask.any():
-            upperlim_points = ax.errorbar(
-                plot_dates[upper_lim_mask],
-                sigma_thresh *
-                upper_lims[value_col],
-                yerr=upper_lims[err_value_col],
-                uplims=uplims,
-                lolims=False,
-                marker=marker,
-                c='k',
-                linestyle="none",
-                markerfacecolor=markerfacecolor,
-                label=label
-            )
+        freq_col = 'frequency'
 
-        self.logger.debug("Plotting detection")
+        grouped_df = measurements_df.groupby(freq_col)
+        freqs = list(grouped_df.groups.keys())
+
+        # Colours for each frequency
+        freq_cmap = plt.cm.get_cmap('viridis')
+        cNorm = matplotlib.colors.Normalize(
+            vmin=min(freqs), vmax=max(freqs) * 1.1)
+        scalarMap = matplotlib.cm.ScalarMappable(norm=cNorm, cmap=freq_cmap)
+        sm = scalarMap
+        sm._A = []
+
+        # Markers for each frequency
+        markers = ['o', 'D', '*', 'X', 's', 'd', 'p']
+
+        self.logger.debug("Frequencies: {}".format(freqs))
+        for i, (freq, measurements) in enumerate(grouped_df):
+            self.logger.debug("Plotting {} MHz data".format(freq))
+            marker = markers[i % len(markers)]
+            marker_colour = sm.to_rgba(freq)
+            plot_dates = measurements['dateobs']
+            self.logger.debug(plot_dates)
+            if mjd:
+                plot_dates = Time(plot_dates.to_numpy()).mjd
+            elif start_date:
+                plot_dates -= start_date
+                plot_dates /= pd.Timedelta(1, unit='d')
+
+            self.logger.debug("Plotting upper limit")
+            if self.pipeline:
+                upper_lim_mask = measurements.forced
+            else:
+                upper_lim_mask = measurements.detection == False
+                if use_forced_for_all:
+                    upper_lim_mask = np.array([False for i in upper_lim_mask])
+            upper_lims = measurements[
+                upper_lim_mask
+            ]
+            if self.pipeline:
+                if peak_flux:
+                    value_col = 'flux_peak'
+                    err_value_col = 'flux_peak_err'
+                else:
+                    value_col = 'flux_int'
+                    err_value_col = 'flux_int_err'
+                uplims = False
+                sigma_thresh = 1.0
+                label = 'Forced'
+                markerfacecolor = 'w'
+            else:
+                if use_forced_for_limits:
+                    value_col = 'f_flux_peak'
+                    err_value_col = 'f_flux_peak_err'
+                    uplims = False
+                    sigma_thresh = 1.0
+                    markerfacecolor = 'w'
+                    label = "Forced"
+                else:
+                    value_col = err_value_col = 'rms_image'
+                    uplims = True
+                    markerfacecolor = marker_colour
+                    label = 'Upper limit'
+            if upper_lim_mask.any():
+                upperlim_points = ax.errorbar(
+                    plot_dates[upper_lim_mask],
+                    sigma_thresh *
+                    upper_lims[value_col],
+                    yerr=upper_lims[err_value_col],
+                    uplims=uplims,
+                    lolims=False,
+                    marker=marker,
+                    c=marker_colour,
+                    linestyle="none",
+                    markerfacecolor=markerfacecolor
+                )
+
+            self.logger.debug("Plotting detection")
+
+            if use_forced_for_all:
+                detections = measurements
+            else:
+                detections = measurements[
+                    ~upper_lim_mask
+                ]
+
+            if self.pipeline:
+                if peak_flux:
+                    err_value_col = 'flux_peak_err'
+                else:
+                    err_value_col = 'flux_int_err'
+            else:
+                if use_forced_for_all:
+                    err_value_col = flux_col + '_err'
+                else:
+                    err_value_col = 'rms_image'
+
+            if use_forced_for_all:
+                markerfacecolor = 'w'
+                label = 'Forced'
+            else:
+                markerfacecolor = marker_colour
+                label = 'Selavy'
+            if (~upper_lim_mask).any():
+                detection_points = ax.errorbar(
+                    plot_dates[~upper_lim_mask],
+                    detections[flux_col],
+                    yerr=detections[err_value_col],
+                    marker=marker,
+                    c=marker_colour,
+                    linestyle="none",
+                    markerfacecolor=markerfacecolor
+                )
+
+        self.logger.debug("Plotting finished.")
+        if self.pipeline:
+            upper_lim_mask = measurements_df.forced
+        else:
+            upper_lim_mask = measurements_df.detection == False
 
         if use_forced_for_all:
-            detections = measurements
+            detections = measurements_df
         else:
-            detections = measurements[
+            detections = measurements_df[
                 ~upper_lim_mask
             ]
-
-        if self.pipeline:
-            if peak_flux:
-                err_value_col = 'flux_peak_err'
-            else:
-                err_value_col = 'flux_int_err'
-        else:
-            if use_forced_for_all:
-                err_value_col = flux_col + '_err'
-            else:
-                err_value_col = 'rms_image'
-
-        if use_forced_for_all:
-            marker = "D"
-            markerfacecolor = 'w'
-            label = 'Forced'
-        else:
-            marker = 'o'
-            markerfacecolor = 'k'
-            label = 'Selavy'
-        if (~upper_lim_mask).any():
-            detection_points = ax.errorbar(
-                plot_dates[~upper_lim_mask],
-                detections[flux_col],
-                yerr=detections[err_value_col],
-                marker=marker,
-                c='k',
-                linestyle="none",
-                markerfacecolor=markerfacecolor,
-                label=label)
-
         if yaxis_start == "0":
             max_det = detections.loc[:, [flux_col, err_value_col]].sum(axis=1)
             if use_forced_for_limits or self.pipeline:
@@ -568,7 +599,26 @@ class Source:
         ax.grid(grid)
 
         if not hide_legend:
-            ax.legend()
+            # Manually create legend artists for consistency.
+            # Using dummy points throws a matplotlib warning.
+            handles = []
+            labels = []
+            for i, freq in enumerate(freqs):
+                line = Line2D([],
+                              [],
+                              ls="",
+                              marker=markers[i],
+                              color=sm.to_rgba(freq)
+                              )
+                barline = LineCollection(np.empty((2, 2, 2)))
+
+                err = ErrorbarContainer((line, None, [barline]),
+                                        has_yerr=True
+                                        )
+                handles.append(err)
+                labels.append('{} MHz'.format(freq))
+
+            ax.legend(handles=handles, labels=labels)
 
         if save:
             if outfile is None:
@@ -713,10 +763,14 @@ class Source:
         Returns:
             Tuple containing the cutout data.
         """
+
+        self._size = size
+
         if self.pipeline:
             image = Image(
                 row.field, row.epoch, self.stokes, self.base_folder,
-                path=row.image, rmspath=row.rms
+                path=row.image, rmspath=row.rms,
+                corrected_data=self.corrected_data
             )
             image.get_img_data()
         else:
@@ -726,7 +780,7 @@ class Source:
             image = Image(
                 row.field, e, self.stokes,
                 self.base_folder, tiles=self.tiles,
-                sbid=row.sbid
+                sbid=row.sbid, corrected_data=self.corrected_data
             )
             image.get_img_data()
 
@@ -736,6 +790,17 @@ class Source:
             size=size,
             wcs=image.wcs
         )
+
+        cutout_data = copy.deepcopy(cutout.data)
+        cutout_wcs = copy.deepcopy(cutout.wcs)
+
+        header = copy.deepcopy(image.header)
+        header.update(cutout.wcs.to_header())
+
+        beam = image.beam
+
+        del cutout
+        del image
 
         if self.pipeline:
             selavy_components = pd.read_parquet(
@@ -758,16 +823,14 @@ class Source:
                 }
             )
         else:
-            selavy_components = pd.read_fwf(
-                row.selavy, skiprows=[1, ], usecols=[
-                    'island_id',
-                    'ra_deg_cont',
-                    'dec_deg_cont',
-                    'maj_axis',
-                    'min_axis',
-                    'pos_ang'
-                ]
-            )
+            selavy_components = read_selavy(row.selavy, cols=[
+                'island_id',
+                'ra_deg_cont',
+                'dec_deg_cont',
+                'maj_axis',
+                'min_axis',
+                'pos_ang'
+            ])
 
         selavy_coords = SkyCoord(
             selavy_components.ra_deg_cont.values,
@@ -782,23 +845,15 @@ class Source:
             row.skycoord
         )
 
-        header = image.header.copy()
-        header.update(cutout.wcs.to_header())
-
-        beam = image.beam
-
-        self._size = size
-
-        del image
         del selavy_coords
 
         return (
-            cutout.data, cutout.wcs, header, selavy_components, beam
+            cutout_data, cutout_wcs, header, selavy_components, beam
         )
 
     def show_png_cutout(
         self,
-        epoch: str,
+        index: int,
         selavy: bool = True,
         percentile: float = 99.9,
         zscale: bool = False,
@@ -811,13 +866,14 @@ class Source:
         hide_beam: bool = False,
         size: Optional[Angle] = None,
         force: bool = False,
+        offset_axes: bool = True,
     ) -> plt.Figure:
         """
         Wrapper for make_png to make nicer interactive function.
         No access to save.
 
         Args:
-            epoch: The epoch to show.
+            index: Index of the observation to show.
             selavy: If `True` then selavy overlay are shown,
                  defaults to `True`.
             percentile: The value passed to the percentile
@@ -835,14 +891,15 @@ class Source:
             hide_beam: Hide the beam on the plot, defaults to `False`.
             size: Size of the cutout, defaults to None.
             force: Whether to force the re-fetching of the cutout data,
-                defaults to `False`
+                defaults to `False`.
+            offset_axes: Use offset, rather than absolute, axis labels.
 
         Returns:
             Figure object.
         """
 
         fig = self.make_png(
-            epoch,
+            index,
             selavy=selavy,
             percentile=percentile,
             zscale=zscale,
@@ -854,14 +911,15 @@ class Source:
             crossmatch_overlay=crossmatch_overlay,
             hide_beam=hide_beam,
             size=size,
-            force=force
+            force=force,
+            offset_axes=offset_axes
         )
 
         return fig
 
     def save_png_cutout(
         self,
-        epoch: str,
+        index: int,
         selavy: bool = True,
         percentile: float = 99.9,
         zscale: bool = False,
@@ -875,14 +933,15 @@ class Source:
         size: Optional[Angle] = None,
         force: bool = False,
         outfile: Optional[str] = None,
-        plot_dpi: int = 150
+        plot_dpi: int = 150,
+        offset_axes: bool = True
     ) -> None:
         """
         Wrapper for make_png to make nicer interactive function.
         Always save.
 
         Args:
-            epoch: The epoch to show.
+            index: Index of the observation to show.
             selavy: If `True` then selavy overlay are shown,
                  defaults to `True`.
             percentile: The value passed to the percentile
@@ -904,12 +963,13 @@ class Source:
             outfile: Name to give the file, if None then the name is
                 automatically generated, defaults to None.
             plot_dpi: Specify the DPI of saved figures, defaults to 150.
+            offset_axes: Use offset, rather than absolute, axis labels.
 
         Returns:
             None
         """
         fig = self.make_png(
-            epoch,
+            index,
             selavy=selavy,
             percentile=percentile,
             zscale=zscale,
@@ -924,54 +984,57 @@ class Source:
             force=force,
             outfile=outfile,
             save=True,
-            plot_dpi=plot_dpi
+            plot_dpi=plot_dpi,
+            offset_axes=offset_axes
         )
 
         return
 
-    def _get_save_name(self, epoch: str, ext: str) -> str:
+    def _get_save_name(self,
+                       index: int,
+                       ext: str
+                       ) -> str:
         """
         Generate name of file to save to.
 
         Args:
-            epoch: Epoch corresponding to requested data
+            index: Index of the requested data
             ext: File extension
 
         Returns:
             Name of file to save.
         """
 
+        row = self.measurements.iloc[index]
+
+        if not ext.startswith("."):
+            ext = f".{ext}"
+
+        source_name = self.name.replace(" ", "_").replace("/", "_")
+
         if self.pipeline:
-            name_epoch = epoch
+            outfile = f"{source_name}_{index}{ext}"
         else:
-            if "-" in epoch:
-                e_split = epoch.split("-")
-                e = e_split[0]
-                name_epoch = RELEASED_EPOCHS[e] + "-" + e_split[1]
-            else:
-                name_epoch = RELEASED_EPOCHS[epoch]
-        outfile = "{}_EPOCH{}{}".format(
-            self.name.replace(" ", "_").replace(
-                "/", "_"
-            ),
-            name_epoch,
-            ext
-        )
+            field_name = row.field
+            sbid = row.sbid
+
+            outfile = f"{source_name}_{field_name}_SB{sbid}{ext}"
+
         return outfile
 
     def save_fits_cutout(
         self,
-        epoch: str,
+        index: int,
         outfile: Optional[str] = None,
         size: Optional[Angle] = None,
         force: bool = False,
         cutout_data: Optional[pd.DataFrame] = None
     ) -> None:
         """
-        Saves the FITS file cutout of the requested epoch.
+        Saves the FITS file cutout of the requested observation.
 
         Args:
-            epoch: Requested epoch.
+            index: The index of the requested observation.
             outfile: File to save to, defaults to None.
             size: Size of the cutout, defaults to None.
             force: Whether to force the re-fetching
@@ -983,30 +1046,21 @@ class Source:
             None
 
         Raises:
-            ValueError: If the source does not contain the requested epoch.
+            ValueError: If the source does not contain the requested index.
         """
 
         if (self._cutouts_got is False) or (force):
             if cutout_data is None:
                 self.get_cutout_data(size)
 
-        if epoch not in self.epochs:
-            raise ValueError(
-                "This source does not contain Epoch {}!".format(epoch)
-            )
-
-            return
-
         if outfile is None:
-            outfile = self._get_save_name(epoch, ".fits")
+            outfile = self._get_save_name(index, ".fits")
+
         if self.outdir != ".":
             outfile = os.path.join(
                 self.outdir,
                 outfile
             )
-
-        index = self.epochs.index(epoch)
-
         if cutout_data is None:
             cutout_row = self.cutout_df.iloc[index]
         else:
@@ -1019,6 +1073,53 @@ class Source:
 
         # Write the cutout to a new FITS file
         hdu_stamp.writeto(outfile, overwrite=True)
+        self.logger.debug(f"Wrote to {outfile}")
+
+        del hdu_stamp
+
+    def _save_noisemap_cutout(
+        self,
+        index: int,
+        cutout_data: pd.DataFrame,
+        noisemap_type: str,
+        outfile: Optional[str] = None,
+    ) -> None:
+        """
+        Saves the FITS file cutout of the requested observation.
+
+        Args:
+            index: The index of the requested observation.
+            cutout_data: The external cutout data to be used.
+            noisemap_type: The type of noisemap to use. Must be 'rms' or 'bkg'.
+            outfile: File to save to, defaults to None.
+
+        Returns:
+            None
+
+        Raises:
+            ValueError: If the noisemap_type is not 'rms' or 'bkg'
+        """
+
+        if noisemap_type not in ['rms', 'bkg']:
+            raise ValueError("noisemap_type must be 'rms' or 'bkg'")
+        if outfile is None:
+            outfile = self._get_save_name(index, f"{noisemap_type}.fits")
+
+        if self.outdir != ".":
+            outfile = os.path.join(
+                self.outdir,
+                outfile
+            )
+        cutout_row = cutout_data.iloc[index]
+
+        hdu_stamp = fits.PrimaryHDU(
+            data=cutout_row[f'{noisemap_type}_data'],
+            header=cutout_row[f'{noisemap_type}_header']
+        )
+
+        # Write the cutout to a new FITS file
+        hdu_stamp.writeto(outfile, overwrite=True)
+        self.logger.debug(f"Wrote to {outfile}")
 
         del hdu_stamp
 
@@ -1039,7 +1140,8 @@ class Source:
         Returns:
             None
         """
-        self.measurements['epoch'].apply(
+        indices = self.measurements.index.to_series()
+        indices.apply(
             self.write_ann,
             args=(
                 None,
@@ -1068,7 +1170,8 @@ class Source:
             None
         """
 
-        self.measurements['epoch'].apply(
+        indices = self.measurements.index.to_series()
+        indices.apply(
             self.write_reg,
             args=(
                 None,
@@ -1102,8 +1205,41 @@ class Source:
             if cutout_data is None:
                 self.get_cutout_data(size)
 
-        for e in self.measurements['epoch']:
-            self.save_fits_cutout(e, cutout_data=cutout_data)
+        self.logger.debug("Saving fits cutouts...")
+
+        if cutout_data is None:
+            indices = self.measurements.index
+        else:
+            indices = cutout_data.index
+
+        for i in indices:
+            self.save_fits_cutout(i, cutout_data=cutout_data)
+
+    def _save_all_noisemap_cutouts(
+        self,
+        cutout_data: pd.DataFrame,
+        rms: bool = True,
+        bkg: bool = True,
+    ) -> None:
+        """
+        Save all cutouts of the source to fits file
+
+        Args:
+            cutout_data: The external data to be used.
+            rms: Create rms map cutouts.
+            bkg: Create bkg map cutouts.
+
+        Returns:
+            None
+        """
+
+        self.logger.debug("Saving noisemap cutouts...")
+
+        for i in cutout_data.index:
+            if rms:
+                self._save_noisemap_cutout(i, cutout_data, 'rms')
+            if bkg:
+                self._save_noisemap_cutout(i, cutout_data, 'bkg')
 
     def save_all_png_cutouts(
         self,
@@ -1119,7 +1255,8 @@ class Source:
         disable_autoscaling: bool = False,
         cutout_data: Optional[pd.DataFrame] = None,
         calc_script_norms: bool = False,
-        plot_dpi: int = 150
+        plot_dpi: int = 150,
+        offset_axes: bool = True
     ) -> None:
         """
         Wrapper function to save all the png cutouts
@@ -1148,7 +1285,8 @@ class Source:
             calc_script_norms: When passing cutout data this parameter
                 can be set to True to pass this cutout data to the analyse
                 norms function, defaults to False.
-            plot_dpi: Specify the DPI of saved figures, defaults to 150
+            plot_dpi: Specify the DPI of saved figures, defaults to 150.
+            offset_axes: Use offset, rather than absolute, axis labels.
 
         Returns:
             None
@@ -1173,7 +1311,8 @@ class Source:
                 cutout_data=cutout_data
             )
 
-        self.measurements['epoch'].apply(
+        indices = self.measurements.index.to_series()
+        indices.apply(
             self.make_png,
             args=(
                 selavy,
@@ -1193,7 +1332,8 @@ class Source:
                 disable_autoscaling,
                 cutout_data,
                 norms,
-                plot_dpi
+                plot_dpi,
+                offset_axes
             )
         )
 
@@ -1211,7 +1351,8 @@ class Source:
         no_selavy: bool = False,
         disable_autoscaling: bool = False,
         hide_epoch_labels: bool = False,
-        plot_dpi: int = 150
+        plot_dpi: int = 150,
+        offset_axes: bool = True
     ) -> Union[None, plt.figure]:
         """
         Creates a grid plot showing the source in each epoch.
@@ -1242,6 +1383,7 @@ class Source:
             hide_epoch_labels: Turn off the epoch number label (found in
                 top left corner of image).
             plot_dpi: Specify the DPI of saved figures, defaults to 150.
+            offset_axes: Use offset, rather than absolute, axis labels.
 
         Returns:
             None is save is `True` or the Figure if `False`.
@@ -1360,7 +1502,14 @@ class Source:
 
         if save:
             if outfile is None:
-                outfile = self._get_save_name(epoch, ".png")
+                outfile = "{}_cutouts.png".format(self.name.replace(
+                    " ", "_"
+                ).replace(
+                    "/", "_"
+                ))
+
+            elif not outfile.endswith(".png"):
+                outfile += ".png"
 
             if self.outdir != ".":
                 outfile = os.path.join(
@@ -1368,7 +1517,7 @@ class Source:
                     outfile
                 )
 
-            plt.savefig(outfile, bbox_inches=True, dpi=plot_dpi)
+            plt.savefig(outfile, bbox_inches='tight', dpi=plot_dpi)
 
             plt.close()
 
@@ -1457,7 +1606,7 @@ class Source:
 
     def skyview_contour_plot(
         self,
-        epoch: str,
+        index: int,
         survey: str,
         contour_levels: List[float] = [3., 5., 10., 15.],
         percentile: float = 99.9,
@@ -1476,7 +1625,7 @@ class Source:
         the source location and overlays ASKAP contours.
 
         Args:
-            epoch: Epoch requested for the ASKAP contours.
+            index: Index of the requested ASKAP observation.
             survey: Survey requested to be fetched using SkyView.
             contour_levels: Contour levels to plot which are multiples
                  of the local rms, defaults to [3., 5., 10., 15.].
@@ -1501,7 +1650,7 @@ class Source:
             None if save is `True` or the figure object if `False`
 
         Raises:
-            ValueError: If the source does not contain the requested epoch.
+            ValueError: If the index is out of range.
         """
 
         if (self._cutouts_got is False) or (force):
@@ -1509,23 +1658,18 @@ class Source:
 
         size = self._size
 
-        if epoch not in self.epochs:
-            raise ValueError(
-                "This source does not contain Epoch {}!".format(epoch)
-            )
-
+        if index > len(self.measurements):
+            raise ValueError(f"Cannot access {index}th measurement.")
             return
 
         if outfile is None:
-            outfile = self._get_save_name(epoch, ".png")
+            outfile = self._get_save_name(index, ".png")
 
         if self.outdir != ".":
             outfile = os.path.join(
                 self.outdir,
                 outfile
             )
-
-        index = self.epochs.index(epoch)
 
         try:
             paths = SkyView.get_images(
@@ -1577,14 +1721,13 @@ class Source:
         )
 
         if title is None:
-            if self.pipeline:
-                title = "'{}' Epoch {} {}".format(
-                    self.name, epoch, survey
+            obs_time = self.measurements.iloc[index].dateobs
+            title = "{} {}".format(
+                self.name,
+                obs_time.strftime(
+                    "%Y-%m-%d %H:%M:%S"
                 )
-            else:
-                title = "VAST Epoch {} '{}' {}".format(
-                    epoch, self.name, survey
-                )
+            )
 
         ax.set_title(title)
 
@@ -1611,7 +1754,7 @@ class Source:
 
     def make_png(
         self,
-        epoch: str,
+        index: int,
         selavy: bool = True,
         percentile: float = 99.9,
         zscale: bool = False,
@@ -1629,13 +1772,14 @@ class Source:
         disable_autoscaling: bool = False,
         cutout_data: Optional[pd.DataFrame] = None,
         norms: Optional[ImageNormalize] = None,
-        plot_dpi: int = 150
+        plot_dpi: int = 150,
+        offset_axes: bool = True
     ) -> Union[None, plt.figure]:
         """
         Save a PNG of the image postagestamp.
 
         Args:
-            epoch: The requested epoch.
+            index: The index correpsonding to the requested observation.
             selavy: `True` to overlay selavy components, `False` otherwise.
             percentile: The value passed to the percentile
                 normalization function, defaults to 99.9.
@@ -1663,42 +1807,37 @@ class Source:
             force: Whether to force the re-fetching of the cutout data,
                 defaults to `False`.
             disable_autoscaling: Turn off the consistent normalization and
-                calculate the normalizations separately for each epoch,
+                calculate the normalizations separately for each observation,
                 defaults to `False`.
             cutout_data: Pass external cutout_data to be used
                 instead of fetching the data, defaults to None.
             norms: Pass external normalization to be used
                 instead of internal calculations.
             plot_dpi: Specify the DPI of saved figures, defaults to 150.
+            offset_axes: Use offset, rather than absolute, axis labels.
 
         Returns:
             None if save is `True` or the figure object if `False`
 
         Raises:
-            ValueError: If the source does not contain the requested epoch.
+            ValueError: If the index is out of range.
         """
 
         if (self._cutouts_got is False) or (force):
             if cutout_data is None:
                 self.get_cutout_data(size)
 
-        if epoch not in self.epochs:
-            raise ValueError(
-                "This source does not contain Epoch {}!".format(epoch)
-            )
-
-            return
+        if index > len(self.measurements):
+            raise ValueError(f"Cannot access {index}th measurement.")
 
         if outfile is None:
-            outfile = self._get_save_name(epoch, ".png")
+            outfile = self._get_save_name(index, ".png")
 
         if self.outdir != ".":
             outfile = os.path.join(
                 self.outdir,
                 outfile
             )
-
-        index = self.epochs.index(epoch)
 
         if cutout_data is None:
             cutout_row = self.cutout_df.iloc[index]
@@ -1871,13 +2010,10 @@ class Source:
             cb.set_label("mJy/beam")
 
         if title is None:
-            epoch_time = self.measurements[
-                self.measurements['epoch'] == epoch
-            ].iloc[0].dateobs
-            title = "{} Epoch {} {}".format(
+            obs_time = self.measurements.iloc[index].dateobs
+            title = "{} {}".format(
                 self.name,
-                epoch,
-                epoch_time.strftime(
+                obs_time.strftime(
                     "%Y-%m-%d %H:%M:%S"
                 )
             )
@@ -1912,6 +2048,34 @@ class Source:
         else:
             self.logger.debug("Hiding beam.")
 
+        if offset_axes:
+            axis_units = u.arcmin
+
+            if size is None and cutout_row.wcs.is_celestial:
+                pix_scale = proj_plane_pixel_scales(
+                    cutout_row.wcs
+                )
+                sx = pix_scale[0]
+                sy = pix_scale[1]
+                xlims = ax.get_xlim()
+                ylims = ax.get_ylim()
+
+                xsize = sx * (xlims[1] - xlims[0])
+                ysize = sy * (ylims[1] - ylims[0])
+                size = max([xsize, ysize]) * u.deg
+
+            if size is not None:
+                if size < 2 * u.arcmin:
+                    axis_units = u.arcsec
+                elif size > 2 * u.deg:
+                    axis_units = u.deg
+
+            offset_postagestamp_axes(ax,
+                                     self.coord,
+                                     ra_units=axis_units,
+                                     dec_units=axis_units
+                                     )
+
         if save:
             plt.savefig(outfile, bbox_inches="tight", dpi=plot_dpi)
             self.logger.debug("Saved {}".format(outfile))
@@ -1924,7 +2088,7 @@ class Source:
 
     def write_ann(
         self,
-        epoch: str,
+        index: int,
         outfile: str = None,
         crossmatch_overlay: bool = False,
         size: Optional[Angle] = None,
@@ -1936,7 +2100,7 @@ class Source:
         within the image.
 
         Args:
-            epoch: The requested epoch.
+            index: The index correpsonding to the requested observation.
             outfile: Name of the file to write, defaults to None.
             crossmatch_overlay: If True, a circle is added to the
                 annotation file output denoting the crossmatch radius,
@@ -1955,14 +2119,12 @@ class Source:
                 self.get_cutout_data(size)
 
         if outfile is None:
-            outfile = self._get_save_name(epoch, ".ann")
+            outfile = self._get_save_name(index, ".ann")
         if self.outdir != ".":
             outfile = os.path.join(
                 self.outdir,
                 outfile
             )
-
-        index = self.epochs.index(epoch)
 
         neg = False
         with open(outfile, 'w') as f:
@@ -2025,7 +2187,7 @@ class Source:
 
     def write_reg(
         self,
-        epoch: str,
+        index: int,
         outfile: Optional[str] = None,
         crossmatch_overlay: bool = False,
         size: Optional[Angle] = None,
@@ -2036,7 +2198,7 @@ class Source:
         Write a DS9 region file containing all selavy sources within the image
 
         Args:
-            epoch: The requested epoch.
+            index: The index correpsonding to the requested observation.
             outfile: Name of the file to write, defaults to None.
             crossmatch_overlay: If True, a circle is added to the
                 annotation file output denoting the crossmatch radius,
@@ -2055,14 +2217,13 @@ class Source:
                 self.get_cutout_data(size)
 
         if outfile is None:
-            outfile = self._get_save_name(epoch, ".reg")
+            outfile = self._get_save_name(index, ".reg")
         if self.outdir != ".":
             outfile = os.path.join(
                 self.outdir,
                 outfile
             )
 
-        index = self.epochs.index(epoch)
         with open(outfile, 'w') as f:
             f.write("# Region file format: DS9 version 4.0\n")
             f.write("global color=green font=\"helvetica 10 normal\" "
@@ -2337,8 +2498,8 @@ class Source:
             self.measurements[~detect_mask][non_detect_label_err]
         )
 
-        fluxes = detect_fluxes.append(non_detect_fluxes)
-        errors = detect_errors.append(non_detect_errors)
+        fluxes = pd.concat([detect_fluxes, non_detect_fluxes])
+        errors = pd.concat([detect_errors, non_detect_errors])
 
         return fluxes, errors
 

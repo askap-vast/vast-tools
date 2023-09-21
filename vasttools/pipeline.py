@@ -8,43 +8,32 @@ import numexpr
 import os
 import warnings
 import glob
-import gc
 import vaex
 import dask.dataframe as dd
-import scipy.ndimage as ndi
-import bokeh.colors.named as colors
 import colorcet as cc
 import numpy as np
 import pandas as pd
 import astropy
 import mocpy
 import matplotlib
+import logging
 import matplotlib.pyplot as plt
 
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 from bokeh.models import (
-    ColumnDataSource,
     Span,
     BoxAnnotation,
     Model,
-    DataRange1d,
-    Range1d,
-    Whisker,
-    LabelSet,
-    Circle,
-    HoverTool,
-    Slider
 )
 from bokeh.layouts import gridplot, Spacer
 from bokeh.palettes import Category10_3
-from bokeh.plotting import figure, from_networkx
+from bokeh.plotting import figure
 from bokeh.transform import linear_cmap, factor_cmap
 from scipy.stats import norm
 from astropy.stats import sigma_clip, mad_std, bayesian_blocks
 from astropy.coordinates import SkyCoord
 from astropy import units as u
 from multiprocessing import cpu_count
-from mocpy import MOC
 from datetime import timedelta
 from itertools import combinations
 from matplotlib.ticker import NullFormatter
@@ -57,9 +46,9 @@ from vasttools.utils import (
     pipeline_get_variable_metrics,
     gen_skycoord_from_df,
     calculate_vs_metric,
-    calculate_m_metric
+    calculate_m_metric,
+    create_moc_from_fits
 )
-from vasttools.survey import Image
 from vasttools.tools import add_credible_levels
 
 HOST_NCPU = cpu_count()
@@ -70,6 +59,12 @@ matplotlib.pyplot.switch_backend('Agg')
 class PipelineDirectoryError(Exception):
     """
     An error to indicate an error with the pipeline directory.
+    """
+    pass
+
+class MeasPairsDoNotExistError(Exception):
+    """
+    An error to indicate that the measurement pairs do not exist for a run.
     """
     pass
 
@@ -114,7 +109,8 @@ class PipeRun(object):
         measurements: Union[pd.DataFrame, vaex.dataframe.DataFrame],
         measurement_pairs_file: List[str],
         vaex_meas: bool = False,
-        n_workers: int = cpu_count() - 1
+        n_workers: int = HOST_NCPU - 1,
+        scheduler: str = 'processes'
     ) -> None:
         """
         Constructor method.
@@ -146,6 +142,9 @@ class PipeRun(object):
                 loaded into a pandas DataFrame.
             n_workers: Number of workers (cpus) available. Default is
                 determined by running `cpu_count()`.
+            scheduler: Dask scheduling option to use. Options are "processes"
+                (parallel processing) or "single-threaded". Defaults to
+                "single-threaded".
 
         Returns:
             None
@@ -164,7 +163,26 @@ class PipeRun(object):
         self.n_workers = n_workers
         self._vaex_meas = vaex_meas
         self._loaded_two_epoch_metrics = False
+        self.scheduler = scheduler
 
+        self.logger = logging.getLogger('vasttools.pipeline.PipeRun')
+        self.logger.debug('Created PipeRun instance')
+        
+        self._measurement_pairs_exists = self._check_measurement_pairs_file()
+
+    def _check_measurement_pairs_file(self):
+        measurement_pairs_exists = True
+        
+        for filepath in self.measurement_pairs_file:
+            if not os.path.isfile(filepath):
+                self.logger.warning(f"Measurement pairs file ({filepath}) does"
+                                    f" not exist. You will be unable to access"
+                                    f" measurement pairs or two-epoch metrics."
+                                    )
+                measurement_pairs_exists = False
+
+        return measurement_pairs_exists
+            
     def combine_with_run(
         self, other_PipeRun, new_name: Optional[str] = None
     ):
@@ -186,12 +204,12 @@ class PipeRun(object):
             PipeRun: The self object with the other pipeline run added.
         """
 
-        self.images = self.images.append(
-            other_PipeRun.images,
+        self.images = pd.concat(
+            [self.images, other_PipeRun.images]
         ).drop_duplicates('path')
 
-        self.skyregions = self.skyregions.append(
-            other_PipeRun.skyregions,
+        self.skyregions = pd.concat(
+            [self.skyregions, other_PipeRun.skyregions],
             ignore_index=True
         ).drop_duplicates('id')
 
@@ -212,8 +230,8 @@ class PipeRun(object):
             self._vaex_meas = True
 
         else:
-            self.measurements = self.measurements.append(
-                other_PipeRun.measurements,
+            self.measurements = pd.concat(
+                [self.measurements, other_PipeRun.measurements],
                 ignore_index=True
             ).drop_duplicates(['id', 'source'])
 
@@ -223,14 +241,27 @@ class PipeRun(object):
             ))
         ]
 
-        self.sources = self.sources.append(
-            sources_to_add
-        )
+        self.sources = pd.concat([self.sources, sources_to_add])
 
         # need to keep access to all the different pairs files
         # for two epoch metrics.
-        for i in other_PipeRun.measurement_pairs_file:
-            self.measurement_pairs_file.append(i)
+        orig_run_pairs_exist = self._measurement_pairs_exists
+        other_run_pairs_exist = other_PipeRun._measurement_pairs_exists
+
+        if orig_run_pairs_exist and other_run_pairs_exist:
+            for i in other_PipeRun.measurement_pairs_file:
+                self.measurement_pairs_file.append(i)
+        
+        elif orig_run_pairs_exist:
+            self.logger.warning("Not combining measurement pairs because they "
+                                " do not exist for the new run."
+                                )
+            self._measurement_pairs_exists = False
+
+        elif other_run_pairs_exist:
+            self.logger.warning("Not combining measurement pairs because they "
+                                " do not exist for the original run."
+                                )
 
         del sources_to_add
 
@@ -412,6 +443,13 @@ class PipeRun(object):
 
         return thesource
 
+    def _raise_if_no_pairs(self):
+        if not self._measurement_pairs_exists:
+             raise MeasPairsDoNotExistError("This method cannot be used as "
+                                            "the measurement pairs are not "
+                                            "available for this pipeline run."
+                                            )
+
     def load_two_epoch_metrics(self) -> None:
         """
         Loads the two epoch metrics dataframe, usually stored as either
@@ -426,7 +464,14 @@ class PipeRun(object):
 
         Returns:
             None
+
+        Raises:
+            MeasPairsDoNotExistError: The measurement pairs file(s) do not
+                exist for this run
         """
+        
+        self._raise_if_no_pairs()
+
         image_ids = self.images.sort_values(by='datetime').index.tolist()
 
         pairs_df = pd.DataFrame.from_dict(
@@ -631,7 +676,7 @@ class PipeRun(object):
             ['sun', 'moon'] for i in range(sun_moon_df.shape[0])
         ]
 
-        planets_df = planets_df.append(sun_moon_df, ignore_index=True)
+        planets_df = pd.concat([planets_df, sun_moon_df], ignore_index=True)
 
         del sun_moon_df
 
@@ -662,7 +707,7 @@ class PipeRun(object):
                 match_planet_to_field,
                 meta=meta
             ).compute(
-                scheduler='processes',
+                scheduler=self.scheduler,
                 n_workers=self.n_workers
             )
         )
@@ -735,64 +780,6 @@ class PipeRun(object):
 
         return new_PipeRun
 
-    def _distance_from_edge(self, x: np.ndarray) -> np.ndarray:
-        """
-        Analyses the binary array x and determines the distance from
-        the edge (0).
-
-        Args:
-            x: The binary array to analyse.
-
-        Returns:
-            Array each cell containing distance from the edge.
-        """
-        x = np.pad(x, 1, mode='constant')
-        dist = ndi.distance_transform_cdt(x, metric='taxicab')
-
-        return dist[1:-1, 1:-1]
-
-    def _create_moc_from_fits(
-        self, fits_img: str, max_depth: int = 9
-    ) -> mocpy.moc.moc.MOC:
-        """
-        Creates a MOC from (assuming) an ASKAP fits image
-        using the cheat method of analysing the edge pixels of the image.
-
-        Args:
-            fits_img: The path of the ASKAP FITS image to generate the MOC
-                from.
-            max_depth: Max depth parameter passed to the
-                MOC.from_polygon_skycoord() function, defaults to 9.
-
-        Returns:
-            The MOC generated from the FITS file.
-        """
-        image = Image(
-            'field', '1', 'I', 'None',
-            path=fits_img
-        )
-
-        image.get_img_data()
-
-        binary = (~np.isnan(image.data)).astype(int)
-        mask = self._distance_from_edge(binary)
-        x, y = np.where(mask == 1)
-
-        array_coords = np.column_stack((x, y))
-        coords = image.wcs.array_index_to_world_values(array_coords)
-        # need to know when to reverse by checking axis sizes.
-        coords = np.column_stack(coords)
-        coords = SkyCoord(coords[0], coords[1], unit=(u.deg, u.deg))
-
-        moc = MOC.from_polygon_skycoord(coords, max_depth=max_depth)
-
-        del image
-        del binary
-        del array_coords
-        gc.collect()
-
-        return moc
-
     def create_moc(
         self, max_depth: int = 9, ignore_large_run_warning: bool = False
     ) -> mocpy.MOC:
@@ -825,14 +812,14 @@ class PipeRun(object):
             )
             return
 
-        moc = self._create_moc_from_fits(
+        moc = create_moc_from_fits(
             images_to_use[0],
             max_depth=max_depth
         )
 
         if images_to_use.shape[0] > 1:
             for img in images_to_use[1:]:
-                img_moc = self._create_moc_from_fits(
+                img_moc = create_moc_from_fits(
                     img,
                     max_depth
                 )
@@ -889,7 +876,8 @@ class PipeAnalysis(PipeRun):
         measurements: Union[pd.DataFrame, vaex.dataframe.DataFrame],
         measurement_pairs_file: str,
         vaex_meas: bool = False,
-        n_workers: int = cpu_count() - 1
+        n_workers: int = HOST_NCPU - 1,
+        scheduler: str = 'processes',
     ) -> None:
         """
         Constructor method.
@@ -924,13 +912,17 @@ class PipeAnalysis(PipeRun):
                 vaex from an arrow file. `False` means the measurements are
                 loaded into a pandas DataFrame.
             n_workers: Number of workers (cpus) available.
+            scheduler: Dask scheduling option to use. Options are "processes"
+                (parallel processing) or "single-threaded". Defaults to
+                "single-threaded".
 
         Returns:
             None
         """
         super().__init__(
             name, images, skyregions, relations, sources, associations,
-            bands, measurements, measurement_pairs_file, vaex_meas, n_workers
+            bands, measurements, measurement_pairs_file, vaex_meas, n_workers,
+            scheduler
         )
 
     def _filter_meas_pairs_df(
@@ -948,6 +940,7 @@ class PipeAnalysis(PipeRun):
         Returns:
             The filtered measurement pairs dataframe.
         """
+
         if not self._loaded_two_epoch_metrics:
             self.load_two_epoch_metrics()
 
@@ -1099,7 +1092,18 @@ class PipeAnalysis(PipeRun):
         Returns:
             The regenerated sources_df.  A `pandas.core.frame.DataFrame`
             instance.
+        
+        Raises:
+            MeasPairsDoNotExistError: The measurement pairs file(s) do not
+                exist for this run
         """
+        
+        self._raise_if_no_pairs()
+
+        # Two epoch metrics
+        if not self._loaded_two_epoch_metrics:
+            self.load_two_epoch_metrics()
+
         if not self._vaex_meas:
             measurements_df = vaex.from_pandas(measurements_df)
 
@@ -1195,13 +1199,13 @@ class PipeAnalysis(PipeRun):
         }
 
         sources_df_fluxes = (
-            dd.from_pandas(measurements_df_temp, HOST_NCPU)
+            dd.from_pandas(measurements_df_temp, self.n_workers)
             .groupby('source')
             .apply(
                 pipeline_get_variable_metrics,
                 meta=col_dtype
             )
-            .compute(num_workers=HOST_NCPU - 1, scheduler='processes')
+            .compute(num_workers=self.n_workers, scheduler=self.scheduler)
         )
 
         # Switch to pandas at this point to perform join
@@ -1212,10 +1216,6 @@ class PipeAnalysis(PipeRun):
         sources_df = sources_df.join(
             self.sources[['new', 'new_high_sigma']],
         )
-
-        # Two epoch metrics
-        if not self._loaded_two_epoch_metrics:
-            self.load_two_epoch_metrics()
 
         if measurement_pairs_df is None:
             measurement_pairs_df = self._filter_meas_pairs_df(
@@ -1311,10 +1311,10 @@ class PipeAnalysis(PipeRun):
         ], axis=1)
 
         # correct the RA wrapping
-        ra_wrap_mask = sources_df['wavg_ra'] >= 360.
-        sources_df.at[
+        ra_wrap_mask = (sources_df['wavg_ra'] >= 360.).to_numpy()
+        sources_df.loc[
             ra_wrap_mask, 'wavg_ra'
-        ] = sources_df[ra_wrap_mask].wavg_ra.values - 360.
+        ] = sources_df.loc[ra_wrap_mask]["wavg_ra"].to_numpy() - 360.
 
         # Switch relations column to int
         sources_df['n_relations'] = sources_df['n_relations'].astype(int)
@@ -1704,7 +1704,12 @@ class PipeAnalysis(PipeRun):
             Exception: 'plot_type' is not recognised.
             Exception: `plot_style` is not recognised.
             Exception: Pair with entered ID does not exist.
+            MeasPairsDoNotExistError: The measurement pairs file(s) do not
+                exist for this run
         """
+
+        self._raise_if_no_pairs()
+
         if not self._loaded_two_epoch_metrics:
             raise Exception(
                 "The two epoch metrics must first be loaded to use the"
@@ -1795,7 +1800,12 @@ class PipeAnalysis(PipeRun):
         Raises:
             Exception: The two epoch metrics must be loaded before using this
                 function.
+            MeasPairsDoNotExistError: The measurement pairs file(s) do not
+                exist for this run
         """
+        
+        self._raise_if_no_pairs()
+
         if not self._loaded_two_epoch_metrics:
             raise Exception(
                 "The two epoch metrics must first be loaded to use the"
@@ -2058,7 +2068,6 @@ class PipeAnalysis(PipeRun):
         (see Rowlinson et al., 2018,
         https://ui.adsabs.harvard.edu/abs/2019A%26C....27..111R/abstract).
         Returns a matplotlib version.
-
         Args:
             df: Dataframe containing the sources from the pipeline run.
                 A `pandas.core.frame.DataFrame` instance.
@@ -2070,7 +2079,6 @@ class PipeAnalysis(PipeRun):
             v_cutoff: The log10 v_cutoff from the analysis.
             use_int_flux: Use integrated fluxes for the analysis instead of
                 peak fluxes, defaults to 'False'.
-
         Returns:
             Matplotlib figure containing the plot.
         """
@@ -2097,11 +2105,11 @@ class PipeAnalysis(PipeRun):
         rect_histx = [left, bottom_h, width, 0.2]
         rect_histy = [left_h, bottom, 0.2, height]
         fig = plt.figure(figsize=(12, 12))
-        axScatter = fig.add_subplot(223, position=rect_scatter)
+        axScatter = fig.add_subplot(223)
         plt.xlabel(r'$\eta_{\nu}$', fontsize=28)
         plt.ylabel(r'$V_{\nu}$', fontsize=28)
-        axHistx = fig.add_subplot(221, position=rect_histx)
-        axHisty = fig.add_subplot(224, position=rect_histy)
+        axHistx = fig.add_subplot(221)
+        axHisty = fig.add_subplot(224)
         axHistx.xaxis.set_major_formatter(nullfmt)
         axHisty.yaxis.set_major_formatter(nullfmt)
         axHistx.axes.yaxis.set_ticklabels([])
@@ -2163,6 +2171,10 @@ class PipeAnalysis(PipeRun):
         range_y, fity = self._gaussian_fit(y, v_fit_mean, v_fit_sigma)
         axHisty.plot(fity, range_y, 'k:', linewidth=2)
 
+        axHistx.set_position(rect_histx)
+        axHisty.set_position(rect_histy)
+        axScatter.set_position(rect_scatter)
+
         return fig
 
     def _plot_eta_v_bokeh(
@@ -2198,6 +2210,25 @@ class PipeAnalysis(PipeRun):
         Returns:
             Bokeh grid object containing figure.
         """
+
+        if use_int_flux:
+            x_label = 'eta_int'
+            y_label = 'v_int'
+            title = "Int. Flux"
+        else:
+            x_label = 'eta_peak'
+            y_label = 'v_peak'
+            title = 'Peak Flux'
+
+        bokeh_df = df
+        negative_v = bokeh_df[y_label] <= 0
+        if negative_v.any():
+            indices = bokeh_df[negative_v].index
+            self.logger.warning("Negative V encountered. Removing...")
+            self.logger.debug(f"Negative V indices: {indices.values}")
+
+            bokeh_df = bokeh_df.drop(indices)
+
         # generate fitted curve data for plotting
         eta_x = np.linspace(
             norm.ppf(0.001, loc=eta_fit_mean, scale=eta_fit_sigma),
@@ -2230,15 +2261,6 @@ class PipeAnalysis(PipeRun):
             df["n_selavy"].max(),
         )
 
-        if use_int_flux:
-            x_label = 'eta_int'
-            y_label = 'v_int'
-            title = "Int. Flux"
-        else:
-            x_label = 'eta_peak'
-            y_label = 'v_peak'
-            title = 'Peak Flux'
-
         fig.scatter(
             x=x_label, y=y_label, color=cmap,
             marker="circle", size=5, source=df
@@ -2257,7 +2279,7 @@ class PipeAnalysis(PipeRun):
             tools="",
         )
         x_hist_data, x_hist_edges = np.histogram(
-            np.log10(df["eta_peak"]), density=True, bins=50,
+            np.log10(bokeh_df[x_label]), density=True, bins=50,
         )
         x_hist.quad(
             top=x_hist_data,
@@ -2285,7 +2307,7 @@ class PipeAnalysis(PipeRun):
             tools="",
         )
         y_hist_data, y_hist_edges = np.histogram(
-            np.log10(df["v_peak"]), density=True, bins=50,
+            np.log10(bokeh_df[y_label]), density=True, bins=50,
         )
         y_hist.quad(
             right=y_hist_data,
@@ -2517,7 +2539,7 @@ class Pipeline(object):
 
     def load_runs(
         self, run_names: List[str], name: Optional[str] = None,
-        n_workers: int = cpu_count() - 1
+        n_workers: int = HOST_NCPU - 1
     ) -> PipeAnalysis:
         """
         Wrapper to load multiple runs in one command.
@@ -2549,7 +2571,7 @@ class Pipeline(object):
         return piperun
 
     def load_run(
-        self, run_name: str, n_workers: int = cpu_count() - 1
+        self, run_name: str, n_workers: int = HOST_NCPU - 1
     ) -> PipeAnalysis:
         """
         Process and load a pipeline run.

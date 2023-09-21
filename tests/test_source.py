@@ -10,7 +10,7 @@ from astropy.time import Time
 from astropy.wcs import WCS
 from matplotlib.pyplot import Figure
 from pathlib import Path
-from pytest_mock import mocker
+from pytest_mock import mocker, MockerFixture  # noqa: F401
 from radio_beam import Beam
 from typing import Optional
 
@@ -35,13 +35,16 @@ def get_measurements() -> pd.DataFrame:
     Returns:
         The dataframe containing the source measurements.
     """
-    def _get_measurements(pipeline: bool = False) -> pd.DataFrame:
+    def _get_measurements(pipeline: bool = False,
+                          multi_freq: bool = True
+                          ) -> pd.DataFrame:
         """
         The workhorse function to load the measurements.
 
         Args:
             pipeline: If 'True' the pipeline version of measurements are
                 loaded in-place of the query version.
+            multi_freq: Include multifrequency data
 
         Returns:
             The dataframe containing the measurements.
@@ -52,6 +55,14 @@ def get_measurements() -> pd.DataFrame:
             filepath = TEST_DATA_DIR / 'psr-j2129-04-query-meas.csv'
         meas_df = pd.read_csv(filepath)
         meas_df['dateobs'] = pd.to_datetime(meas_df['dateobs'])
+
+        freq_col = 'frequency'
+
+        if multi_freq:
+            temp_df = meas_df.copy()
+            temp_df[freq_col] = 1367.5
+            meas_df = pd.concat([meas_df, temp_df], ignore_index=True)
+            del temp_df
 
         if not pipeline:
             meas_df['skycoord'] = meas_df[['ra', 'dec']].apply(
@@ -198,7 +209,8 @@ def source_instance(
     """
     def _get_source_instance(
         pipeline: bool = False,
-        add_cutout_data: bool = False
+        add_cutout_data: bool = False,
+        multi_freq: bool = False
     ):
         """
         The workhorse function that actually generates the source.
@@ -208,6 +220,7 @@ def source_instance(
                 the query measurements.
             add_cutout_data: If 'True' the cutout data is added to the
                 source instance before returning.
+            multi_freq: Include multifrequency data
 
         Returns:
             The vast tools Source instance for testing.
@@ -218,7 +231,7 @@ def source_instance(
             unit=(u.deg, u.deg)
         )
         name = 'PSR J2129-04'
-        meas_df = get_measurements(pipeline=pipeline)
+        meas_df = get_measurements(pipeline=pipeline, multi_freq=multi_freq)
 
         if pipeline:
             epochs = ['1', '2', '3', '4', '5', '6']
@@ -264,15 +277,20 @@ def source_instance(
             )
 
             for i in range(source.measurements.shape[0]):
-                cutout_df = cutout_df.append(pd.DataFrame(
-                    data={
-                        "data": [hdul[0].data],
-                        "wcs": [wcs],
-                        "header": [hdul[0].header],
-                        "selavy_overlay": [selavy_components],
-                        "beam": [beam]
-                    }
-                ))
+                cutout_df = pd.concat(
+                    [
+                        cutout_df,
+                        pd.DataFrame(
+                            data={
+                                "data": [hdul[0].data],
+                                "wcs": [wcs],
+                                "header": [hdul[0].header],
+                                "selavy_overlay": [selavy_components],
+                                "beam": [beam]
+                            }
+                        )
+                    ]
+                )
 
             source.cutout_df = cutout_df.reset_index(drop=True)
 
@@ -326,7 +344,7 @@ class TestSource:
         simple: bool,
         outfile: Optional[str],
         source_instance: vts.Source,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the initialisation of the source object.
@@ -363,7 +381,9 @@ class TestSource:
             (10, 2, False, False, None),
             (2, 10, False, False, None),
             (2, 2, True, False, None),
-            (2, 2, False, True, pd.Timestamp('2019-10-30T10:11:56.9130'))
+            (2, 2, False, True, pd.Timestamp('2019-10-30T10:11:56.9130')),
+            (2, 2, True, False, None),
+            (2, 2, True, False, None),
         ]
     )
     def test_plot_lightcurve_errors(
@@ -425,20 +445,22 @@ class TestSource:
             )
 
     @pytest.mark.parametrize(
-        "pipeline,mjd,peak_flux,start_date",
+        "pipeline,mjd,peak_flux,start_date,multi_freq",
         [
-            (False, False, True, None),
-            (False, True, True, None),
-            (False, False, False, None),
+            (False, False, True, None, False),
+            (False, True, True, None, False),
+            (False, False, False, None, False),
             (False, False, True, pd.Timestamp(
                 '2019-10-30T10:11:56.9130'
-            )),
-            (True, False, True, None),
-            (True, True, True, None),
-            (True, False, False, None),
+            ), False),
+            (True, False, True, None, False),
+            (True, True, True, None, False),
+            (True, False, False, None, False),
             (True, False, True, pd.Timestamp(
                 '2019-10-30T10:11:56.9130', tz='utc'
-            )),
+            ), False),
+            (False, False, True, None, True),
+            (True, False, True, None, True),
         ]
     )
     def test_plot_lightcurve(
@@ -447,6 +469,7 @@ class TestSource:
         mjd: bool,
         peak_flux: bool,
         start_date: Optional[pd.Timestamp],
+        multi_freq: bool,
         source_instance: vts.Source,
         get_measurements: pd.DataFrame
     ) -> None:
@@ -464,13 +487,14 @@ class TestSource:
                 plot_lightcurve method.
             start_date: The start_date argument to be passed to the
                 plot_lightcurve method.
+            multi_freq: If `True` then multiple frequencies are plotted.
             source_instance: The pytest source_instance fixture.
             get_measurements: The pytest fixture that loads the measurements.
 
         Returns:
             None
         """
-        source = source_instance(pipeline=pipeline)
+        source = source_instance(pipeline=pipeline, multi_freq=multi_freq)
 
         lightcurve = source.plot_lightcurve(
             mjd=mjd,
@@ -478,7 +502,14 @@ class TestSource:
             start_date=start_date
         )
 
-        meas_df = get_measurements(pipeline=pipeline)
+        measurements_df = get_measurements(pipeline=pipeline,
+                                           multi_freq=multi_freq
+                                           )
+        freq_col = 'frequency'
+
+        grouped_df = measurements_df.groupby(freq_col)
+        freqs = list(grouped_df.groups.keys())
+
         expected_values = {}
 
         if peak_flux:
@@ -486,32 +517,50 @@ class TestSource:
         else:
             flux_col = 'flux_int'
 
-        if pipeline:
-            temp_meas_df = meas_df[meas_df['forced'] == True]
-            expected_values['0_x'] = temp_meas_df['dateobs'].to_numpy()
-            expected_values['0_y'] = temp_meas_df[flux_col].to_numpy()
+        for i, (freq, meas_df) in enumerate(grouped_df):
+            expected_values[freq] = {}
+            if pipeline:
+                temp_df = meas_df[meas_df['forced'] == True]
+                expected_values[freq]['0_x'] = temp_df['dateobs'].to_numpy()
+                expected_values[freq]['0_y'] = temp_df[flux_col].to_numpy()
 
-            temp_meas_df = meas_df[meas_df['forced'] == False]
-            expected_values['1_x'] = temp_meas_df['dateobs'].to_numpy()
-            expected_values['1_y'] = temp_meas_df[flux_col].to_numpy()
-        else:
-            temp_meas_df = meas_df[meas_df['detection'] == False]
-            expected_values['0_x'] = temp_meas_df['dateobs'].to_numpy()
-            expected_values['0_y'] = temp_meas_df['rms_image'].to_numpy() * 5.
+                temp_df = meas_df[meas_df['forced'] == False]
+                expected_values[freq]['1_x'] = temp_df['dateobs'].to_numpy()
+                expected_values[freq]['1_y'] = temp_df[flux_col].to_numpy()
+            else:
+                temp_df = meas_df[meas_df['detection'] == False]
+                expected_values[freq]['0_x'] = pd.to_datetime(
+                    temp_df['dateobs']
+                )
+                upper_lims = temp_df['rms_image'].to_numpy() * 5.
+                expected_values[freq]['0_y'] = upper_lims
 
-            temp_meas_df = meas_df[meas_df['detection'] == True]
-            expected_values['2_x'] = temp_meas_df['dateobs'].to_numpy()
-            expected_values['2_y'] = temp_meas_df[flux_col].to_numpy()
+                temp_df = meas_df[meas_df['detection'] == True]
+                expected_values[freq]['2_x'] = pd.to_datetime(
+                    temp_df['dateobs']
+                )
+                expected_values[freq]['2_y'] = temp_df[flux_col].to_numpy()
 
+        freq_counter = 0
+        line_counter = 0
+        num_lines = len(lightcurve.axes[0].lines)
         for i, line in enumerate(lightcurve.axes[0].lines):
+            # skip the dummy points
+            if i == num_lines - len(freqs):
+                break
+
             # skip the extra upper limit symbol on the lines
-            if not pipeline and i == 1:
+            if not pipeline and line_counter == 1:
+                line_counter += 1
                 continue
+
             x_data = line.get_xdata()
             y_data = line.get_ydata()
 
-            expected_x = expected_values[f'{i}_x']
-            expected_y = expected_values[f'{i}_y']
+            freq = freqs[freq_counter]
+
+            expected_x = expected_values[freq][f'{line_counter}_x']
+            expected_y = expected_values[freq][f'{line_counter}_y']
 
             if mjd:
                 expected_x = Time(expected_x).mjd
@@ -522,9 +571,13 @@ class TestSource:
                     (expected_x - start_date)
                     / pd.Timedelta(1, unit='d')
                 )
-
             assert np.all(expected_x == x_data)
             assert np.all(expected_y == y_data)
+
+            line_counter += 1
+            if line_counter >= 2:
+                line_counter = 0
+                freq_counter += 1
 
         plt.close(lightcurve)
 
@@ -556,31 +609,31 @@ class TestSource:
         Returns:
             None
         """
-        source = source_instance()
+        source = source_instance(multi_freq=False)
 
         lightcurve = source.plot_lightcurve(
             use_forced_for_limits=use_forced_for_limits,
             use_forced_for_all=use_forced_for_all
         )
 
-        meas_df = get_measurements()
+        meas_df = get_measurements(multi_freq=False)
         expected_values = {}
 
         if use_forced_for_limits:
-            temp_meas_df = meas_df[meas_df['detection'] == False]
-            expected_values['0_x'] = temp_meas_df['dateobs'].to_numpy()
-            expected_values['0_y'] = temp_meas_df['f_flux_peak'].to_numpy()
+            temp_df = meas_df[meas_df['detection'] == False]
+            expected_values['0_x'] = pd.to_datetime(temp_df['dateobs'])
+            expected_values['0_y'] = temp_df['f_flux_peak'].to_numpy()
 
-            temp_meas_df = meas_df[meas_df['detection'] == True]
-            expected_values['2_x'] = temp_meas_df['dateobs'].to_numpy()
-            expected_values['2_y'] = temp_meas_df['flux_peak'].to_numpy()
+            temp_df = meas_df[meas_df['detection'] == True]
+            expected_values['2_x'] = pd.to_datetime(temp_df['dateobs'])
+            expected_values['2_y'] = temp_df['flux_peak'].to_numpy()
         else:
-            expected_values['0_x'] = meas_df['dateobs'].to_numpy()
+            expected_values['0_x'] = pd.to_datetime(meas_df['dateobs'])
             expected_values['0_y'] = meas_df['f_flux_peak'].to_numpy()
 
         for i, line in enumerate(lightcurve.axes[0].lines):
-            # skip the extra upper limit symbol on the lines
-            if use_forced_for_limits and i == 1:
+            # skip dummy points
+            if i > 0:
                 continue
             x_data = line.get_xdata()
             y_data = line.get_ydata()
@@ -599,7 +652,7 @@ class TestSource:
         pipeline: bool,
         source_instance: vts.Source,
         dummy_selavy_components: pd.DataFrame,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the get_cutout method on the Source, which fetches the cutout
@@ -631,8 +684,8 @@ class TestSource:
             'vasttools.source.Cutout2D'
         )
 
-        pandas_read_fwf_mocker = mocker.patch(
-            'vasttools.source.pd.read_fwf',
+        pandas_read_selavy_mocker = mocker.patch(
+            'vasttools.source.read_selavy',
             return_value=dummy_selavy_components
         )
 
@@ -655,8 +708,8 @@ class TestSource:
     @pytest.mark.parametrize(
         "pipeline,expected",
         [
-            (False, 'PSR_J2129-04_EPOCH01.fits'),
-            (True, 'PSR_J2129-04_EPOCH1.fits')
+            (False, 'PSR_J2129-04_VAST_2118-06A_SB9668.fits'),
+            (True, 'PSR_J2129-04_0.fits')
         ]
     )
     def test__get_save_name(
@@ -678,7 +731,7 @@ class TestSource:
         """
         source = source_instance(pipeline=pipeline)
 
-        outname = source._get_save_name('1', '.fits')
+        outname = source._get_save_name(0, '.fits')
 
         assert outname == expected
 
@@ -702,7 +755,7 @@ class TestSource:
         crossmatch_overlay: bool,
         hide_beam: bool,
         source_instance: vts.Source,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the make_png method, specifically with the options that are
@@ -735,7 +788,7 @@ class TestSource:
         source = source_instance(pipeline=pipeline, add_cutout_data=True)
 
         png_plot = source.make_png(
-            '1',
+            0,
             selavy=selavy,
             no_islands=no_islands,
             no_colorbar=no_colorbar,
@@ -749,9 +802,9 @@ class TestSource:
 
         if title is None:
             if pipeline:
-                title = 'PSR J2129-04 Epoch 1 2019-08-27 13:38:38'
+                title = 'PSR J2129-04 2019-08-27 13:38:38'
             else:
-                title = 'PSR J2129-04 Epoch 1 2019-08-27 18:52:00'
+                title = 'PSR J2129-04 2019-08-27 18:52:00'
 
         assert isinstance(png_plot, Figure)
         assert result_title == title
@@ -774,7 +827,7 @@ class TestSource:
         zscale: bool,
         contrast: float,
         source_instance: vts.Source,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the make_png method, specifically with the options that affect
@@ -800,7 +853,7 @@ class TestSource:
         source = source_instance(pipeline=pipeline, add_cutout_data=True)
 
         png_plot = source.make_png(
-            '1',
+            0,
             percentile=percentile,
             zscale=zscale,
             contrast=contrast
@@ -815,7 +868,7 @@ class TestSource:
         pipeline: bool,
         source_instance: vts.Source,
         dummy_fits: fits.HDUList,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the skyview_contour_plot method.
@@ -839,7 +892,7 @@ class TestSource:
             return_value=[dummy_fits]
         )
 
-        result = source.skyview_contour_plot('1', 'suveycode')
+        result = source.skyview_contour_plot(0, 'suveycode')
 
         assert isinstance(result, Figure)
         plt.close(result)
@@ -849,7 +902,7 @@ class TestSource:
         self,
         pipeline: bool,
         source_instance: vts.Source,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the write ann method.
@@ -875,7 +928,7 @@ class TestSource:
         )
 
         if pipeline:
-            filename = 'PSR_J2129-04_EPOCH1.ann'
+            filename = 'PSR_J2129-04_0.ann'
             expected = (
                 "COORD W\n"
                 "PA SKY\n"
@@ -901,7 +954,7 @@ class TestSource:
                 "TEXT 315.56781 -0.299919 island_1004\n"
             )
         else:
-            filename = 'PSR_J2129-04_EPOCH01.ann'
+            filename = 'PSR_J2129-04_VAST_2118-06A_SB9668.ann'
             expected = (
                 "COORD W\n"
                 "PA SKY\n"
@@ -927,7 +980,7 @@ class TestSource:
                 "TEXT 315.56781 -0.299919 island_1004\n"
             )
 
-        source.write_ann('1')
+        source.write_ann(0)
 
         write_calls = (
             mocker_file_open.return_value.__enter__().write.call_args_list
@@ -946,7 +999,7 @@ class TestSource:
         self,
         pipeline: bool,
         source_instance: vts.Source,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the write reg method.
@@ -972,7 +1025,7 @@ class TestSource:
         )
 
         if pipeline:
-            filename = 'PSR_J2129-04_EPOCH1.reg'
+            filename = 'PSR_J2129-04_0.reg'
             expected = (
                 "# Region file format: DS9 version 4.0\n"
                 "global color=green font=\"helvetica 10 normal\" "
@@ -1003,7 +1056,7 @@ class TestSource:
                 "# color=green\n"
             )
         else:
-            filename = 'PSR_J2129-04_EPOCH01.reg'
+            filename = 'PSR_J2129-04_VAST_2118-06A_SB9668.reg'
             expected = (
                 "# Region file format: DS9 version 4.0\n"
                 "global color=green font=\"helvetica 10 normal\" select=1 "
@@ -1034,7 +1087,7 @@ class TestSource:
                 "# color=green\n"
             )
 
-        source.write_reg('1')
+        source.write_reg(0)
 
         write_calls = (
             mocker_file_open.return_value.__enter__().write.call_args_list
@@ -1077,7 +1130,10 @@ class TestSource:
         source = source_instance()
         assert expected == source._remove_sbid(input)
 
-    def test_simbad_search(self, source_instance: vts.Source, mocker) -> None:
+    def test_simbad_search(self,
+                           source_instance: vts.Source,
+                           mocker: MockerFixture
+    ) -> None:
         """
         Tests the simbad search method.
 
@@ -1106,7 +1162,10 @@ class TestSource:
         )
         assert result == -99
 
-    def test_ned_search(self, source_instance: vts.Source, mocker) -> None:
+    def test_ned_search(self,
+                        source_instance: vts.Source,
+                        mocker: MockerFixture
+    ) -> None:
         """
         Tests the NED search method.
 
@@ -1135,7 +1194,10 @@ class TestSource:
         )
         assert result == -99
 
-    def test_casda_search(self, source_instance: vts.Source, mocker) -> None:
+    def test_casda_search(self,
+                          source_instance: vts.Source,
+                          mocker: MockerFixture
+    ) -> None:
         """
         Tests the casda search method.
 
@@ -1213,17 +1275,27 @@ class TestSource:
         if pipeline:
             detection_label = 'forced'
 
-            expected_fluxes = source.measurements[
-                source.measurements[detection_label] == False
-            ][f'flux_{suffix}'].append(source.measurements[
-                source.measurements[detection_label] == True
-            ][f'flux_{suffix}'])
+            expected_fluxes = pd.concat(
+                [
+                    source.measurements[
+                        source.measurements[detection_label] == False
+                    ][f'flux_{suffix}'],
+                    source.measurements[
+                        source.measurements[detection_label] == True
+                    ][f'flux_{suffix}']
+                ]
+            )
 
-            expected_errors = source.measurements[
-                source.measurements[detection_label] == False
-            ][f'flux_{suffix}_err'].append(source.measurements[
-                source.measurements[detection_label] == True
-            ][f'flux_{suffix}_err'])
+            expected_errors = pd.concat(
+                [
+                    source.measurements[
+                        source.measurements[detection_label] == False
+                    ][f'flux_{suffix}_err'],
+                    source.measurements[
+                        source.measurements[detection_label] == True
+                    ][f'flux_{suffix}_err']
+                ]
+            )
 
         else:
             detection_label = 'detection'
@@ -1237,28 +1309,40 @@ class TestSource:
             ][f'flux_{suffix}_err']
 
             if forced_fits:
-                expected_fluxes = expected_fluxes.append(
-                    source.measurements[
-                        source.measurements[detection_label] == False
-                    ][f'f_flux_{suffix}']
+                expected_fluxes = pd.concat(
+                    [
+                        expected_fluxes,
+                        source.measurements[
+                            source.measurements[detection_label] == False
+                        ][f'f_flux_{suffix}']
+                    ]
                 )
 
-                expected_errors = expected_errors.append(
-                    source.measurements[
-                        source.measurements[detection_label] == False
-                    ][f'f_flux_{suffix}_err']
+                expected_errors = pd.concat(
+                    [
+                        expected_errors,
+                        source.measurements[
+                            source.measurements[detection_label] == False
+                        ][f'f_flux_{suffix}_err']
+                    ]
                 )
             else:
-                expected_fluxes = expected_fluxes.append(
-                    source.measurements[
-                        source.measurements[detection_label] == False
-                    ][f'rms_image'] * 5.
+                expected_fluxes = pd.concat(
+                    [
+                        expected_fluxes,
+                        source.measurements[
+                            source.measurements[detection_label] == False
+                        ][f'rms_image'] * 5.
+                    ]
                 )
 
-                expected_errors = expected_errors.append(
-                    source.measurements[
-                        source.measurements[detection_label] == False
-                    ][f'rms_image']
+                expected_errors = pd.concat(
+                    [
+                        expected_errors,
+                        source.measurements[
+                            source.measurements[detection_label] == False
+                        ][f'rms_image']
+                    ]
                 )
 
         assert fluxes.equals(expected_fluxes)

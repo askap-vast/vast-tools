@@ -5,7 +5,8 @@ import pytest
 
 from astropy.coordinates import SkyCoord, Angle
 from astropy.table import Table
-from pytest_mock import mocker
+from astropy.io import fits
+from pytest_mock import mocker, MockerFixture  # noqa: F401
 
 import vasttools.utils as vtu
 
@@ -224,6 +225,186 @@ def source_df() -> pd.DataFrame:
     return source_df
 
 
+@pytest.fixture
+def dummy_selavy_components_astropy() -> Table:
+    """
+    Provides a dummy set of selavy components containing only the columns
+    required for testing.
+    Returned as a pandas dataframe.
+    Returns:
+        The dataframe containing the dummy selavy components.
+    """
+    df = pd.DataFrame(data={
+        'island_id': {
+            0: 'SB9667_island_1000',
+            1: 'SB9667_island_1001',
+            2: 'SB9667_island_1002',
+            3: 'SB9667_island_1003',
+            4: 'SB9667_island_1004'
+        },
+        'ra_deg_cont': {
+            0: 321.972731,
+            1: 317.111595,
+            2: 322.974588,
+            3: 315.077869,
+            4: 315.56781
+        },
+        'dec_deg_cont': {
+            0: 0.699851,
+            1: 0.53981,
+            2: 1.790072,
+            3: 3.011253,
+            4: -0.299919
+        },
+        'maj_axis': {0: 15.6, 1: 18.48, 2: 21.92, 3: 16.77, 4: 14.67},
+        'min_axis': {0: 14.23, 1: 16.03, 2: 16.67, 3: 12.4, 4: 13.64},
+        'pos_ang': {0: 111.96, 1: 43.18, 2: 22.71, 3: 57.89, 4: 63.43},
+        'flux_peak': {0: 1.0, 1: 2.0, 2: 3.0, 3: 4.0, 4: 5.0},
+        'flux_peak_err': {0: 0.5, 1: 0.2, 2: 0.1, 3: 0.2, 4: 0.3}
+    })
+
+    return Table.from_pandas(df)
+
+
+@pytest.fixture
+def dummy_fits_open() -> fits.HDUList:
+    """
+    Produces a dummy fits file (hdulist).
+
+    Returns:
+        The fits file as an hdulist instance.
+    """
+    data = np.zeros((100, 100), dtype=np.float32)
+
+    hdu = fits.PrimaryHDU(data=data)
+
+    header = hdu.header
+
+    header['BMAJ'] = 0.00493462835125746
+    header['BMIN'] = 0.00300487516378073
+    header['BPA'] = -71.0711523845679
+    header['CDELT1'] = 1.0
+    header['CDELT2'] = 1.0
+    header['WCSAXES'] = 2
+    header['TELESCOP'] = "ASKAP"
+    header['RESTFREQ'] = 887491000.0
+    header['DATE-OBS'] = "2020-01-12T05:36:03.834"
+    header['TIMESYS'] = "UTC"
+    header['RADESYS'] = "ICRS"
+    header['CTYPE1'] = "RA---SIN"
+    header['CUNIT1'] = "deg"
+    header['CRVAL1'] = 319.6519091667
+    header['CRPIX1'] = 4059.5
+    header['CD1_1'] = -0.0006944444444444
+    header['CD1_2'] = 0.0
+    header['CTYPE2'] = "DEC--SIN"
+    header['CUNIT2'] = "deg"
+    header['CRVAL2'] = -6.2985525
+    header['CRPIX2'] = -2537.5
+    header['CD2_1'] = 0.0
+    header['CD2_2'] = 0.0006944444444444
+
+    hdul = fits.HDUList([hdu])
+
+    return hdul
+
+
+@pytest.fixture
+def dummy_fits_open_large() -> fits.HDUList:
+    border_width = 50
+    image_width = 1000
+
+    data = np.ones((image_width, image_width))
+    data[:border_width, :] = np.nan
+    data[-border_width:, :] = np.nan
+    data[:, :border_width] = np.nan
+    data[:, -border_width:] = np.nan
+
+    hdu = fits.PrimaryHDU(data=data)
+
+    header = hdu.header
+
+    header['BMAJ'] = 0.00493462835125746
+    header['BMIN'] = 0.00300487516378073
+    header['BPA'] = -71.0711523845679
+    header['CDELT1'] = 1.0
+    header['CDELT2'] = 1.0
+    header['WCSAXES'] = 2
+    header['TELESCOP'] = "ASKAP"
+    header['RESTFREQ'] = 887491000.0
+    header['DATE-OBS'] = "2020-01-12T05:36:03.834"
+    header['TIMESYS'] = "UTC"
+    header['RADESYS'] = "ICRS"
+    header['CTYPE1'] = "RA---SIN"
+    header['CUNIT1'] = "deg"
+    header['CRVAL1'] = 319.6519091667
+    header['CRPIX1'] = 4059.5
+    header['CD1_1'] = -0.0006944444444444
+    header['CD1_2'] = 0.0
+    header['CTYPE2'] = "DEC--SIN"
+    header['CUNIT2'] = "deg"
+    header['CRVAL2'] = -6.2985525
+    header['CRPIX2'] = -2537.5
+    header['CD2_1'] = 0.0
+    header['CD2_2'] = 0.0006944444444444
+
+    hdul = fits.HDUList([hdu])
+
+    return hdul
+
+
+@pytest.fixture
+def dummy_fits_open_large_hole() -> fits.HDUList:
+    border_width = 50
+    image_width = 1000
+    hole_width = 100
+
+    centre = int(image_width / 2)
+    hole_rad = int(hole_width / 2)
+
+    data = np.ones((image_width, image_width))
+    data[:border_width, :] = np.nan
+    data[-border_width:, :] = np.nan
+    data[:, :border_width] = np.nan
+    data[:, -border_width:] = np.nan
+
+    data[centre - hole_rad:centre + hole_rad,
+         centre - hole_rad:centre + hole_rad
+         ] = np.nan
+
+    hdu = fits.PrimaryHDU(data=data)
+
+    header = hdu.header
+
+    header['BMAJ'] = 0.00493462835125746
+    header['BMIN'] = 0.00300487516378073
+    header['BPA'] = -71.0711523845679
+    header['CDELT1'] = 1.0
+    header['CDELT2'] = 1.0
+    header['WCSAXES'] = 2
+    header['TELESCOP'] = "ASKAP"
+    header['RESTFREQ'] = 887491000.0
+    header['DATE-OBS'] = "2020-01-12T05:36:03.834"
+    header['TIMESYS'] = "UTC"
+    header['RADESYS'] = "ICRS"
+    header['CTYPE1'] = "RA---SIN"
+    header['CUNIT1'] = "deg"
+    header['CRVAL1'] = 319.6519091667
+    header['CRPIX1'] = 4059.5
+    header['CD1_1'] = -0.0006944444444444
+    header['CD1_2'] = 0.0
+    header['CTYPE2'] = "DEC--SIN"
+    header['CUNIT2'] = "deg"
+    header['CRVAL2'] = -6.2985525
+    header['CRPIX2'] = -2537.5
+    header['CD2_1'] = 0.0
+    header['CD2_2'] = 0.0006944444444444
+
+    hdul = fits.HDUList([hdu])
+
+    return hdul
+
+
 def test_gen_skycoord_from_df(
     coords_df: pd.DataFrame,
     coords_skycoord: SkyCoord
@@ -292,7 +473,7 @@ def test_gen_skycoord_from_df_colnames(
     assert np.all(coords_skycoord == vtu_sc)
 
 
-def test_check_file(mocker) -> None:
+def test_check_file(mocker: MockerFixture) -> None:
     """
     Tests check file returns correctly.
 
@@ -311,7 +492,7 @@ def test_check_file(mocker) -> None:
     mocker_isfile.assert_called_once_with(test_file)
 
 
-def test_check_racs_exists(mocker) -> None:
+def test_check_racs_exists(mocker: MockerFixture) -> None:
     """
     Tests the RACS check.
 
@@ -328,7 +509,7 @@ def test_check_racs_exists(mocker) -> None:
     assert exists is True
 
 
-def test_create_source_directories(mocker) -> None:
+def test_create_source_directories(mocker: MockerFixture) -> None:
     """
     Tests the source directories creation.
 
@@ -386,7 +567,7 @@ def test_filter_selavy_components(
 
 def test_build_catalog_file(
     catalog_deg_float: pd.DataFrame,
-    mocker,
+    mocker: MockerFixture,
 ) -> None:
     """
     Tests the build catalog function.
@@ -511,7 +692,95 @@ def test_build_SkyCoord_string_hms(
     assert np.all(result == catalog_skycoord_hms)
 
 
-def test_simbad_search(mocker) -> None:
+def test_read_selavy_xml(mocker: MockerFixture):
+    """
+    Tests read_selavy for a file with xml formatting.
+    Args:
+        mocker: Pytest mock mocker object.
+    Returns:
+        None.
+    """
+    mock_table_read = mocker.patch(
+        'vasttools.utils.Table.read')
+
+    test_filename = 'test.xml'
+    vtu.read_selavy(test_filename)
+    mock_table_read.assert_called_once_with(test_filename,
+                                            format="votable",
+                                            use_names_over_ids=True
+                                            )
+
+
+def test_read_selavy_xml_usecols(dummy_selavy_components_astropy,
+                                 mocker: MockerFixture
+                                 ) -> None:
+    """
+    Tests read_selavy for a file with xml formatting, requesting a subset
+    of the available columns.
+    Args:
+        dummy_selavy_components_astropy: A dummy astropy Table containing
+            the necessary selavy columns
+        mocker: Pytest mock mocker object.
+    Returns:
+        None.
+    """
+    mock_table_read = mocker.patch(
+        'vasttools.utils.Table.read',
+        return_value=dummy_selavy_components_astropy
+    )
+
+    test_filename = 'test.xml'
+    usecols = ['island_id',
+               'ra_deg_cont',
+               'dec_deg_cont',
+               'maj_axis',
+               'min_axis',
+               'pos_ang'
+               ]
+
+    df = vtu.read_selavy(test_filename, cols=usecols)
+
+    assert list(df.columns) == usecols
+
+
+def test_read_selavy_fwf(mocker: MockerFixture) -> None:
+    """
+    Tests read_selavy for a file with standard fixed-width formatting.
+    Args:
+        mocker: Pytest mock mocker object.
+    Returns:
+        None.
+    """
+    mock_table_read = mocker.patch(
+        'vasttools.utils.pd.read_fwf')
+
+    test_filename = 'test.txt'
+    vtu.read_selavy(test_filename)
+    mock_table_read.assert_called_once_with(test_filename,
+                                            skiprows=[1],
+                                            usecols=None
+                                            )
+
+
+def test_read_selavy_csv(mocker) -> None:
+    """
+    Tests read_selavy for a file with csv formatting.
+    Args:
+        mocker: Pytest mock mocker object.
+    Returns:
+        None.
+    """
+    mock_table_read = mocker.patch(
+        'vasttools.utils.pd.read_csv')
+
+    test_filename = 'test.csv'
+    vtu.read_selavy(test_filename)
+    mock_table_read.assert_called_once_with(test_filename,
+                                            usecols=None
+                                            )
+
+
+def test_simbad_search(mocker: MockerFixture) -> None:
     """
     Test the SIMBAD search.
 
@@ -548,7 +817,7 @@ def test_simbad_search(mocker) -> None:
     assert np.all(result_names == np.array(objects))
 
 
-def test_simbad_search_none(mocker) -> None:
+def test_simbad_search_none(mocker: MockerFixture) -> None:
     """
     Test the SIMBAD search None result.
 
@@ -700,3 +969,140 @@ def test_calculate_m_metric() -> None:
     result = vtu.calculate_m_metric(flux_a, flux_b)
 
     assert result == 2. / 3.
+
+
+def test_create_moc_from_fits(
+    dummy_fits_open: fits.HDUList,
+    mocker: MockerFixture
+) -> None:
+    """
+    Tests the generation of a MOC for a single fits file.
+
+    Args:
+        dummy_fits_open: The dummy HDUList object that represents an open
+            FITS file.
+        mocker: The pytest mock mocker object.
+
+    Returns:
+        None
+    """
+
+    mocker_fits_open = mocker.patch(
+        'vasttools.utils.open_fits',
+        return_value=dummy_fits_open
+    )
+    mocker_fits_open = mocker.patch(
+        'os.path.isfile',
+        return_value=True
+    )
+
+    moc_out_json = {'9': [1215087, 1215098]}
+
+    moc = vtu.create_moc_from_fits('test.fits', 9)
+    moc_json = moc.serialize(format='json')
+
+    assert moc_json == moc_out_json
+
+
+def test_mocs_with_holes(dummy_fits_open_large: fits.HDUList,
+                         dummy_fits_open_large_hole: fits.HDUList,
+                         mocker: MockerFixture) -> None:
+    """
+    Tests that gen_mocs_field produces the same output regardless of whether
+    there are NaN holes within the image.
+
+    Args:
+        dummy_fits_open_large: The dummy HDUList object that represents an open
+            FITS file with a large data array of ones.
+        dummy_fits_open_large_hole: The dummy HDUList object that represents
+            an open FITS file with a large data array of ones, with a hole of
+            NaN values in the centre.
+        mocker: The pytest mock mocker object.
+    Returns:
+        None
+    """
+    mocker_fits_open = mocker.patch(
+        'os.path.isfile',
+        return_value=True
+    )
+
+    mocker_fits_open = mocker.patch(
+        'vasttools.utils.open_fits',
+        return_value=dummy_fits_open_large
+    )
+    full_moc = vtu.create_moc_from_fits('test.fits')
+
+    mocker_fits_open = mocker.patch(
+        'vasttools.utils.open_fits',
+        return_value=dummy_fits_open_large_hole
+    )
+    hole_moc = vtu.create_moc_from_fits('test.fits')
+
+    assert full_moc == hole_moc
+
+
+def test__distance_from_edge() -> None:
+    """
+    Tests the distance from edge method.
+
+    The function works by calculating how far the pixel is from the edge
+    (i.e. zero pixels). The expected result is defined in the test.
+
+    Args:
+        None
+
+    Returns:
+        None
+    """
+    input_array = np.array(
+        [
+            [0, 0, 0, 0, 0, 0],
+            [0, 1, 1, 1, 1, 0],
+            [0, 1, 1, 1, 1, 0],
+            [0, 1, 1, 1, 1, 0],
+            [0, 1, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0, 0]
+        ]
+    )
+
+    expected = np.array(
+        [
+            [0, 0, 0, 0, 0, 0],
+            [0, 1, 1, 1, 1, 0],
+            [0, 1, 2, 2, 1, 0],
+            [0, 1, 2, 2, 1, 0],
+            [0, 1, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0, 0]
+        ]
+    )
+
+    result = vtu._distance_from_edge(input_array)
+
+    assert np.all(result == expected)
+
+
+@pytest.mark.parametrize("in_series, out_series",
+                         [(pd.Series(['VAST_0000+00A']),
+                           pd.Series(['VAST_0000+00'])
+                           ),
+                          (pd.Series(['VAST_0000+00']),
+                           pd.Series(['VAST_0000+00'])
+                           ),
+                          ],
+                         ids=('with-A', 'without-A')
+                         )
+def test_strip_fieldnames(in_series, out_series) -> None:
+    """
+    Test the strip_fieldnames function.
+
+    Args:
+        in_series: Series to be put into the function.
+        out_series: Expected output.
+
+    Returns:
+        None
+    """
+
+    stripped = vtu.strip_fieldnames(in_series)
+
+    pd.testing.assert_series_equal(stripped, out_series)

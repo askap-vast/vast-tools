@@ -65,11 +65,30 @@ The guidelines to dealing with reviews and conversations on GitHub are essential
 * The PR author will re-request the review by clicking on the :octicons-sync-16: on the top right corner and might ping the reviewer on a comment if necessary with `@github_name`.
 * When the PR is approved by at least one reviewer you might want to merge it to dev (you should have that privileges), unless you want to make sure that such PR is reviewed by another reviewer (e.g. you are doing big changes or important changes or you want to make sure that other person is aware/updated about the changes in that PR).
 
-### PEP 8 Speaks
+### Flake8 Lint Check
 
-The [`PEP 8 Speaks`](https://github.com/marketplace/pep-8-speaks){:target="_blank"} app will automatically review any python code in the pull request to make sure the proposed code conforms to the [PEP 8 style](https://pep8.org){:target="_blank"}.
-Please address any lines of code that the app flags and upon a new push to the pull request branch, the app will automatically update the message to say if all PEP8 issues have been addressed.
-If there is no post by the app on an opened pull request it means the app has found no style issues in the proposed code.
+[`Flake8`](https://flake8.pycqa.org/en/latest/){:target="_blank"} is automatically run on each commit to a PR using GitHub Actions to perform lint checking.
+Only minor checks are made and these are:
+
+* Trailing whitespace ([W291](https://www.flake8rules.com/rules/W291.html){:target="_blank"}).
+* No new line at end of file ([W292](https://www.flake8rules.com/rules/W292.html){:target="_blank"}).
+* Module imported but unused ([F401](https://www.flake8rules.com/rules/W292.html){:target="_blank"}).
+
+`Flake8` is included in the development dependencies of VAST Tools and the check can be performed locally by using the example below.
+
+!!! example "Example: Local Flake8 Lint Check"
+    From the project root directory run the following command:
+    ```console
+    flake8 --select W291,W292,F401 .
+    ```
+
+!!! tip "Tip: Ignoring Flake8 Violations"
+    There may be instances where it is useful for a lint violation to be ignored.
+    For example, an unused import F401 violation can be flagged to be ignored by commenting the offending line as so:
+    ```python
+    import foo  # noqa: F401
+    ```
+    See the [`Flake8` documentation](https://flake8.pycqa.org/en/latest/user/violations.html){:target="_blank"} for full details and options for ignoring violations.
 
 ## Releases
 

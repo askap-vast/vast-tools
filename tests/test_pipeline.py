@@ -8,14 +8,11 @@ import pytest
 import vaex
 
 from astropy.coordinates import SkyCoord
-from astropy.io import fits
-from astropy.wcs import WCS
 from mocpy import MOC
 from pathlib import Path
-from pytest_mock import mocker
+from pytest_mock import mocker, MockerFixture  # noqa: F401
 from typing import Dict, List, Union
 
-from vasttools import RELEASED_EPOCHS
 import vasttools.pipeline as vtp
 
 
@@ -23,7 +20,7 @@ TEST_DATA_DIR = Path(__file__).resolve().parent / 'data'
 
 
 @pytest.fixture
-def dummy_pipeline_object(mocker) -> vtp.Pipeline:
+def dummy_pipeline_object(mocker: MockerFixture) -> vtp.Pipeline:
     """
     A dummy Pipeline instance for testing.
 
@@ -353,12 +350,12 @@ def load_parquet_side_effect(
 
 
 @pytest.fixture
-def dummy_PipeAnalysis(
+def dummy_PipeAnalysis_base(
     dummy_pipeline_object: vtp.Pipeline,
-    mocker
+    mocker: MockerFixture
 ) -> vtp.PipeAnalysis:
     """
-    A dummy PipeAnalysis object used in testing.
+    The base dummy PipeAnalysis object used in testing.
 
     Because the raw pipeline outputs are processed in the load run function
     it is easier to test while creating the object each time. It is a little
@@ -394,9 +391,40 @@ def dummy_PipeAnalysis(
 
 
 @pytest.fixture
+def dummy_PipeAnalysis(
+    dummy_PipeAnalysis_base: vtp.PipeAnalysis,
+    mocker: MockerFixture
+) -> vtp.PipeAnalysis:
+    """
+    The dummy PipeAnalysis object used for most testing.
+
+    Because the raw pipeline outputs are processed in the load run function
+    it is easier to test while creating the object each time. It is a little
+    inefficient and really the pipeline process should be refactored slightly
+    to support better testing.
+
+    Args:
+        dummy_PipeAnalysis_base: The base vtp.PipeAnalysis fixture
+        mocker: The pytest mock mocker object.
+
+    Returns:
+        The vtp.PipeAnalysis instance.
+    """
+
+    measurement_pairs_existence_mocker = mocker.patch(
+        'vasttools.pipeline.PipeRun._check_measurement_pairs_file',
+        return_value=True
+    )
+
+    dummy_PipeAnalysis_base._measurement_pairs_exists = True
+
+    return dummy_PipeAnalysis_base
+
+
+@pytest.fixture
 def dummy_PipeAnalysis_wtwoepoch(
     dummy_PipeAnalysis: vtp.PipeAnalysis,
-    mocker
+    mocker: MockerFixture
 ) -> vtp.PipeAnalysis:
     """
     A dummy PipeAnalysis object used in testing with the two epoch data
@@ -423,7 +451,7 @@ def dummy_PipeAnalysis_wtwoepoch(
 @pytest.fixture
 def dummy_PipeAnalysis_vaex(
     dummy_pipeline_object: vtp.Pipeline,
-    mocker
+    mocker: MockerFixture
 ) -> vtp.PipeAnalysis:
     """
     A dummy PipeAnalysis object used in testing, a vaex version.
@@ -462,7 +490,7 @@ def dummy_PipeAnalysis_vaex(
 @pytest.fixture
 def dummy_PipeAnalysis_vaex_wtwoepoch(
     dummy_PipeAnalysis_vaex: vtp.PipeAnalysis,
-    mocker
+    mocker: MockerFixture
 ) -> vtp.PipeAnalysis:
     """
     A dummy PipeAnalysis object used in testing with the two epoch data
@@ -624,7 +652,7 @@ class TestPipeline:
     vasttools.Pipeline.
     """
 
-    def test_init(self, mocker) -> None:
+    def test_init(self, mocker: MockerFixture) -> None:
         """
         Tests the initialisation of a Pipeline instance.
 
@@ -646,7 +674,7 @@ class TestPipeline:
 
         assert pipe.project_dir == expected_path
 
-    def test_init_projectdir(self, mocker) -> None:
+    def test_init_projectdir(self, mocker: MockerFixture) -> None:
         """
         Tests the initialisation of a Pipeline instance, when the project
         dir is stated.
@@ -669,7 +697,7 @@ class TestPipeline:
 
         assert pipe.project_dir == expected_path
 
-    def test_init_env_fail(self, mocker) -> None:
+    def test_init_env_fail(self, mocker: MockerFixture) -> None:
         """
         Tests the initialisation failure of a Pipeline instance.
 
@@ -693,7 +721,7 @@ class TestPipeline:
             "The pipeline run directory could not be determined!"
         )
 
-    def test_init_project_dir_fail(self, mocker) -> None:
+    def test_init_project_dir_fail(self, mocker: MockerFixture) -> None:
         """
         Tests the initialisation failure of a Pipeline instance.
 
@@ -719,7 +747,7 @@ class TestPipeline:
     def test_list_piperuns(
         self,
         dummy_pipeline_object: vtp.Pipeline,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the list piperuns method.
@@ -752,7 +780,7 @@ class TestPipeline:
     def test_list_images(
         self,
         dummy_pipeline_object: vtp.Pipeline,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the list images method.
@@ -788,7 +816,7 @@ class TestPipeline:
     def test_load_run_dir_fail(
         self,
         dummy_pipeline_object: vtp.Pipeline,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the failure of the load run method.
@@ -814,7 +842,7 @@ class TestPipeline:
     def test_load_run_no_vaex(
         self,
         dummy_pipeline_object: vtp.Pipeline,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the load run method.
@@ -854,7 +882,7 @@ class TestPipeline:
     def test_load_run_no_vaex_check_columns(
         self,
         dummy_pipeline_object: vtp.Pipeline,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the load run method.
@@ -894,7 +922,7 @@ class TestPipeline:
     def test_load_run_vaex(
         self,
         dummy_pipeline_object: vtp.Pipeline,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the load run method.
@@ -936,6 +964,55 @@ class TestPipeAnalysis:
     the pipeline component.
     """
 
+    @pytest.mark.parametrize(
+        "pairs_existence",
+        [
+            [True],
+            [False],
+            [True,True],
+            [False,False],
+            [True,False],
+        ],
+        ids=("single-exists",
+             "single-no-exists",
+             "multiple-all-exists",
+             "multiple-no-exists",
+             "multiple-some-exists",
+             )
+     )
+    def test__check_measurement_pairs_file(self,
+        pairs_existence: List[bool],
+        dummy_PipeAnalysis_base: vtp.PipeAnalysis,
+        mocker: MockerFixture
+        ) -> None:
+        """
+        Tests the _check_measurement_pairs_file method.
+        
+        Args:
+            pairs_existence: A list of booleans corresponding to whether a
+                pairs file exists.
+            dummy_PipeAnalysis_base: The base dummy PipeAnalysis object.
+            mocker: The pytest-mock mocker object.
+        
+        Returns:
+            None
+        """
+        mocker_isfile = mocker.patch(
+            "os.path.isfile",
+            side_effect=pairs_existence
+        )
+        
+        fake_pairs_file = [""]*len(pairs_existence)
+        
+        dummy_PipeAnalysis_base.measurement_pairs_file = fake_pairs_file
+        
+        returned_val = dummy_PipeAnalysis_base._check_measurement_pairs_file()
+        
+        all_exist = sum(pairs_existence) == len(pairs_existence)
+        
+        assert returned_val == all_exist
+        
+    
     def test_combine_with_run(
         self,
         dummy_PipeAnalysis: vtp.PipeAnalysis
@@ -1012,7 +1089,7 @@ class TestPipeAnalysis:
     def test_pipeanalysis_get_sources_skycoord(
         self,
         dummy_PipeAnalysis: vtp.PipeAnalysis,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the get sources sky coord method.
@@ -1041,7 +1118,7 @@ class TestPipeAnalysis:
     def test_pipeanalysis_get_sources_skycoord_user_sources(
         self,
         dummy_PipeAnalysis: vtp.PipeAnalysis,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the get sources sky coord method for a custom user defined
@@ -1080,7 +1157,7 @@ class TestPipeAnalysis:
     def test_pipeanalysis_get_sources_skycoord_user_sources_hms(
         self,
         dummy_PipeAnalysis: vtp.PipeAnalysis,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the get sources sky coord method for a custom dataframe where
@@ -1120,7 +1197,7 @@ class TestPipeAnalysis:
         dummy_PipeAnalysis: vtp.PipeAnalysis,
         expected_sources_skycoord: SkyCoord,
         expected_source_measurements_pd: pd.DataFrame,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the get source method that would normally return a
@@ -1218,7 +1295,7 @@ class TestPipeAnalysis:
         dummy_PipeAnalysis_vaex: vtp.PipeAnalysis,
         expected_sources_skycoord: SkyCoord,
         expected_source_measurements_pd: pd.DataFrame,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the get source method that would normally return a
@@ -1316,7 +1393,7 @@ class TestPipeAnalysis:
         self,
         dummy_PipeAnalysis: vtp.PipeAnalysis,
         dummy_pipeline_pairs_df: pd.DataFrame,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the method that loads the two epoch metrics.
@@ -1346,7 +1423,7 @@ class TestPipeAnalysis:
         self,
         dummy_PipeAnalysis_vaex: vtp.PipeAnalysis,
         dummy_pipeline_pairs_df: pd.DataFrame,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the method that loads the two epoch metrics.
@@ -1429,7 +1506,7 @@ class TestPipeAnalysis:
     def test_check_for_planets(
         self,
         dummy_PipeAnalysis: vtp.PipeAnalysis,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the method checks the pipeline run for planets.
@@ -1503,113 +1580,10 @@ class TestPipeAnalysis:
         assert result.sources.shape[0] == 2
         assert result.measurements.shape[0] == 10
 
-    def test__distance_from_edge(
-        self,
-        dummy_PipeAnalysis: vtp.PipeAnalysis
-    ) -> None:
-        """
-        Tests the distance from edge method.
-
-        The function works by calculating how far the pixel is from the edge
-        (i.e. zero pixels). The expected result is defined in the test.
-
-        Args:
-            dummy_PipeAnalysis: The dummy PipeAnalysis object that is used
-                for testing.
-
-        Returns:
-            None
-        """
-        input_array = np.array(
-            [
-                [0, 0, 0, 0, 0, 0],
-                [0, 1, 1, 1, 1, 0],
-                [0, 1, 1, 1, 1, 0],
-                [0, 1, 1, 1, 1, 0],
-                [0, 1, 1, 1, 1, 0],
-                [0, 0, 0, 0, 0, 0]
-            ]
-        )
-
-        expected = np.array(
-            [
-                [0, 0, 0, 0, 0, 0],
-                [0, 1, 1, 1, 1, 0],
-                [0, 1, 2, 2, 1, 0],
-                [0, 1, 2, 2, 1, 0],
-                [0, 1, 1, 1, 1, 0],
-                [0, 0, 0, 0, 0, 0]
-            ]
-        )
-
-        result = dummy_PipeAnalysis._distance_from_edge(input_array)
-
-        assert np.all(result == expected)
-
-    def test__create_moc_from_fits(
-        self,
-        dummy_PipeAnalysis: vtp.PipeAnalysis,
-        mocker
-    ) -> None:
-        """
-        Tests the create MOC from fits method.
-
-        As the actual create MOC function does not need to be tested here, the
-        calls are mocked and checks are made against the calls. And that the
-        return result is passed through. A FITS object is created in the test.
-
-        Args:
-            dummy_PipeAnalysis: The dummy PipeAnalysis object that is used
-                for testing.
-            mocker: The pytest mock mocker object.
-
-        Returns:
-            None
-        """
-        image_data = np.ones((4, 4), dtype=np.float32)
-        image_data = np.pad(
-            image_data, pad_width=1, mode='constant', constant_values=np.nan
-        )
-
-        hdu = fits.PrimaryHDU(data=image_data)
-
-        hdu.header['RADESYS'] = "ICRS"
-        hdu.header['CTYPE1'] = "RA---SIN"
-        hdu.header['CUNIT1'] = "deg"
-        hdu.header['CRVAL1'] = 0.0
-        hdu.header['CRPIX1'] = 2.0
-        hdu.header['CD1_1'] = 1.0
-        hdu.header['CD1_2'] = 0.0
-        hdu.header['CTYPE2'] = "DEC--SIN"
-        hdu.header['CUNIT2'] = "deg"
-        hdu.header['CRVAL2'] = 0.0
-        hdu.header['CRPIX2'] = 2.0
-        hdu.header['CD2_1'] = 0.0
-        hdu.header['CD2_2'] = 1.0
-
-        image_wcs = WCS(hdu.header)
-
-        image_mocker = mocker.patch('vasttools.pipeline.Image')
-        (image_mocker.return_value).data = image_data
-        (image_mocker.return_value).wcs = image_wcs
-
-        moc_from_polygon_skycoord_mocker = mocker.patch(
-            'mocpy.MOC.from_polygon_skycoord',
-            return_value=-99
-        )
-
-        result = dummy_PipeAnalysis._create_moc_from_fits('test.fits')
-        called_coords = moc_from_polygon_skycoord_mocker.call_args.args[0]
-        pixels = image_wcs.world_to_array_index(called_coords)
-
-        assert len(pixels[0]) == 12
-        assert np.all(pixels != 0)
-        assert result == -99
-
     def test_create_moc(
         self,
         dummy_PipeAnalysis: vtp.PipeAnalysis,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the front facing create moc method.
@@ -1625,17 +1599,16 @@ class TestPipeAnalysis:
             None
         """
         create_moc_from_fits_mocker = mocker.patch(
-            'vasttools.pipeline.PipeRun._create_moc_from_fits'
+            'vasttools.pipeline.create_moc_from_fits'
         )
 
         result = dummy_PipeAnalysis.create_moc()
-
         create_moc_from_fits_mocker.assert_called_once()
 
     def test_create_moc_multiple_regions(
         self,
         dummy_PipeAnalysis: vtp.PipeAnalysis,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the create moc method for multiple regions present.
@@ -1651,7 +1624,7 @@ class TestPipeAnalysis:
             None
         """
         create_moc_from_fits_mocker = mocker.patch(
-            'vasttools.pipeline.PipeRun._create_moc_from_fits'
+            'vasttools.pipeline.create_moc_from_fits'
         )
 
         moc_union_mocker = create_moc_from_fits_mocker.return_value.union
@@ -1659,8 +1632,12 @@ class TestPipeAnalysis:
         new_image_row = dummy_PipeAnalysis.images.iloc[0]
         new_image_row.name = 10
 
-        dummy_PipeAnalysis.images = dummy_PipeAnalysis.images.append(
-            new_image_row
+        dummy_PipeAnalysis.images = pd.concat(
+            [
+                dummy_PipeAnalysis.images,
+                # need to transpose the series to a dataframe to concat
+                new_image_row.to_frame().T.set_index('name')
+            ]
         )
 
         dummy_PipeAnalysis.images.loc[10, 'skyreg_id'] = 4
@@ -1762,7 +1739,7 @@ class TestPipeAnalysis:
     def test_recalc_sources_df(
         self,
         dummy_PipeAnalysis: vtp.PipeAnalysis,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the method that recalculates the source statistics.
@@ -1835,7 +1812,7 @@ class TestPipeAnalysis:
         self,
         dummy_PipeAnalysis_wtwoepoch: vtp.PipeAnalysis,
         dummy_pipeline_pairs_df: pd.DataFrame,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the method that generates a dataframe and other metrics used
@@ -1875,7 +1852,7 @@ class TestPipeAnalysis:
         self,
         dummy_PipeAnalysis_wtwoepoch: vtp.PipeAnalysis,
         gen_measurement_pairs_df: pd.DataFrame,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the matplotlib method of plotting the epoch pair metrics.
@@ -1919,7 +1896,7 @@ class TestPipeAnalysis:
         self,
         dummy_PipeAnalysis_wtwoepoch: vtp.PipeAnalysis,
         gen_measurement_pairs_df: pd.DataFrame,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the matplotlib style b method of plotting the epoch pair
@@ -1965,7 +1942,7 @@ class TestPipeAnalysis:
         self,
         dummy_PipeAnalysis_wtwoepoch: vtp.PipeAnalysis,
         gen_measurement_pairs_df: pd.DataFrame,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the matplotlib method of plotting the epoch pair metrics using
@@ -2011,7 +1988,7 @@ class TestPipeAnalysis:
         self,
         dummy_PipeAnalysis_wtwoepoch: vtp.PipeAnalysis,
         gen_measurement_pairs_df: pd.DataFrame,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Smoke tests the bokeh method of plotting the epoch pair metrics.
@@ -2041,7 +2018,7 @@ class TestPipeAnalysis:
         self,
         dummy_PipeAnalysis_wtwoepoch: vtp.PipeAnalysis,
         gen_measurement_pairs_df: pd.DataFrame,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Smoke tests the bokeh style b method of plotting the epoch pair
@@ -2073,7 +2050,7 @@ class TestPipeAnalysis:
         self,
         dummy_PipeAnalysis_wtwoepoch: vtp.PipeAnalysis,
         gen_measurement_pairs_df: pd.DataFrame,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the front facing method to plot the two epoch metrics
@@ -2113,7 +2090,7 @@ class TestPipeAnalysis:
         self,
         dummy_PipeAnalysis_wtwoepoch: vtp.Pipeline,
         gen_measurement_pairs_df: pd.DataFrame,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the front facing method to plot the two epoch metrics
@@ -2228,7 +2205,7 @@ class TestPipeAnalysis:
     def test__gaussian_fit(
         self,
         dummy_PipeAnalysis: vtp.PipeAnalysis,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests performing the gaussian fits to the source metrics.
@@ -2319,7 +2296,7 @@ class TestPipeAnalysis:
         self,
         dummy_PipeAnalysis: vtp.PipeAnalysis,
         gen_sources_metrics_df: pd.DataFrame,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Smoke test for the eta v plot (matplotlib).
@@ -2355,7 +2332,7 @@ class TestPipeAnalysis:
         self,
         dummy_PipeAnalysis: vtp.PipeAnalysis,
         gen_sources_metrics_df: pd.DataFrame,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Smoke test for the eta v plot (bokeh).

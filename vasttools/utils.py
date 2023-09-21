@@ -12,16 +12,22 @@ import matplotlib.markers
 import matplotlib.lines
 import numpy as np
 import pandas as pd
-import warnings
+import scipy.ndimage as ndi
+import gc
 
 from astropy import units as u
 from astropy.coordinates import SkyCoord, Angle
 from astroquery.simbad import Simbad
 from astropy.time import Time
+from astropy.table import Table
 from astropy.coordinates import solar_system_ephemeris
-from astropy.coordinates import get_body, get_moon
+from astropy.coordinates import get_body
+from astropy.io import fits
+from astropy.wcs import WCS
 from multiprocessing_logging import install_mp_handler
 from typing import Optional, Union, Tuple, List
+from pathlib import Path
+from mocpy import MOC
 
 # crosshair imports
 from matplotlib.transforms import Affine2D
@@ -35,7 +41,7 @@ except ImportError:
     use_colorlog = False
 
 
-from vasttools.survey import get_askap_observing_location
+import vasttools.survey as vts
 
 
 def get_logger(
@@ -310,6 +316,40 @@ def build_SkyCoord(catalog: pd.DataFrame) -> SkyCoord:
     return src_coords
 
 
+def read_selavy(
+    selavy_path: str,
+    cols: Optional[List[str]] = None
+) -> pd.DataFrame:
+    """
+    Load a selavy catalogue from file. Can handle VOTables and csv files.
+    Args:
+        selavy_path: Path to the file.
+        cols: Columns to use. Defaults to None, which returns all columns.
+    Returns:
+        Dataframe containing the catalogue.
+    """
+
+    if selavy_path.endswith(".xml") or selavy_path.endswith(".vot"):
+        df = Table.read(
+            selavy_path, format="votable", use_names_over_ids=True
+        ).to_pandas()
+        if cols is not None:
+            df = df[df.columns.intersection(cols)]
+    elif selavy_path.endswith(".csv"):
+        # CSVs from CASDA have all lowercase column names
+        df = pd.read_csv(selavy_path, usecols=cols).rename(
+            columns={"spectral_index_from_tt": "spectral_index_from_TT"}
+        )
+    else:
+        df = pd.read_fwf(selavy_path, skiprows=[1], usecols=cols)
+
+    # Force all flux values to be positive
+    for colname in ['flux_peak', 'flux_peak_err', 'flux_int', 'flux_int_err']:
+        if colname in df.columns:
+            df[colname] = df[colname].abs()
+    return df
+
+
 def filter_selavy_components(
     selavy_df: pd.DataFrame,
     selavy_sc: SkyCoord,
@@ -348,6 +388,9 @@ def simbad_search(
 
     Returns:
         Coordinates and source names. Each will be NoneType if search fails.
+
+    Raises:
+        Exception: Simbad table length exceeds number of objects queried.
     """
     if logger is None:
         logger = logging.getLogger()
@@ -365,6 +408,12 @@ def simbad_search(
         c = SkyCoord(ra, dec, unit=(u.deg, u.deg))
 
         simbad_names = np.array(result_table['TYPED_ID'])
+
+        if len(simbad_names) > len(objects):
+            raise Exception("Returned Simbad table is longer than the number "
+                            "of queried objects. You likely have a malformed "
+                            "object name in your query."
+                            )
 
         return c, simbad_names
 
@@ -399,6 +448,10 @@ def match_planet_to_field(
         filtered for only those which are within 'sep_thresh' degrees. Hence
         an empty dataframe could be returned.
     """
+
+    if group.empty:
+        return
+
     planet = group.iloc[0]['planet']
     dates = Time(group['DATEOBS'].tolist())
     fields_skycoord = SkyCoord(
@@ -407,7 +460,7 @@ def match_planet_to_field(
         unit=(u.deg, u.deg)
     )
 
-    ol = get_askap_observing_location()
+    ol = vts.get_askap_observing_location()
     with solar_system_ephemeris.set('builtin'):
         planet_coords = get_body(planet, dates, ol)
 
@@ -509,7 +562,7 @@ def pipeline_get_eta_metric(df: pd.DataFrame, peak: bool = False) -> float:
     suffix = 'peak' if peak else 'int'
     weights = 1. / df[f'flux_{suffix}_err'].values**2
     fluxes = df[f'flux_{suffix}'].values
-    eta = (df.shape[0] / (df.shape[0]-1)) * (
+    eta = (df.shape[0] / (df.shape[0] - 1)) * (
         (weights * fluxes**2).mean() - (
             (weights * fluxes).mean()**2 / weights.mean()
         )
@@ -585,24 +638,107 @@ def calculate_m_metric(flux_a: float, flux_b: float) -> float:
     return 2 * ((flux_a - flux_b) / (flux_a + flux_b))
 
 
-def epoch12_user_warning() -> None:
+def _distance_from_edge(x: np.ndarray) -> np.ndarray:
     """
-    A function to raise a user warning about the new epoch 12 and 13
-    definitions.
+    Analyses the binary array x and determines the distance from
+    the edge (0).
 
-    To be removed in a future release.
+    Args:
+        x: The binary array to analyse.
 
     Returns:
-        None
+        Array each cell containing distance from the edge.
     """
-    # TODO: Remove warning in future release.
-    warning_msg = (
-        "Using v2.0.0 epoch definitions which inserts a new epoch 12, "
-        "displacing the existing epoch 12 to epoch 13. "
-        "Code written before this time that uses vast-tools may need to be "
-        "updated to reproduce results. See "
-        "https://github.com/askap-vast/vast-project/wiki/"
-        "Pilot-Survey-Status-&-Data"
-    )
+    x = np.pad(x, 1, mode='constant')
+    dist = ndi.distance_transform_cdt(x, metric='taxicab')
 
-    warnings.warn(warning_msg)
+    return dist[1:-1, 1:-1]
+
+
+def create_moc_from_fits(fits_file: str, max_depth: int = 9) -> MOC:
+    """
+    Creates a MOC from (assuming) an ASKAP fits image
+    using the cheat method of analysing the edge pixels of the image.
+
+    Args:
+        fits_file: The path of the ASKAP FITS image to generate the MOC from.
+        max_depth: Max depth parameter passed to the
+            MOC.from_polygon_skycoord() function, defaults to 9.
+
+    Returns:
+        The MOC generated from the FITS file.
+
+    Raises:
+        Exception: When the FITS file cannot be found.
+    """
+    if not os.path.isfile(fits_file):
+        raise Exception("{} does not exist".format(fits_file))
+
+    with open_fits(fits_file) as vast_fits:
+        data = vast_fits[0].data
+        if data.ndim == 4:
+            data = data[0, 0, :, :]
+        header = vast_fits[0].header
+        wcs = WCS(header, naxis=2)
+
+    binary = (~np.isnan(data)).astype(int)
+    mask = _distance_from_edge(binary)
+
+    x, y = np.where(mask == 1)
+    # need to know when to reverse by checking axis sizes.
+    pixels = np.column_stack((y, x))
+
+    coords = SkyCoord(wcs.wcs_pix2world(
+        pixels, 0), unit="deg", frame="icrs")
+
+    moc = MOC.from_polygon_skycoord(coords, max_depth=max_depth)
+
+    del binary
+    gc.collect()
+
+    return moc
+
+
+def strip_fieldnames(fieldnames: pd.Series) -> pd.Series:
+    """
+    Some field names have historically used the interleaving naming scheme,
+    but that has changed as of January 2023. This function removes the "A"
+    that is on the end of the field names
+
+    Args:
+        fieldnames: Series to strip field names from
+
+    Returns:
+        Series with stripped field names
+    """
+
+    return fieldnames.str.rstrip('A')
+
+def open_fits(fits_path: Union[str, Path], memmap: Optional[bool]=True):
+    """
+    This function opens both compressed and uncompressed fits files.
+    
+    Args:
+        fits_path: Path to the fits file
+        memmap: Open the fits file with mmap.
+    
+    Returns:
+        HDUList loaded from the fits file
+    
+    Raises:
+        ValueError: File extension must be .fits or .fits.fz
+    """
+
+    if type(fits_path) == Path:
+        fits_path = str(fits_path)
+
+    hdul = fits.open(fits_path, memmap=memmap)
+
+    if fits_path.endswith('.fits'):
+        return hdul
+    elif fits_path.endswith('.fits.fz'):
+        return fits.HDUList(hdul[1:])
+    else:
+        raise ValueError("Unrecognised extension for {fits_path}."
+                         "File extension must be .fits or .fits.fz"
+                         )

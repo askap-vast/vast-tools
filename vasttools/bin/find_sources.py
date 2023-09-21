@@ -19,8 +19,6 @@ Attributes:
 from astropy import units as u
 from astropy.coordinates import Angle
 from vasttools import RELEASED_EPOCHS, ALLOWED_PLANETS
-from vasttools.survey import Fields, Image
-from vasttools.source import Source
 from vasttools.query import Query
 from vasttools.utils import (
     get_logger,
@@ -87,7 +85,7 @@ def parse_args() -> argparse.Namespace:
         '--imsize',
         type=float,
         help='Edge size of the postagestamp in arcmin',
-        default=30.)
+        default=5.)
     parser.add_argument(
         '--maxsep',
         type=float,
@@ -103,11 +101,20 @@ def parse_args() -> argparse.Namespace:
         '--crossmatch-radius',
         type=float,
         help='Crossmatch radius in arcseconds',
-        default=15.0)
+        default=10.0)
+    parser.add_argument(
+        '--search-all-fields',
+        action="store_true",
+        help='Return all data at the requested location(s) regardless of field'
+        )
     parser.add_argument(
         '--use-tiles',
         action="store_true",
         help='Use the individual tiles instead of combined mosaics.')
+    parser.add_argument(
+        '--uncorrected-data',
+        action="store_true",
+        help='Use the uncorrected data. Only relevant with --use-tiles')
     parser.add_argument(
         '--islands',
         action="store_true",
@@ -197,6 +204,13 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help=("Overwrite the output directory if it already exists."))
     parser.add_argument(
+        '--scheduler',
+        default='processes',
+        choices=['processes', 'single-threaded'],
+        help=("Dask scheduling option to use. Options are 'processes' "
+              "(parallel processing) or 'single-threaded'.")
+        )
+    parser.add_argument(
         '--sort-output',
         action="store_true",
         help=(
@@ -217,6 +231,14 @@ def parse_args() -> argparse.Namespace:
         '--no-fits',
         action="store_true",
         help='Do not save the FITS cutouts.')
+    parser.add_argument(
+        '--rms-cutouts',
+        action="store_true",
+        help='Create FITS files containing noisemap cutouts.')
+    parser.add_argument(
+        '--bkg-cutouts',
+        action="store_true",
+        help='Create FITS files containing meanmap cutouts.')
     parser.add_argument(
         '--plot-dpi',
         type=int,
@@ -262,6 +284,13 @@ def parse_args() -> argparse.Namespace:
         help=(
             'Do not use the auto normalisation and instead apply'
             ' scale settings to each epoch individually.'
+        ))
+    parser.add_argument(
+        '--png-absolute-axes',
+        action="store_true",
+        help=(
+            'Create PNGs with axis labels in absolute coordinates,'
+            ' rather than offsets from the central position.'
         ))
     parser.add_argument(
         '--ann',
@@ -393,6 +422,14 @@ def main() -> None:
         "Available epochs: {}".format(sorted(RELEASED_EPOCHS.keys()))
     )
 
+    if args.uncorrected_data and not args.use_tiles:
+        logger.error(
+            "Uncorrected data has been selected with COMBINED data!"
+        )
+        logger.error(
+            "These modes cannot be used together, "
+            "please check input and try again."
+        )
     if len(args.planets) > 0:
         args.planets = args.planets.lower().replace(" ", "").split(",")
 
@@ -469,6 +506,7 @@ def main() -> None:
         sky_coords = None
         source_names = ""
     logger.debug(args.epochs)
+
     query = Query(
         coords=sky_coords,
         source_names=source_names,
@@ -488,7 +526,11 @@ def main() -> None:
         sort_output=args.sort_output,
         forced_fits=args.forced_fits,
         forced_cluster_threshold=args.forced_cluster_threshold,
-        forced_allow_nan=args.forced_allow_nan
+        forced_allow_nan=args.forced_allow_nan,
+        incl_observed=args.find_fields,
+        corrected_data=not args.uncorrected_data,
+        search_all_fields=args.search_all_fields,
+        scheduler=args.scheduler,
     )
 
     if args.find_fields:
@@ -522,12 +564,16 @@ def main() -> None:
                 )
             if args.crossmatch_only:
                 fits = False
+                rms = False
+                bkg = False
                 png = False
                 ann = False
                 reg = False
                 lightcurve = False
             else:
                 fits = (not args.no_fits)
+                rms = args.rms_cutouts
+                bkg = args.bkg_cutouts
                 png = args.create_png
                 ann = args.ann
                 reg = args.reg
@@ -535,6 +581,8 @@ def main() -> None:
 
             query._gen_all_source_products(
                 fits=fits,
+                rms=rms,
+                bkg=bkg,
                 png=png,
                 ann=ann,
                 reg=reg,
@@ -550,6 +598,7 @@ def main() -> None:
                 png_crossmatch_overlay=args.crossmatch_radius_overlay,
                 png_hide_beam=args.png_hide_beam,
                 png_disable_autoscaling=args.png_disable_autoscaling,
+                png_offset_axes=(not args.png_absolute_axes),
                 ann_crossmatch_overlay=args.crossmatch_radius_overlay,
                 reg_crossmatch_overlay=args.crossmatch_radius_overlay,
                 lc_sigma_thresh=5,

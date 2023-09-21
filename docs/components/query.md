@@ -1,10 +1,5 @@
 # Query
 
-!!! warning "Version 2.0.0 Epoch 12 Update"
-    In v2.0.0 of vast tools, what was defined as `EPOCH12` has now been redefined as `EPOCH13`.
-    `EPOCH12` is now the epoch that was observed between `11x` and `13` that was processed after these observations.
-    Please refer to the [VAST wiki page](https://github.com/askap-vast/vast-project/wiki/Pilot-Survey-Status-&-Data){:target="_blank"} for the full details (VAST GitHub organization membership required).
-
 The `Query` component of VAST Tools is used to query the VAST Pilot Survey data directly.
 
 !!!warning "Deprecation Warning"
@@ -34,7 +29,7 @@ In full, the `Query` component as the ability to:
 
 !!!warning "Warning: Data Access"
     It is assumed that the machine that is running VAST Tools has access to the VAST Pilot Survey release output.
-    Refer to the [Configuration & Data Access](../../getting_started/configuration/) page for more information.
+    Refer to the [Configuration & Data Access](../../getting_started/configuration/) page for more information. If the user only has access to an incomplete version of the dataset, the code will automatically remove the data that is unavailable, allowing the query to proceed.
 
 !!!tip "Tip: `find_sources` script"
     It is not ideal to perform large queries in a notebook environment.
@@ -54,6 +49,19 @@ A `Query` instance can be imported from `vasttools.query`:
     ```python
     from vasttools.query import Query
     ```
+
+!!!warning "Warning: Running a Query inside a script"
+    The main `Query` functions use multiprocessing to speed up large queries. 
+    Users who attempt to call a query from their own scripts may encounter a Dask RuntimeError which, due to the nature of the error, cannot be nicely caught with the `vasttools` module. 
+    The solution is to ensure that all calls to `Query` functions are protected within a `if __name__ == '__main__'` statement, i.e.
+    ```python
+    from vasttools.query import Query
+    
+    if __name__ == '__main__':
+        my_query = Query(source_names=["PSR J2129-04"])
+        my_query.find_sources()
+    ```
+        
 
 ### Constructing a Query
 
@@ -143,7 +151,7 @@ There are two options that control how the crossmatching to the VAST catalogues 
 This is the radius, in arcsec, to which a VAST Pilot source is considered a match to the search coordinate.
 
 **`max_sep`**  
-The maximum distance, in degrees, from the centre of an individual beam (36 beams make up an ASKAP tile) to determine if a match is possible.
+The maximum distance, in degrees, from the centre of an individual beam (36 beams make up an ASKAP tile) to determine if a match is possible. This defaults to 1.5 degrees.
 
 !!!note "Note: Field Selection"
     When the query is made, if the source is found in two separate overlapping fields, all fields will be noted as a match but field used will be that which has
@@ -157,14 +165,25 @@ All matches within the `crossmatch_radius` are returned instead of just the clos
 These `Query` keyword arguments control the data that is used to perform the query or the data returned.
 
 **`epochs`**  
-A comma-separated list of epochs (entered as a string) to search.
+A list of epochs or a comma-separated string of epochs to search.
 Do not use zero padded values when entering the epochs.
-The values `all` and `all-vast` are also valid, selecting Epoch 0 + VAST data and just VAST data, respectively.
+The values `all` and `all-vast` are also valid, selecting all RACS & VAST data or just VAST data, respectively.
 
-!!! example
-    ```python
-    my_query = Query(..., epochs="1,2,6x,8,9")
-    ```
+The pilot survey used an `x` to designate an epoch that was only partially observed. This can be supplied, but is not necessary.
+
+!!! example "Example: Defining the epochs parameter"
+    === "Comma-separated string"
+        ```python
+        my_query = Query(..., epochs="1,2,6x,8,9")
+        ```
+    === "List of strings"
+        ```python
+        my_query = Query(..., epochs=["1","2","6x","8","9"])
+        ```
+    === "List of ints"
+        ```python
+        my_query = Query(..., epochs=[1,2,6,8,9])
+        ```
 
 **`stokes`**  
 Select which Stokes parameter data to search in.
@@ -177,9 +196,16 @@ Refer to [this wiki page](https://github.com/askap-vast/vast-project/wiki/Pilot-
 **`use_islands`**  
 Query the island catalogues produced by the [`selavy`](https://www.atnf.csiro.au/computing/software/askapsoft/sdp/docs/current/analysis/selavy.html){:target="_blank"} source finder instead of the component catalogues (default).
 
+!!! warning "Warning: Islands selavy catalogues"
+    `flux_peak_err` and `rms_image` are not calculated for islands catalogues. For the purposes of `vast-tools` we have chosen to use `background_noise` as a placeholder for both.
+
 **`matches_only`**  
 Only return results that have a source match. 
 I.e. no forced fit or upper limit measurements will be returned.
+
+**`search_all_fields`**
+Return all data available at the source location. If not selected, only the data associated with the best (i.e. closest)
+field will be returned.
 
 #### Planet Search
 
@@ -230,8 +256,8 @@ Once the `Query` has been defined the settings can be checked by viewing the `Qu
     my_source_names = ["1AXG J134412+0016", "SN 2012dy", "PSR J2129-0429"]
 
     my_query = Query(
-        coords=coords_to_query,
-        source_names=source_names,
+        coords=my_coords,
+        source_names=my_source_names,
         matches_only=True, 
         epochs="all-vast", 
         crossmatch_radius=10., 
@@ -244,7 +270,7 @@ Once the `Query` has been defined the settings can be checked by viewing the `Qu
     {'epochs': ['1', '2', '3x', '4x', '5x', '6x', '7x', '8', '9', '10x', '11x'],
      'stokes': 'I',
      'crossmatch_radius': <Angle 10. arcsec>,
-     'max_sep': 1.0,
+     'max_sep': 1.5,
      'islands': False,
      'tiles': False,
      'no_rms': False,
@@ -252,7 +278,8 @@ Once the `Query` has been defined the settings can be checked by viewing the `Qu
      'search_around': False,
      'sort_output': False,
      'forced_fits': False,
-     'output_dir': 'source-search-example-output'}
+     'output_dir': 'source-search-example-output',
+     'search_all_fields': False,}
     ```
 
 ### Running a Query
