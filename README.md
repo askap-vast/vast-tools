@@ -1,5 +1,5 @@
 # VAST Tools
-
+[![DOI](https://zenodo.org/badge/199943719.svg)](https://zenodo.org/badge/latestdoi/199943719)
 [![astropy](http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat)](http://www.astropy.org/)
 ![Tests](https://github.com/askap-vast/vast-tools/actions/workflows/pytest.yml/badge.svg)
 [![documentation](https://img.shields.io/badge/docs-mkdocs%20material-blue.svg?style=flat)](https://vast-survey.org/vast-tools/)
