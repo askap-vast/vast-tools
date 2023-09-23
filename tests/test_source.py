@@ -931,7 +931,6 @@ class TestSource:
 
         assert str(excinfo.value).endswith('not a valid SkyView survey name')
 
-
     @pytest.mark.parametrize("pipeline", [False, True])
     def test_write_ann(
         self,
