@@ -892,10 +892,44 @@ class TestSource:
             return_value=[dummy_fits]
         )
 
-        result = source.skyview_contour_plot(0, 'suveycode')
+        result = source.skyview_contour_plot(0, 'DSS2 Blue')
 
         assert isinstance(result, Figure)
         plt.close(result)
+
+    @pytest.mark.parametrize("pipeline", [False, True])
+    def test_skyview_contour_plot_survey_fail(
+        self,
+        pipeline: bool,
+        source_instance: vts.Source,
+        dummy_fits: fits.HDUList,
+        mocker: MockerFixture
+    ) -> None:
+        """
+        Tests the skyview_contour_plot method.
+
+        Parametrized for pipeline and query source.
+
+        Args:
+            pipeline: If 'True' then the Source is initialised as a
+                pipeline source.
+            source_instance: The pytest source_instance fixture.
+            dummy_fits: The pytest fixture dummy fits.
+            mocker: The pytest-mock mocker object.
+
+        Returns:
+            None
+        """
+        source = source_instance(pipeline=pipeline, add_cutout_data=True)
+
+        mocker_skyview = mocker.patch(
+            'vasttools.source.SkyView.get_images',
+            return_value=[dummy_fits]
+        )
+        with pytest.raises(ValueError) as excinfo:
+            source.skyview_contour_plot(0, 'this-is-not-a-survey')
+
+        assert str(excinfo.value).endswith('not a valid SkyView survey name')
 
     @pytest.mark.parametrize("pipeline", [False, True])
     def test_write_ann(

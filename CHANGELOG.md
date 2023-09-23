@@ -10,12 +10,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Changed
 
+- Exit nicely when invalid survey is requested for SkyView contour plot [#497](https://github.com/askap-vast/vast-tools/pull/497)
 #### Fixed
 
 #### Removed
 
 #### List of PRs
 
+- [#497](https://github.com/askap-vast/vast-tools/pull/497): feat: Exit nicely when invalid survey is requested for SkyView contour plot
 
 ## [3.0.0](https://github.com/askap-vast/vast-tools/releases/v3.0.0) (2023-09-02)
 
