@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Changed
 
-- [#496](https://github.com/askap-vast/vast-tools/pull/496): fix: fix poetry version for ci-docs workflow
+- Update github workflows to latest versions [#496](https://github.com/askap-vast/vast-tools/pull/496)
 
 #### Fixed
 
@@ -18,7 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
-- [#496](https://github.com/askap-vast/vast-tools/pull/496): fix: Update setup-poetry to v8 in ci-docs workflow
+- [#496](https://github.com/askap-vast/vast-tools/pull/496): fix: Update github workflows to latest versions
 
 ## [3.0.0](https://github.com/askap-vast/vast-tools/releases/v3.0.0) (2023-09-02)
 
