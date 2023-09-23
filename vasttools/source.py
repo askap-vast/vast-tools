@@ -1658,10 +1658,10 @@ class Source:
             self.get_cutout_data(size)
 
         size = self._size
-        
+
         surveys = list(SkyView.survey_dict.values())
         survey_list = [item for sublist in surveys for item in sublist]
-        
+
         if survey not in survey_list:
             raise ValueError(f"{survey} is not a valid SkyView survey name")
 

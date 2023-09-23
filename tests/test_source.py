@@ -930,7 +930,7 @@ class TestSource:
             source.skyview_contour_plot(0, 'this-is-not-a-survey')
 
         assert str(excinfo.value).endswith('not a valid SkyView survey name')
-        
+
 
     @pytest.mark.parametrize("pipeline", [False, True])
     def test_write_ann(
