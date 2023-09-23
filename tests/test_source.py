@@ -892,7 +892,7 @@ class TestSource:
             return_value=[dummy_fits]
         )
 
-        result = source.skyview_contour_plot(0, 'suveycode')
+        result = source.skyview_contour_plot(0, 'DSS2 Blue')
 
         assert isinstance(result, Figure)
         plt.close(result)

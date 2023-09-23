@@ -1651,12 +1651,19 @@ class Source:
 
         Raises:
             ValueError: If the index is out of range.
+            ValueError: If the requested survey is not valid.
         """
 
         if (self._cutouts_got is False) or (force):
             self.get_cutout_data(size)
 
         size = self._size
+        
+        surveys = list(SkyView.survey_dict.values())
+        survey_list = [item for sublist in surveys for item in sublist]
+        
+        if survey not in survey_list:
+            raise ValueError(f"{survey} is not a valid SkyView survey name")
 
         if index > len(self.measurements):
             raise ValueError(f"Cannot access {index}th measurement.")
