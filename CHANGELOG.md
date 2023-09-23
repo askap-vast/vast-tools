@@ -10,8 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Changed
 
-- Bumped `mkdocstrings` to version `3.0.3` to avoid `mkdocstrings` error [#496](https://github.com/askap-vast/vast-tools/pull/496).
-- Pinned `jinja2` to version `0.17.0` to avoid `mkdocs_autoref` error [#496](https://github.com/askap-vast/vast-tools/pull/496).
+- Bumped `mkdocstrings` to version `0.17.0` to avoid `mkdocstrings` error [#496](https://github.com/askap-vast/vast-tools/pull/496).
+- Pinned `jinja2` to version `3.0.3` to avoid `mkdocs_autoref` error [#496](https://github.com/askap-vast/vast-tools/pull/496).
 - Update github workflows to latest versions [#496](https://github.com/askap-vast/vast-tools/pull/496)
 - Exit nicely when invalid survey is requested for SkyView contour plot [#497](https://github.com/askap-vast/vast-tools/pull/497)
 
