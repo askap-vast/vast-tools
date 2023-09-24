@@ -11,20 +11,20 @@ jobs:
         python_version: ['3.8', '3.9']
 
     steps:
-    - uses: actions/checkout@v2
+        - uses: actions/checkout@v4
 
-    - uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python_version }}
-    - uses: Gr1N/setup-poetry@v8
-    - name: Cache Python dependencies
-      uses: actions/cache@v2
-      with:
-        path: ~/.cache/pypoetry/virtualenvs
-        key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
+        - uses: actions/setup-python@v4
+          with:
+            python-version: ${{ matrix.python_version }}
+        - uses: Gr1N/setup-poetry@v8
+        - name: Cache Python dependencies
+          uses: actions/cache@v3
+          with:
+            path: ~/.cache/pypoetry/virtualenvs
+            key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
 
-    - name: Install python dependencies
-      run: poetry install
-    - name: Run pytests
-      run: |
-        poetry run pytest --cov=vasttools -vv
+        - name: Install python dependencies
+          run: poetry install
+        - name: Run pytests
+          run: |
+            poetry run pytest --cov=vasttools -vv
