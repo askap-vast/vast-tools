@@ -10,13 +10,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Changed
 
+- Bumped `mkdocstrings` to version `0.17.0` to avoid `mkdocstrings` error [#496](https://github.com/askap-vast/vast-tools/pull/496).
+- Pinned `jinja2` to version `3.0.3` to avoid `mkdocs_autoref` error [#496](https://github.com/askap-vast/vast-tools/pull/496).
+- Update github workflows to latest versions [#496](https://github.com/askap-vast/vast-tools/pull/496)
 - Exit nicely when invalid survey is requested for SkyView contour plot [#497](https://github.com/askap-vast/vast-tools/pull/497)
+
 #### Fixed
+
+- Fixed docs build process [#496](https://github.com/askap-vast/vast-tools/pull/496).
 
 #### Removed
 
 #### List of PRs
 
+- [#496](https://github.com/askap-vast/vast-tools/pull/496): fix: Update github workflows to latest versions
 - [#497](https://github.com/askap-vast/vast-tools/pull/497): feat: Exit nicely when invalid survey is requested for SkyView contour plot
 
 ## [3.0.0](https://github.com/askap-vast/vast-tools/releases/v3.0.0) (2023-09-02)
@@ -125,14 +132,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 #### List of PRs
 
 - [#490](https://github.com/askap-vast/vast-tools/pull/490): feat: Raise exception when simbad name query returns more names than there are objects queried
-- [#478](https://github.com/askap-vast/vast-tools/pull/478): fix: Account for pipeline runs with no measurement pairs file 
+- [#478](https://github.com/askap-vast/vast-tools/pull/478): fix: Account for pipeline runs with no measurement pairs file
 - [#483](https://github.com/askap-vast/vast-tools/pull/483): fix: Ensure that full image data does not persist when creating FITS cutouts from compressed HDUs
 - [#480](https://github.com/askap-vast/vast-tools/pull/480): feat: Added open_fits function to handle compressed image HDUs
-- [#476](https://github.com/askap-vast/vast-tools/pull/476): fix: Fixed missing RMS measurements for non-detections 
+- [#476](https://github.com/askap-vast/vast-tools/pull/476): fix: Fixed missing RMS measurements for non-detections
 - [#472](https://github.com/askap-vast/vast-tools/pull/472): fix: Remove duplicates in field matching
 - [#470](https://github.com/askap-vast/vast-tools/pull/470): feat: Added epoch 41
 - [#465](https://github.com/askap-vast/vast-tools/pull/465): feat: Added warning when querying corrected data
-- [#466](https://github.com/askap-vast/vast-tools/pull/466): feat: Added epochs 38, 39 and 40 
+- [#466](https://github.com/askap-vast/vast-tools/pull/466): feat: Added epochs 38, 39 and 40
 - [#463](https://github.com/askap-vast/vast-tools/pull/463): fix: Fix read_selavy to force all flux & flux_err values to be positive
 - [#458](https://github.com/askap-vast/vast-tools/pull/458): feat: Added epoch 37
 - [#453](https://github.com/askap-vast/vast-tools/pull/453): fix: Fix planet matching to correctly handle field names with/without 'A' suffix, and correctly handle empty df in init_sources
@@ -151,7 +158,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - [#421](https://github.com/askap-vast/vast-tools/pull/421): feat, fix, docs: Updated Query._get_epochs to exit nicely when no epochs available & to allow lists and ints to be passed.
 - [#429](https://github.com/askap-vast/vast-tools/pull/429): feat: Added access to epoch 32
 - [#427](https://github.com/askap-vast/vast-tools/pull/427): feat: Added access to epoch 31
-- [#425](https://github.com/askap-vast/vast-tools/pull/425): fix: Bumped pytest and lint github workflow from ubuntu-18.04 -> ubuntu-20.04 
+- [#425](https://github.com/askap-vast/vast-tools/pull/425): fix: Bumped pytest and lint github workflow from ubuntu-18.04 -> ubuntu-20.04
 - [#419](https://github.com/askap-vast/vast-tools/pull/419): feat: Added access to epoch 30
 - [#416](https://github.com/askap-vast/vast-tools/pull/416): fix: Update match_planet_to_field to handle empty groups
 - [#414](https://github.com/askap-vast/vast-tools/pull/414): feat: Added access to epoch 27
@@ -253,7 +260,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - [#258](https://github.com/askap-vast/vast-tools/pull/258): feat: v2.0.0-rc.6
 - [#257](https://github.com/askap-vast/vast-tools/pull/257): fix: Fix lightcurve axist limits for forced fits
 - [#255](https://github.com/askap-vast/vast-tools/pull/255): fix: Added if statement to catch os.getenv returning None
-- [#253](https://github.com/askap-vast/vast-tools/pull/253): feat: Added filter pipeline run by MOC function 
+- [#253](https://github.com/askap-vast/vast-tools/pull/253): feat: Added filter pipeline run by MOC function
 - [#251](https://github.com/askap-vast/vast-tools/pull/251): fix: Check self.pipeline inside write_measurements
 - [#247](https://github.com/askap-vast/vast-tools/pull/247): feat, dep: Updated forced photometry to be a dependency
 - [#246](https://github.com/askap-vast/vast-tools/pull/246): fix: Fixed vaex two epoch metric analysis
@@ -277,5 +284,4 @@ The release candidate 5 of v2.0.0. This was the release before the changelog was
 
 - [#221](https://github.com/askap-vast/vast-tools/pull/221) feat: Pipeline add 2 epoch Mooley style plotting
 - [#220](https://github.com/askap-vast/vast-tools/pull/220) fix: Issue 219 fix source names
-- [#218](https://github.com/askap-vast/vast-tools/pull/218) fix: Removed bad fields from epoch 12 csv 
-
+- [#218](https://github.com/askap-vast/vast-tools/pull/218) fix: Removed bad fields from epoch 12 csv

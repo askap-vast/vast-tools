@@ -1,23 +1,25 @@
 name: ci docs
+
 on:
-  push:
-    branches:
-      - master
-      - main
+ push:
+   branches:
+     - master
+     - main
+
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     if: ${{ github.repository_owner == 'askap-vast' }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v4
         with:
-          python-version: 3.x
-      - uses: Gr1N/setup-poetry@v7
+          python-version: 3.9
+      - uses: Gr1N/setup-poetry@v8
       - name: Cache Python dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.cache/pypoetry/virtualenvs
           key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
