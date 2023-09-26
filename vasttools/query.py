@@ -1198,20 +1198,14 @@ class Query:
             #self.logger.debug(bkg_cutout_data)
             
             concat_data = pd.concat(to_concat, axis=1)
-            self.logger.debug(concat_data)
-            self.logger.debug(concat_data.columns)
-            self.logger.debug(concat_data.data)
-            self.logger.debug(len(concat_data))
+            self.logger.debug(concat_data[['data', 'bkg_data', 'rms_data']])
             self.logger.debug(concat_data.isna())
             cutout_data = concat_data.dropna(how='all', axis=0)
             
             self.logger.debug("Concatenated into cutout_data")
             
-            self.logger.debug(cutout_data.columns)
-            self.logger.debug(len(cutout_data))
-            self.logger.debug(cutout_data)
-            self.logger.debug(group['name'].values)
-
+            self.logger.debug(cutout_data[['data', 'bkg_data', 'rms_data']])
+            
             cutout_data['name'] = group['name'].values
             self.logger.debug(cutout_data['name'])
             cutout_data['dateobs'] = group['dateobs'].values
@@ -1240,7 +1234,7 @@ class Query:
         # Drop the cutouts that raised a NoOverlapError
         cutout_data.dropna(inplace=True)
         self.logger.debug(cutout_data)
-
+        exit()
         return cutout_data
 
     def _get_cutout(
