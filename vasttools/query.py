@@ -1122,7 +1122,8 @@ class Query:
                     4: "beam"
                 })
                 self.logger.debug("Fetched image cutout data:")
-                self.logger.debug(img_cutout_data)
+                self.logger.debug(img_cutout_data.columns)
+                self.logger.debug(len(img_cutout_data))
             else:
                 img_cutout_data = pd.DataFrame([[None]*5]*len(group),
                     columns=[
@@ -1182,12 +1183,19 @@ class Query:
             self.logger.debug("Generated all cutout data")
             
             to_concat = [img_cutout_data, rms_cutout_data, bkg_cutout_data]
-            cutout_data = pd.concat(to_concat, axis=1).dropna(how='all')
+            concat_data = pd.concat(to_concat, axis=1)
+            self.logger.debug(concat_data)
+            self.logger.debug(concat_data.columns)
+            self.logger.debug(len(concat_data))
+            cutout_data = concat_data.dropna(how='all')
             
             self.logger.debug("Concatenated into cutout_data")
             
-            if bkg_cutout_data['bkg_data'].values == rms_cutout_data['rms_data'].values:
-                self.logger.warning("Background and RMS data are identical!")
+            if bkg or rms:
+                bkg_values = bkg_cutout_data['bkg_data'].values
+                rms_values = rms_cutout_data['rms_data'].values
+                if bkg_values == rms_values:
+                    self.logger.warning("Bkg and RMS data are identical!")
             
             self.logger.debug(cutout_data.columns)
             self.logger.debug(len(cutout_data))
@@ -1251,8 +1259,8 @@ class Query:
         Raises:
             ValueError: Exactly one of img, rms or bkg must be `True`
         """
-        self.logger.debug("Running _get_cutout with: "
-                          "img={img}, rms={rms}, bkg={bkg}"
+        self.logger.debug(f"Running _get_cutout with: "
+                          f"img={img}, rms={rms}, bkg={bkg}"
                           )
         
         if sum([img,rms,bkg]) != 1:
@@ -1321,9 +1329,12 @@ class Query:
             selavy_components = None
 
         theheader.update(cutout.wcs.to_header())
-        self.logger.debug(cutout.data)
-        self.logger.debug(cutout.wcs)
-        self.logger.debug(theheader)
+        #self.logger.debug("Cutout data:")
+        #self.logger.debug(cutout.data)
+        #self.logger.debug("Cutout WCS:")
+        #self.logger.debug(cutout.wcs)
+        #self.logger.debug("Cutout header:")
+        #self.logger.debug(theheader)
 
         return (
             cutout.data, cutout.wcs, theheader, selavy_components, beam
