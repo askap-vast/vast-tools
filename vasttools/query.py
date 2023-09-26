@@ -1121,6 +1121,8 @@ class Query:
                     3: "selavy_overlay",
                     4: "beam"
                 })
+                self.logger.debug("Fetched image cutout data:")
+                self.logger.debug(img_cutout_data)
             else:
                 img_cutout_data = pd.DataFrame([[None]*5]*len(group),
                     columns=[
@@ -1249,6 +1251,9 @@ class Query:
         Raises:
             ValueError: Exactly one of img, rms or bkg must be `True`
         """
+        self.logger.debug("Running _get_cutout with: "
+                          "img={img}, rms={rms}, bkg={bkg}"
+                          )
         
         if sum([img,rms,bkg]) != 1:
             raise ValueError("Exactly one of img, rms or bkg must be True")
@@ -1285,6 +1290,7 @@ class Query:
             return (None, None, None, None, None)
 
         if img:
+            self.logger.debug("Fetching selavy components and beam info")
             selavy_components = read_selavy(row.selavy, cols=[
                 'island_id',
                 'ra_deg_cont',
@@ -1315,6 +1321,9 @@ class Query:
             selavy_components = None
 
         theheader.update(cutout.wcs.to_header())
+        self.logger.debug(cutout.data)
+        self.logger.debug(cutout.wcs)
+        self.logger.debug(theheader)
 
         return (
             cutout.data, cutout.wcs, theheader, selavy_components, beam
