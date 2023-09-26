@@ -432,7 +432,7 @@ class Query:
         Returns:
             `True` if settings are acceptable, `False` otherwise.
         """
-        
+
         self.logger.debug("Using settings: ")
         self.logger.debug(self.settings)
 
@@ -466,7 +466,7 @@ class Query:
                                  "the full VAST survey."
                                  )
             return False
-        
+
         if self.settings['tiles'] and self.corrected_data and self.vast_full:
             self.logger.critical(
                 "Corrected data does not yet exist for the full VAST survey."
@@ -844,7 +844,6 @@ class Query:
         elif self.settings['scheduler'] == 'single-threaded' or self.ncpu == 1:
             for result in map(produce_source_products_multi, to_process):
                 pass
-            
 
     def _produce_source_products(
         self,
@@ -955,7 +954,7 @@ class Query:
         """
 
         source, cutout_data = i
-        
+
         self.logger.debug(f"Producing source products for {source.name}")
 
         if fits:
@@ -1105,7 +1104,7 @@ class Query:
                 tiles=self.settings['tiles'],
                 corrected_data=self.corrected_data
             )
-            
+
             if img:
                 image.get_img_data()
                 img_cutout_data = group.apply(
@@ -1121,14 +1120,14 @@ class Query:
                     4: "beam"
                 })
             else:
-                img_cutout_data = pd.DataFrame([[None]*5]*len(group),
-                    columns=[
-                        'data',
-                        'wcs',
-                        'header',
-                        'selavy_overlay',
-                        'beam',
-                    ]
+                img_cutout_data = pd.DataFrame([[None] * 5] * len(group),
+                                               columns=[
+                    'data',
+                    'wcs',
+                    'header',
+                    'selavy_overlay',
+                    'beam',
+                ]
                 )
             if rms:
                 image.get_rms_img()
@@ -1145,14 +1144,14 @@ class Query:
                     2: "rms_header",
                 }).drop(columns=[3, 4])
             else:
-                rms_cutout_data = pd.DataFrame([[None]*3]*len(group),
-                    columns=[
-                        'rms_data',
-                        'rms_wcs',
-                        'rms_header',
-                    ]
+                rms_cutout_data = pd.DataFrame([[None] * 3] * len(group),
+                                               columns=[
+                    'rms_data',
+                    'rms_wcs',
+                    'rms_header',
+                ]
                 )
-                
+
             if bkg:
                 image.get_bkg_img()
                 bkg_cutout_data = group.apply(
@@ -1168,24 +1167,24 @@ class Query:
                     2: "bkg_header",
                 }).drop(columns=[3, 4])
             else:
-                bkg_cutout_data = pd.DataFrame([[None]*3]*len(group),
-                    columns=[
-                        'bkg_data',
-                        'bkg_wcs',
-                        'bkg_header',
-                    ]
+                bkg_cutout_data = pd.DataFrame([[None] * 3] * len(group),
+                                               columns=[
+                    'bkg_data',
+                    'bkg_wcs',
+                    'bkg_header',
+                ]
                 )
-                
+
             self.logger.debug("Generated all cutout data")
-            
+
             to_concat = [img_cutout_data, rms_cutout_data, bkg_cutout_data]
             cutout_data = pd.concat(to_concat, axis=1).dropna(how='all')
-            
+
             self.logger.debug("Concatenated into cutout_data")
-            
+
             if bkg_cutout_data['bkg_data'].values == rms_cutout_data['rms_data'].values:
                 self.logger.warning("Background and RMS data are identical!")
-            
+
             self.logger.debug(cutout_data.columns)
             self.logger.debug(len(cutout_data))
             self.logger.debug(group['name'].values)
@@ -1197,7 +1196,8 @@ class Query:
 
             del image
         except Exception as e:
-            self.logger.warning("Caught exception inside _grouped_fetch_cutouts")
+            self.logger.warning(
+                "Caught exception inside _grouped_fetch_cutouts")
             self.logger.warning(e)
             cutout_data = pd.DataFrame(columns=[
                 'data',
@@ -1241,12 +1241,12 @@ class Query:
         Returns:
             Tuple containing cutout data, WCS, image header, associated
             selavy components and beam information.
-        
+
         Raises:
             ValueError: Exactly one of img, rms or bkg must be `True`
         """
-        
-        if sum([img,rms,bkg]) != 1:
+
+        if sum([img, rms, bkg]) != 1:
             raise ValueError("Exactly one of img, rms or bkg must be True")
 
         if img:
@@ -1264,7 +1264,7 @@ class Query:
             thewcs = image.bkg_wcs
             theheader = image.bkg_header.copy()
             thepath = image.bkgpath
-        
+
         self.logger.debug(f"Using data from {thepath}")
 
         try:
@@ -1302,9 +1302,9 @@ class Query:
                 size,
                 row.skycoord
             )
-            
+
             del selavy_coords
-            
+
             beam = image.beam
         else:
             beam = None
