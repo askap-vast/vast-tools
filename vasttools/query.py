@@ -1182,8 +1182,11 @@ class Query:
 
             self.logger.debug("Concatenated into cutout_data")
 
-            if bkg_cutout_data['bkg_data'].values == rms_cutout_data['rms_data'].values:
-                self.logger.warning("Background and RMS data are identical!")
+            if bkg or rms:
+                bkg_values = bkg_cutout_data['bkg_data'].values
+                rms_values = rms_cutout_data['rms_data'].values
+                if bkg_values == rms_values:
+                    self.logger.warning("Bkg and RMS data are identical!")
 
             self.logger.debug(cutout_data.columns)
             self.logger.debug(len(cutout_data))
