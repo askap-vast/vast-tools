@@ -1214,9 +1214,6 @@ class Query:
                 'bkg_wcs',
                 'bkg_header',
             ])
-        
-        # Drop the cutouts that raised a NoOverlapError
-        cutout_data.dropna(inplace=True)
 
         return cutout_data
 
