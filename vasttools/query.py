@@ -1183,9 +1183,17 @@ class Query:
             self.logger.debug("Generated all cutout data")
             
             to_concat = [img_cutout_data, rms_cutout_data, bkg_cutout_data]
+            self.logger.debug("img_cutout_data:")
+            self.logger.debug(img_cutout_data)
+            self.logger.debug("rms_cutout_data:")
+            self.logger.debug(rms_cutout_data)
+            self.logger.debug("bkg_cutout_data:")
+            self.logger.debug(bkg_cutout_data)
+            
             concat_data = pd.concat(to_concat, axis=1)
             self.logger.debug(concat_data)
             self.logger.debug(concat_data.columns)
+            self.logger.debug(concat_data.data)
             self.logger.debug(len(concat_data))
             cutout_data = concat_data.dropna(how='all')
             
