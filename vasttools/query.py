@@ -610,6 +610,8 @@ class Query:
                       scheduler=self.settings['scheduler']
                       )
         )
+        self.logger.debug("Inside _get_all_cutout_data")
+        self.logger.debug(cutouts)
 
         if not cutouts.empty:
             if isinstance(cutouts.index, pd.MultiIndex):
@@ -740,7 +742,6 @@ class Query:
                                                    rms=rms,
                                                    bkg=bkg,
                                                    )
-            self.logger.info('Done.')
             if cutouts_df.empty:
                 fits = False
                 png = False
@@ -759,6 +760,7 @@ class Query:
 
                 del cutouts_df
                 gc.collect()
+            self.logger.info('Done.')
         else:
             to_process = [(s, None) for s in self.results.values]
             cutouts_df = None
@@ -1121,9 +1123,8 @@ class Query:
                     3: "selavy_overlay",
                     4: "beam"
                 })
-                self.logger.debug("Fetched image cutout data:")
-                self.logger.debug(img_cutout_data.columns)
-                self.logger.debug(len(img_cutout_data))
+                self.logger.debug("Fetched image cutout data.")
+                self.logger.debug(f"Length: {len(img_cutout_data)}")
             else:
                 img_cutout_data = pd.DataFrame([[None]*5]*len(group),
                     columns=[
@@ -1182,13 +1183,19 @@ class Query:
                 
             self.logger.debug("Generated all cutout data")
             
+            if bkg or rms:
+                bkg_values = bkg_cutout_data['bkg_data'].values
+                rms_values = rms_cutout_data['rms_data'].values
+                if bkg_values == rms_values:
+                    self.logger.warning("Bkg and RMS data are identical!")
+            
             to_concat = [img_cutout_data, rms_cutout_data, bkg_cutout_data]
-            self.logger.debug("img_cutout_data:")
-            self.logger.debug(img_cutout_data)
-            self.logger.debug("rms_cutout_data:")
-            self.logger.debug(rms_cutout_data)
-            self.logger.debug("bkg_cutout_data:")
-            self.logger.debug(bkg_cutout_data)
+            #self.logger.debug("img_cutout_data:")
+            #self.logger.debug(img_cutout_data)
+            #self.logger.debug("rms_cutout_data:")
+            #self.logger.debug(rms_cutout_data)
+            #self.logger.debug("bkg_cutout_data:")
+            #self.logger.debug(bkg_cutout_data)
             
             concat_data = pd.concat(to_concat, axis=1)
             self.logger.debug(concat_data)
@@ -1199,14 +1206,9 @@ class Query:
             
             self.logger.debug("Concatenated into cutout_data")
             
-            if bkg or rms:
-                bkg_values = bkg_cutout_data['bkg_data'].values
-                rms_values = rms_cutout_data['rms_data'].values
-                if bkg_values == rms_values:
-                    self.logger.warning("Bkg and RMS data are identical!")
-            
             self.logger.debug(cutout_data.columns)
             self.logger.debug(len(cutout_data))
+            self.logger.debug(cutout_data)
             self.logger.debug(group['name'].values)
 
             cutout_data['name'] = group['name'].values
@@ -1236,6 +1238,7 @@ class Query:
         
         # Drop the cutouts that raised a NoOverlapError
         cutout_data.dropna(inplace=True)
+        self.logger.debug(cutout_data)
 
         return cutout_data
 
