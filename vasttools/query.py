@@ -1094,7 +1094,7 @@ class Query:
         """
         image_file = group.iloc[0]['image']
         self.logger.debug(f"Fetching cutouts from {image_file}")
-        self.logger.debug(f"Using variables: {locals()}")
+        self.logger.debug(f"Using options: img={img}, rms={rms}, bkg={bkg}")
 
         try:
             image = Image(
