@@ -1234,7 +1234,7 @@ class Query:
         # Drop the cutouts that raised a NoOverlapError
         cutout_data.dropna(inplace=True)
         self.logger.debug(cutout_data)
-        exit()
+        
         return cutout_data
 
     def _get_cutout(
