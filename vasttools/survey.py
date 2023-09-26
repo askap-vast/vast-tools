@@ -444,6 +444,7 @@ class Image:
             self.beam = None
 
         self._loaded_data = True
+        self.logger.debug("Successfully loaded image data")
 
     def get_rms_img(self) -> None:
         """
@@ -471,6 +472,8 @@ class Image:
             self.rms_header = hdul[0].header
             self.rms_wcs = WCS(self.rms_header, naxis=2)
             self.rms_data = hdul[0].data.squeeze()
+        
+        self.logger.debug("Successfully loaded RMS data")
 
     def get_bkg_img(self) -> None:
         """
@@ -498,6 +501,8 @@ class Image:
             self.bkg_header = hdul[0].header
             self.bkg_wcs = WCS(self.bkg_header, naxis=2)
             self.bkg_data = hdul[0].data.squeeze()
+        
+        self.logger.debug("Successfully loaded background data")
 
     def measure_coord_pixel_values(
         self,
