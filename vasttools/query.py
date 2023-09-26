@@ -1202,6 +1202,7 @@ class Query:
             self.logger.debug(concat_data.columns)
             self.logger.debug(concat_data.data)
             self.logger.debug(len(concat_data))
+            self.logger.debug(concat_data.isna())
             cutout_data = concat_data.dropna(how='all', axis=0)
             
             self.logger.debug("Concatenated into cutout_data")
