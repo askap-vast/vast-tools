@@ -479,6 +479,7 @@ class Query:
                 "to access full survey data. Query will continue to run, "
                 "but proceed with caution."
             )
+        ## TO DO: Maybe add some setting validation for self.post_processed_data
 
         return True
 

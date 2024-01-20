@@ -301,7 +301,8 @@ class Image:
         rmspath: Optional[str] = None,
         bkgpath: Optional[str] = None,
         rms_header: Optional[fits.Header] = None,
-        corrected_data: bool = True
+        corrected_data: bool = False,
+        post_processed_data: bool = True,
     ) -> None:
         """
         Constructor method.
@@ -324,7 +325,9 @@ class Image:
             rms_header: Header of rms FITS image if already obtained,
                 defaults to None.
             corrected_data: Access the corrected data. Only relevant if
-                `tiles` is `True`. Defaults to `True`.
+                `tiles` is `True`. Defaults to `False`.
+            post_processed_data: Access the post-processed data. Only relevant
+                if `tiles` is `True`. Defaults to `True`.
 
         Returns:
             None
@@ -343,6 +346,7 @@ class Image:
         self.tiles = tiles
         self.base_folder = base_folder
         self.corrected_data = corrected_data
+        self.post_processed_data = post_processed_data
 
         if self.path is None:
             self.logger.debug("Path not supplied, fetching paths and names")
@@ -379,6 +383,10 @@ class Image:
             if not self.corrected_data:
                 img_folder = img_folder.replace("_CORRECTED", "")
                 img_template = img_template.replace(".corrected", "")
+
+            if not self.post_processed_data:
+                img_folder = img_folder.replace("_CORRECTED", "_PROCESSED")
+                img_template = img_template.replace(".fits", ".fits.fz")
 
             self.imgname = img_template.format(
                 self.stokes.lower(), self.field, self.sbid
