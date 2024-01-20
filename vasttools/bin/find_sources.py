@@ -108,13 +108,20 @@ def parse_args() -> argparse.Namespace:
         help='Return all data at the requested location(s) regardless of field'
         )
     parser.add_argument(
-        '--use-tiles',
+        '--use-combined',
         action="store_true",
-        help='Use the individual tiles instead of combined mosaics.')
+        help='Use the combined mosaics instead of individual tiles.')
     parser.add_argument(
         '--uncorrected-data',
         action="store_true",
         help='Use the uncorrected data. Only relevant with --use-tiles')
+    parser.add_argument(
+        '--corrected-data',
+        action="store_true",
+        help='Use the corrected data. Only relevant with --use-tiles. '
+             'Note: this is distinct from the post-processed data, which '
+             'will be used by default if no data arguments are passed.'
+             )
     parser.add_argument(
         '--islands',
         action="store_true",
@@ -410,6 +417,10 @@ def main() -> None:
         None
     """
     args = parse_args()
+    
+    post_processed_data = True
+    if args.corrected_data or args.uncorrected_data:
+        post_processed_data = False
 
     os.nice(args.nice)
 
@@ -422,12 +433,14 @@ def main() -> None:
         "Available epochs: {}".format(sorted(RELEASED_EPOCHS.keys()))
     )
 
-    if args.uncorrected_data and not args.use_tiles:
+    if args.corrected_data and args.uncorrected_data:
         logger.error(
-            "Uncorrected data has been selected with COMBINED data!"
+            "Uncorrected and corrected data cannot be selected simultaneously"
         )
+    if (args.uncorrected_data or post_processed_data) and args.use_combined:
         logger.error(
-            "These modes cannot be used together, "
+            "Uncorrected or post-processed data has been selected "
+            "with COMBINED data! These modes cannot be used together, "
             "please check input and try again."
         )
     if len(args.planets) > 0:
@@ -453,9 +466,9 @@ def main() -> None:
         )
         sys.exit()
 
-    if args.forced_fits and args.use_tiles:
+    if args.forced_fits and not args.use_combined:
         logger.error(
-            "Forced fits and use tiles are both selected!"
+            "Forced fits and TILES are both selected!"
         )
         logger.error(
             "These modes cannot be used together, "
@@ -506,6 +519,8 @@ def main() -> None:
         sky_coords = None
         source_names = ""
     logger.debug(args.epochs)
+    
+    
 
     query = Query(
         coords=sky_coords,
@@ -515,7 +530,7 @@ def main() -> None:
         stokes=args.stokes,
         crossmatch_radius=args.crossmatch_radius,
         max_sep=args.maxsep,
-        use_tiles=args.use_tiles,
+        use_tiles=~args.use_combined,
         use_islands=args.islands,
         base_folder=args.base_folder,
         matches_only=args.process_matches,
@@ -528,7 +543,8 @@ def main() -> None:
         forced_cluster_threshold=args.forced_cluster_threshold,
         forced_allow_nan=args.forced_allow_nan,
         incl_observed=args.find_fields,
-        corrected_data=not args.uncorrected_data,
+        corrected_data=args.corrected_data,
+        post_processed_data=post_processed_data,
         search_all_fields=args.search_all_fields,
         scheduler=args.scheduler,
     )
