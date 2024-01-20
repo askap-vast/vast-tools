@@ -2065,7 +2065,7 @@ class Query:
             #if self.post_processed_data:
             #    selavy_file_fmt = selavy_file_fmt.replace(".xml",
             #                                              ".processed.xml"
-                                                          )
+            #                                              )
 
             selavy_path = selavy_folder / selavy_file_fmt
 
