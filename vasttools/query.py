@@ -479,7 +479,7 @@ class Query:
                 "to access full survey data. Query will continue to run, "
                 "but proceed with caution."
             )
-        ## TO DO: Maybe add some setting validation for self.post_processed_data
+        # TO DO: Maybe add some setting validation for self.post_processed_data
 
         return True
 
@@ -2062,7 +2062,7 @@ class Query:
                 selavy_file_fmt = selavy_file_fmt.replace(".xml",
                                                           ".corrected.xml"
                                                           )
-            #if self.post_processed_data:
+            # if self.post_processed_data:
             #    selavy_file_fmt = selavy_file_fmt.replace(".xml",
             #                                              ".processed.xml"
             #                                              )
@@ -2132,7 +2132,7 @@ class Query:
             if self.post_processed_data:
                 img_dir += "_PROCESSED"
                 rms_dir += "_PROCESSED"
-                #image_file_fmt = image_file_fmt.replace(".fits",
+                # image_file_fmt = image_file_fmt.replace(".fits",
                 #                                        ".processed.fits"
                 #                                        )
             rms_file_fmt = f"noiseMap.{image_file_fmt}"

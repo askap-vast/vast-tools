@@ -106,7 +106,7 @@ def parse_args() -> argparse.Namespace:
         '--search-all-fields',
         action="store_true",
         help='Return all data at the requested location(s) regardless of field'
-        )
+    )
     parser.add_argument(
         '--use-combined',
         action="store_true",
@@ -121,7 +121,7 @@ def parse_args() -> argparse.Namespace:
         help='Use the corrected data. Only relevant with --use-tiles. '
              'Note: this is distinct from the post-processed data, which '
              'will be used by default if no data arguments are passed.'
-             )
+    )
     parser.add_argument(
         '--islands',
         action="store_true",
@@ -216,7 +216,7 @@ def parse_args() -> argparse.Namespace:
         choices=['processes', 'single-threaded'],
         help=("Dask scheduling option to use. Options are 'processes' "
               "(parallel processing) or 'single-threaded'.")
-        )
+    )
     parser.add_argument(
         '--sort-output',
         action="store_true",
@@ -417,7 +417,7 @@ def main() -> None:
         None
     """
     args = parse_args()
-    
+
     post_processed_data = True
     if args.corrected_data or args.uncorrected_data:
         post_processed_data = False
@@ -519,8 +519,6 @@ def main() -> None:
         sky_coords = None
         source_names = ""
     logger.debug(args.epochs)
-    
-    
 
     query = Query(
         coords=sky_coords,
