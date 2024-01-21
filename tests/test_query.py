@@ -72,7 +72,10 @@ def vast_query_psrj2129(pilot_moc_mocker: MOC,
         coords=psr_coordinate,
         source_names=['PSR J2129-04'],
         base_folder=test_dir,
-        epochs='1,2'
+        epochs='1,2',
+        corrected_data=True,
+        post_processed_data=False,
+        use_tiles=False
     )
 
     return psr_query
@@ -619,7 +622,7 @@ class TestQuery:
                     planets=['Mars'],
                     base_folder=test_dir,
                     stokes='v',
-                    use_tiles=True
+                    use_tiles=True,
                 )
             assert str(excinfo.value).startswith(
                 "Problems found in query settings!"
@@ -852,7 +855,7 @@ class TestQuery:
         """
         stokes = "I"
         epoch = "10x"
-        data_type = "COMBINED"
+        data_type = "TILES"
 
         base_dir = tmp_path
         epoch_dir = base_dir / f"EPOCH{epoch}"
@@ -877,7 +880,9 @@ class TestQuery:
             planets=['Mars'],
             base_folder=base_dir,
             stokes=stokes,
-            no_rms=no_rms
+            no_rms=no_rms,
+            corrected_data=False,
+            post_processed_data=False
         )
 
         assert all_available == query._check_data_availability()
