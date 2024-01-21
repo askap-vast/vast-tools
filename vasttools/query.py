@@ -2062,10 +2062,10 @@ class Query:
                 selavy_file_fmt = selavy_file_fmt.replace(".xml",
                                                           ".corrected.xml"
                                                           )
-            # if self.post_processed_data:
-            #    selavy_file_fmt = selavy_file_fmt.replace(".xml",
-            #                                              ".processed.xml"
-            #                                              )
+            if self.post_processed_data:
+                selavy_file_fmt = selavy_file_fmt.replace(".xml",
+                                                          ".processed.xml"
+                                                          )
 
             selavy_path = selavy_folder / selavy_file_fmt
 
@@ -2132,9 +2132,9 @@ class Query:
             if self.post_processed_data:
                 img_dir += "_PROCESSED"
                 rms_dir += "_PROCESSED"
-                # image_file_fmt = image_file_fmt.replace(".fits",
-                #                                        ".processed.fits"
-                #                                        )
+                image_file_fmt = image_file_fmt.replace(".fits",
+                                                        ".processed.fits"
+                                                        )
             rms_file_fmt = f"noiseMap.{image_file_fmt}"
 
         else:
