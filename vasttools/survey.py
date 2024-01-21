@@ -386,7 +386,9 @@ class Image:
 
             if not self.post_processed_data:
                 img_folder = img_folder.replace("_CORRECTED", "_PROCESSED")
-                img_template = img_template.replace(".fits", ".fits.fz")
+                img_template = img_template.replace(".fits",
+                                                    ".processed.fits.fz"
+                                                    )
 
             self.imgname = img_template.format(
                 self.stokes.lower(), self.field, self.sbid
@@ -397,6 +399,10 @@ class Image:
                 if self.corrected_data:
                     self.imgname = self.imgname.replace(".corrected.",
                                                         ".conv.corrected."
+                                                        )
+                if self.post_processed_data:
+                    self.imgname = self.imgname.replace(".processed.",
+                                                        ".conv.processed."
                                                         )
                 else:
                     self.imgname = self.imgname.replace(".fits",
