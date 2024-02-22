@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Added
 
+- Added epoch 40 as a base epoch to allow query of full VAST extragalactic fields [#522](https://github.com/askap-vast/vast-tools/pull/522)
+- Added support for epochs 42-51 [#522](https://github.com/askap-vast/vast-tools/pull/522)
+
 #### Changed
 
 #### Fixed
@@ -15,6 +18,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 #### Removed
 
 #### List of PRs
+
+- [#522](https://github.com/askap-vast/vast-tools/pull/522): fix, feat: Add support for extrgalactic queries and epochs 42-51
 
 ## [3.0.1](https://github.com/askap-vast/vast-tools/releases/v3.0.1) (2023-09-24)
 
