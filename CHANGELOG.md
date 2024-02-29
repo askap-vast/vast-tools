@@ -15,7 +15,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Fixed
 
-- Update open_fits to check HDU list contents rather than the file extension [#524](https://github.com/askap-vast/vast-tools/pull/524)
 - Fix open_fits handling of unprocessed files [#526](https://github.com/askap-vast/vast-tools/pull/526)
 - Update open_fits to check HDU list contents rather than the file extension [#524](https://github.com/askap-vast/vast-tools/pull/524)
 
