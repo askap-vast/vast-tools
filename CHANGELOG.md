@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Fixed
 
+- Fix checking length of HDUl that should have been fixed by #526 [#528](https://github.com/askap-vast/vast-tools/pull/528)
 - Disable auto-scaling for show_png_cutout to allow users to specify the scaling [#527](https://github.com/askap-vast/vast-tools/pull/527)
 - Fix open_fits handling of unprocessed files [#526](https://github.com/askap-vast/vast-tools/pull/526)
 - Update open_fits to check HDU list contents rather than the file extension [#524](https://github.com/askap-vast/vast-tools/pull/524)
@@ -23,6 +24,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#528](https://github.com/askap-vast/vast-tools/pull/528): fix: Fix checking length of HDUl that should have been fixed by #526
 - [#527](https://github.com/askap-vast/vast-tools/pull/527): fix: Disable auto-scaling for show_png_cutout to allow users to specify the scaling
 - [#526](https://github.com/askap-vast/vast-tools/pull/526): fix: Fix open_fits handling of unprocessed files
 - [#524](https://github.com/askap-vast/vast-tools/pull/524): fix: Update open_fits to check HDU list contents rather than the file extension
