@@ -115,7 +115,7 @@ class Query:
         stokes: str = "I",
         crossmatch_radius: float = 5.0,
         max_sep: float = 1.5,
-        use_tiles: bool = False,
+        use_tiles: bool = True,
         use_islands: bool = False,
         base_folder: Optional[str] = None,
         matches_only: bool = False,
@@ -129,7 +129,8 @@ class Query:
         forced_cluster_threshold: float = 1.5,
         forced_allow_nan: bool = False,
         incl_observed: bool = False,
-        corrected_data: bool = True,
+        corrected_data: bool = False,
+        post_processed_data: bool = True,
         search_all_fields: bool = False,
         scheduler: str = 'processes',
     ) -> None:
@@ -179,7 +180,9 @@ class Query:
                 released, in the query. This should only be used when finding
                 fields, not querying data. Defaults to False.
             corrected_data: Access the corrected data. Only relevant if
-                `tiles` is `True`. Defaults to `True`.
+                `tiles` is `True`. Defaults to `False`.
+            post_processed_data: Access the post-processed data. Only relevant
+                if `tiles` is `True`. Defaults to `True`.
             search_all_fields: If `True`, return all data at the requested
                 positions regardless of field. If `False`, only return data
                 from the best (closest) field in each epoch.
@@ -219,6 +222,7 @@ class Query:
         self.simbad_names = None
 
         self.corrected_data = corrected_data
+        self.post_processed_data = post_processed_data
 
         if coords is None:
             self.coords = coords
@@ -436,6 +440,20 @@ class Query:
         self.logger.debug("Using settings: ")
         self.logger.debug(self.settings)
 
+        if not self.settings['tiles']:
+            if self.post_processed_data:
+                self.logger.debug("Using post-processed TILES data...")
+            elif self.corrected_data:
+                self.logger.warning(
+                    "Using corrected TILES data - this should only be "
+                    "selected with good reason! Otherwise, use the default!"
+                )
+            else:
+                self.logger.warning(
+                    "Using raw TILES data - this should only be "
+                    "selected with good reason! Otherwise, use the default!"
+                )
+
         if self.settings['tiles'] and self.settings['stokes'].lower() != "i":
             if self.vast_full:
                 self.logger.warning("Stokes V tiles are only available for the"
@@ -463,16 +481,25 @@ class Query:
 
         if self.vast_full and not self.settings['tiles']:
             self.logger.critical("COMBINED images are not available for "
-                                 "the full VAST survey."
+                                 "the full VAST survey. Query will continue "
+                                 "to run, but proceed with caution."
                                  )
-            return False
 
         if self.settings['tiles'] and self.corrected_data and self.vast_full:
             self.logger.critical(
-                "Corrected data does not yet exist for the full VAST survey."
-                "Pass corrected_data=False to access full survey data. "
-                "Query will continue to run, but proceed with caution."
+                "Corrected data does not exist for the full VAST survey."
+                "Pass corrected_data=False and post_processed_data=True "
+                "to access full survey data. Query will continue to run, "
+                "but proceed with caution."
             )
+
+        # TO DO: Maybe add some setting validation for self.post_processed_data
+        if self.corrected_data and self.post_processed_data:
+            self.logger.critical(
+                "Only one of corrected_data and post-processed data can be "
+                "selected."
+            )
+            return False
 
         return True
 
@@ -495,6 +522,8 @@ class Query:
             data_type = "TILES"
             if self.corrected_data:
                 corrected_str = "_CORRECTED"
+            if self.post_processed_data:
+                corrected_str = "_PROCESSED"
 
         stokes = self.settings['stokes']
 
@@ -1102,7 +1131,8 @@ class Query:
                 self.base_folder,
                 sbid=group.iloc[0].sbid,
                 tiles=self.settings['tiles'],
-                corrected_data=self.corrected_data
+                corrected_data=self.corrected_data,
+                post_processed_data=self.post_processed_data,
             )
 
             if img:
@@ -1656,7 +1686,8 @@ class Query:
             islands=source_islands,
             forced_fits=self.settings['forced_fits'],
             outdir=source_outdir,
-            corrected_data=self.corrected_data
+            corrected_data=self.corrected_data,
+            post_processed_data=self.post_processed_data,
         )
 
         return thesource
@@ -1706,7 +1737,8 @@ class Query:
                 tiles=self.settings["tiles"],
                 path=image,
                 rmspath=rms,
-                corrected_data=self.corrected_data
+                corrected_data=self.corrected_data,
+                post_processed_data=self.post_processed_data,
             )
             img_beam.get_img_data()
             img_beam = img_beam.beam
@@ -1975,7 +2007,8 @@ class Query:
                             self.base_folder,
                             sbid=group.iloc[0].sbid,
                             tiles=self.settings['tiles'],
-                            corrected_data=self.corrected_data
+                            corrected_data=self.corrected_data,
+                            post_processed_data=self.post_processed_data
                         )
                         image.get_img_data()
                         rms_values = image.measure_coord_pixel_values(
@@ -2028,6 +2061,8 @@ class Query:
             data_folder = f"STOKES{self.settings['stokes']}_SELAVY"
             if self.corrected_data:
                 data_folder += "_CORRECTED"
+            if self.post_processed_data:
+                data_folder += "_PROCESSED"
 
             selavy_folder = Path(
                 self.base_folder,
@@ -2046,6 +2081,10 @@ class Query:
             if self.corrected_data:
                 selavy_file_fmt = selavy_file_fmt.replace(".xml",
                                                           ".corrected.xml"
+                                                          )
+            if self.post_processed_data:
+                selavy_file_fmt = selavy_file_fmt.replace(".xml",
+                                                          ".processed.xml"
                                                           )
 
             selavy_path = selavy_folder / selavy_file_fmt
@@ -2109,6 +2148,12 @@ class Query:
                 rms_dir += "_CORRECTED"
                 image_file_fmt = image_file_fmt.replace(".fits",
                                                         ".corrected.fits"
+                                                        )
+            if self.post_processed_data:
+                img_dir += "_PROCESSED"
+                rms_dir += "_PROCESSED"
+                image_file_fmt = image_file_fmt.replace(".fits",
+                                                        ".processed.fits"
                                                         )
             rms_file_fmt = f"noiseMap.{image_file_fmt}"
 

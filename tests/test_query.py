@@ -72,7 +72,10 @@ def vast_query_psrj2129(pilot_moc_mocker: MOC,
         coords=psr_coordinate,
         source_names=['PSR J2129-04'],
         base_folder=test_dir,
-        epochs='1,2'
+        epochs='1,2',
+        corrected_data=True,
+        post_processed_data=False,
+        use_tiles=False
     )
 
     return psr_query
@@ -619,7 +622,7 @@ class TestQuery:
                     planets=['Mars'],
                     base_folder=test_dir,
                     stokes='v',
-                    use_tiles=True
+                    use_tiles=True,
                 )
             assert str(excinfo.value).startswith(
                 "Problems found in query settings!"
@@ -852,7 +855,7 @@ class TestQuery:
         """
         stokes = "I"
         epoch = "10x"
-        data_type = "COMBINED"
+        data_type = "TILES"
 
         base_dir = tmp_path
         epoch_dir = base_dir / f"EPOCH{epoch}"
@@ -877,7 +880,9 @@ class TestQuery:
             planets=['Mars'],
             base_folder=base_dir,
             stokes=stokes,
-            no_rms=no_rms
+            no_rms=no_rms,
+            corrected_data=False,
+            post_processed_data=False
         )
 
         assert all_available == query._check_data_availability()
@@ -1146,21 +1151,26 @@ class TestQuery:
         for result, expected in zip(results, expected_results):
             assert result == expected
 
-    @pytest.mark.parametrize("corrected, stokes",
-                             [(True, "I"),
-                              (True, "V"),
-                              (False, "I"),
-                              (False, "V"),
+    @pytest.mark.parametrize("corrected, post_processed, stokes",
+                             [(True, False, "I"),
+                              (True, False, "V"),
+                              (False, False, "I"),
+                              (False, False, "V"),
+                              (False, True, "I"),
+                              (False, True, "V"),
                               ],
                              ids=('corrected-i',
                                   'corrected-v',
                                   'uncorrected-i',
                                   'uncorrected-v',
+                                  'post-processed-i',
+                                  'post-processed-v',
                                   )
                              )
     def test__add_files_tiles(
         self,
         corrected: bool,
+        post_processed: bool,
         stokes: str,
         vast_query_psrj2129_fields: vtq.Query,
         mocker: MockerFixture
@@ -1172,6 +1182,7 @@ class TestQuery:
 
         Args:
             corrected: Whether to test the corrected paths or not.
+            post_processed: Whether to test the post-processed paths or not.
             stokes: Stokes parameter.
             vast_query_psrj2129_fields: The dummy Query instance that includes
                 a search for PSR J2129-04 with the included found fields data.
@@ -1194,6 +1205,18 @@ class TestQuery:
                 f'_CORRECTED/noiseMap.image.{stokes_lower}.VAST_2118-06A'
                 '.SB9668.cont.taylor.0.restored.corrected.fits'
             )
+        elif post_processed:
+            expected_results = (
+                f'/testing/folder/EPOCH01/TILES/STOKES{stokes}_SELAVY'
+                f'_PROCESSED/selavy-image.{stokes_lower}.VAST_2118-06A.SB9668'
+                '.cont.taylor.0.restored.components.processed.xml',
+                f'/testing/folder/EPOCH01/TILES/STOKES{stokes}_IMAGES'
+                f'_PROCESSED/image.{stokes_lower}.VAST_2118-06A.SB9668.cont'
+                '.taylor.0.restored.processed.fits',
+                f'/testing/folder/EPOCH01/TILES/STOKES{stokes}_RMSMAPS'
+                f'_PROCESSED/noiseMap.image.{stokes_lower}.VAST_2118-06A'
+                '.SB9668.cont.taylor.0.restored.processed.fits'
+            )
         else:
             expected_results = (
                 f'/testing/folder/EPOCH01/TILES/STOKES{stokes}_SELAVY'
@@ -1211,6 +1234,7 @@ class TestQuery:
         test_query.settings['stokes'] = stokes
 
         test_query.corrected_data = corrected
+        test_query.post_processed_data = post_processed
 
         mock_selavy_path = mocker.patch(
             'vasttools.query.Query._get_selavy_path',

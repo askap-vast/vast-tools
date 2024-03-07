@@ -111,7 +111,8 @@ def init_Image() -> vts.Image:
         base_folder: str = '/mocked/basefolder/',
         rmspath: Optional[str] = None,
         bkgpath: Optional[str] = None,
-        corrected_data: bool = True
+        corrected_data: bool = False,
+        post_processed_data: bool = True,
     ) -> vts.Image:
         """
         Returns the Image instance.
@@ -126,7 +127,9 @@ def init_Image() -> vts.Image:
             rmspath: Path of the rms image.
             bkgpath: Path of the bkg image.
             corrected_data: Access the corrected data. Only relevant if
-                `tiles` is `True`. Defaults to `True`.
+                `tiles` is `True`. Defaults to `False`.
+            post_processed_data: Access the post-processed data. Only relevant
+                if `tiles` is `True`. Defaults to `True`.
 
         Returns:
             The image instance.
@@ -141,7 +144,8 @@ def init_Image() -> vts.Image:
             path=path,
             rmspath=rmspath,
             bkgpath=bkgpath,
-            corrected_data=corrected_data
+            corrected_data=corrected_data,
+            post_processed_data=post_processed_data,
         )
 
         return img
@@ -518,20 +522,24 @@ class TestImage:
         assert image.imgname == expected_filename
         assert image.image_fail is False
 
-    @pytest.mark.parametrize("corrected, conv, expected_suffix",
+    @pytest.mark.parametrize("corrected, post_processed, conv, expected_suffix",
                              [(True,
+                               False,
                                True,
                                'restored.conv.corrected.fits'
                                ),
                               (False,
+                               False,
                                True,
                                'restored.conv.fits'
                                ),
                               (True,
                                False,
+                               False,
                                'restored.corrected.fits'
                                ),
                               (False,
+                               False,
                                False,
                                'restored.fits'
                                )
@@ -546,6 +554,7 @@ class TestImage:
         self,
         init_Image: vts.Image,
         corrected,
+        post_processed,
         conv,
         expected_suffix,
         mocker: MockerFixture
@@ -559,6 +568,7 @@ class TestImage:
         Args:
             init_Image: The Image pytest fixture.
             corrected: Test the "corrected" path.
+            post_processed: Test the "post-processed" path.
             conv: Test the "convolved" path.
             expected_suffix: The suffix of the expected file path.
             mocker: Pytest mock mocker object.
@@ -569,20 +579,26 @@ class TestImage:
         mock_ospath = mocker.patch('os.path.exists', return_value=not conv)
         mock_check_exists = mocker.patch('os.path.isfile', return_value=True)
 
-        image = init_Image(tiles=True, corrected_data=corrected)
+        image = init_Image(tiles=True,
+                           corrected_data=corrected,
+                           post_processed_data=post_processed,
+                           )
 
         # Use the defaults on the init_Image fixture.
         expected_filename = (
             f"image.i.VAST_0012+00.SB9667.cont.taylor.0.{expected_suffix}"
         )
 
+        dir_suffix = ""
+        if corrected:
+            dir_suffix = "_CORRECTED"
+        elif post_processed:
+            dir_suffix = "_PROCESSED"
+
         expected_path = (
             "/mocked/basefolder/EPOCH01/TILES/"
-            f"STOKESI_IMAGES_CORRECTED/{expected_filename}"
+            f"STOKESI_IMAGES{dir_suffix}/{expected_filename}"
         )
-
-        if not corrected:
-            expected_path = expected_path.replace("_CORRECTED", "")
 
         assert image.imgpath == expected_path
         assert image.imgname == expected_filename
@@ -645,11 +661,11 @@ class TestImage:
         # Use the defaults on the init_Image fixture.
         expected_filename = (
             "image.v.VAST_0012+00.SB9667.cont.taylor."
-            "0.restored.conv.corrected.fits"
+            "0.restored.conv.processed.fits"
         )
         expected_path = (
             "/mocked/basefolder/EPOCH01/TILES/"
-            f"STOKESV_IMAGES_CORRECTED/{expected_filename}"
+            f"STOKESV_IMAGES_PROCESSED/{expected_filename}"
         )
 
         assert image.imgpath == expected_path
@@ -832,7 +848,7 @@ class TestImage:
         assert image.bkgname == expected_filename
         assert image.bkg_fail is False
         mock_fits_open.assert_called_once_with(expected_path)
-    
+
     def test_image_get_rms_img_path(
         self,
         init_Image: vts.Image,

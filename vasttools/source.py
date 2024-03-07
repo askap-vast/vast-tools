@@ -92,7 +92,9 @@ class Source:
         image_type (str): 'TILES' or 'COMBINED'.
         tiles (bool): `True` if `image_type` == `TILES`.
         corrected_data (bool): Access the corrected data. Only relevant if
-            `tiles` is `True`. Defaults to `True`.
+            `tiles` is `True`. Defaults to `False`.
+        post_processed_data: Access the post-processed data. Only relevant
+                if `tiles` is `True`. Defaults to `True`.
         detections (int): The number of selavy detections the source contains.
         limits (int):
             The number of upper limits the source contains. Will be set to
@@ -122,7 +124,8 @@ class Source:
         planet: bool = False,
         pipeline: bool = False,
         tiles: bool = False,
-        corrected_data: bool = True,
+        corrected_data: bool = False,
+        post_processed_data: bool = True,
         forced_fits: bool = False,
     ) -> None:
         """
@@ -189,6 +192,7 @@ class Source:
             self.tiles = False
 
         self.corrected_data = corrected_data
+        self.post_processed_data = post_processed_data
         if self.pipeline:
             self.detections = self.measurements[
                 self.measurements.forced == False
@@ -770,7 +774,8 @@ class Source:
             image = Image(
                 row.field, row.epoch, self.stokes, self.base_folder,
                 path=row.image, rmspath=row.rms,
-                corrected_data=self.corrected_data
+                corrected_data=self.corrected_data,
+                post_processed_data=self.post_processed_data
             )
             image.get_img_data()
         else:
@@ -779,8 +784,9 @@ class Source:
                 e = e.split("-")[0]
             image = Image(
                 row.field, e, self.stokes,
-                self.base_folder, tiles=self.tiles,
-                sbid=row.sbid, corrected_data=self.corrected_data
+                self.base_folder, tiles=self.tiles, sbid=row.sbid,
+                corrected_data=self.corrected_data,
+                post_processed_data=self.post_processed_data
             )
             image.get_img_data()
 
