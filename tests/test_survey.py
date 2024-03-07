@@ -848,7 +848,7 @@ class TestImage:
         assert image.bkgname == expected_filename
         assert image.bkg_fail is False
         mock_fits_open.assert_called_once_with(expected_path)
-    
+
     def test_image_get_rms_img_path(
         self,
         init_Image: vts.Image,

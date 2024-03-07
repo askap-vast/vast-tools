@@ -378,7 +378,7 @@ class Image:
             if self.post_processed_data:
                 dir_suffix = "_PROCESSED"
                 img_suffix = ".processed.fits"
-            
+
             img_folder = os.path.join(
                 self.base_folder,
                 "EPOCH{}".format(RELEASED_EPOCHS[self.epoch]),
