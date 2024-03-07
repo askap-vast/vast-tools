@@ -370,44 +370,34 @@ class Image:
             None
         """
         if self.tiles:
+            dir_suffix = ""
+            img_suffix = ".fits"
+            if self.corrected_data:
+                dir_suffix = "_CORRECTED"
+                img_suffix = ".corrected.fits"
+            if self.post_processed_data:
+                dir_suffix = "_PROCESSED"
+                img_suffix = ".processed.fits"
+            
             img_folder = os.path.join(
                 self.base_folder,
                 "EPOCH{}".format(RELEASED_EPOCHS[self.epoch]),
                 "TILES",
-                "STOKES{}_IMAGES_CORRECTED".format(self.stokes.upper())
+                "STOKES{}_IMAGES{}".format(self.stokes.upper(), dir_suffix)
             )
             img_template = (
-                'image.{}.{}.SB{}.cont.taylor.0.restored.corrected.fits'
+                'image.{}.{}.SB{}.cont.taylor.0.restored{}'
             )
 
-            if not self.corrected_data:
-                img_folder = img_folder.replace("_CORRECTED", "")
-                img_template = img_template.replace(".corrected", "")
-
-            if not self.post_processed_data:
-                img_folder = img_folder.replace("_CORRECTED", "_PROCESSED")
-                img_template = img_template.replace(".fits",
-                                                    ".processed.fits.fz"
-                                                    )
-
             self.imgname = img_template.format(
-                self.stokes.lower(), self.field, self.sbid
+                self.stokes.lower(), self.field, self.sbid, img_suffix
             )
             img_path = os.path.join(img_folder, self.imgname)
 
             if not os.path.exists(img_path):
-                if self.corrected_data:
-                    self.imgname = self.imgname.replace(".corrected.",
-                                                        ".conv.corrected."
-                                                        )
-                if self.post_processed_data:
-                    self.imgname = self.imgname.replace(".processed.",
-                                                        ".conv.processed."
-                                                        )
-                else:
-                    self.imgname = self.imgname.replace(".fits",
-                                                        ".conv.fits"
-                                                        )
+                self.imgname = self.imgname.replace(img_suffix,
+                                                    f".conv{img_suffix}"
+                                                    )
         else:
             img_folder = os.path.join(
                 self.base_folder,
