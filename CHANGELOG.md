@@ -8,13 +8,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Added
 
+- Added epoch 40 as a base epoch to allow query of full VAST extragalactic fields [#522](https://github.com/askap-vast/vast-tools/pull/522)
+- Added support for epochs 42-51 [#522](https://github.com/askap-vast/vast-tools/pull/522)
+
 #### Changed
 
 #### Fixed
 
+- Fix checking length of HDUl that should have been fixed by #526 [#528](https://github.com/askap-vast/vast-tools/pull/528)
+- Disable auto-scaling for show_png_cutout to allow users to specify the scaling [#527](https://github.com/askap-vast/vast-tools/pull/527)
+- Fix open_fits handling of unprocessed files [#526](https://github.com/askap-vast/vast-tools/pull/526)
+- Update open_fits to check HDU list contents rather than the file extension [#524](https://github.com/askap-vast/vast-tools/pull/524)
+
 #### Removed
 
 #### List of PRs
+
+- [#528](https://github.com/askap-vast/vast-tools/pull/528): fix: Fix checking length of HDUl that should have been fixed by #526
+- [#527](https://github.com/askap-vast/vast-tools/pull/527): fix: Disable auto-scaling for show_png_cutout to allow users to specify the scaling
+- [#526](https://github.com/askap-vast/vast-tools/pull/526): fix: Fix open_fits handling of unprocessed files
+- [#524](https://github.com/askap-vast/vast-tools/pull/524): fix: Update open_fits to check HDU list contents rather than the file extension
+- [#522](https://github.com/askap-vast/vast-tools/pull/522): fix, feat: Add support for extrgalactic queries and epochs 42-51
 
 ## [3.0.1](https://github.com/askap-vast/vast-tools/releases/v3.0.1) (2023-09-24)
 

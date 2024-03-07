@@ -918,7 +918,8 @@ class Source:
             hide_beam=hide_beam,
             size=size,
             force=force,
-            offset_axes=offset_axes
+            offset_axes=offset_axes,
+            disable_autoscaling=True
         )
 
         return fig
