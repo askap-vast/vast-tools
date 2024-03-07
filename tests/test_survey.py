@@ -661,11 +661,11 @@ class TestImage:
         # Use the defaults on the init_Image fixture.
         expected_filename = (
             "image.v.VAST_0012+00.SB9667.cont.taylor."
-            "0.restored.conv.corrected.fits"
+            "0.restored.conv.processed.fits"
         )
         expected_path = (
             "/mocked/basefolder/EPOCH01/TILES/"
-            f"STOKESV_IMAGES_CORRECTED/{expected_filename}"
+            f"STOKESV_IMAGES_PROCESSED/{expected_filename}"
         )
 
         assert image.imgpath == expected_path
