@@ -470,7 +470,6 @@ class Query:
                                  "the full VAST survey. Query will continue "
                                  "to run, but proceed with caution."
                                  )
-            return False
 
         if self.settings['tiles'] and self.corrected_data and self.vast_full:
             self.logger.critical(
@@ -479,7 +478,16 @@ class Query:
                 "to access full survey data. Query will continue to run, "
                 "but proceed with caution."
             )
+
         # TO DO: Maybe add some setting validation for self.post_processed_data
+        if self.corrected_data and self.post_processed_data:
+            self.logger.critical(
+                "Only one of corrected_data and post-processed data can be "
+                "selected."
+            )
+            return False
+                
+        
 
         return True
 
