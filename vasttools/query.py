@@ -223,7 +223,7 @@ class Query:
 
         self.corrected_data = corrected_data
         self.post_processed_data = post_processed_data
-
+        
         if coords is None:
             self.coords = coords
         elif coords.isscalar:
@@ -439,6 +439,20 @@ class Query:
 
         self.logger.debug("Using settings: ")
         self.logger.debug(self.settings)
+        
+        if not self.settings['tiles']:
+            if self.post_processed_data:
+                self.logger.debug("Using post-processed TILES data...")
+            elif self.corrected_data:
+                self.logger.warning(
+                    "Using corrected TILES data - this should only be "
+                    "selected with good reason! Otherwise, use the default!"
+                    )
+            else:
+                self.logger.warning(
+                    "Using raw TILES data - this should only be "
+                    "selected with good reason! Otherwise, use the default!"
+                    )
 
         if self.settings['tiles'] and self.settings['stokes'].lower() != "i":
             if self.vast_full:
