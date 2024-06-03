@@ -55,7 +55,7 @@ from vasttools.survey import (
 from vasttools.source import Source
 from vasttools.utils import (
     filter_selavy_components, simbad_search, match_planet_to_field,
-    read_selavy, strip_fieldnames
+    read_selavy, strip_fieldnames, open_fits
 )
 from vasttools.moc import VASTMOCS
 from forced_phot import ForcedPhot
@@ -1692,6 +1692,29 @@ class Query:
 
         return thesource
 
+    def _forcedphot_preload(self,
+                            image: str,
+                            background: str,
+                            noise: str,
+                            memmap: Optional[bool] = False
+                            ):
+        """
+        Load the relevant image, background and noisemap files.
+        Args:
+            image: a string with the path of the image file
+            background: a string with the path of the background map
+            noise: a string with the path of the noise map
+        Returns:
+            A tuple containing the HDU lists
+        """
+
+        image_hdul = open_fits(image, memmap=memmap)
+        background_hdul = open_fits(background, memmap=memmap)
+        noise_hdul = open_fits(noise, memmap=memmap)
+
+        return image_hdul, background_hdul, noise_hdul
+
+
     def _get_forced_fits(
         self, group: pd.DataFrame,
         cluster_threshold: float = 1.5, allow_nan: bool = False
@@ -1768,7 +1791,12 @@ class Query:
         )
 
         # make the Forced Photometry object
-        FP = ForcedPhot(image, bkg, rms)
+        forcedphot_input = self._forcedphot_preload(image,
+                                                    bkg,
+                                                    rms,
+                                                    memmap=False
+                                                    )
+        FP = ForcedPhot(*forcedphot_input)
 
         # run the forced photometry
         (
