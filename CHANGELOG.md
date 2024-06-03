@@ -19,6 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Fixed
 
+- Fix forced fitting of compressed fits files [#534](https://github.com/askap-vast/vast-tools/pull/534)
 - Fix checking length of HDUl that should have been fixed by #526 [#528](https://github.com/askap-vast/vast-tools/pull/528)
 - Disable auto-scaling for show_png_cutout to allow users to specify the scaling [#527](https://github.com/askap-vast/vast-tools/pull/527)
 - Fix open_fits handling of unprocessed files [#526](https://github.com/askap-vast/vast-tools/pull/526)
@@ -28,6 +29,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#534](https://github.com/askap-vast/vast-tools/pull/534): fix: Fix forced fitting of compressed fits files 
 - [#515](https://github.com/askap-vast/vast-tools/pull/515): fix, docs, feat: Support post-procesed data, make it the default and improve clarity of what data has been selected in a query.
 - [#528](https://github.com/askap-vast/vast-tools/pull/528): fix: Fix checking length of HDUl that should have been fixed by #526
 - [#527](https://github.com/askap-vast/vast-tools/pull/527): fix: Disable auto-scaling for show_png_cutout to allow users to specify the scaling
