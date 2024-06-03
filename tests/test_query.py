@@ -1453,7 +1453,7 @@ class TestQuery:
         mocked_Image.return_value.beam.major.to.return_value.value = 15.
         mocked_Image.return_value.beam.minor.to.return_value.value = 10.
         mocked_Image.return_value.beam.pa.to.return_value.value = 0.
-        
+
         patch_name = 'vasttools.query.Query._forcedphot_preload'
         mocked_FP_preload = mocker.patch(patch_name)
         mocked_FP_preload.return_value = (None, None, None)
