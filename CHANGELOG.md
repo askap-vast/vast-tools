@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Changed
 
+- Updated README [#535](https://github.com/askap-vast/vast-tools/pull/535)
 - Changed default behaviour to using post-processed TILES data [#515](https://github.com/askap-vast/vast-tools/pull/515)
 
 #### Fixed
@@ -28,7 +29,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 #### Removed
 
 #### List of PRs
-
+- [#535](https://github.com/askap-vast/vast-tools/pull/535): feat: Add epochs 58-60 and updated README
 - [#534](https://github.com/askap-vast/vast-tools/pull/534): fix: Fix forced fitting of compressed fits files 
 - [#515](https://github.com/askap-vast/vast-tools/pull/515): fix, docs, feat: Support post-procesed data, make it the default and improve clarity of what data has been selected in a query.
 - [#528](https://github.com/askap-vast/vast-tools/pull/528): fix: Fix checking length of HDUl that should have been fixed by #526
