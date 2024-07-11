@@ -110,7 +110,7 @@ class Source:
     def __init__(
         self,
         coord: SkyCoord,
-        name: str,
+        name: Union[str, int],
         epochs: List[str],
         fields: List[str],
         stokes: str,
@@ -133,7 +133,7 @@ class Source:
 
         Args:
             coord: Source coordinates.
-            name: The name of the source.
+            name: The name of the source. Will be converted to a string.
             epochs: The epochs that the source contains.
             fields: The fields that the source contains.
             stokes: The stokes parameter of the source.
@@ -166,7 +166,7 @@ class Source:
         self.logger.debug('Created Source instance')
         self.pipeline = pipeline
         self.coord = coord
-        self.name = name
+        self.name = str(name)
         self.epochs = epochs
         self.fields = fields
         self.stokes = stokes
