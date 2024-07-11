@@ -17,11 +17,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Changed
 
+- Convert all Source names to strings [#537](https://github.com/askap-vast/vast-tools/pull/537)
 - Updated README [#535](https://github.com/askap-vast/vast-tools/pull/535)
 - Changed default behaviour to using post-processed TILES data [#515](https://github.com/askap-vast/vast-tools/pull/515)
 
 #### Fixed
 
+- Fix errors when creating a Source with an int name [#537](https://github.com/askap-vast/vast-tools/pull/537)
 - Fix incorrect warnings when using COMBINED data [#538](https://github.com/askap-vast/vast-tools/pull/538)
 - Fix forced fitting of compressed fits files [#534](https://github.com/askap-vast/vast-tools/pull/534)
 - Fix checking length of HDUl that should have been fixed by #526 [#528](https://github.com/askap-vast/vast-tools/pull/528)
@@ -32,7 +34,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 #### Removed
 
 #### List of PRs
-
+- [#537](https://github.com/askap-vast/vast-tools/pull/537): fix: Convert all Source names to strings
 - [#538](https://github.com/askap-vast/vast-tools/pull/538): fix: Fix incorrect warnings when using COMBINED data
 - [#537](https://github.com/askap-vast/vast-tools/pull/537): feat: Add epoch 61
 - [#535](https://github.com/askap-vast/vast-tools/pull/535): feat: Add epochs 58-60 and updated README
