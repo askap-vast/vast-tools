@@ -22,6 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Fixed
 
+- Fix incorrect warnings when using COMBINED data [#538](https://github.com/askap-vast/vast-tools/pull/538)
 - Fix forced fitting of compressed fits files [#534](https://github.com/askap-vast/vast-tools/pull/534)
 - Fix checking length of HDUl that should have been fixed by #526 [#528](https://github.com/askap-vast/vast-tools/pull/528)
 - Disable auto-scaling for show_png_cutout to allow users to specify the scaling [#527](https://github.com/askap-vast/vast-tools/pull/527)
@@ -31,6 +32,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 #### Removed
 
 #### List of PRs
+
+- [#538](https://github.com/askap-vast/vast-tools/pull/538): fix: Fix incorrect warnings when using COMBINED data
 - [#537](https://github.com/askap-vast/vast-tools/pull/537): feat: Add epoch 61
 - [#535](https://github.com/askap-vast/vast-tools/pull/535): feat: Add epochs 58-60 and updated README
 - [#534](https://github.com/askap-vast/vast-tools/pull/534): fix: Fix forced fitting of compressed fits files 
