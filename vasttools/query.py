@@ -440,7 +440,7 @@ class Query:
         self.logger.debug("Using settings: ")
         self.logger.debug(self.settings)
 
-        if not self.settings['tiles']:
+        if self.settings['tiles']:
             if self.post_processed_data:
                 self.logger.debug("Using post-processed TILES data...")
             elif self.corrected_data:
@@ -454,6 +454,8 @@ class Query:
                     "selected with good reason! Otherwise, use the default!"
                 )
 
+        else:
+            self.logger.debug("Using COMBINED data")
         if self.settings['tiles'] and self.settings['stokes'].lower() != "i":
             if self.vast_full:
                 self.logger.warning("Stokes V tiles are only available for the"
