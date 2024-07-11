@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Added
 
+- Add epoch 61 [#537](https://github.com/askap-vast/vast-tools/pull/537)
+- Add epochs 58-60 [#535](https://github.com/askap-vast/vast-tools/pull/535)
 - Added extra logging in Query to improve clarity of data selection [#515](https://github.com/askap-vast/vast-tools/pull/515)
 - Added support for post-processed data [#515](https://github.com/askap-vast/vast-tools/pull/515)
 - Added epoch 40 as a base epoch to allow query of full VAST extragalactic fields [#522](https://github.com/askap-vast/vast-tools/pull/522)
@@ -30,7 +32,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 #### Removed
 
 #### List of PRs
-- [#538](https://github.com/askap-vast/vast-tools/pull/538): fix: Fix incorrect warnings when using COMBINED data 
+
+- [#538](https://github.com/askap-vast/vast-tools/pull/538): fix: Fix incorrect warnings when using COMBINED data
+- [#537](https://github.com/askap-vast/vast-tools/pull/537): feat: Add epoch 61
 - [#535](https://github.com/askap-vast/vast-tools/pull/535): feat: Add epochs 58-60 and updated README
 - [#534](https://github.com/askap-vast/vast-tools/pull/534): fix: Fix forced fitting of compressed fits files 
 - [#515](https://github.com/askap-vast/vast-tools/pull/515): fix, docs, feat: Support post-procesed data, make it the default and improve clarity of what data has been selected in a query.
