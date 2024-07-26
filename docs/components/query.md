@@ -190,7 +190,7 @@ Select which Stokes parameter data to search in.
 Valid entries are `I`, `V`, `Q` and `U`.
 
 **`use_tiles`**  
-Switch to using the catalogues and images of the `TILE` type instead of the `COMBINED` (default).
+Switch to using the catalogues and images `TILE` type instead of the `COMBINED`. The default is to use the `TILE` type.
 Refer to [this wiki page](https://github.com/askap-vast/vast-project/wiki/Pilot-Survey-Status-&-Data){:target="_blank"} for an explanation on the two types (askap-vast GitHub membership required to access).
 
 **`use_islands`**  
@@ -206,6 +206,9 @@ I.e. no forced fit or upper limit measurements will be returned.
 **`search_all_fields`**
 Return all data available at the source location. If not selected, only the data associated with the best (i.e. closest)
 field will be returned.
+
+**`corrected_data` and `post_processed_data`**
+Use the corrected data (astrometric corrections applied, only available for the pilot survey) or the post-processed data (astrometric corrections and cropping applied, along with the use of compressed images). The default is now to use the post-processed data moving forward.
 
 #### Planet Search
 

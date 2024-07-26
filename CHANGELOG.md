@@ -4,17 +4,47 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), with an added `List of PRs` section and links to the relevant PRs on the individal updates. This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased](https://github.com/askap-vast/vast-tools/compare/v3.0.1...HEAD)
+## [3.1.0](https://github.com/askap-vast/vast-tools/releases/v3.1.0) (2024-07-26)
 
 #### Added
 
+- Add epoch 61 [#537](https://github.com/askap-vast/vast-tools/pull/537)
+- Add epochs 58-60 [#535](https://github.com/askap-vast/vast-tools/pull/535)
+- Added extra logging in Query to improve clarity of data selection [#515](https://github.com/askap-vast/vast-tools/pull/515)
+- Added support for post-processed data [#515](https://github.com/askap-vast/vast-tools/pull/515)
+- Added epoch 40 as a base epoch to allow query of full VAST extragalactic fields [#522](https://github.com/askap-vast/vast-tools/pull/522)
+- Added support for epochs 42-51 [#522](https://github.com/askap-vast/vast-tools/pull/522)
+
 #### Changed
 
+- Convert all Source names to strings [#537](https://github.com/askap-vast/vast-tools/pull/537)
+- Updated README [#535](https://github.com/askap-vast/vast-tools/pull/535)
+- Changed default behaviour to using post-processed TILES data [#515](https://github.com/askap-vast/vast-tools/pull/515)
+
 #### Fixed
+
+- Fix errors when creating a Source with an int name [#537](https://github.com/askap-vast/vast-tools/pull/537)
+- Fix incorrect warnings when using COMBINED data [#538](https://github.com/askap-vast/vast-tools/pull/538)
+- Fix forced fitting of compressed fits files [#534](https://github.com/askap-vast/vast-tools/pull/534)
+- Fix checking length of HDUl that should have been fixed by #526 [#528](https://github.com/askap-vast/vast-tools/pull/528)
+- Disable auto-scaling for show_png_cutout to allow users to specify the scaling [#527](https://github.com/askap-vast/vast-tools/pull/527)
+- Fix open_fits handling of unprocessed files [#526](https://github.com/askap-vast/vast-tools/pull/526)
+- Update open_fits to check HDU list contents rather than the file extension [#524](https://github.com/askap-vast/vast-tools/pull/524)
 
 #### Removed
 
 #### List of PRs
+- [#537](https://github.com/askap-vast/vast-tools/pull/537): fix: Convert all Source names to strings
+- [#538](https://github.com/askap-vast/vast-tools/pull/538): fix: Fix incorrect warnings when using COMBINED data
+- [#537](https://github.com/askap-vast/vast-tools/pull/537): feat: Add epoch 61
+- [#535](https://github.com/askap-vast/vast-tools/pull/535): feat: Add epochs 58-60 and updated README
+- [#534](https://github.com/askap-vast/vast-tools/pull/534): fix: Fix forced fitting of compressed fits files 
+- [#515](https://github.com/askap-vast/vast-tools/pull/515): fix, docs, feat: Support post-procesed data, make it the default and improve clarity of what data has been selected in a query.
+- [#528](https://github.com/askap-vast/vast-tools/pull/528): fix: Fix checking length of HDUl that should have been fixed by #526
+- [#527](https://github.com/askap-vast/vast-tools/pull/527): fix: Disable auto-scaling for show_png_cutout to allow users to specify the scaling
+- [#526](https://github.com/askap-vast/vast-tools/pull/526): fix: Fix open_fits handling of unprocessed files
+- [#524](https://github.com/askap-vast/vast-tools/pull/524): fix: Update open_fits to check HDU list contents rather than the file extension
+- [#522](https://github.com/askap-vast/vast-tools/pull/522): fix, feat: Add support for extrgalactic queries and epochs 42-51
 
 ## [3.0.1](https://github.com/askap-vast/vast-tools/releases/v3.0.1) (2023-09-24)
 

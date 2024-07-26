@@ -55,7 +55,7 @@ from vasttools.survey import (
 from vasttools.source import Source
 from vasttools.utils import (
     filter_selavy_components, simbad_search, match_planet_to_field,
-    read_selavy, strip_fieldnames
+    read_selavy, strip_fieldnames, open_fits
 )
 from vasttools.moc import VASTMOCS
 from forced_phot import ForcedPhot
@@ -115,7 +115,7 @@ class Query:
         stokes: str = "I",
         crossmatch_radius: float = 5.0,
         max_sep: float = 1.5,
-        use_tiles: bool = False,
+        use_tiles: bool = True,
         use_islands: bool = False,
         base_folder: Optional[str] = None,
         matches_only: bool = False,
@@ -129,7 +129,8 @@ class Query:
         forced_cluster_threshold: float = 1.5,
         forced_allow_nan: bool = False,
         incl_observed: bool = False,
-        corrected_data: bool = True,
+        corrected_data: bool = False,
+        post_processed_data: bool = True,
         search_all_fields: bool = False,
         scheduler: str = 'processes',
     ) -> None:
@@ -179,7 +180,9 @@ class Query:
                 released, in the query. This should only be used when finding
                 fields, not querying data. Defaults to False.
             corrected_data: Access the corrected data. Only relevant if
-                `tiles` is `True`. Defaults to `True`.
+                `tiles` is `True`. Defaults to `False`.
+            post_processed_data: Access the post-processed data. Only relevant
+                if `tiles` is `True`. Defaults to `True`.
             search_all_fields: If `True`, return all data at the requested
                 positions regardless of field. If `False`, only return data
                 from the best (closest) field in each epoch.
@@ -219,6 +222,7 @@ class Query:
         self.simbad_names = None
 
         self.corrected_data = corrected_data
+        self.post_processed_data = post_processed_data
 
         if coords is None:
             self.coords = coords
@@ -432,10 +436,26 @@ class Query:
         Returns:
             `True` if settings are acceptable, `False` otherwise.
         """
-        
+
         self.logger.debug("Using settings: ")
         self.logger.debug(self.settings)
 
+        if self.settings['tiles']:
+            if self.post_processed_data:
+                self.logger.debug("Using post-processed TILES data...")
+            elif self.corrected_data:
+                self.logger.warning(
+                    "Using corrected TILES data - this should only be "
+                    "selected with good reason! Otherwise, use the default!"
+                )
+            else:
+                self.logger.warning(
+                    "Using raw TILES data - this should only be "
+                    "selected with good reason! Otherwise, use the default!"
+                )
+
+        else:
+            self.logger.debug("Using COMBINED data")
         if self.settings['tiles'] and self.settings['stokes'].lower() != "i":
             if self.vast_full:
                 self.logger.warning("Stokes V tiles are only available for the"
@@ -463,16 +483,25 @@ class Query:
 
         if self.vast_full and not self.settings['tiles']:
             self.logger.critical("COMBINED images are not available for "
-                                 "the full VAST survey."
+                                 "the full VAST survey. Query will continue "
+                                 "to run, but proceed with caution."
                                  )
-            return False
-        
+
         if self.settings['tiles'] and self.corrected_data and self.vast_full:
             self.logger.critical(
-                "Corrected data does not yet exist for the full VAST survey."
-                "Pass corrected_data=False to access full survey data. "
-                "Query will continue to run, but proceed with caution."
+                "Corrected data does not exist for the full VAST survey."
+                "Pass corrected_data=False and post_processed_data=True "
+                "to access full survey data. Query will continue to run, "
+                "but proceed with caution."
             )
+
+        # TO DO: Maybe add some setting validation for self.post_processed_data
+        if self.corrected_data and self.post_processed_data:
+            self.logger.critical(
+                "Only one of corrected_data and post-processed data can be "
+                "selected."
+            )
+            return False
 
         return True
 
@@ -495,6 +524,8 @@ class Query:
             data_type = "TILES"
             if self.corrected_data:
                 corrected_str = "_CORRECTED"
+            if self.post_processed_data:
+                corrected_str = "_PROCESSED"
 
         stokes = self.settings['stokes']
 
@@ -844,7 +875,6 @@ class Query:
         elif self.settings['scheduler'] == 'single-threaded' or self.ncpu == 1:
             for result in map(produce_source_products_multi, to_process):
                 pass
-            
 
     def _produce_source_products(
         self,
@@ -955,7 +985,7 @@ class Query:
         """
 
         source, cutout_data = i
-        
+
         self.logger.debug(f"Producing source products for {source.name}")
 
         if fits:
@@ -1103,9 +1133,10 @@ class Query:
                 self.base_folder,
                 sbid=group.iloc[0].sbid,
                 tiles=self.settings['tiles'],
-                corrected_data=self.corrected_data
+                corrected_data=self.corrected_data,
+                post_processed_data=self.post_processed_data,
             )
-            
+
             if img:
                 image.get_img_data()
                 img_cutout_data = group.apply(
@@ -1121,14 +1152,14 @@ class Query:
                     4: "beam"
                 })
             else:
-                img_cutout_data = pd.DataFrame([[None]*5]*len(group),
-                    columns=[
-                        'data',
-                        'wcs',
-                        'header',
-                        'selavy_overlay',
-                        'beam',
-                    ]
+                img_cutout_data = pd.DataFrame([[None] * 5] * len(group),
+                                               columns=[
+                    'data',
+                    'wcs',
+                    'header',
+                    'selavy_overlay',
+                    'beam',
+                ]
                 )
             if rms:
                 image.get_rms_img()
@@ -1145,14 +1176,14 @@ class Query:
                     2: "rms_header",
                 }).drop(columns=[3, 4])
             else:
-                rms_cutout_data = pd.DataFrame([[None]*3]*len(group),
-                    columns=[
-                        'rms_data',
-                        'rms_wcs',
-                        'rms_header',
-                    ]
+                rms_cutout_data = pd.DataFrame([[None] * 3] * len(group),
+                                               columns=[
+                    'rms_data',
+                    'rms_wcs',
+                    'rms_header',
+                ]
                 )
-                
+
             if bkg:
                 image.get_bkg_img()
                 bkg_cutout_data = group.apply(
@@ -1168,24 +1199,27 @@ class Query:
                     2: "bkg_header",
                 }).drop(columns=[3, 4])
             else:
-                bkg_cutout_data = pd.DataFrame([[None]*3]*len(group),
-                    columns=[
-                        'bkg_data',
-                        'bkg_wcs',
-                        'bkg_header',
-                    ]
+                bkg_cutout_data = pd.DataFrame([[None] * 3] * len(group),
+                                               columns=[
+                    'bkg_data',
+                    'bkg_wcs',
+                    'bkg_header',
+                ]
                 )
-                
+
             self.logger.debug("Generated all cutout data")
-            
+
             to_concat = [img_cutout_data, rms_cutout_data, bkg_cutout_data]
             cutout_data = pd.concat(to_concat, axis=1).dropna(how='all')
-            
+
             self.logger.debug("Concatenated into cutout_data")
-            
-            if bkg_cutout_data['bkg_data'].values == rms_cutout_data['rms_data'].values:
-                self.logger.warning("Background and RMS data are identical!")
-            
+
+            if bkg or rms:
+                bkg_values = bkg_cutout_data['bkg_data'].values
+                rms_values = rms_cutout_data['rms_data'].values
+                if bkg_values == rms_values:
+                    self.logger.warning("Bkg and RMS data are identical!")
+
             self.logger.debug(cutout_data.columns)
             self.logger.debug(len(cutout_data))
             self.logger.debug(group['name'].values)
@@ -1197,7 +1231,8 @@ class Query:
 
             del image
         except Exception as e:
-            self.logger.warning("Caught exception inside _grouped_fetch_cutouts")
+            self.logger.warning(
+                "Caught exception inside _grouped_fetch_cutouts")
             self.logger.warning(e)
             cutout_data = pd.DataFrame(columns=[
                 'data',
@@ -1214,9 +1249,6 @@ class Query:
                 'bkg_wcs',
                 'bkg_header',
             ])
-        
-        # Drop the cutouts that raised a NoOverlapError
-        cutout_data.dropna(inplace=True)
 
         return cutout_data
 
@@ -1244,12 +1276,12 @@ class Query:
         Returns:
             Tuple containing cutout data, WCS, image header, associated
             selavy components and beam information.
-        
+
         Raises:
             ValueError: Exactly one of img, rms or bkg must be `True`
         """
-        
-        if sum([img,rms,bkg]) != 1:
+
+        if sum([img, rms, bkg]) != 1:
             raise ValueError("Exactly one of img, rms or bkg must be True")
 
         if img:
@@ -1267,7 +1299,7 @@ class Query:
             thewcs = image.bkg_wcs
             theheader = image.bkg_header.copy()
             thepath = image.bkgpath
-        
+
         self.logger.debug(f"Using data from {thepath}")
 
         try:
@@ -1305,9 +1337,9 @@ class Query:
                 size,
                 row.skycoord
             )
-            
+
             del selavy_coords
-            
+
             beam = image.beam
         else:
             beam = None
@@ -1656,10 +1688,34 @@ class Query:
             islands=source_islands,
             forced_fits=self.settings['forced_fits'],
             outdir=source_outdir,
-            corrected_data=self.corrected_data
+            corrected_data=self.corrected_data,
+            post_processed_data=self.post_processed_data,
         )
 
         return thesource
+
+    def _forcedphot_preload(self,
+                            image: str,
+                            background: str,
+                            noise: str,
+                            memmap: Optional[bool] = False
+                            ):
+        """
+        Load the relevant image, background and noisemap files.
+        Args:
+            image: a string with the path of the image file
+            background: a string with the path of the background map
+            noise: a string with the path of the noise map
+        Returns:
+            A tuple containing the HDU lists
+        """
+
+        image_hdul = open_fits(image, memmap=memmap)
+        background_hdul = open_fits(background, memmap=memmap)
+        noise_hdul = open_fits(noise, memmap=memmap)
+
+        return image_hdul, background_hdul, noise_hdul
+
 
     def _get_forced_fits(
         self, group: pd.DataFrame,
@@ -1706,7 +1762,8 @@ class Query:
                 tiles=self.settings["tiles"],
                 path=image,
                 rmspath=rms,
-                corrected_data=self.corrected_data
+                corrected_data=self.corrected_data,
+                post_processed_data=self.post_processed_data,
             )
             img_beam.get_img_data()
             img_beam = img_beam.beam
@@ -1736,7 +1793,12 @@ class Query:
         )
 
         # make the Forced Photometry object
-        FP = ForcedPhot(image, bkg, rms)
+        forcedphot_input = self._forcedphot_preload(image,
+                                                    bkg,
+                                                    rms,
+                                                    memmap=False
+                                                    )
+        FP = ForcedPhot(*forcedphot_input)
 
         # run the forced photometry
         (
@@ -1975,7 +2037,8 @@ class Query:
                             self.base_folder,
                             sbid=group.iloc[0].sbid,
                             tiles=self.settings['tiles'],
-                            corrected_data=self.corrected_data
+                            corrected_data=self.corrected_data,
+                            post_processed_data=self.post_processed_data
                         )
                         image.get_img_data()
                         rms_values = image.measure_coord_pixel_values(
@@ -2028,6 +2091,8 @@ class Query:
             data_folder = f"STOKES{self.settings['stokes']}_SELAVY"
             if self.corrected_data:
                 data_folder += "_CORRECTED"
+            if self.post_processed_data:
+                data_folder += "_PROCESSED"
 
             selavy_folder = Path(
                 self.base_folder,
@@ -2046,6 +2111,10 @@ class Query:
             if self.corrected_data:
                 selavy_file_fmt = selavy_file_fmt.replace(".xml",
                                                           ".corrected.xml"
+                                                          )
+            if self.post_processed_data:
+                selavy_file_fmt = selavy_file_fmt.replace(".xml",
+                                                          ".processed.xml"
                                                           )
 
             selavy_path = selavy_folder / selavy_file_fmt
@@ -2109,6 +2178,12 @@ class Query:
                 rms_dir += "_CORRECTED"
                 image_file_fmt = image_file_fmt.replace(".fits",
                                                         ".corrected.fits"
+                                                        )
+            if self.post_processed_data:
+                img_dir += "_PROCESSED"
+                rms_dir += "_PROCESSED"
+                image_file_fmt = image_file_fmt.replace(".fits",
+                                                        ".processed.fits"
                                                         )
             rms_file_fmt = f"noiseMap.{image_file_fmt}"
 

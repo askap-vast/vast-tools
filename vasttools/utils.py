@@ -734,11 +734,9 @@ def open_fits(fits_path: Union[str, Path], memmap: Optional[bool]=True):
 
     hdul = fits.open(fits_path, memmap=memmap)
 
-    if fits_path.endswith('.fits'):
+    if len(hdul) == 1:
         return hdul
-    elif fits_path.endswith('.fits.fz'):
+    elif type(hdul[1]) == fits.hdu.compressed.CompImageHDU:
         return fits.HDUList(hdul[1:])
     else:
-        raise ValueError("Unrecognised extension for {fits_path}."
-                         "File extension must be .fits or .fits.fz"
-                         )
+        return hdul
