@@ -12,20 +12,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Changed
 
-- Updated author email addresses [553](https://github.com/askap-vast/vast-tools/pull/553)
-- Explicitly require setuptools in pyproject.toml [553](https://github.com/askap-vast/vast-tools/pull/553)
+- Updated author email addresses [#553](https://github.com/askap-vast/vast-tools/pull/553)
+- Explicitly require setuptools in pyproject.toml [#553](https://github.com/askap-vast/vast-tools/pull/553)
+- Pin mkdocs=1.3.1 [#553](https://github.com/askap-vast/vast-tools/pull/553)
 - Force jinja2==3.0.3 [#551](https://github.com/askap-vast/vast-tools/pull/551)
 
 #### Fixed
 
-- Temporary fix for pydantic version breaking vaex [553](https://github.com/askap-vast/vast-tools/pull/553)
+- Temporary fix for pydantic version breaking vaex [#553](https://github.com/askap-vast/vast-tools/pull/553)
 - Downgraded jinja2 to fix bug in docs deployment [#551](https://github.com/askap-vast/vast-tools/pull/551)
 
 #### Removed
 
 #### List of PRs
 
-- [553](https://github.com/askap-vast/vast-tools/pull/553): fix, dep:
+- [#553](https://github.com/askap-vast/vast-tools/pull/553): fix, dep:
 - [#551](https://github.com/askap-vast/vast-tools/pull/551): fix, dep: Downgrade jinja2 to fix bug in docs deployment
 - [#552](https://github.com/askap-vast/vast-tools/pull/552): feat: Add 2023 workshop notebook to docs
 
