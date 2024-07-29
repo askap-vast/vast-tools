@@ -12,12 +12,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Changed
 
+- Force jinja2==3.0.3 [#551](https://github.com/askap-vast/vast-tools/pull/551)
+
 #### Fixed
+
+- Downgraded jinja2 to fix bug in docs deployment [#551](https://github.com/askap-vast/vast-tools/pull/551)
 
 #### Removed
 
 #### List of PRs
 
+- [#551](https://github.com/askap-vast/vast-tools/pull/551): fix: Downgrade jinja2 to fix bug in docs deployment
 - [#552](https://github.com/askap-vast/vast-tools/pull/552): feat: Add 2023 workshop notebook to docs
 
 ## [3.1.0](https://github.com/askap-vast/vast-tools/releases/v3.1.0) (2024-07-26)
