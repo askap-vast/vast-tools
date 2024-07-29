@@ -90,6 +90,7 @@ nav:
     - Query Source Search: notebook-examples/source-search-example.ipynb
     - Using VAST MOCs: notebook-examples/using-vast-mocs-example.ipynb
     - VAST Pipeline Exploration: notebook-examples/vast-pipeline-example.ipynb
+    - VAST Workshop 2023: notebook-examples/workshop-notebook-2023.ipynb
   - Contributing & Developing:
     - Developing VAST Tools: contributing/develop.md
     - GitHub Platform: contributing/github.md
