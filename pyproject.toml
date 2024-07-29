@@ -33,6 +33,7 @@ vaex-hdf5 = "^0.7.0"
 healpy = "^1.15.0"
 svgpath2mpl = "^1.0.0"
 setuptools = "65.5.1"
+pydantic = "<2.0.0"
 
 [tool.poetry.dev-dependencies]
 ipdb = "^0.13.6"
