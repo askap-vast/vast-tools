@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Added
 
+- Added 2023 workshop notebook to docs [#552](https://github.com/askap-vast/vast-tools/pull/552)
+
 #### Changed
 
 #### Fixed
@@ -15,6 +17,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 #### Removed
 
 #### List of PRs
+
+- [#552](https://github.com/askap-vast/vast-tools/pull/552): feat: Add 2023 workshop notebook to docs
 
 ## [3.1.0](https://github.com/askap-vast/vast-tools/releases/v3.1.0) (2024-07-26)
 
