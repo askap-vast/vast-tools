@@ -740,26 +740,22 @@ files = [
 
 [[package]]
 name = "colorcet"
-version = "2.0.6"
+version = "3.1.0"
 description = "Collection of perceptually uniform colormaps"
 optional = false
-python-versions = ">=2.7"
+python-versions = ">=3.7"
 files = [
-    {file = "colorcet-2.0.6-py2.py3-none-any.whl", hash = "sha256:4c203d31b50a1cdd2f5dcb2f59be8b6d459de1cf74a85611215ebc25994aa261"},
-    {file = "colorcet-2.0.6.tar.gz", hash = "sha256:efa44b6f4078261e62d0039c76aba17ac8d3ebaf0bc2291a111aee3905313433"},
+    {file = "colorcet-3.1.0-py3-none-any.whl", hash = "sha256:2a7d59cc8d0f7938eeedd08aad3152b5319b4ba3bcb7a612398cc17a384cb296"},
+    {file = "colorcet-3.1.0.tar.gz", hash = "sha256:2921b3cd81a2288aaf2d63dbc0ce3c26dcd882e8c389cc505d6886bf7aa9a4eb"},
 ]
 
-[package.dependencies]
-param = ">=1.7.0"
-pyct = ">=0.4.4"
-
 [package.extras]
-all = ["bokeh", "flake8", "holoviews", "matplotlib", "nbsite (>=0.6.1)", "nbsmoke (>=0.2.6)", "numpy", "param (>=1.7.0)", "pyct (>=0.4.4)", "pytest (>=2.8.5)", "pytest-mpl", "setuptools (>=30.3.0)", "sphinx-holoviz-theme", "wheel"]
-build = ["param (>=1.7.0)", "pyct (>=0.4.4)", "setuptools (>=30.3.0)", "wheel"]
-doc = ["bokeh", "holoviews", "matplotlib", "nbsite (>=0.6.1)", "numpy", "sphinx-holoviz-theme"]
+all = ["colorcet[doc]", "colorcet[examples]", "colorcet[tests-extra]", "colorcet[tests]"]
+doc = ["colorcet[examples]", "nbsite (>=0.8.4)", "sphinx-copybutton"]
 examples = ["bokeh", "holoviews", "matplotlib", "numpy"]
-tests = ["flake8", "nbsmoke (>=0.2.6)", "pytest (>=2.8.5)"]
-tests-extra = ["flake8", "nbsmoke (>=0.2.6)", "pytest (>=2.8.5)", "pytest-mpl"]
+tests = ["packaging", "pre-commit", "pytest (>=2.8.5)", "pytest-cov"]
+tests-examples = ["colorcet[examples]", "nbval"]
+tests-extra = ["colorcet[tests]", "pytest-mpl"]
 
 [[package]]
 name = "colorlog"
@@ -3309,27 +3305,6 @@ files = [
 ]
 
 [[package]]
-name = "param"
-version = "2.1.1"
-description = "Make your Python code clearer and more reliable by declaring Parameters."
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "param-2.1.1-py3-none-any.whl", hash = "sha256:81066d040526fbaa44b6419f3e92348fa8856ea44c8d3915e9245937ddabe2d6"},
-    {file = "param-2.1.1.tar.gz", hash = "sha256:3b1da14abafa75bfd908572378a58696826b3719a723bc31b40ffff2e9a5c852"},
-]
-
-[package.extras]
-all = ["aiohttp", "cloudpickle", "coverage[toml]", "flake8", "gmpy", "ipython", "jsonschema", "nbsite (==0.8.4)", "nbval", "nest-asyncio", "numpy", "odfpy", "openpyxl", "pandas", "panel", "pre-commit", "pyarrow", "pytest", "pytest-asyncio", "pytest-xdist", "sphinx-remove-toctrees", "tables", "xlrd"]
-doc = ["aiohttp", "nbsite (==0.8.4)", "pandas", "panel", "sphinx-remove-toctrees"]
-examples = ["aiohttp", "pandas", "panel"]
-lint = ["flake8", "pre-commit"]
-tests = ["coverage[toml]", "pytest", "pytest-asyncio"]
-tests-deser = ["odfpy", "openpyxl", "pyarrow", "tables", "xlrd"]
-tests-examples = ["aiohttp", "nbval", "pandas", "panel", "pytest", "pytest-asyncio", "pytest-xdist"]
-tests-full = ["aiohttp", "cloudpickle", "coverage[toml]", "gmpy", "ipython", "jsonschema", "nbval", "nest-asyncio", "numpy", "odfpy", "openpyxl", "pandas", "panel", "pyarrow", "pytest", "pytest-asyncio", "pytest-xdist", "tables", "xlrd"]
-
-[[package]]
 name = "parso"
 version = "0.8.4"
 description = "A Python Parser"
@@ -3706,26 +3681,6 @@ files = [
     {file = "pycparser-2.22-py3-none-any.whl", hash = "sha256:c3702b6d3dd8c7abc1afa565d7e63d53a1d0bd86cdc24edd75470f4de499cfcc"},
     {file = "pycparser-2.22.tar.gz", hash = "sha256:491c8be9c040f5390f5bf44a5b07752bd07f56edf992381b05c701439eec10f6"},
 ]
-
-[[package]]
-name = "pyct"
-version = "0.5.0"
-description = "Python package common tasks for users (e.g. copy examples, fetch data, ...)"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "pyct-0.5.0-py2.py3-none-any.whl", hash = "sha256:a4038a8885059ab8cac6f946ea30e0b5e6bdbe0b92b6723f06737035f9d65e8c"},
-    {file = "pyct-0.5.0.tar.gz", hash = "sha256:dd9f4ac5cbd8e37c352c04036062d3c5f67efec76d404761ef16b0cbf26aa6a0"},
-]
-
-[package.dependencies]
-param = ">=1.7.0"
-
-[package.extras]
-build = ["param (>=1.7.0)", "setuptools"]
-cmd = ["pyyaml", "requests"]
-doc = ["nbsite", "sphinx-ioam-theme"]
-tests = ["flake8", "pytest"]
 
 [[package]]
 name = "pydantic"
@@ -5147,4 +5102,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.0,<3.11"
-content-hash = "2e1cd2df01575077f2aecb8427cf72ce4cc6e1af641588e54f1bfa9e39f7aef6"
+content-hash = "6b03fa901473c9e99171ee783a6ae6e8b0102d46899a71c6d88bd73548b22b51"
