@@ -1602,7 +1602,7 @@ class Source:
 
         patches = [Ellipse(
             coordinates[i], hh[i], ww[i],
-            aa[i]) for i in range(len(coordinates))]
+            angle=aa[i]) for i in range(len(coordinates))]
         collection = PatchCollection(
             patches,
             facecolors="None",
