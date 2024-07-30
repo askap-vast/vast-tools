@@ -449,7 +449,7 @@ class Source:
         freqs = list(grouped_df.groups.keys())
 
         # Colours for each frequency
-        freq_cmap = plt.cm.get_cmap('viridis')
+        freq_cmap = matplotlib.colormaps.get_cmap('viridis')
         cNorm = matplotlib.colors.Normalize(
             vmin=min(freqs), vmax=max(freqs) * 1.1)
         scalarMap = matplotlib.cm.ScalarMappable(norm=cNorm, cmap=freq_cmap)
