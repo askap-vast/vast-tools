@@ -160,7 +160,8 @@ def dummy_stmoc() -> Union[MOC, STMOC]:
 def dummy_ax(dummy_fits_open):
     hdu = dummy_fits_open[0]
     wcs = WCS(hdu.header)
-    ax = plt.subplot(projection=wcs)
+    fig = plt.figure()
+    ax = fig.add_subplot(projection=wcs)
 
     return ax
 
