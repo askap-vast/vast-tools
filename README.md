@@ -37,7 +37,7 @@ Take a look at the [example notebooks](https://github.com/askap-vast/vast-tools/
 * Dougal Dobie – [Sydney Institute for Astronomy](https://sifa.sydney.edu.au/) and [OzGrav](https://www.ozgrav.org)
 
 ### Former
-* Emil Lenc [Australi Telescope National Facility](https://www.atnf.csiro.au/)
+* Emil Lenc [Australia Telescope National Facility](https://www.atnf.csiro.au/)
 * Andrew O'Brien – [Department of Physics, University of Wisconsin-Milwaukee](https://uwm.edu/physics/research/astronomy-gravitation-cosmology/)
 * Tara Murphy – [Sydney Institute for Astronomy](https://sifa.sydney.edu.au/)
 * David Kaplan – [Department of Physics, University of Wisconsin-Milwaukee](https://uwm.edu/physics/research/astronomy-gravitation-cosmology/)
