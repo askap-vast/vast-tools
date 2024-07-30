@@ -34,7 +34,7 @@ Take a look at the [example notebooks](https://github.com/askap-vast/vast-tools/
 ### Active
 
 * Adam Stewart – [Sydney Institute for Astronomy](https://sifa.sydney.edu.au/)
-* Dougal Dobie – [[Sydney Institute for Astronomy](https://sifa.sydney.edu.au/) and [OzGrav](https://www.ozgrav.org)
+* Dougal Dobie – [Sydney Institute for Astronomy](https://sifa.sydney.edu.au/) and [OzGrav](https://www.ozgrav.org)
 
 ### Former
 * Emil Lenc [CSIRO]
