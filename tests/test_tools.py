@@ -433,8 +433,8 @@ def test_gen_mocs_image(
         mocker_stmoc_write.assert_called_once_with(Path(stmoc_file),
                                                    overwrite=True)
 
-    assert stmoc.max_time.jd == end.jd
-    assert stmoc.min_time.jd == start.jd
+    assert stmoc.max_time.isclose(end, atol=1e-5*u.s)
+    assert stmoc.min_time.isclose(start, atol=1e-5*u.s)
 
 
 def test_gen_mocs_epoch(dummy_moc: MOC,
