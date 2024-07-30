@@ -67,7 +67,7 @@ def skymap2moc(filename: str, cutoff: float) -> MOC:
     idx = np.where(credible_levels < cutoff)[0]
     levels = np.ones(len(idx)) * level
 
-    moc = MOC.from_healpix_cells(idx, depth=levels)
+    moc = MOC.from_healpix_cells(idx, depth=levels, max_depth=12)
 
     return moc
 
@@ -482,7 +482,7 @@ def gen_mocs_image(fits_file: str,
     start = Time([header['DATE-BEG']])
     end = Time([header['DATE-END']])
     stmoc = STMOC.from_spatial_coverages(
-        start, end, [moc]
+        start, end, [moc], time_depth=61
     )
 
     if write:
