@@ -2812,57 +2812,62 @@ nbconvert = ">=6.0.0"
 
 [[package]]
 name = "mocpy"
-version = "0.16.2"
+version = "0.14.0"
 description = "MOC parsing and manipulation in Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "mocpy-0.16.2-cp310-cp310-macosx_10_12_x86_64.macosx_11_0_arm64.macosx_10_12_universal2.whl", hash = "sha256:795dbec44d86c0de75c68e2aac57d50fc99aa56b1d96f8b0da3b8c1388f16207"},
-    {file = "mocpy-0.16.2-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:d382198ab7f517f6255d757555af7675c0e4f91bdcc39611ce0b38eba02e6ba6"},
-    {file = "mocpy-0.16.2-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:4e17b9a269adfb0d3e23b5126f0ceb820c653ff0eaf847a4a11a151bdd079211"},
-    {file = "mocpy-0.16.2-cp310-cp310-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:34adddc62ea178d591daf7686f6add2b2f79d44a8eb5bd551880c786dc0c3550"},
-    {file = "mocpy-0.16.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:9d909690dac486d30987b6f4b4c39da2f2175854997230ae4f53e6e70e0a73f3"},
-    {file = "mocpy-0.16.2-cp310-cp310-manylinux_2_28_x86_64.whl", hash = "sha256:164219f4bc23ef459330615ed24af29376f717ac938a10153bd0b9a0d56c70ca"},
-    {file = "mocpy-0.16.2-cp310-cp310-musllinux_1_2_aarch64.whl", hash = "sha256:29f8c32c5ea5342ed12f9d709acb2a8e772afff4cb6ba280a60c5f2cb1c89783"},
-    {file = "mocpy-0.16.2-cp310-cp310-musllinux_1_2_i686.whl", hash = "sha256:31098e2fb93ecb8c90b93333398a49e4bd2c62d37ff260c499148d653cd3939b"},
-    {file = "mocpy-0.16.2-cp310-none-win_amd64.whl", hash = "sha256:3e5bb295dd976bed16f108dd913c4ceee1f8e80a242ef4a5988cffbf46519226"},
-    {file = "mocpy-0.16.2-cp311-cp311-macosx_10_12_x86_64.macosx_11_0_arm64.macosx_10_12_universal2.whl", hash = "sha256:3539753a86292ca2137fb89fb58ddbe86a939d244eb2c41bd8fc2b7540104bf8"},
-    {file = "mocpy-0.16.2-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:9d26846cdf041a27e461511199a4cce3a968e3a85f9b0af36590fac852492867"},
-    {file = "mocpy-0.16.2-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:aba4c15952340a62c3b978cc3ba0d931dc3169ca3d66e0bed4056962fbe76ab3"},
-    {file = "mocpy-0.16.2-cp311-cp311-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:47582f4fb74e979b72978943c7d87c9d1f1b08e682ad18b0ea0e0455589139a6"},
-    {file = "mocpy-0.16.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:eb14affd63017f495f1f1ea721cffe382efda30003c4950ae0e573115e3fa51b"},
-    {file = "mocpy-0.16.2-cp311-cp311-manylinux_2_28_x86_64.whl", hash = "sha256:31953319509d8ee4975f4d3ad2fc54efabb0e265cfbfd7e2d59c46e880592734"},
-    {file = "mocpy-0.16.2-cp311-cp311-musllinux_1_2_aarch64.whl", hash = "sha256:807ae016152c34861022904e6f5d8a79336770e22dc86fc508541d1e9cb0fcd9"},
-    {file = "mocpy-0.16.2-cp311-cp311-musllinux_1_2_i686.whl", hash = "sha256:2f81e7721fdc7c10510b3533d689277c63730eee24356e0c46ad61beb56193fc"},
-    {file = "mocpy-0.16.2-cp311-none-win_amd64.whl", hash = "sha256:bd25612a2a7967edd326e140ca38242536fa256f9b9f31110fd05bbe275f4d43"},
-    {file = "mocpy-0.16.2-cp312-cp312-macosx_10_12_x86_64.macosx_11_0_arm64.macosx_10_12_universal2.whl", hash = "sha256:676abcc0469f28c1d7cad785913c0100844787862035f2fd7c34dcded9889d1c"},
-    {file = "mocpy-0.16.2-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:28db4b1f73f0796d466a2b71ca9329b3fd583c358d2b1172c92b188db2f7531e"},
-    {file = "mocpy-0.16.2-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:1193c619554d98b68ca830237365c08057d4e51f860cf3ee368ea7f976ff1d30"},
-    {file = "mocpy-0.16.2-cp312-cp312-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:73bced01f698a71e54873c1f1232144d99105e21d1ca68560da035c510b4fa07"},
-    {file = "mocpy-0.16.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:513cb04e0ba259d4513d5fda1a32ab26f03e47613abb1cfefd0aeb078424c616"},
-    {file = "mocpy-0.16.2-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:195a2b4d6cf0c4738269669bf26d5e2f0c53f0d5bc4ff10d093d3f995a284d93"},
-    {file = "mocpy-0.16.2-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:a15d2203d21438c11cbaca8f6c78ead995a6c3e167893c5905c37d74637b4336"},
-    {file = "mocpy-0.16.2-cp312-cp312-musllinux_1_2_i686.whl", hash = "sha256:466c57d89adeabf6f801deb93c371eb30fcd886549e63b47b8fd6686d87080aa"},
-    {file = "mocpy-0.16.2-cp312-none-win_amd64.whl", hash = "sha256:4b0b9470cf4e414a8202663f260fa964e39777288f93dc923f68b76552aac7c5"},
-    {file = "mocpy-0.16.2-cp38-cp38-macosx_10_12_x86_64.macosx_11_0_arm64.macosx_10_12_universal2.whl", hash = "sha256:c42266531ab5928d2bb1d6b0f4e126a7b6306c6cba185a9ee870b118d5220eeb"},
-    {file = "mocpy-0.16.2-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:5bc1347a5454087884dee59eef9326b40fca4844cd6e734670dad4934628dbc4"},
-    {file = "mocpy-0.16.2-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:91572b71b3ae1a0c8c154f42cafae42783e94970d6c41e7a8b27bc138410247d"},
-    {file = "mocpy-0.16.2-cp38-cp38-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:3682ab8e5b4b8a1143e3c5cb2d1779411d24b15202e7a31fdd85d2b8f2a919b4"},
-    {file = "mocpy-0.16.2-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f9538f01515708bfdb381509c3e109a6d4fe42a2fef561d4ac02413128b2ec64"},
-    {file = "mocpy-0.16.2-cp38-cp38-manylinux_2_28_x86_64.whl", hash = "sha256:134d08808c5371cc40b5dcec79adef9000d6f124b37ab81ed12e5d13003d6edd"},
-    {file = "mocpy-0.16.2-cp38-cp38-musllinux_1_2_aarch64.whl", hash = "sha256:f6c506b7e200305a4e5c569c985f305fbaf366241ff10513365026a358cf8ae2"},
-    {file = "mocpy-0.16.2-cp38-cp38-musllinux_1_2_i686.whl", hash = "sha256:885fc2c6de6c12902796721b5bd1557b978e9ebaac8a02ce3646e0891f0885a2"},
-    {file = "mocpy-0.16.2-cp38-none-win_amd64.whl", hash = "sha256:ad509ad43a764f58c86b355159598f22f2550e486cef3b693ed2d8b97878fbdb"},
-    {file = "mocpy-0.16.2-cp39-cp39-macosx_10_12_x86_64.macosx_11_0_arm64.macosx_10_12_universal2.whl", hash = "sha256:d801f3df8b91ab571c162b6637dc3f79b046ac508d21caf76b41cb4a67fb5789"},
-    {file = "mocpy-0.16.2-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:8e8f80ab95b03cdebe6408cfa62e3402a142e7165d84a8088a4548958a61af4c"},
-    {file = "mocpy-0.16.2-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:1fd71eaa33d9cefb526bdcad128ebcf08cd692985c140fb14139fb1f61f636d7"},
-    {file = "mocpy-0.16.2-cp39-cp39-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:834b7efa38e50db0b0fd9516963810779c9b56a1c33facbbdba5259d2540a38a"},
-    {file = "mocpy-0.16.2-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:61becffa8fa8f13ca1ed9b1e181a8795ed64b19741e094061aad1498a512e2c0"},
-    {file = "mocpy-0.16.2-cp39-cp39-manylinux_2_28_x86_64.whl", hash = "sha256:c8e1d38eee4b32addf5b3a9d87c3154793be784a4fbe20ec923aa0a9ae35dbb2"},
-    {file = "mocpy-0.16.2-cp39-cp39-musllinux_1_2_aarch64.whl", hash = "sha256:2f269e69b2377352684da30532c62ca48a814fa503edb05b876799b6baa3a774"},
-    {file = "mocpy-0.16.2-cp39-cp39-musllinux_1_2_i686.whl", hash = "sha256:fddd2921ce9feef485bb8d77a4f431e24695acf10b259e037cf589539c1fc7fc"},
-    {file = "mocpy-0.16.2-cp39-none-win_amd64.whl", hash = "sha256:e65b0d41eb84015fac219d8ee23388a2f9309f32e511bff442d2a00131bf4a03"},
-    {file = "mocpy-0.16.2.tar.gz", hash = "sha256:43428ccc3bb9023f002a87e23adf1097245465a9432f52391e66fc3d6c0506e5"},
+    {file = "mocpy-0.14.0-cp310-cp310-macosx_10_12_x86_64.macosx_11_0_arm64.macosx_10_12_universal2.whl", hash = "sha256:576558db9984c94b19d355342a1386b558776665c479040207c83feaae77bfb7"},
+    {file = "mocpy-0.14.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:53e3a861114127ed0c4c4386c3d83c41dd5d0d5879d4b6b896f952b704e82217"},
+    {file = "mocpy-0.14.0-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:0e34683eefecf750585fd2c4d3ec52be2e5ecef688108b71b64eb247ad28f0b9"},
+    {file = "mocpy-0.14.0-cp310-cp310-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:9c1f07942f4a0de256563815f7e4f0077bcd176cef8f046a5e97d5ae2da63213"},
+    {file = "mocpy-0.14.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8989642c28f5702b8bc3e810daeacbb342b543ad968ac26dbed2d8ce7cb85d11"},
+    {file = "mocpy-0.14.0-cp310-cp310-manylinux_2_28_x86_64.whl", hash = "sha256:a58c87b6bb5e681a49e81f9b1a36b55e0039bb505dd275b44f2721fa9324d75d"},
+    {file = "mocpy-0.14.0-cp310-cp310-musllinux_1_2_aarch64.whl", hash = "sha256:46c28fc360ef7bf170f1ab3873ac8f0084944a38dfafd1440f9b90127028a9e7"},
+    {file = "mocpy-0.14.0-cp310-cp310-musllinux_1_2_i686.whl", hash = "sha256:76ea8ae93a67094bbf70b3740b275443a6248dfd96f01ae9c1fe39c86c755d67"},
+    {file = "mocpy-0.14.0-cp310-cp310-musllinux_1_2_x86_64.whl", hash = "sha256:6b6f226154c1bae76a71ca6f60eecf81bcab5ff0aa2f2934293928b168f8b943"},
+    {file = "mocpy-0.14.0-cp310-none-win_amd64.whl", hash = "sha256:55acff822ea916e34e21e993e3c09152bb5ca31b856a4edf901d8cf03c7218b1"},
+    {file = "mocpy-0.14.0-cp311-cp311-macosx_10_12_x86_64.macosx_11_0_arm64.macosx_10_12_universal2.whl", hash = "sha256:8ef6f394d160e1159a998653775641c23d75f279fbac9f2e276a47ee243eb82c"},
+    {file = "mocpy-0.14.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:6e449cc372b03e0ebbf4b6cbb20ad77a5531567193776871164ba4443dd8aeed"},
+    {file = "mocpy-0.14.0-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:1bee1f1e2612941478e586cfcaa490aa3cb332cb00ad73c001ab1fef59881e17"},
+    {file = "mocpy-0.14.0-cp311-cp311-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:ec6488c9cb12eb7af9290990afa24ccfe191cd1aae6d347ecc22df95b6b25642"},
+    {file = "mocpy-0.14.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:aa61f2be28ea09e51935db6a7b825014798692b2da61a6423fb2f923955af30f"},
+    {file = "mocpy-0.14.0-cp311-cp311-manylinux_2_28_x86_64.whl", hash = "sha256:47f09bcda36a2a5c9a46fa038c57fbd67e3b4d559658db9a22ac784098bad7ad"},
+    {file = "mocpy-0.14.0-cp311-cp311-musllinux_1_2_aarch64.whl", hash = "sha256:e821338f33e84a79d097a4332dd07b8417b2390a5d2efc0bea0d705124ec98a0"},
+    {file = "mocpy-0.14.0-cp311-cp311-musllinux_1_2_i686.whl", hash = "sha256:05c4dc42d879b7e488a04afe50e5df7dc493f32f9b1dca0bd5e7ba4efbcdcc45"},
+    {file = "mocpy-0.14.0-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:4dbe24a874188bf4b4ddf9c2c1e05cf8571e857e2a3ecf0360d7d924d3c5088f"},
+    {file = "mocpy-0.14.0-cp311-none-win_amd64.whl", hash = "sha256:f6dee54100e8dea13ca9513e27ba27e5c8b371e8ddce0008d6ce08f2840625ea"},
+    {file = "mocpy-0.14.0-cp312-cp312-macosx_10_12_x86_64.macosx_11_0_arm64.macosx_10_12_universal2.whl", hash = "sha256:d65892899bd91401a27ec8bde542212bb82bd5cd3dfdd778da79f2fba8f986c0"},
+    {file = "mocpy-0.14.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:f153e2bd88b11eb8c19befc8fa259869f681f89703c3aed210cbf92d3f92f5f6"},
+    {file = "mocpy-0.14.0-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:2329a3c591dce2b45f63dc7269259660833f2c7b543432b48c8807a465390d49"},
+    {file = "mocpy-0.14.0-cp312-cp312-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:e9697be1a184b1bc393b71afd83265365b4122690eecc83bb52b559d9d7d3673"},
+    {file = "mocpy-0.14.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:dcc0b9a7b721f8ac4bcffbce3fde8c51126e66c3fdaf052851050135fd58a36f"},
+    {file = "mocpy-0.14.0-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:5f66842af14eaebb7f1f2ddb1aa7edc94b014f6bdeb3bc2b7f71f24a9521a060"},
+    {file = "mocpy-0.14.0-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:7345359c9d4f8400795196c541606c36bf2c82947f31c1ec247a32d855516799"},
+    {file = "mocpy-0.14.0-cp312-cp312-musllinux_1_2_i686.whl", hash = "sha256:d7a9a5888b10f2127da334fdb6b4f786d0ef4074d95178faa0a4cca2b7fa77ee"},
+    {file = "mocpy-0.14.0-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:9cbad09ba9b577588ed680138c294ce1459ee4accfbefe2ac2042327bb1581e0"},
+    {file = "mocpy-0.14.0-cp312-none-win_amd64.whl", hash = "sha256:071fea92dd39f289cf466d35249a11899df458f10955472d604925d1d810c7f9"},
+    {file = "mocpy-0.14.0-cp38-cp38-macosx_10_12_x86_64.macosx_11_0_arm64.macosx_10_12_universal2.whl", hash = "sha256:e04d7700f4e5b014d1d69c8f36a202b01f47423b4f544ba23f17fe196e0d056a"},
+    {file = "mocpy-0.14.0-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:6b9166010e8f1fd86157d39d1717c17f7cfe5b3e40240f3ea30f0e8cbab59c9c"},
+    {file = "mocpy-0.14.0-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:9b089c86a7cc0866846a38b28a1bebde347a5cc43d0fdd7f46d3bcf8acfeddf6"},
+    {file = "mocpy-0.14.0-cp38-cp38-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:5d331fb009dfc23e1c2146e5d252f1affa98db8f792d1f04f1e03e7cfddc21ec"},
+    {file = "mocpy-0.14.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:bc3330e70e535767731e89d485c7ec0f0645d8ca81f79b99ac091a1b3f41af36"},
+    {file = "mocpy-0.14.0-cp38-cp38-manylinux_2_28_x86_64.whl", hash = "sha256:5a574d3deb69365bbd6650fc3a645f973c02039565d417a35f138e04f0f1be24"},
+    {file = "mocpy-0.14.0-cp38-cp38-musllinux_1_2_aarch64.whl", hash = "sha256:e430321b49c3a6cce8507070a238c2451a288b9aabf509ecf85ecfdef1d575f7"},
+    {file = "mocpy-0.14.0-cp38-cp38-musllinux_1_2_i686.whl", hash = "sha256:8e09e0aa09c02ddcc9f23cde327d07c68ba7e04ec4d70a96763c180328b7ca26"},
+    {file = "mocpy-0.14.0-cp38-cp38-musllinux_1_2_x86_64.whl", hash = "sha256:a10a154e39ea1eb4d8a821d544af7812c64a2e99f90dee81e15a04c31c5609e8"},
+    {file = "mocpy-0.14.0-cp38-none-win_amd64.whl", hash = "sha256:e25c56b7ef67f4b33e77b95301ea58e1d8ffe80dbe81a9ca15b054f99c9e848f"},
+    {file = "mocpy-0.14.0-cp39-cp39-macosx_10_12_x86_64.macosx_11_0_arm64.macosx_10_12_universal2.whl", hash = "sha256:d6f122c2846c31c7eaada4ad280fd264a732b3889c4f38ff2b2877b9b459b196"},
+    {file = "mocpy-0.14.0-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:85489adeda6662246ad1d5f169d918d4181c64b7a4a04d842bf71ed724600e88"},
+    {file = "mocpy-0.14.0-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:33048b80d61b1604aa681f0eb986ce4358c7803de874dbd22d6c4bbe79033b89"},
+    {file = "mocpy-0.14.0-cp39-cp39-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:101c3a15832299f0a3ff99a7cbd5db977a379ab1039fdeb81df2830bf334b6ed"},
+    {file = "mocpy-0.14.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:378ae0a4344c9e614e5f4ecd75e3b989202d3c51670f2b842b1038f44d664b0f"},
+    {file = "mocpy-0.14.0-cp39-cp39-manylinux_2_28_x86_64.whl", hash = "sha256:ea579ba4df6e88458ebea6a90b4c73c9b06d44f4bba5be2bf778d4ad0a7a4c1f"},
+    {file = "mocpy-0.14.0-cp39-cp39-musllinux_1_2_aarch64.whl", hash = "sha256:161778a4e10cdcffab33496c9037713d9033c29b3de248e7a556ed66a1549e15"},
+    {file = "mocpy-0.14.0-cp39-cp39-musllinux_1_2_i686.whl", hash = "sha256:a70e8483eef4cb3cb53f92367c7ffe3aa41c20145f2ca9b53cad686fef664090"},
+    {file = "mocpy-0.14.0-cp39-cp39-musllinux_1_2_x86_64.whl", hash = "sha256:d1fce2ebf2b492efa9ca2094d10758a967ee95140c3e8cde2b8970b501558c46"},
+    {file = "mocpy-0.14.0-cp39-none-win_amd64.whl", hash = "sha256:b4da08a7d74707dca1906849da9026b1d7a6f2c1c2235ed79f56015235014637"},
+    {file = "mocpy-0.14.0.tar.gz", hash = "sha256:72120e4d15e4bd72a1d6444da311eb6d50194f9b4e49a8ef2463c920bc928d57"},
 ]
 
 [package.dependencies]
@@ -2873,13 +2878,12 @@ astropy = [
 cdshealpix = ">=0.6.4"
 matplotlib = "*"
 networkx = ">=2.5"
-numpy = "<2.0"
 
 [package.extras]
 astropy-regions = ["regions"]
-dev = ["astropy-healpix", "pre-commit (>=2.20)", "pytest (>6.0)", "pytest-cov", "pytest-mock", "regions", "requests", "ruff (>=0.5.0)"]
-docs = ["astropy-healpix", "astropy-sphinx-theme", "nbsphinx", "numpydoc", "sphinx-astropy", "sphinx-collections", "sphinx-copybutton", "sphinx-gallery", "sphinxcontrib-bibtex"]
-notebooks = ["astroquery", "ipyaladin", "nbmake", "regions"]
+dev = ["astropy-healpix", "pre-commit (>=2.20)", "pytest (>6.0)", "pytest-cov", "pytest-mock", "regions", "requests"]
+docs = ["astropy-healpix", "astropy-sphinx-theme", "healpy", "nbsphinx", "numpydoc", "sphinx-astropy", "sphinx-collections", "sphinx-copybutton", "sphinx-gallery", "sphinxcontrib-bibtex"]
+notebooks = ["astroquery", "ipyaladin", "maser-data", "nbmake", "regions"]
 query-fits = ["requests"]
 
 [[package]]
@@ -5102,4 +5106,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.0,<3.11"
-content-hash = "6b03fa901473c9e99171ee783a6ae6e8b0102d46899a71c6d88bd73548b22b51"
+content-hash = "86f46d95973f1d220444a3dba3e91118c44c810c28b34ecd7eb36f6433eb3c56"
