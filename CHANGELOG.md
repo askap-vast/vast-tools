@@ -26,7 +26,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
-- [#553](https://github.com/askap-vast/vast-tools/pull/553): fix, dep:
+- [#553](https://github.com/askap-vast/vast-tools/pull/553): fix, dep: Pin versions to fix dependency issues, update author email addresses
 - [#551](https://github.com/askap-vast/vast-tools/pull/551): fix, dep: Downgrade jinja2 to fix bug in docs deployment
 - [#552](https://github.com/askap-vast/vast-tools/pull/552): feat: Add 2023 workshop notebook to docs
 
