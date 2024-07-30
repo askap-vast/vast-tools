@@ -1,10 +1,10 @@
 [tool.poetry]
 name = "vasttools"
-version = "3.1.0"
+version = "v3.1.0-dev"
 description = "Python module to interact with ASKAP VAST data."
 license = "MIT"
 homepage = "https://github.com/askap-vast/vasttools/"
-authors = ["Adam Stewart <adam.stewart@sydney.edu.au>", "Dougal Dobie <ddobie@swin.edu.au>"]
+authors = ["Adam Stewart <adam.stewart@sydney.edu.au>", "Dougal Dobie <d.dobie@sydney.edu.au>"]
 include = ["vasttools/data", "example_notebooks"]
 
 [tool.poetry.dependencies]
@@ -16,7 +16,7 @@ colorcet = "^2.0.2"
 colorlog = "^4.1.0"
 dask = {extras = ["dataframe"], version = "^2021.10.0"}
 forced-phot = { git = "https://github.com/askap-vast/forced_phot.git" }
-matplotlib = "^3.2.1"
+matplotlib = ">=3.2.1 <3.7"
 mocpy = "^0.8.4"
 multiprocessing-logging = "^0.3.1"
 numexpr = "^2.7.1"
@@ -32,12 +32,15 @@ vaex-core = "^4.5.0"
 vaex-hdf5 = "^0.7.0"
 healpy = "^1.15.0"
 svgpath2mpl = "^1.0.0"
+setuptools = "^70.0.0"
+pydantic = "<2.0.0"
 
 [tool.poetry.dev-dependencies]
 ipdb = "^0.13.6"
 jupyterlab = "^3.6.7"
 jupyterlab-execute-time = "^2.0.2"
 jupyterlab-system-monitor = "^0.8.0"
+mkdocs = "1.3.1"
 mkdocs-material = "^7.3.0"
 mkdocstrings = "^0.17.0"
 mkdocs-minify-plugin = "^0.4.1"
@@ -52,7 +55,7 @@ pytest-mock = "^3.6.1"
 autopep8 = "^1.5.7"
 pytest-cov = "^2.12.1"
 flake8 = "^4.0.1"
-jinja2 = "3.1.4"
+jinja2 = "3.0.3"
 
 [tool.poetry.scripts]
 build_lightcurves = "vasttools.bin.build_lightcurves:main"

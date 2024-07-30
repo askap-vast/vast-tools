@@ -24,6 +24,9 @@ The available notebooks are:
 * [VAST Pipeline Exploration](vast-pipeline-example.ipynb)  
     Provides an example of how to interact with a run from the VAST Pipeline.
 
+* [VAST Workshop 2023 notebook](workshop-notebook-2023.ipynb)  
+    This notebook was used in the VAST software tutorial at the 2023 VAST Workshops. It provides an overview of the most common use cases, synthesising aspects of most of the above notebooks.
+
 !!! warning "Warning: Example Parameters"
     Remember that while the parameters and thresholds used in the example notebooks may provide a good starting point, they may not be best suited to your own science goals.
 
