@@ -67,7 +67,7 @@ def skymap2moc(filename: str, cutoff: float) -> MOC:
     idx = np.where(credible_levels < cutoff)[0]
     levels = np.ones(len(idx)) * level
 
-    moc = MOC.from_healpix_cells(idx, depth=levels, max_depth=12)
+    moc = MOC.from_healpix_cells(idx, depth=levels)
 
     return moc
 
