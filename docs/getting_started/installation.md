@@ -27,14 +27,14 @@ With the python environment activated, VAST Tools can then be installed.
 !!!warning "Warning: Select the Release"
     The default branch of VAST Tools is the development branch, which may not be stable.
     When installing the package please use the release tag for the version that is desired to be installed.
-    This is done by placing `@<tag>` at the end of the URL. For example, the URL to use for version 2.0.0 would be:
+    This is done by placing `@<tag>` at the end of the URL. For example, the URL to use for version 3.0.0 would be:
     ```terminal
-    https://github.com/askap-vast/vast-tools.git@v2.0.0
+    https://github.com/askap-vast/vast-tools.git@v3.0.0
     ```
 VAST Tools can be installed using `pip` directly from GitHub by using the command below, being sure to specify the version.
 
 ```terminal
-pip install git+https://github.com/askap-vast/vast-tools.git@v2.0.0
+pip install git+https://github.com/askap-vast/vast-tools.git@v3.0.0
 ```
 
 VAST Tools will now be installed in the virtual environment.

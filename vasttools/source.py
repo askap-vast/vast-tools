@@ -13,6 +13,7 @@ import numpy as np
 import os
 import pandas as pd
 import warnings
+import copy
 
 from astropy.visualization import LinearStretch
 from astropy.visualization import PercentileInterval
@@ -91,7 +92,9 @@ class Source:
         image_type (str): 'TILES' or 'COMBINED'.
         tiles (bool): `True` if `image_type` == `TILES`.
         corrected_data (bool): Access the corrected data. Only relevant if
-            `tiles` is `True`. Defaults to `True`.
+            `tiles` is `True`. Defaults to `False`.
+        post_processed_data: Access the post-processed data. Only relevant
+                if `tiles` is `True`. Defaults to `True`.
         detections (int): The number of selavy detections the source contains.
         limits (int):
             The number of upper limits the source contains. Will be set to
@@ -107,7 +110,7 @@ class Source:
     def __init__(
         self,
         coord: SkyCoord,
-        name: str,
+        name: Union[str, int],
         epochs: List[str],
         fields: List[str],
         stokes: str,
@@ -121,7 +124,8 @@ class Source:
         planet: bool = False,
         pipeline: bool = False,
         tiles: bool = False,
-        corrected_data: bool = True,
+        corrected_data: bool = False,
+        post_processed_data: bool = True,
         forced_fits: bool = False,
     ) -> None:
         """
@@ -129,7 +133,7 @@ class Source:
 
         Args:
             coord: Source coordinates.
-            name: The name of the source.
+            name: The name of the source. Will be converted to a string.
             epochs: The epochs that the source contains.
             fields: The fields that the source contains.
             stokes: The stokes parameter of the source.
@@ -162,7 +166,7 @@ class Source:
         self.logger.debug('Created Source instance')
         self.pipeline = pipeline
         self.coord = coord
-        self.name = name
+        self.name = str(name)
         self.epochs = epochs
         self.fields = fields
         self.stokes = stokes
@@ -188,6 +192,7 @@ class Source:
             self.tiles = False
 
         self.corrected_data = corrected_data
+        self.post_processed_data = post_processed_data
         if self.pipeline:
             self.detections = self.measurements[
                 self.measurements.forced == False
@@ -762,11 +767,15 @@ class Source:
         Returns:
             Tuple containing the cutout data.
         """
+
+        self._size = size
+
         if self.pipeline:
             image = Image(
                 row.field, row.epoch, self.stokes, self.base_folder,
                 path=row.image, rmspath=row.rms,
-                corrected_data=self.corrected_data
+                corrected_data=self.corrected_data,
+                post_processed_data=self.post_processed_data
             )
             image.get_img_data()
         else:
@@ -775,8 +784,9 @@ class Source:
                 e = e.split("-")[0]
             image = Image(
                 row.field, e, self.stokes,
-                self.base_folder, tiles=self.tiles,
-                sbid=row.sbid, corrected_data=self.corrected_data
+                self.base_folder, tiles=self.tiles, sbid=row.sbid,
+                corrected_data=self.corrected_data,
+                post_processed_data=self.post_processed_data
             )
             image.get_img_data()
 
@@ -786,6 +796,17 @@ class Source:
             size=size,
             wcs=image.wcs
         )
+
+        cutout_data = copy.deepcopy(cutout.data)
+        cutout_wcs = copy.deepcopy(cutout.wcs)
+
+        header = copy.deepcopy(image.header)
+        header.update(cutout.wcs.to_header())
+
+        beam = image.beam
+
+        del cutout
+        del image
 
         if self.pipeline:
             selavy_components = pd.read_parquet(
@@ -830,18 +851,10 @@ class Source:
             row.skycoord
         )
 
-        header = image.header.copy()
-        header.update(cutout.wcs.to_header())
-
-        beam = image.beam
-
-        self._size = size
-
-        del image
         del selavy_coords
 
         return (
-            cutout.data, cutout.wcs, header, selavy_components, beam
+            cutout_data, cutout_wcs, header, selavy_components, beam
         )
 
     def show_png_cutout(
@@ -905,7 +918,8 @@ class Source:
             hide_beam=hide_beam,
             size=size,
             force=force,
-            offset_axes=offset_axes
+            offset_axes=offset_axes,
+            disable_autoscaling=True
         )
 
         return fig
@@ -1004,7 +1018,7 @@ class Source:
             ext = f".{ext}"
 
         source_name = self.name.replace(" ", "_").replace("/", "_")
-        
+
         if self.pipeline:
             outfile = f"{source_name}_{index}{ext}"
         else:
@@ -1048,12 +1062,12 @@ class Source:
 
         if outfile is None:
             outfile = self._get_save_name(index, ".fits")
+
         if self.outdir != ".":
             outfile = os.path.join(
                 self.outdir,
                 outfile
             )
-
         if cutout_data is None:
             cutout_row = self.cutout_df.iloc[index]
         else:
@@ -1066,6 +1080,53 @@ class Source:
 
         # Write the cutout to a new FITS file
         hdu_stamp.writeto(outfile, overwrite=True)
+        self.logger.debug(f"Wrote to {outfile}")
+
+        del hdu_stamp
+
+    def _save_noisemap_cutout(
+        self,
+        index: int,
+        cutout_data: pd.DataFrame,
+        noisemap_type: str,
+        outfile: Optional[str] = None,
+    ) -> None:
+        """
+        Saves the FITS file cutout of the requested observation.
+
+        Args:
+            index: The index of the requested observation.
+            cutout_data: The external cutout data to be used.
+            noisemap_type: The type of noisemap to use. Must be 'rms' or 'bkg'.
+            outfile: File to save to, defaults to None.
+
+        Returns:
+            None
+
+        Raises:
+            ValueError: If the noisemap_type is not 'rms' or 'bkg'
+        """
+
+        if noisemap_type not in ['rms', 'bkg']:
+            raise ValueError("noisemap_type must be 'rms' or 'bkg'")
+        if outfile is None:
+            outfile = self._get_save_name(index, f"{noisemap_type}.fits")
+
+        if self.outdir != ".":
+            outfile = os.path.join(
+                self.outdir,
+                outfile
+            )
+        cutout_row = cutout_data.iloc[index]
+
+        hdu_stamp = fits.PrimaryHDU(
+            data=cutout_row[f'{noisemap_type}_data'],
+            header=cutout_row[f'{noisemap_type}_header']
+        )
+
+        # Write the cutout to a new FITS file
+        hdu_stamp.writeto(outfile, overwrite=True)
+        self.logger.debug(f"Wrote to {outfile}")
 
         del hdu_stamp
 
@@ -1151,8 +1212,41 @@ class Source:
             if cutout_data is None:
                 self.get_cutout_data(size)
 
-        for i in self.measurements.index:
+        self.logger.debug("Saving fits cutouts...")
+
+        if cutout_data is None:
+            indices = self.measurements.index
+        else:
+            indices = cutout_data.index
+
+        for i in indices:
             self.save_fits_cutout(i, cutout_data=cutout_data)
+
+    def _save_all_noisemap_cutouts(
+        self,
+        cutout_data: pd.DataFrame,
+        rms: bool = True,
+        bkg: bool = True,
+    ) -> None:
+        """
+        Save all cutouts of the source to fits file
+
+        Args:
+            cutout_data: The external data to be used.
+            rms: Create rms map cutouts.
+            bkg: Create bkg map cutouts.
+
+        Returns:
+            None
+        """
+
+        self.logger.debug("Saving noisemap cutouts...")
+
+        for i in cutout_data.index:
+            if rms:
+                self._save_noisemap_cutout(i, cutout_data, 'rms')
+            if bkg:
+                self._save_noisemap_cutout(i, cutout_data, 'bkg')
 
     def save_all_png_cutouts(
         self,
@@ -1415,7 +1509,14 @@ class Source:
 
         if save:
             if outfile is None:
-                outfile = self._get_save_name(epoch, ".png")
+                outfile = "{}_cutouts.png".format(self.name.replace(
+                    " ", "_"
+                ).replace(
+                    "/", "_"
+                ))
+
+            elif not outfile.endswith(".png"):
+                outfile += ".png"
 
             if self.outdir != ".":
                 outfile = os.path.join(
@@ -1423,7 +1524,7 @@ class Source:
                     outfile
                 )
 
-            plt.savefig(outfile, bbox_inches=True, dpi=plot_dpi)
+            plt.savefig(outfile, bbox_inches='tight', dpi=plot_dpi)
 
             plt.close()
 
@@ -1557,12 +1658,19 @@ class Source:
 
         Raises:
             ValueError: If the index is out of range.
+            ValueError: If the requested survey is not valid.
         """
 
         if (self._cutouts_got is False) or (force):
             self.get_cutout_data(size)
 
         size = self._size
+
+        surveys = list(SkyView.survey_dict.values())
+        survey_list = [item for sublist in surveys for item in sublist]
+
+        if survey not in survey_list:
+            raise ValueError(f"{survey} is not a valid SkyView survey name")
 
         if index > len(self.measurements):
             raise ValueError(f"Cannot access {index}th measurement.")

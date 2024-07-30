@@ -66,17 +66,17 @@ The arguments to this function are the path to the skymap file, the source DataF
     Unless the path is directly specified as an input, for the functions detailed below that either access or manipulate the VAST FITS files, it is assumed that the file structure is the same as the standard VAST Data release.
     See the [Data Access](../../getting_started/configuration/#data-access) page for details.
 
-#### create_fields_csv
+#### create_fields_metadata
 :fontawesome-regular-file-alt: [Code reference](../../reference/tools/#vasttools.tools.create_fields_csv).
 
-This function creates a fields csv file for a given epoch using data from the [`ASKAP_SURVEYS`](https://bitbucket.csiro.au/projects/ASKAP_SURVEYS/repos/vast/browse){:target="_blank"} repository, which must be downloaded separately.
+This function creates a fields csv file and a `SkyCoord` pickle for a given epoch using data from the [`ASKAP_SURVEYS`](https://bitbucket.csiro.au/projects/ASKAP_SURVEYS/repos/vast/browse){:target="_blank"} repository, which must be downloaded separately.
 The arguments to this function are the epoch, the path to the repository and the path to the output directory, which defaults to the current directory.
 
-!!! example "Example: Building a new fields csv"
-    Build a new fields csv file for epoch 17
+!!! example "Example: Building metadata for a new field"
+    Build a fields metadata for epoch 17
     ```python
-    from vasttools.tools import create_fields_csv
-    create_fields_csv('17', '/path/to/askap_surveys/db/')
+    from vasttools.tools import create_fields_metadata
+    create_fields_metadata('17', '/path/to/askap_surveys/db/')
     ```
 
 #### add_obs_date

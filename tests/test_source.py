@@ -10,7 +10,7 @@ from astropy.time import Time
 from astropy.wcs import WCS
 from matplotlib.pyplot import Figure
 from pathlib import Path
-from pytest_mock import mocker  # noqa: F401
+from pytest_mock import mocker, MockerFixture  # noqa: F401
 from radio_beam import Beam
 from typing import Optional
 
@@ -344,7 +344,7 @@ class TestSource:
         simple: bool,
         outfile: Optional[str],
         source_instance: vts.Source,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the initialisation of the source object.
@@ -652,7 +652,7 @@ class TestSource:
         pipeline: bool,
         source_instance: vts.Source,
         dummy_selavy_components: pd.DataFrame,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the get_cutout method on the Source, which fetches the cutout
@@ -755,7 +755,7 @@ class TestSource:
         crossmatch_overlay: bool,
         hide_beam: bool,
         source_instance: vts.Source,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the make_png method, specifically with the options that are
@@ -827,7 +827,7 @@ class TestSource:
         zscale: bool,
         contrast: float,
         source_instance: vts.Source,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the make_png method, specifically with the options that affect
@@ -868,7 +868,7 @@ class TestSource:
         pipeline: bool,
         source_instance: vts.Source,
         dummy_fits: fits.HDUList,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the skyview_contour_plot method.
@@ -892,17 +892,51 @@ class TestSource:
             return_value=[dummy_fits]
         )
 
-        result = source.skyview_contour_plot(0, 'suveycode')
+        result = source.skyview_contour_plot(0, 'DSS2 Blue')
 
         assert isinstance(result, Figure)
         plt.close(result)
+
+    @pytest.mark.parametrize("pipeline", [False, True])
+    def test_skyview_contour_plot_survey_fail(
+        self,
+        pipeline: bool,
+        source_instance: vts.Source,
+        dummy_fits: fits.HDUList,
+        mocker: MockerFixture
+    ) -> None:
+        """
+        Tests the skyview_contour_plot method.
+
+        Parametrized for pipeline and query source.
+
+        Args:
+            pipeline: If 'True' then the Source is initialised as a
+                pipeline source.
+            source_instance: The pytest source_instance fixture.
+            dummy_fits: The pytest fixture dummy fits.
+            mocker: The pytest-mock mocker object.
+
+        Returns:
+            None
+        """
+        source = source_instance(pipeline=pipeline, add_cutout_data=True)
+
+        mocker_skyview = mocker.patch(
+            'vasttools.source.SkyView.get_images',
+            return_value=[dummy_fits]
+        )
+        with pytest.raises(ValueError) as excinfo:
+            source.skyview_contour_plot(0, 'this-is-not-a-survey')
+
+        assert str(excinfo.value).endswith('not a valid SkyView survey name')
 
     @pytest.mark.parametrize("pipeline", [False, True])
     def test_write_ann(
         self,
         pipeline: bool,
         source_instance: vts.Source,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the write ann method.
@@ -999,7 +1033,7 @@ class TestSource:
         self,
         pipeline: bool,
         source_instance: vts.Source,
-        mocker
+        mocker: MockerFixture
     ) -> None:
         """
         Tests the write reg method.
@@ -1130,7 +1164,10 @@ class TestSource:
         source = source_instance()
         assert expected == source._remove_sbid(input)
 
-    def test_simbad_search(self, source_instance: vts.Source, mocker) -> None:
+    def test_simbad_search(self,
+                           source_instance: vts.Source,
+                           mocker: MockerFixture
+    ) -> None:
         """
         Tests the simbad search method.
 
@@ -1159,7 +1196,10 @@ class TestSource:
         )
         assert result == -99
 
-    def test_ned_search(self, source_instance: vts.Source, mocker) -> None:
+    def test_ned_search(self,
+                        source_instance: vts.Source,
+                        mocker: MockerFixture
+    ) -> None:
         """
         Tests the NED search method.
 
@@ -1188,7 +1228,10 @@ class TestSource:
         )
         assert result == -99
 
-    def test_casda_search(self, source_instance: vts.Source, mocker) -> None:
+    def test_casda_search(self,
+                          source_instance: vts.Source,
+                          mocker: MockerFixture
+    ) -> None:
         """
         Tests the casda search method.
 

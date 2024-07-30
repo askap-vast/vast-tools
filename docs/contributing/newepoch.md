@@ -3,22 +3,6 @@
 VAST Tools contains packaged observing information and MOC files for each epoch of the VAST Pilot Survey that is available.
 When a new epoch is ready to be added to VAST Tools the following must be completed.
 
-## Future Epochs Warning
-
-!!! warning 
-    This package provides complete access to Phase I of the VAST Pilot Survey, which has been conducted at a single frequency.
-    As such,  the individual tile observations from which the epochs were constructed were standardised and had the same footprint.
-    For example, the field `VAST_0216-06A` had the same footprint in every epoch.
-    Some epochs of the Phase II survey will be carried out at a higher frequency and hence, will have different footprints and field centres. The current version of the package *cannot* be used to access these observations.
-    To handle this, VAST Tools must be updated to:
-      
-      * Be able to determine which footprint of the tile is requried if the tiles have the same central name and pointing at a different frequency.
-      * Update the `vasttools/data/mocs/COMBINED` and `vasttools/data/mocs/TILES` with MOCS of the new footprints.
-      * Add new 'field' MOC files in `vasttools/data/mocs/` to provide new VAST Pilot Survey defined fields if necessary.
-      * Update the file `vasttools/data/csv/vast_field_centres.csv` if required.
-      
-    In addition, users should be aware that the `max_sep` parameter in the [`Query`](../../components/query) component may need tweaking.
-
 ## Generating the VAST Tools metadata
 
 ### Epoch information csv files
@@ -53,17 +37,24 @@ To add a new epoch, users should take the below actions.
 
 * Place the epoch information csv file in `vasttools/data/csvs/`, named `vast_epochXX_info.csv`, where `XX` is the two digit zero padded epoch number.
 
+* Place the field `SkyCoord` pickle file in `vasttools/data/pickles/`, named `vast_epochXX_fields_sc.pickle`, where `XX` is the two digit zero padded epoch number.
+
 * Place the full-epoch MOC in `vasttools/data/mocs/`, named `VAST_PILOT_EPOCHXX.moc.fits`, where `XX` is the two digit zero padded epoch number.
 
 * Replace the current version of `VAST_PILOT.stmoc.fits` in `vasttools/data/mocs/` with the updated version containing the observations from the new epoch.
 
-* Add the new epoch to the `RELEASED_EPOCHS` variable found in [`vasttools.survey`](../../reference/survey).
+* Add the new epoch to the `RELEASED_EPOCHS` variable found in `vasttools.__init__.py`.
 
 * If the new epoch is from RACS rather than VAST, add the new epoch to the `RACS_EPOCHS` variable in `vasttools.__init__.py`.
 
-* Add the new epoch to the `path` variable found in [`vasttools.survey.load_fields_file`](../../reference/survey/load_fields_file).
-
 * Make sure the new epoch data is present in the standard release format if the instance of VAST Tools has access to the survey data.
+
+!!! warning "Warning: non-VAST data"
+    Metadata from other surveys (e.g. RACS) is supported, and can be given arbitrary names.
+    The only requirement is that the csv files must end in `_info.csv` and pickle files in `_fields_csv.pickle`.
+    When adding data in this form the file prefix must also be added to the `special_epoch_prefixes` dict inside
+    `vasttools.survey._get_resource_path`.
+
 
 ### Example Epoch Addition
 The following steps will allow users to add epoch 99 to the package, from start to finish assuming absolutely no pre-processing. In the future these steps may be simplified, for example if observations datetime data is already added to the fits images.
@@ -74,15 +65,13 @@ The following steps will allow users to add epoch 99 to the package, from start 
 !!! example "Example: Generate epoch metadata"
     Generate all epoch metadata for epoch 99
     ```python
-    from vasttools.tools import create_fields_csv
-    create_fields_csv('99', '/path/to/surveys_db/')
+    from vasttools.tools import create_fields_metadata
+    create_fields_metadata('99', '/path/to/surveys_db/')
     ```
 
-3. Move the resulting info csv, `vast_epoch99_info.csv` files into `vasttools/data/csvs/`
+3. Move the resulting info csv file (`vast_epoch99_info.csv`) into `vasttools/data/csvs/`, and the resulting `SkyCoord` pickle file (`vast_epoch99_fields_sc.pickle`) into `vasttools/data/pickles/`
 
 4. Update the `RELEASED_EPOCHS` variable in `vasttools.__init__.py`, appending `"99": "99"` to the existing dictionary.
-
-5. Update the `paths` variable in `vasttools.survey.load_fields_file`, appending `"99": importlib.resources.path('vasttools.data.csvs', 'vast_epoch99_info.csv')` to the existing dictionary.
 
 6. If the fits files don't contain datetime information, add it with the following code. This should be done for all image types and polarisations, but only one is necessary for the following steps.
 !!! example "Example: Add datetime information to fits images"
@@ -110,8 +99,8 @@ The following steps will allow users to add epoch 99 to the package, from start 
 !!! example "Example: Push new epoch to git"
     Commit changes required for the addition of epoch 99
     ```git add vasttools/data/csvs/vast_epoch99_info.csv
+    git add vasttools/data/pickles/vast_epoch99_fields_sc.pickle
     git add __init__.py
-    git add vasttools/survey.py
     git add vasttools/data/mocs/VAST_PILOT_EPOCH99.moc.fits
     git add vasttools/data/mocs/VAST_PILOT.stmoc.fits
     ```

@@ -1,5 +1,5 @@
 # VAST Tools
-
+[![DOI](https://zenodo.org/badge/199943719.svg)](https://zenodo.org/badge/latestdoi/199943719)
 [![astropy](http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat)](http://www.astropy.org/)
 ![Tests](https://github.com/askap-vast/vast-tools/actions/workflows/pytest.yml/badge.svg)
 [![documentation](https://img.shields.io/badge/docs-mkdocs%20material-blue.svg?style=flat)](https://vast-survey.org/vast-tools/)
@@ -31,8 +31,13 @@ Take a look at the [example notebooks](https://github.com/askap-vast/vast-tools/
 
 ## Contributors
 
+### Active
+
 * Adam Stewart – [Sydney Institute for Astronomy](https://sifa.sydney.edu.au/)
-* Dougal Dobie – [Swinburne University of Technology/OzGrav](https://www.ozgrav.org)
+* Dougal Dobie – [[Sydney Institute for Astronomy](https://sifa.sydney.edu.au/) and [OzGrav](https://www.ozgrav.org)
+
+### Former
+* Emil Lenc [CSIRO]
 * Andrew O'Brien – [Department of Physics, University of Wisconsin-Milwaukee](https://uwm.edu/physics/research/astronomy-gravitation-cosmology/)
 * Tara Murphy – [Sydney Institute for Astronomy](https://sifa.sydney.edu.au/)
 * David Kaplan – [Department of Physics, University of Wisconsin-Milwaukee](https://uwm.edu/physics/research/astronomy-gravitation-cosmology/)
@@ -42,4 +47,4 @@ Take a look at the [example notebooks](https://github.com/askap-vast/vast-tools/
 The VAST Tools development was supported by:
 
 * The Australian Research Council through grants FT150100099 and DP190100561.
-
+* The Australian Research Council Centre of Excellence for Gravitational Wave Discovery (OzGrav), project numbers CE170100004 and CE230100016.

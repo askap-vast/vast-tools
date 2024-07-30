@@ -62,6 +62,12 @@ class PipelineDirectoryError(Exception):
     """
     pass
 
+class MeasPairsDoNotExistError(Exception):
+    """
+    An error to indicate that the measurement pairs do not exist for a run.
+    """
+    pass
+
 
 class PipeRun(object):
     """
@@ -103,7 +109,8 @@ class PipeRun(object):
         measurements: Union[pd.DataFrame, vaex.dataframe.DataFrame],
         measurement_pairs_file: List[str],
         vaex_meas: bool = False,
-        n_workers: int = cpu_count() - 1
+        n_workers: int = HOST_NCPU - 1,
+        scheduler: str = 'processes'
     ) -> None:
         """
         Constructor method.
@@ -135,6 +142,9 @@ class PipeRun(object):
                 loaded into a pandas DataFrame.
             n_workers: Number of workers (cpus) available. Default is
                 determined by running `cpu_count()`.
+            scheduler: Dask scheduling option to use. Options are "processes"
+                (parallel processing) or "single-threaded". Defaults to
+                "single-threaded".
 
         Returns:
             None
@@ -153,10 +163,26 @@ class PipeRun(object):
         self.n_workers = n_workers
         self._vaex_meas = vaex_meas
         self._loaded_two_epoch_metrics = False
+        self.scheduler = scheduler
 
         self.logger = logging.getLogger('vasttools.pipeline.PipeRun')
         self.logger.debug('Created PipeRun instance')
+        
+        self._measurement_pairs_exists = self._check_measurement_pairs_file()
 
+    def _check_measurement_pairs_file(self):
+        measurement_pairs_exists = True
+        
+        for filepath in self.measurement_pairs_file:
+            if not os.path.isfile(filepath):
+                self.logger.warning(f"Measurement pairs file ({filepath}) does"
+                                    f" not exist. You will be unable to access"
+                                    f" measurement pairs or two-epoch metrics."
+                                    )
+                measurement_pairs_exists = False
+
+        return measurement_pairs_exists
+            
     def combine_with_run(
         self, other_PipeRun, new_name: Optional[str] = None
     ):
@@ -219,8 +245,23 @@ class PipeRun(object):
 
         # need to keep access to all the different pairs files
         # for two epoch metrics.
-        for i in other_PipeRun.measurement_pairs_file:
-            self.measurement_pairs_file.append(i)
+        orig_run_pairs_exist = self._measurement_pairs_exists
+        other_run_pairs_exist = other_PipeRun._measurement_pairs_exists
+
+        if orig_run_pairs_exist and other_run_pairs_exist:
+            for i in other_PipeRun.measurement_pairs_file:
+                self.measurement_pairs_file.append(i)
+        
+        elif orig_run_pairs_exist:
+            self.logger.warning("Not combining measurement pairs because they "
+                                " do not exist for the new run."
+                                )
+            self._measurement_pairs_exists = False
+
+        elif other_run_pairs_exist:
+            self.logger.warning("Not combining measurement pairs because they "
+                                " do not exist for the original run."
+                                )
 
         del sources_to_add
 
@@ -402,6 +443,13 @@ class PipeRun(object):
 
         return thesource
 
+    def _raise_if_no_pairs(self):
+        if not self._measurement_pairs_exists:
+             raise MeasPairsDoNotExistError("This method cannot be used as "
+                                            "the measurement pairs are not "
+                                            "available for this pipeline run."
+                                            )
+
     def load_two_epoch_metrics(self) -> None:
         """
         Loads the two epoch metrics dataframe, usually stored as either
@@ -416,7 +464,14 @@ class PipeRun(object):
 
         Returns:
             None
+
+        Raises:
+            MeasPairsDoNotExistError: The measurement pairs file(s) do not
+                exist for this run
         """
+        
+        self._raise_if_no_pairs()
+
         image_ids = self.images.sort_values(by='datetime').index.tolist()
 
         pairs_df = pd.DataFrame.from_dict(
@@ -652,7 +707,7 @@ class PipeRun(object):
                 match_planet_to_field,
                 meta=meta
             ).compute(
-                scheduler='processes',
+                scheduler=self.scheduler,
                 n_workers=self.n_workers
             )
         )
@@ -821,7 +876,8 @@ class PipeAnalysis(PipeRun):
         measurements: Union[pd.DataFrame, vaex.dataframe.DataFrame],
         measurement_pairs_file: str,
         vaex_meas: bool = False,
-        n_workers: int = cpu_count() - 1
+        n_workers: int = HOST_NCPU - 1,
+        scheduler: str = 'processes',
     ) -> None:
         """
         Constructor method.
@@ -856,13 +912,17 @@ class PipeAnalysis(PipeRun):
                 vaex from an arrow file. `False` means the measurements are
                 loaded into a pandas DataFrame.
             n_workers: Number of workers (cpus) available.
+            scheduler: Dask scheduling option to use. Options are "processes"
+                (parallel processing) or "single-threaded". Defaults to
+                "single-threaded".
 
         Returns:
             None
         """
         super().__init__(
             name, images, skyregions, relations, sources, associations,
-            bands, measurements, measurement_pairs_file, vaex_meas, n_workers
+            bands, measurements, measurement_pairs_file, vaex_meas, n_workers,
+            scheduler
         )
 
     def _filter_meas_pairs_df(
@@ -880,6 +940,7 @@ class PipeAnalysis(PipeRun):
         Returns:
             The filtered measurement pairs dataframe.
         """
+
         if not self._loaded_two_epoch_metrics:
             self.load_two_epoch_metrics()
 
@@ -1031,7 +1092,18 @@ class PipeAnalysis(PipeRun):
         Returns:
             The regenerated sources_df.  A `pandas.core.frame.DataFrame`
             instance.
+        
+        Raises:
+            MeasPairsDoNotExistError: The measurement pairs file(s) do not
+                exist for this run
         """
+        
+        self._raise_if_no_pairs()
+
+        # Two epoch metrics
+        if not self._loaded_two_epoch_metrics:
+            self.load_two_epoch_metrics()
+
         if not self._vaex_meas:
             measurements_df = vaex.from_pandas(measurements_df)
 
@@ -1127,13 +1199,13 @@ class PipeAnalysis(PipeRun):
         }
 
         sources_df_fluxes = (
-            dd.from_pandas(measurements_df_temp, HOST_NCPU)
+            dd.from_pandas(measurements_df_temp, self.n_workers)
             .groupby('source')
             .apply(
                 pipeline_get_variable_metrics,
                 meta=col_dtype
             )
-            .compute(num_workers=HOST_NCPU - 1, scheduler='processes')
+            .compute(num_workers=self.n_workers, scheduler=self.scheduler)
         )
 
         # Switch to pandas at this point to perform join
@@ -1144,10 +1216,6 @@ class PipeAnalysis(PipeRun):
         sources_df = sources_df.join(
             self.sources[['new', 'new_high_sigma']],
         )
-
-        # Two epoch metrics
-        if not self._loaded_two_epoch_metrics:
-            self.load_two_epoch_metrics()
 
         if measurement_pairs_df is None:
             measurement_pairs_df = self._filter_meas_pairs_df(
@@ -1635,7 +1703,12 @@ class PipeAnalysis(PipeRun):
             Exception: 'plot_type' is not recognised.
             Exception: `plot_style` is not recognised.
             Exception: Pair with entered ID does not exist.
+            MeasPairsDoNotExistError: The measurement pairs file(s) do not
+                exist for this run
         """
+
+        self._raise_if_no_pairs()
+
         if not self._loaded_two_epoch_metrics:
             raise Exception(
                 "The two epoch metrics must first be loaded to use the"
@@ -1726,7 +1799,12 @@ class PipeAnalysis(PipeRun):
         Raises:
             Exception: The two epoch metrics must be loaded before using this
                 function.
+            MeasPairsDoNotExistError: The measurement pairs file(s) do not
+                exist for this run
         """
+        
+        self._raise_if_no_pairs()
+
         if not self._loaded_two_epoch_metrics:
             raise Exception(
                 "The two epoch metrics must first be loaded to use the"
@@ -2460,7 +2538,7 @@ class Pipeline(object):
 
     def load_runs(
         self, run_names: List[str], name: Optional[str] = None,
-        n_workers: int = cpu_count() - 1
+        n_workers: int = HOST_NCPU - 1
     ) -> PipeAnalysis:
         """
         Wrapper to load multiple runs in one command.
@@ -2492,7 +2570,7 @@ class Pipeline(object):
         return piperun
 
     def load_run(
-        self, run_name: str, n_workers: int = cpu_count() - 1
+        self, run_name: str, n_workers: int = HOST_NCPU - 1
     ) -> PipeAnalysis:
         """
         Process and load a pipeline run.

@@ -26,6 +26,7 @@ from astropy.io import fits
 from astropy.wcs import WCS
 from multiprocessing_logging import install_mp_handler
 from typing import Optional, Union, Tuple, List
+from pathlib import Path
 from mocpy import MOC
 
 # crosshair imports
@@ -40,7 +41,7 @@ except ImportError:
     use_colorlog = False
 
 
-from vasttools.survey import get_askap_observing_location
+import vasttools.survey as vts
 
 
 def get_logger(
@@ -342,6 +343,10 @@ def read_selavy(
     else:
         df = pd.read_fwf(selavy_path, skiprows=[1], usecols=cols)
 
+    # Force all flux values to be positive
+    for colname in ['flux_peak', 'flux_peak_err', 'flux_int', 'flux_int_err']:
+        if colname in df.columns:
+            df[colname] = df[colname].abs()
     return df
 
 
@@ -383,6 +388,9 @@ def simbad_search(
 
     Returns:
         Coordinates and source names. Each will be NoneType if search fails.
+
+    Raises:
+        Exception: Simbad table length exceeds number of objects queried.
     """
     if logger is None:
         logger = logging.getLogger()
@@ -400,6 +408,12 @@ def simbad_search(
         c = SkyCoord(ra, dec, unit=(u.deg, u.deg))
 
         simbad_names = np.array(result_table['TYPED_ID'])
+
+        if len(simbad_names) > len(objects):
+            raise Exception("Returned Simbad table is longer than the number "
+                            "of queried objects. You likely have a malformed "
+                            "object name in your query."
+                            )
 
         return c, simbad_names
 
@@ -446,7 +460,7 @@ def match_planet_to_field(
         unit=(u.deg, u.deg)
     )
 
-    ol = get_askap_observing_location()
+    ol = vts.get_askap_observing_location()
     with solar_system_ephemeris.set('builtin'):
         planet_coords = get_body(planet, dates, ol)
 
@@ -548,7 +562,7 @@ def pipeline_get_eta_metric(df: pd.DataFrame, peak: bool = False) -> float:
     suffix = 'peak' if peak else 'int'
     weights = 1. / df[f'flux_{suffix}_err'].values**2
     fluxes = df[f'flux_{suffix}'].values
-    eta = (df.shape[0] / (df.shape[0]-1)) * (
+    eta = (df.shape[0] / (df.shape[0] - 1)) * (
         (weights * fluxes**2).mean() - (
             (weights * fluxes).mean()**2 / weights.mean()
         )
@@ -660,7 +674,7 @@ def create_moc_from_fits(fits_file: str, max_depth: int = 9) -> MOC:
     if not os.path.isfile(fits_file):
         raise Exception("{} does not exist".format(fits_file))
 
-    with fits.open(fits_file) as vast_fits:
+    with open_fits(fits_file) as vast_fits:
         data = vast_fits[0].data
         if data.ndim == 4:
             data = data[0, 0, :, :]
@@ -683,3 +697,46 @@ def create_moc_from_fits(fits_file: str, max_depth: int = 9) -> MOC:
     gc.collect()
 
     return moc
+
+
+def strip_fieldnames(fieldnames: pd.Series) -> pd.Series:
+    """
+    Some field names have historically used the interleaving naming scheme,
+    but that has changed as of January 2023. This function removes the "A"
+    that is on the end of the field names
+
+    Args:
+        fieldnames: Series to strip field names from
+
+    Returns:
+        Series with stripped field names
+    """
+
+    return fieldnames.str.rstrip('A')
+
+def open_fits(fits_path: Union[str, Path], memmap: Optional[bool]=True):
+    """
+    This function opens both compressed and uncompressed fits files.
+    
+    Args:
+        fits_path: Path to the fits file
+        memmap: Open the fits file with mmap.
+    
+    Returns:
+        HDUList loaded from the fits file
+    
+    Raises:
+        ValueError: File extension must be .fits or .fits.fz
+    """
+
+    if type(fits_path) == Path:
+        fits_path = str(fits_path)
+
+    hdul = fits.open(fits_path, memmap=memmap)
+
+    if len(hdul) == 1:
+        return hdul
+    elif type(hdul[1]) == fits.hdu.compressed.CompImageHDU:
+        return fits.HDUList(hdul[1:])
+    else:
+        return hdul

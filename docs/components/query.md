@@ -151,7 +151,7 @@ There are two options that control how the crossmatching to the VAST catalogues 
 This is the radius, in arcsec, to which a VAST Pilot source is considered a match to the search coordinate.
 
 **`max_sep`**  
-The maximum distance, in degrees, from the centre of an individual beam (36 beams make up an ASKAP tile) to determine if a match is possible.
+The maximum distance, in degrees, from the centre of an individual beam (36 beams make up an ASKAP tile) to determine if a match is possible. This defaults to 1.5 degrees.
 
 !!!note "Note: Field Selection"
     When the query is made, if the source is found in two separate overlapping fields, all fields will be noted as a match but field used will be that which has
@@ -167,16 +167,22 @@ These `Query` keyword arguments control the data that is used to perform the que
 **`epochs`**  
 A list of epochs or a comma-separated string of epochs to search.
 Do not use zero padded values when entering the epochs.
-The values `all` and `all-vast` are also valid, selecting Epoch 0 + VAST data and just VAST data, respectively.
+The values `all` and `all-vast` are also valid, selecting all RACS & VAST data or just VAST data, respectively.
+
+The pilot survey used an `x` to designate an epoch that was only partially observed. This can be supplied, but is not necessary.
 
 !!! example "Example: Defining the epochs parameter"
     === "Comma-separated string"
         ```python
         my_query = Query(..., epochs="1,2,6x,8,9")
         ```
-    === "List"
+    === "List of strings"
         ```python
         my_query = Query(..., epochs=["1","2","6x","8","9"])
+        ```
+    === "List of ints"
+        ```python
+        my_query = Query(..., epochs=[1,2,6,8,9])
         ```
 
 **`stokes`**  
@@ -184,7 +190,7 @@ Select which Stokes parameter data to search in.
 Valid entries are `I`, `V`, `Q` and `U`.
 
 **`use_tiles`**  
-Switch to using the catalogues and images of the `TILE` type instead of the `COMBINED` (default).
+Switch to using the catalogues and images `TILE` type instead of the `COMBINED`. The default is to use the `TILE` type.
 Refer to [this wiki page](https://github.com/askap-vast/vast-project/wiki/Pilot-Survey-Status-&-Data){:target="_blank"} for an explanation on the two types (askap-vast GitHub membership required to access).
 
 **`use_islands`**  
@@ -196,6 +202,13 @@ Query the island catalogues produced by the [`selavy`](https://www.atnf.csiro.au
 **`matches_only`**  
 Only return results that have a source match. 
 I.e. no forced fit or upper limit measurements will be returned.
+
+**`search_all_fields`**
+Return all data available at the source location. If not selected, only the data associated with the best (i.e. closest)
+field will be returned.
+
+**`corrected_data` and `post_processed_data`**
+Use the corrected data (astrometric corrections applied, only available for the pilot survey) or the post-processed data (astrometric corrections and cropping applied, along with the use of compressed images). The default is now to use the post-processed data moving forward.
 
 #### Planet Search
 
@@ -260,7 +273,7 @@ Once the `Query` has been defined the settings can be checked by viewing the `Qu
     {'epochs': ['1', '2', '3x', '4x', '5x', '6x', '7x', '8', '9', '10x', '11x'],
      'stokes': 'I',
      'crossmatch_radius': <Angle 10. arcsec>,
-     'max_sep': 1.0,
+     'max_sep': 1.5,
      'islands': False,
      'tiles': False,
      'no_rms': False,
@@ -268,7 +281,8 @@ Once the `Query` has been defined the settings can be checked by viewing the `Qu
      'search_around': False,
      'sort_output': False,
      'forced_fits': False,
-     'output_dir': 'source-search-example-output'}
+     'output_dir': 'source-search-example-output',
+     'search_all_fields': False,}
     ```
 
 ### Running a Query

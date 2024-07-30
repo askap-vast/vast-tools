@@ -29,6 +29,7 @@ from astropy.coordinates import SkyCoord
 from astropy.io import fits
 from astropy.wcs import WCS
 from astropy.utils.exceptions import AstropyWarning, AstropyDeprecationWarning
+from astropy.nddata.utils import NoOverlapError
 
 from functools import partial
 
@@ -44,7 +45,8 @@ from typing import Optional, List, Tuple, Dict, Union
 from pathlib import Path
 
 from vasttools import (
-    RELEASED_EPOCHS, OBSERVED_EPOCHS, ALLOWED_PLANETS, BASE_EPOCHS, RACS_EPOCHS
+    RELEASED_EPOCHS, OBSERVED_EPOCHS, ALLOWED_PLANETS, BASE_EPOCHS,
+    RACS_EPOCHS, P1_EPOCHS, P2_EPOCHS
 )
 from vasttools.survey import Fields, Image
 from vasttools.survey import (
@@ -53,7 +55,7 @@ from vasttools.survey import (
 from vasttools.source import Source
 from vasttools.utils import (
     filter_selavy_components, simbad_search, match_planet_to_field,
-    read_selavy
+    read_selavy, strip_fieldnames, open_fits
 )
 from vasttools.moc import VASTMOCS
 from forced_phot import ForcedPhot
@@ -109,11 +111,11 @@ class Query:
         self,
         coords: Optional[SkyCoord] = None,
         source_names: Optional[List[str]] = None,
-        epochs: Union[str, List[str]] = "1",
+        epochs: Union[str, List[str], List[int]] = "1",
         stokes: str = "I",
         crossmatch_radius: float = 5.0,
-        max_sep: float = 1.0,
-        use_tiles: bool = False,
+        max_sep: float = 1.5,
+        use_tiles: bool = True,
         use_islands: bool = False,
         base_folder: Optional[str] = None,
         matches_only: bool = False,
@@ -127,7 +129,10 @@ class Query:
         forced_cluster_threshold: float = 1.5,
         forced_allow_nan: bool = False,
         incl_observed: bool = False,
-        corrected_data: bool = True
+        corrected_data: bool = False,
+        post_processed_data: bool = True,
+        search_all_fields: bool = False,
+        scheduler: str = 'processes',
     ) -> None:
         """
         Constructor method.
@@ -142,7 +147,7 @@ class Query:
             stokes: Stokes parameter to query.
             crossmatch_radius: Crossmatch radius in arcsec, defaults to 5.0.
             max_sep: Maximum separation of source from beam centre
-                in degrees, defaults to 1.0.
+                in degrees, defaults to 1.5.
             use_tiles: Query tiles rather than combined mosaics,
                 defaults to `False`.
             use_islands: Use selavy islands rather than components,
@@ -175,7 +180,15 @@ class Query:
                 released, in the query. This should only be used when finding
                 fields, not querying data. Defaults to False.
             corrected_data: Access the corrected data. Only relevant if
-                `tiles` is `True`. Defaults to `True`.
+                `tiles` is `True`. Defaults to `False`.
+            post_processed_data: Access the post-processed data. Only relevant
+                if `tiles` is `True`. Defaults to `True`.
+            search_all_fields: If `True`, return all data at the requested
+                positions regardless of field. If `False`, only return data
+                from the best (closest) field in each epoch.
+            scheduler: Dask scheduling option to use. Options are "processes"
+                (parallel processing) or "single-threaded". Defaults to
+                "processes".
 
         Returns:
             None
@@ -194,6 +207,7 @@ class Query:
             QueryInitError: Base folder cannot be found.
             QueryInitError: Base folder cannot be found.
             QueryInitError: Problems found in query settings.
+            QueryInitError: Invalid scheduler option requested.
         """
         self.logger = logging.getLogger('vasttools.find_sources.Query')
 
@@ -208,6 +222,7 @@ class Query:
         self.simbad_names = None
 
         self.corrected_data = corrected_data
+        self.post_processed_data = post_processed_data
 
         if coords is None:
             self.coords = coords
@@ -230,6 +245,7 @@ class Query:
                 )
             )
         self.ncpu = ncpu
+        self.logger.debug(f"Using {self.ncpu} CPUs")
 
         if coords is None and len(source_names) == 0 and len(planets) == 0:
             raise QueryInitError(
@@ -355,6 +371,15 @@ class Query:
         self.settings['forced_allow_nan'] = forced_allow_nan
 
         self.settings['output_dir'] = output_dir
+        self.settings['search_all_fields'] = search_all_fields
+
+        scheduler_options = ['processes', 'single-threaded']
+        if scheduler not in scheduler_options:
+            raise QueryInitError(
+                f"{scheduler} is not a suitable scheduler option. Please "
+                f"select from {scheduler_options}"
+            )
+        self.settings['scheduler'] = scheduler
 
         # Going to need this so load it now
         self._epoch_fields = get_fields_per_epoch_info()
@@ -381,7 +406,6 @@ class Query:
                 "\nPlease address and try again."
             ))
 
-        self.logger.info("Checking data availability...")
         all_data_available = self._check_data_availability()
         if all_data_available:
             self.logger.info("All data available!")
@@ -413,21 +437,71 @@ class Query:
             `True` if settings are acceptable, `False` otherwise.
         """
 
+        self.logger.debug("Using settings: ")
+        self.logger.debug(self.settings)
+
+        if self.settings['tiles']:
+            if self.post_processed_data:
+                self.logger.debug("Using post-processed TILES data...")
+            elif self.corrected_data:
+                self.logger.warning(
+                    "Using corrected TILES data - this should only be "
+                    "selected with good reason! Otherwise, use the default!"
+                )
+            else:
+                self.logger.warning(
+                    "Using raw TILES data - this should only be "
+                    "selected with good reason! Otherwise, use the default!"
+                )
+
+        else:
+            self.logger.debug("Using COMBINED data")
         if self.settings['tiles'] and self.settings['stokes'].lower() != "i":
-            self.logger.critical("Only Stokes I are supported with tiles!")
-            return False
+            if self.vast_full:
+                self.logger.warning("Stokes V tiles are only available for the"
+                                    " full VAST survey. Proceed with caution!"
+                                    )
+            else:
+                self.logger.critical("Stokes V tiles are only available for "
+                                     "the full VAST survey."
+                                     )
+                return False
 
         if self.settings['tiles'] and self.settings['islands']:
-            self.logger.critical(
-                "Only component catalogues are supported with tiles!"
-            )
-            return False
+            if self.vast_p1 or self.vast_p2 or self.racs:
+                self.logger.critical(
+                    "Only component catalogues are supported with tiles "
+                    "for the selected epochs."
+                )
+                return False
 
         if self.settings['islands']:
             self.logger.warning(
                 "Image RMS and peak flux error are not available with islands."
                 "Using background_noise as a placeholder for both."
             )
+
+        if self.vast_full and not self.settings['tiles']:
+            self.logger.critical("COMBINED images are not available for "
+                                 "the full VAST survey. Query will continue "
+                                 "to run, but proceed with caution."
+                                 )
+
+        if self.settings['tiles'] and self.corrected_data and self.vast_full:
+            self.logger.critical(
+                "Corrected data does not exist for the full VAST survey."
+                "Pass corrected_data=False and post_processed_data=True "
+                "to access full survey data. Query will continue to run, "
+                "but proceed with caution."
+            )
+
+        # TO DO: Maybe add some setting validation for self.post_processed_data
+        if self.corrected_data and self.post_processed_data:
+            self.logger.critical(
+                "Only one of corrected_data and post-processed data can be "
+                "selected."
+            )
+            return False
 
         return True
 
@@ -450,6 +524,8 @@ class Query:
             data_type = "TILES"
             if self.corrected_data:
                 corrected_str = "_CORRECTED"
+            if self.post_processed_data:
+                corrected_str = "_PROCESSED"
 
         stokes = self.settings['stokes']
 
@@ -501,12 +577,20 @@ class Query:
 
         return all_available
 
-    def _get_all_cutout_data(self, imsize: Angle) -> pd.DataFrame:
+    def _get_all_cutout_data(self,
+                             imsize: Angle,
+                             img: bool = True,
+                             rms: bool = False,
+                             bkg: bool = False
+                             ) -> pd.DataFrame:
         """
         Get cutout data and selavy components for all sources.
 
         Args:
             imsize: Size of the requested cutout.
+            img: Fetch image data, defaults to `True`.
+            rms: Fetch rms data, defaults to `False`.
+            bkg: Fetch bkg data, defaults to `False`.
 
         Returns:
             Dataframe containing the cutout data of all measurements in
@@ -533,8 +617,14 @@ class Query:
             'header': 'O',
             'selavy_overlay': 'O',
             'beam': 'O',
+            'rms_data': 'O',
+            'rms_wcs': 'O',
+            'rms_header': 'O',
+            'bkg_data': 'O',
+            'bkg_wcs': 'O',
+            'bkg_header': 'O',
             'name': 'U',
-            'dateobs': 'datetime64[ns]'
+            'dateobs': 'datetime64[ns]',
         }
 
         cutouts = (
@@ -544,7 +634,12 @@ class Query:
                 self._grouped_fetch_cutouts,
                 imsize=imsize,
                 meta=meta,
-            ).compute(num_workers=self.ncpu, scheduler='processes')
+                img=img,
+                rms=rms,
+                bkg=bkg,
+            ).compute(num_workers=self.ncpu,
+                      scheduler=self.settings['scheduler']
+                      )
         )
 
         if not cutouts.empty:
@@ -556,6 +651,8 @@ class Query:
     def _gen_all_source_products(
         self,
         fits: bool = True,
+        rms: bool = False,
+        bkg: bool = False,
         png: bool = False,
         ann: bool = False,
         reg: bool = False,
@@ -596,6 +693,10 @@ class Query:
 
         Args:
             fits: Create and save fits cutouts, defaults to `True`.
+            rms: Create and save fits cutouts of the rms images,
+                defaults to `True`.
+            bkg: Create and save fits cutouts of the bkg images,
+                defaults to `True`.
             png: Create and save png postagestamps, defaults to `False`.
             ann: Create and save kvis annotation files for all components,
                 defaults to `False`
@@ -661,11 +762,15 @@ class Query:
                 ' used.'
             )
 
-        if sum([fits, png, ann, reg]) > 0:
+        if sum([fits, rms, bkg, png, ann, reg]) > 0:
             self.logger.info(
                 "Fetching cutout data for sources..."
             )
-            cutouts_df = self._get_all_cutout_data(imsize)
+            cutouts_df = self._get_all_cutout_data(imsize,
+                                                   img=fits,
+                                                   rms=rms,
+                                                   bkg=bkg,
+                                                   )
             self.logger.info('Done.')
             if cutouts_df.empty:
                 fits = False
@@ -696,6 +801,8 @@ class Query:
         produce_source_products_multi = partial(
             self._produce_source_products,
             fits=fits,
+            rms=rms,
+            bkg=bkg,
             png=png,
             ann=ann,
             reg=reg,
@@ -730,45 +837,51 @@ class Query:
             plot_dpi=plot_dpi
         )
 
-        original_sigint_handler = signal.signal(
-            signal.SIGINT, signal.SIG_IGN
-        )
-        signal.signal(signal.SIGINT, original_sigint_handler)
-        workers = Pool(processes=self.ncpu, maxtasksperchild=100)
+        if self.settings['scheduler'] == 'processes':
+            original_sigint_handler = signal.signal(
+                signal.SIGINT, signal.SIG_IGN
+            )
+            signal.signal(signal.SIGINT, original_sigint_handler)
+            workers = Pool(processes=self.ncpu, maxtasksperchild=100)
 
-        try:
-            workers.map(
-                produce_source_products_multi,
-                to_process,
-            )
-        except KeyboardInterrupt:
-            self.logger.error(
-                "Caught KeyboardInterrupt, terminating workers."
-            )
-            workers.terminate()
-            sys.exit()
-        except Exception as e:
-            self.logger.error(
-                "Encountered error!."
-            )
-            self.logger.error(
-                e
-            )
-            workers.terminate()
-            sys.exit()
-        finally:
-            self.logger.debug("Closing workers.")
-            # Using terminate below as close was prone to hanging
-            # when join is called. I believe the hang comes from
-            # a child processes not getting returned properly
-            # because of the large number of file I/O.
-            workers.terminate()
-            workers.join()
+            try:
+                workers.map(
+                    produce_source_products_multi,
+                    to_process,
+                )
+            except KeyboardInterrupt:
+                self.logger.error(
+                    "Caught KeyboardInterrupt, terminating workers."
+                )
+                workers.terminate()
+                sys.exit()
+            except Exception as e:
+                self.logger.error(
+                    "Encountered error!."
+                )
+                self.logger.error(
+                    e
+                )
+                workers.terminate()
+                sys.exit()
+            finally:
+                self.logger.debug("Closing workers.")
+                # Using terminate below as close was prone to hanging
+                # when join is called. I believe the hang comes from
+                # a child processes not getting returned properly
+                # because of the large number of file I/O.
+                workers.terminate()
+                workers.join()
+        elif self.settings['scheduler'] == 'single-threaded' or self.ncpu == 1:
+            for result in map(produce_source_products_multi, to_process):
+                pass
 
     def _produce_source_products(
         self,
         i: Tuple[Source, pd.DataFrame],
         fits: bool = True,
+        rms: bool = False,
+        bkg: bool = False,
         png: bool = False,
         ann: bool = False,
         reg: bool = False,
@@ -808,6 +921,10 @@ class Query:
         Args:
             i: Tuple containing source and cutout data.
             fits: Create and save fits cutouts, defaults to `True`.
+            rms: Create and save fits cutouts of the rms images,
+                defaults to `True`.
+            bkg: Create and save fits cutouts of the bkg images,
+                defaults to `True`.
             png: Create and save png postagestamps, defaults to `False`.
             ann: Create and save kvis annotation files for all components,
                 defaults to `False`.
@@ -869,8 +986,12 @@ class Query:
 
         source, cutout_data = i
 
+        self.logger.debug(f"Producing source products for {source.name}")
+
         if fits:
             source.save_all_fits_cutouts(cutout_data=cutout_data)
+        if sum([rms, bkg]) > 1:
+            source._save_all_noisemap_cutouts(cutout_data, rms=rms, bkg=bkg)
 
         if png:
             source.save_all_png_cutouts(
@@ -979,7 +1100,12 @@ class Query:
         return s
 
     def _grouped_fetch_cutouts(
-        self, group: pd.DataFrame, imsize: Angle
+        self,
+        group: pd.DataFrame,
+        imsize: Angle,
+        img: bool = True,
+        rms: bool = False,
+        bkg: bool = False
     ) -> pd.DataFrame:
         """
         Function that handles fetching the cutout data per
@@ -989,11 +1115,15 @@ class Query:
         Args:
             group: Catalogue of sources grouped by field.
             imsize: Size of the requested cutout.
+            img: Fetch image data, defaults to `True`.
+            rms: Fetch rms data, defaults to `False`.
+            bkg: Fetch bkg data, defaults to `False`.
 
         Returns:
             Dataframe containing the cutout data for the group.
         """
         image_file = group.iloc[0]['image']
+        self.logger.debug(f"Fetching cutouts from {image_file}")
 
         try:
             image = Image(
@@ -1003,29 +1133,107 @@ class Query:
                 self.base_folder,
                 sbid=group.iloc[0].sbid,
                 tiles=self.settings['tiles'],
-                corrected_data=self.corrected_data
+                corrected_data=self.corrected_data,
+                post_processed_data=self.post_processed_data,
             )
 
-            image.get_img_data()
+            if img:
+                image.get_img_data()
+                img_cutout_data = group.apply(
+                    self._get_cutout,
+                    args=(image, imsize),
+                    axis=1,
+                    result_type='expand'
+                ).rename(columns={
+                    0: "data",
+                    1: "wcs",
+                    2: "header",
+                    3: "selavy_overlay",
+                    4: "beam"
+                })
+            else:
+                img_cutout_data = pd.DataFrame([[None] * 5] * len(group),
+                                               columns=[
+                    'data',
+                    'wcs',
+                    'header',
+                    'selavy_overlay',
+                    'beam',
+                ]
+                )
+            if rms:
+                image.get_rms_img()
+                rms_cutout_data = group.apply(
+                    self._get_cutout,
+                    args=(image, imsize),
+                    img=False,
+                    rms=True,
+                    axis=1,
+                    result_type='expand'
+                ).rename(columns={
+                    0: "rms_data",
+                    1: "rms_wcs",
+                    2: "rms_header",
+                }).drop(columns=[3, 4])
+            else:
+                rms_cutout_data = pd.DataFrame([[None] * 3] * len(group),
+                                               columns=[
+                    'rms_data',
+                    'rms_wcs',
+                    'rms_header',
+                ]
+                )
 
-            cutout_data = group.apply(
-                self._get_cutout,
-                args=(image, imsize),
-                axis=1,
-                result_type='expand'
-            ).rename(columns={
-                0: "data",
-                1: "wcs",
-                2: "header",
-                3: "selavy_overlay",
-                4: "beam"
-            })
+            if bkg:
+                image.get_bkg_img()
+                bkg_cutout_data = group.apply(
+                    self._get_cutout,
+                    args=(image, imsize),
+                    img=False,
+                    bkg=True,
+                    axis=1,
+                    result_type='expand'
+                ).rename(columns={
+                    0: "bkg_data",
+                    1: "bkg_wcs",
+                    2: "bkg_header",
+                }).drop(columns=[3, 4])
+            else:
+                bkg_cutout_data = pd.DataFrame([[None] * 3] * len(group),
+                                               columns=[
+                    'bkg_data',
+                    'bkg_wcs',
+                    'bkg_header',
+                ]
+                )
+
+            self.logger.debug("Generated all cutout data")
+
+            to_concat = [img_cutout_data, rms_cutout_data, bkg_cutout_data]
+            cutout_data = pd.concat(to_concat, axis=1).dropna(how='all')
+
+            self.logger.debug("Concatenated into cutout_data")
+
+            if bkg or rms:
+                bkg_values = bkg_cutout_data['bkg_data'].values
+                rms_values = rms_cutout_data['rms_data'].values
+                if bkg_values == rms_values:
+                    self.logger.warning("Bkg and RMS data are identical!")
+
+            self.logger.debug(cutout_data.columns)
+            self.logger.debug(len(cutout_data))
+            self.logger.debug(group['name'].values)
 
             cutout_data['name'] = group['name'].values
+            self.logger.debug(cutout_data['name'])
             cutout_data['dateobs'] = group['dateobs'].values
+            self.logger.debug(cutout_data['dateobs'])
 
             del image
         except Exception as e:
+            self.logger.warning(
+                "Caught exception inside _grouped_fetch_cutouts")
+            self.logger.warning(e)
             cutout_data = pd.DataFrame(columns=[
                 'data',
                 'wcs',
@@ -1033,14 +1241,25 @@ class Query:
                 'selavy_overlay',
                 'beam',
                 'name',
-                'dateobs'
+                'dateobs',
+                'rms_data',
+                'rms_wcs',
+                'rms_header',
+                'bkg_data',
+                'bkg_wcs',
+                'bkg_header',
             ])
 
         return cutout_data
 
     def _get_cutout(
-        self, row: pd.Series, image: Image,
-        size: Angle = Angle(5. * u.arcmin)
+        self,
+        row: pd.Series,
+        image: Image,
+        size: Angle = Angle(5. * u.arcmin),
+        img: bool = True,
+        rms: bool = False,
+        bkg: bool = False
     ) -> Tuple[pd.DataFrame, WCS, fits.Header, pd.DataFrame, Beam]:
         """
         Create cutout centered on a source location
@@ -1050,50 +1269,86 @@ class Query:
                 interest
             image: Image to create cutout from.
             size: Size of the cutout, defaults to Angle(5.*u.arcmin).
+            img: Make a cutout from the image data, defaults to `True`.
+            rms: Make a cutout from the rms data, defaults to `False`.
+            bkg: Make a cutout from the bkg data, defaults to `False`.
 
         Returns:
             Tuple containing cutout data, WCS, image header, associated
             selavy components and beam information.
+
+        Raises:
+            ValueError: Exactly one of img, rms or bkg must be `True`
         """
 
-        cutout = Cutout2D(
-            image.data,
-            position=row.skycoord,
-            size=size,
-            wcs=image.wcs
-        )
+        if sum([img, rms, bkg]) != 1:
+            raise ValueError("Exactly one of img, rms or bkg must be True")
 
-        selavy_components = read_selavy(row.selavy, cols=[
-            'island_id',
-            'ra_deg_cont',
-            'dec_deg_cont',
-            'maj_axis',
-            'min_axis',
-            'pos_ang'
-        ])
+        if img:
+            thedata = image.data
+            thewcs = image.wcs
+            theheader = image.header.copy()
+            thepath = image.imgpath
+        elif rms:
+            thedata = image.rms_data
+            thewcs = image.rms_wcs
+            theheader = image.rms_header.copy()
+            thepath = image.rmspath
+        elif bkg:
+            thedata = image.bkg_data
+            thewcs = image.bkg_wcs
+            theheader = image.bkg_header.copy()
+            thepath = image.bkgpath
 
-        selavy_coords = SkyCoord(
-            selavy_components.ra_deg_cont.values,
-            selavy_components.dec_deg_cont.values,
-            unit=(u.deg, u.deg)
-        )
+        self.logger.debug(f"Using data from {thepath}")
 
-        selavy_components = filter_selavy_components(
-            selavy_components,
-            selavy_coords,
-            size,
-            row.skycoord
-        )
+        try:
+            cutout = Cutout2D(
+                thedata,
+                position=row.skycoord,
+                size=size,
+                wcs=thewcs
+            )
+        except NoOverlapError:
+            self.logger.warning(f"Unable to create cutout for {row['name']}.")
+            self.logger.warning(f"Image path: {thepath}")
+            self.logger.warning(f"Coordinate: {row.skycoord.to_string()}")
+            return (None, None, None, None, None)
 
-        header = image.header.copy()
-        header.update(cutout.wcs.to_header())
+        if img:
+            selavy_components = read_selavy(row.selavy, cols=[
+                'island_id',
+                'ra_deg_cont',
+                'dec_deg_cont',
+                'maj_axis',
+                'min_axis',
+                'pos_ang'
+            ])
 
-        beam = image.beam
+            selavy_coords = SkyCoord(
+                selavy_components.ra_deg_cont.values,
+                selavy_components.dec_deg_cont.values,
+                unit=(u.deg, u.deg)
+            )
 
-        del selavy_coords
+            selavy_components = filter_selavy_components(
+                selavy_components,
+                selavy_coords,
+                size,
+                row.skycoord
+            )
+
+            del selavy_coords
+
+            beam = image.beam
+        else:
+            beam = None
+            selavy_components = None
+
+        theheader.update(cutout.wcs.to_header())
 
         return (
-            cutout.data, cutout.wcs, header, selavy_components, beam
+            cutout.data, cutout.wcs, theheader, selavy_components, beam
         )
 
     def find_sources(self) -> None:
@@ -1124,7 +1379,7 @@ class Query:
         if self.fields_found is False:
             self.find_fields()
 
-        self.logger.info("Finding sources in PILOT data...")
+        self.logger.info("Finding sources in VAST data...")
 
         self.sources_df = self.fields_df.sort_values(
             by=['name', 'dateobs']
@@ -1169,7 +1424,9 @@ class Query:
                     ),
                     allow_nan=self.settings['forced_allow_nan'],
                     meta=meta,
-                ).compute(num_workers=self.ncpu, scheduler='processes')
+                ).compute(num_workers=self.ncpu,
+                          scheduler=self.settings['scheduler']
+                          )
             )
 
             if not f_results.empty:
@@ -1187,10 +1444,13 @@ class Query:
             .apply(
                 self._get_components,
                 meta=self._get_selavy_meta(),
-            ).compute(num_workers=self.ncpu, scheduler='processes')
+            ).compute(num_workers=self.ncpu,
+                      scheduler=self.settings['scheduler']
+                      )
         )
 
         self.logger.debug("Selavy components succesfully added.")
+        self.logger.debug(results)
 
         if self.settings['islands']:
             results['rms_image'] = results['background_noise']
@@ -1218,6 +1478,8 @@ class Query:
         self.crossmatch_results = self.sources_df.merge(
             results, how=how, left_index=True, right_index=True
         )
+        self.logger.debug("Crossmatch results:")
+        self.logger.debug(self.crossmatch_results)
 
         meta = {'name': 'O'}
 
@@ -1226,6 +1488,7 @@ class Query:
                 'detection': any
             }).sum()
         )
+        self.logger.debug(f"{self.num_sources_detected} sources detected:")
 
         if self.settings['search_around']:
             self.results = self.crossmatch_results.rename(
@@ -1239,7 +1502,9 @@ class Query:
                 .apply(
                     self._init_sources,
                     meta=meta,
-                ).compute(num_workers=npart, scheduler='processes')
+                ).compute(num_workers=npart,
+                          scheduler=self.settings['scheduler']
+                          )
             )
             self.results = self.results.dropna()
 
@@ -1275,7 +1540,9 @@ class Query:
                 self._write_search_around_results,
                 sort_output=sort_output,
                 meta=meta,
-            ).compute(num_workers=self.ncpu, scheduler='processes')
+            ).compute(num_workers=self.ncpu,
+                      scheduler=self.settings['scheduler']
+                      )
         )
 
     def _write_search_around_results(
@@ -1358,6 +1625,9 @@ class Query:
         """
         group = group.sort_values(by='dateobs')
 
+        if group.empty:
+            return
+
         m = group.iloc[0]
 
         if self.settings['matches_only']:
@@ -1402,6 +1672,8 @@ class Query:
 
         source_df = source_df.sort_values('dateobs').reset_index(drop=True)
 
+        self.logger.debug("Initialising Source with base folder:")
+        self.logger.debug(source_base_folder)
         thesource = Source(
             source_coord,
             source_name,
@@ -1416,10 +1688,34 @@ class Query:
             islands=source_islands,
             forced_fits=self.settings['forced_fits'],
             outdir=source_outdir,
-            corrected_data=self.corrected_data
+            corrected_data=self.corrected_data,
+            post_processed_data=self.post_processed_data,
         )
 
         return thesource
+
+    def _forcedphot_preload(self,
+                            image: str,
+                            background: str,
+                            noise: str,
+                            memmap: Optional[bool] = False
+                            ):
+        """
+        Load the relevant image, background and noisemap files.
+        Args:
+            image: a string with the path of the image file
+            background: a string with the path of the background map
+            noise: a string with the path of the noise map
+        Returns:
+            A tuple containing the HDU lists
+        """
+
+        image_hdul = open_fits(image, memmap=memmap)
+        background_hdul = open_fits(background, memmap=memmap)
+        noise_hdul = open_fits(noise, memmap=memmap)
+
+        return image_hdul, background_hdul, noise_hdul
+
 
     def _get_forced_fits(
         self, group: pd.DataFrame,
@@ -1456,14 +1752,18 @@ class Query:
         field = m['field']
         epoch = m['epoch']
         stokes = m['stokes']
-
+        self.logger.debug("Getting Image for forced fits")
         try:
             img_beam = Image(
                 field,
                 epoch,
                 stokes,
                 self.base_folder,
-                corrected_data=self.corrected_data
+                tiles=self.settings["tiles"],
+                path=image,
+                rmspath=rms,
+                corrected_data=self.corrected_data,
+                post_processed_data=self.post_processed_data,
             )
             img_beam.get_img_data()
             img_beam = img_beam.beam
@@ -1493,7 +1793,12 @@ class Query:
         )
 
         # make the Forced Photometry object
-        FP = ForcedPhot(image, bkg, rms)
+        forcedphot_input = self._forcedphot_preload(image,
+                                                    bkg,
+                                                    rms,
+                                                    memmap=False
+                                                    )
+        FP = ForcedPhot(*forcedphot_input)
 
         # run the forced photometry
         (
@@ -1660,11 +1965,13 @@ class Query:
         selavy_file = str(group.name)
 
         if selavy_file is None:
+            self.logger.warning("Selavy file is None. Returning None.")
             return
 
         master = pd.DataFrame()
 
         selavy_df = read_selavy(selavy_file)
+        self.logger.debug(f"Selavy df head: {selavy_df.head()}")
 
         if self.settings['stokes'] != "I":
             head, tail = os.path.split(selavy_file)
@@ -1684,6 +1991,7 @@ class Query:
             selavy_df.dec_deg_cont,
             unit=(u.deg, u.deg)
         )
+
         group_coords = SkyCoord(
             group.ra,
             group.dec,
@@ -1719,6 +2027,9 @@ class Query:
             if missing.shape[0] > 0:
                 if not self.settings['no_rms']:
                     try:
+                        self.logger.debug(
+                            "Initialising Image for components RMS estimates")
+                        self.logger.debug(self.base_folder)
                         image = Image(
                             group.iloc[0].field,
                             group.iloc[0].epoch,
@@ -1726,7 +2037,8 @@ class Query:
                             self.base_folder,
                             sbid=group.iloc[0].sbid,
                             tiles=self.settings['tiles'],
-                            corrected_data=self.corrected_data
+                            corrected_data=self.corrected_data,
+                            post_processed_data=self.post_processed_data
                         )
                         image.get_img_data()
                         rms_values = image.measure_coord_pixel_values(
@@ -1779,6 +2091,8 @@ class Query:
             data_folder = f"STOKES{self.settings['stokes']}_SELAVY"
             if self.corrected_data:
                 data_folder += "_CORRECTED"
+            if self.post_processed_data:
+                data_folder += "_PROCESSED"
 
             selavy_folder = Path(
                 self.base_folder,
@@ -1798,11 +2112,17 @@ class Query:
                 selavy_file_fmt = selavy_file_fmt.replace(".xml",
                                                           ".corrected.xml"
                                                           )
+            if self.post_processed_data:
+                selavy_file_fmt = selavy_file_fmt.replace(".xml",
+                                                          ".processed.xml"
+                                                          )
 
             selavy_path = selavy_folder / selavy_file_fmt
 
             # Some epochs don't have .conv.
             if not selavy_path.is_file():
+                self.logger.debug(f"{selavy_path} is not a file...")
+                self.logger.debug(f"Removing '.conv' from filename")
                 selavy_path = Path(str(selavy_path).replace('.conv', ''))
 
         else:
@@ -1859,6 +2179,12 @@ class Query:
                 image_file_fmt = image_file_fmt.replace(".fits",
                                                         ".corrected.fits"
                                                         )
+            if self.post_processed_data:
+                img_dir += "_PROCESSED"
+                rms_dir += "_PROCESSED"
+                image_file_fmt = image_file_fmt.replace(".fits",
+                                                        ".processed.fits"
+                                                        )
             rms_file_fmt = f"noiseMap.{image_file_fmt}"
 
         else:
@@ -1893,17 +2219,16 @@ class Query:
             rms_dir,
             rms_file_fmt
         ))
-        
+
         if not image_file.is_file():
             conv_image_file = Path(str(image_file).replace('.restored',
                                                            '.restored.conv')
-                                                           )
+                                   )
             if conv_image_file.is_file():
                 image_file = conv_image_file
-                rms_file = Path(str(image_file).replace('.restored',
-                                                        '.restored.conv')
-                                                        )
-
+                rms_file = Path(str(rms_file).replace('.restored',
+                                                      '.restored.conv')
+                                )
 
         return selavy_file, str(image_file), str(rms_file)
 
@@ -1988,14 +2313,15 @@ class Query:
         Raises:
             Exception: No sources are found within the requested footprint.
         """
-        self.logger.info(
-            "Matching queried sources to VAST Pilot fields..."
-        )
 
         if self.racs:
             base_fc = 'RACS'
         else:
             base_fc = 'VAST'
+
+        self.logger.info(
+            f"Matching queried sources to {base_fc} fields..."
+        )
 
         base_epoch = BASE_EPOCHS[base_fc]
 
@@ -2014,7 +2340,7 @@ class Query:
 
         # if RACS is being use we convert all the names to 'VAST'
         # to match the VAST field names, makes matching easier.
-        if self.racs:
+        if base_fc != 'VAST':
             field_centres['field'] = [
                 f.replace("RACS", "VAST") for f in field_centres.field
             ]
@@ -2058,11 +2384,14 @@ class Query:
                     meta=meta,
                     axis=1,
                     result_type='expand'
-                ).compute(num_workers=self.ncpu, scheduler='processes')
+                ).compute(num_workers=self.ncpu,
+                          scheduler=self.settings['scheduler']
+                          )
             )
 
             self.logger.debug("Finished field matching.")
             self.fields_df = self.fields_df.dropna()
+
             if self.fields_df.empty:
                 raise Exception(
                     "No requested sources are within the requested footprint!")
@@ -2071,10 +2400,12 @@ class Query:
                 'field_per_epoch'
             ).reset_index(drop=True)
 
+            field_per_epoch = self.fields_df['field_per_epoch'].tolist()
+
             self.fields_df[
                 ['epoch', 'field', 'sbid', 'dateobs', 'frequency']
             ] = pd.DataFrame(
-                self.fields_df['field_per_epoch'].tolist(),
+                field_per_epoch,
                 index=self.fields_df.index
             )
 
@@ -2085,7 +2416,8 @@ class Query:
                 'dates',
                 'freqs'
             ]
-
+            self.logger.debug(self.fields_df['name'])
+            self.logger.debug(self.fields_df['dateobs'])
             self.fields_df = self.fields_df.drop(
                 labels=to_drop, axis=1
             ).sort_values(
@@ -2098,7 +2430,7 @@ class Query:
 
         # Handle Planets
         if len(self.planets) > 0:
-            self.logger.info(self.planets)
+            self.logger.debug(f"Searching for planets: {self.planets}")
             planet_fields = self._search_planets()
 
             if self.fields_df is None:
@@ -2122,15 +2454,13 @@ class Query:
 
         if self.racs:
             self.logger.info(
-                "%i/%i sources in RACS & VAST Pilot footprint.",
-                self.num_sources_searched,
-                prev_num
+                f"{self.num_sources_searched}/{prev_num} "
+                "sources in RACS & VAST footprint."
             )
         else:
             self.logger.info(
-                "%i/%i sources in VAST Pilot footprint.",
-                self.num_sources_searched,
-                prev_num
+                f"{self.num_sources_searched}/{prev_num} "
+                "sources in VAST footprint."
             )
 
         self.fields_df['dateobs'] = pd.to_datetime(
@@ -2173,29 +2503,31 @@ class Query:
             Tuple containing the field information.
         """
 
+        self.logger.debug("Running field matching with following row info:")
+        self.logger.debug(row)
+        self.logger.debug("Field names:")
+        self.logger.debug(fields_names)
+
         seps = row.skycoord.separation(fields_coords)
         accept = seps.deg < self.settings['max_sep']
         fields = np.unique(fields_names[accept])
-        if self.racs:
+
+        if self.racs or self.vast_full:
             vast_fields = np.array(
                 [f.replace("RACS", "VAST") for f in fields]
             )
 
         if fields.shape[0] == 0:
-            if self.racs:
-                self.logger.info(
-                    "Source '%s' not in RACS & VAST Pilot footprint.",
-                    row['name']
-                )
-            else:
-                self.logger.info(
-                    "Source '%s' not in VAST Pilot footprint.",
-                    row['name']
-                )
-            return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
+            self.logger.info(
+                f"Source '{row['name']}' not in the requested epoch footprint."
+            )
+            return_vals = [np.nan] * 7  # Return nans in all 7 columns
+            self.logger.debug(return_vals)
+            return return_vals
 
         centre_seps = row.skycoord.separation(field_centres)
         primary_field = field_centre_names.iloc[np.argmin(centre_seps.deg)]
+        self.logger.debug(f"Primary field: {primary_field}")
         epochs = []
         field_per_epochs = []
         sbids = []
@@ -2203,16 +2535,33 @@ class Query:
         freqs = []
 
         for i in self.settings['epochs']:
+            self.logger.debug(f"Epoch {i}")
             if i not in RACS_EPOCHS and self.racs:
+                the_fields = vast_fields
+            elif i not in RACS_EPOCHS and self.vast_full:
                 the_fields = vast_fields
             else:
                 the_fields = fields
 
+            epoch_fields_names = self._epoch_fields.loc[i].index
+            stripped = False
+            if epoch_fields_names[0].endswith('A'):
+                self.logger.debug("Using stripped field names")
+                stripped = True
+                epoch_fields_names = strip_fieldnames(epoch_fields_names)
+            the_fields = list(set([f.rstrip('A') for f in the_fields]))
+
+            self.logger.debug("Fields in epoch: ")
+            self.logger.debug(epoch_fields_names)
+
+            self.logger.debug("The fields: ")
+            self.logger.debug(the_fields)
+
             available_fields = [
-                f for f in the_fields if f in self._epoch_fields.loc[
-                    i
-                ].index.to_list()
+                f for f in the_fields if f in epoch_fields_names.to_list()
             ]
+            self.logger.debug("Available fields:")
+            self.logger.debug(available_fields)
 
             if i in RACS_EPOCHS:
                 available_fields = [
@@ -2220,37 +2569,53 @@ class Query:
                 ]
 
             if len(available_fields) == 0:
+                self.logger.debug("No fields available")
                 continue
 
+            if self.settings['search_all_fields']:
+                selected_fields = available_fields
+
             elif primary_field in available_fields:
-                field = primary_field
+                selected_fields = [primary_field]
+                self.logger.debug("Selecting primary field")
 
             elif len(available_fields) == 1:
-                field = available_fields[0]
+                selected_fields = [available_fields[0]]
+                self.logger.debug("Selecting only available field")
 
             else:
                 field_indexes = [
                     field_centre_names[
-                        field_centre_names == f
+                        field_centre_names == f.rstrip('A')
                     ].index[0] for f in available_fields
                 ]
                 min_field_index = np.argmin(
                     centre_seps[field_indexes].deg
                 )
 
-                field = available_fields[min_field_index]
+                selected_fields = [available_fields[min_field_index]]
+                self.logger.debug("Selecting closest field")
+
+            self.logger.debug(f"Selected fields: {selected_fields}")
 
             # Change VAST back to RACS
             if i in RACS_EPOCHS:
-                field = field.replace("VAST", "RACS")
-            epochs.append(i)
-            sbid = self._epoch_fields.loc[i, field]["SBID"]
-            date = self._epoch_fields.loc[i, field]["DATEOBS"]
-            freq = self._epoch_fields.loc[i, field]["OBS_FREQ"]
-            sbids.append(sbid)
-            dateobs.append(date)
-            freqs.append(freq)
-            field_per_epochs.append([i, field, sbid, date, freq])
+                selected_fields = [f.replace("VAST", "RACS")
+                                   for f in selected_fields
+                                   ]
+            for field in selected_fields:
+                if stripped:
+                    field = f"{field}A"
+                sbid_vals = self._epoch_fields.loc[i, field]["SBID"]
+                date_vals = self._epoch_fields.loc[i, field]["DATEOBS"]
+                freq_vals = self._epoch_fields.loc[i, field]["OBS_FREQ"]
+
+                for sbid, date, freq in zip(sbid_vals, date_vals, freq_vals):
+                    sbids.append(sbid)
+                    dateobs.append(date)
+                    freqs.append(freq)
+                    epochs.append(i)
+                    field_per_epochs.append([i, field, sbid, date, freq])
 
         return_vals = (fields,
                        primary_field,
@@ -2260,6 +2625,9 @@ class Query:
                        dateobs,
                        freqs
                        )
+        # If len(available_fields) == 0 for all epochs need to return nan
+        if len(epochs) == 0:
+            return [np.nan] * 7  # Return nans in all 7 columns
 
         return return_vals
 
@@ -2274,11 +2642,13 @@ class Query:
         field_centres = load_field_centres()
 
         planet_epoch_fields = self._epoch_fields.loc[epochs].reset_index()
+        stripped_field_names = planet_epoch_fields.FIELD_NAME.str.rstrip('A')
+        planet_epoch_fields['STRIPPED_FIELD_NAME'] = stripped_field_names
 
         planet_epoch_fields = planet_epoch_fields.merge(
-            field_centres, left_on='FIELD_NAME',
+            field_centres, left_on='STRIPPED_FIELD_NAME',
             right_on='field', how='left'
-        ).drop('field', axis=1).rename(
+        ).drop(['field', 'OBS_FREQ', 'STRIPPED_FIELD_NAME'], axis=1).rename(
             columns={'EPOCH': 'epoch'}
         )
 
@@ -2317,7 +2687,9 @@ class Query:
             .apply(
                 match_planet_to_field,
                 meta=meta,
-            ).compute(num_workers=self.ncpu, scheduler='processes')
+            ).compute(num_workers=self.ncpu,
+                      scheduler=self.settings['scheduler']
+                      )
         )
 
         results = results.reset_index(drop=True).drop(
@@ -2347,10 +2719,13 @@ class Query:
         Returns:
             Catalogue of source positions.
         """
+        self.logger.debug("Building catalogue")
+
         cols = ['ra', 'dec', 'name', 'skycoord', 'stokes']
 
-        if '0' in self.settings['epochs']:
-            mask = self.coords.dec.deg > 42
+        if self.racs:
+            self.logger.debug("Using RACS footprint for masking")
+            mask = self.coords.dec.deg > 50
 
             if mask.any():
                 self.logger.warning(
@@ -2360,18 +2735,34 @@ class Query:
                 self.source_names = self.source_names[~mask]
         else:
             mocs = VASTMOCS()
-            vast_pilot_moc = mocs.load_pilot_epoch_moc('1')
-            mask = vast_pilot_moc.contains(
+
+            pilot = self.vast_p1 or self.vast_p2
+
+            if pilot:
+                self.logger.debug("Using VAST pilot footprint for masking")
+                footprint_moc = mocs.load_survey_footprint('pilot')
+
+            if self.vast_full:
+                self.logger.debug("Using full VAST footprint for masking")
+                full_moc = mocs.load_survey_footprint('full')
+                if pilot:
+                    footprint_moc = footprint_moc.union(full_moc)
+                else:
+                    footprint_moc = full_moc
+
+            self.logger.debug("Masking sources outside footprint")
+            mask = footprint_moc.contains(
                 self.coords.ra, self.coords.dec, keep_inside=False
             )
             if mask.any():
                 self.logger.warning(
-                    "Removing %i sources outside"
-                    " the VAST Pilot Footprint", sum(mask)
+                    f"Removing {sum(mask)} sources outside the requested "
+                    f"survey footprint."
                 )
                 self.coords = self.coords[~mask]
                 self.source_names = self.source_names[~mask]
 
+        self.logger.debug("Generating catalog dataframe")
         if self.coords.shape == ():
             catalog = pd.DataFrame(
                 [[
@@ -2393,13 +2784,14 @@ class Query:
             catalog['stokes'] = self.settings['stokes']
 
         if self.simbad_names is not None:
+            self.logger.debug("Handling SIMBAD naming")
             self.simbad_names = self.simbad_names[~mask]
             catalog['simbad_name'] = self.simbad_names
 
         return catalog
 
     def _get_epochs(self,
-                    req_epochs: Union[str, List[str]]
+                    req_epochs: Union[str, List[str], List[int]]
                     ) -> List[str]:
         """
         Parse the list of epochs to query.
@@ -2409,6 +2801,9 @@ class Query:
 
         Returns:
             Epochs to query, as a list of strings.
+
+        Raises:
+            QueryInitError: None of the requested epochs are available
         """
 
         epoch_dict = RELEASED_EPOCHS.copy()
@@ -2427,42 +2822,33 @@ class Query:
                     epochs.remove(racs_epoch)
         else:
             epochs = []
-            if type(req_epochs) == list:
+            if isinstance(req_epochs, list):
                 epoch_iter = req_epochs
+            elif isinstance(req_epochs, int):
+                epoch_iter = [req_epochs]
             else:
                 epoch_iter = req_epochs.split(',')
 
-            for epoch in req_epochs.split(','):
+            for epoch in epoch_iter:
+                if isinstance(epoch, int):
+                    epoch = str(epoch)
                 if epoch in available_epochs:
                     epochs.append(epoch)
                 else:
-                    if self.logger is None:
-                        self.logger.info(
-                            "Epoch {} is not available. Ignoring.".format(
-                                epoch
-                            )
-                        )
+                    epoch_x = f"{epoch}x"
+                    self.logger.debug(
+                        f"Epoch {epoch} is not available. Trying {epoch_x}"
+                    )
+                    if epoch_x in available_epochs:
+                        epochs.append(epoch_x)
+                        self.logger.debug(f"Epoch {epoch_x} available.")
                     else:
-                        warnings.warn(
-                            "Removing Epoch {} as it"
-                            " is not a valid epoch.".format(epoch),
-                            stacklevel=2
+                        self.logger.info(
+                            f"Epoch {epoch_x} is not available."
                         )
 
-        # RACS check
-        self.racs = False
-        for racs_epoch in RACS_EPOCHS:
-            if racs_epoch in epochs:
-                epoch_str = "EPOCH{}".format(racs_epoch.zfill(2))
-                exists = os.path.isdir(os.path.join(self.base_folder,
-                                                    epoch_str)
-                                       )
-                if not exists:
-                    self.logger.warning(
-                        'RACS {} directory not found!'.format(epoch_str)
-                    )
-                else:
-                    self.racs = True
+        # survey check
+        self._check_survey(epochs)
 
         if self.racs:
             self.logger.warning('RACS data selected!')
@@ -2472,10 +2858,43 @@ class Query:
             )
 
         if len(epochs) == 0:
-            self.logger.critical("No requested epochs are available")
-            sys.exit()
+            raise QueryInitError(
+                "None of the requested epochs are available"
+            )
 
         return epochs
+
+    def _check_survey(self, epochs: list) -> None:
+        """
+        Check which surveys are being queried (e.g. RACS, pilot/full VAST).
+
+        Args:
+            epochs: Requested epochs to query
+        """
+
+        self.racs = False
+        self.vast_p1 = False
+        self.vast_p2 = False
+        self.vast_full = False
+
+        non_full_epochs = RACS_EPOCHS + P1_EPOCHS + P2_EPOCHS
+        all_epochs = RELEASED_EPOCHS.keys()
+        full_epochs = set(all_epochs) - set(non_full_epochs)
+
+        epochs_set = set(epochs)
+        if len(epochs_set & set(RACS_EPOCHS)) > 0:
+            self.racs = True
+        if len(epochs_set & set(P1_EPOCHS)) > 0:
+            self.vast_p1 = True
+        if len(epochs_set & set(P2_EPOCHS)) > 0:
+            self.vast_p2 = True
+        if len(epochs_set & set(full_epochs)) > 0:
+            self.vast_full = True
+
+        self.logger.debug(f"self.racs: {self.racs}")
+        self.logger.debug(f"self.vast_p1: {self.vast_p1}")
+        self.logger.debug(f"self.vast_p2: {self.vast_p2}")
+        self.logger.debug(f"self.vast_full: {self.vast_full}")
 
     def _get_stokes(self, req_stokes: str) -> str:
         """
