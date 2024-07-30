@@ -1576,8 +1576,6 @@ class TestPipeAnalysis:
             None
         """
         result = dummy_PipeAnalysis.filter_by_moc(filter_moc)
-        
-        print(result)
 
         assert result.sources.shape[0] == 2
         assert result.measurements.shape[0] == 10
