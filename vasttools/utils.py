@@ -718,7 +718,7 @@ def strip_fieldnames(fieldnames: pd.Series) -> pd.Series:
 def open_fits(
     fits_path: Union[str, Path],
     memmap: Optional[bool] = True
-)-> fits.HDUList:
+) -> fits.HDUList:
     """
     This function opens both compressed and uncompressed fits files.
 
