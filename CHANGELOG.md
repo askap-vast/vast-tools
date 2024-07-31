@@ -8,11 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Added
 
-- Support python 3.10 [#334](https://github.com/askap-vast/vast-tools/pull/334)
+- Test python 3.10 [#334](https://github.com/askap-vast/vast-tools/pull/334)
 
 #### Changed
 
 - Minor changes for matplotlib 3.7: add angle kwarg to Ellipse and change matplotlib.pyplot.cm.get_cmap to matplotlib.colormaps.get_cmap [#334](https://github.com/askap-vast/vast-tools/pull/334)
+- Refreshed dependencies - major changes are python 3.10, mkdocs (and related packages), astropy v5 and matplotlib v3.7 [#334](https://github.com/askap-vast/vast-tools/pull/334)
 - Update emoji names to reflect latest fontawesome naming scheme[#334](https://github.com/askap-vast/vast-tools/pull/334)
 - Fixed minor typos in docs and docstrings [#334](https://github.com/askap-vast/vast-tools/pull/334)
 - Updated old contact information [#334](https://github.com/askap-vast/vast-tools/pull/334)
@@ -24,7 +25,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Removed
 
-- Removed lightgallery from docs [#334](https://github.com/askap-vast/vast-tools/pull/334)
+- Removed lightgallery functionality from docs [#334](https://github.com/askap-vast/vast-tools/pull/334)
 
 #### List of PRs
 
