@@ -12,6 +12,9 @@ dev_addr: localhost:8008
 docs_dir: docs
 site_dir: docs_build
 
+watch:
+    - vasttools
+
 theme:
   name: material
   favicon: img/favicon.png
@@ -59,13 +62,13 @@ markdown_extensions:
   - pymdownx.highlight
   - pymdownx.tabbed
   - pymdownx.emoji:
-      emoji_index: !!python/name:materialx.emoji.twemoji
-      emoji_generator: !!python/name:materialx.emoji.to_svg
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - toc:
       toc_depth: 4
       permalink: true
   - codehilite
-  - lightgallery
+#  - lightgallery
 
 nav:
   - Home: index.md
@@ -141,8 +144,6 @@ plugins:
             show_source: true
           setup_commands:
             - "import os"
-      watch:
-        - vasttools
   - mknotebooks
 
 extra:
