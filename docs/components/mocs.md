@@ -55,7 +55,7 @@ The following methods are available with the `VASTMOCS` class.
 
 #### load_pilot_tile_moc
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/moc/#vasttools.moc.VASTMOCS.load_pilot_tile_moc).
+:fontawesome-regular-file-lines: [Code reference](../../reference/moc/#vasttools.moc.VASTMOCS.load_pilot_tile_moc).
 
 This loads the MOC of a single tile, returning a `mocpy.MOC` instance.
 
@@ -67,7 +67,7 @@ This loads the MOC of a single tile, returning a `mocpy.MOC` instance.
 
 #### load_pilot_field_moc
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/moc/#vasttools.moc.VASTMOCS.load_pilot_field_moc).
+:fontawesome-regular-file-lines: [Code reference](../../reference/moc/#vasttools.moc.VASTMOCS.load_pilot_field_moc).
 
 This loads the MOC of a VAST pilot survey field, returning a `mocpy.MOC` instance.
 
@@ -79,7 +79,7 @@ This loads the MOC of a VAST pilot survey field, returning a `mocpy.MOC` instanc
 
 #### load_pilot_epoch_moc
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/moc/#vasttools.moc.VASTMOCS.load_pilot_epoch_moc).
+:fontawesome-regular-file-lines: [Code reference](../../reference/moc/#vasttools.moc.VASTMOCS.load_pilot_epoch_moc).
 
 This loads the MOC of a VAST pilot survey epoch, returning a `mocpy.MOC` instance.
 Enter as string with no zero padding on the epoch.
@@ -92,7 +92,7 @@ Enter as string with no zero padding on the epoch.
 
 #### load_pilot_stmoc
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/moc/#vasttools.moc.VASTMOCS.load_pilot_stmoc).
+:fontawesome-regular-file-lines: [Code reference](../../reference/moc/#vasttools.moc.VASTMOCS.load_pilot_stmoc).
 
 This loads the STMOC of all the VAST pilot observations, returning a `mocpy.MOC` instance.
 
@@ -104,7 +104,7 @@ This loads the STMOC of all the VAST pilot observations, returning a `mocpy.MOC`
 
 #### load_survey_footprint
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/moc/#vasttools.moc.VASTMOCS.load_survey_footprint).
+:fontawesome-regular-file-lines: [Code reference](../../reference/moc/#vasttools.moc.VASTMOCS.load_survey_footprint).
 
 This loads a MOC of the footprint of either the pilot or full VAST survey.
 
@@ -117,7 +117,7 @@ This loads a MOC of the footprint of either the pilot or full VAST survey.
 
 #### query_vizier_vast_pilot
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/moc/#vasttools.moc.VASTMOCS.query_vizier_vast_pilot).
+:fontawesome-regular-file-lines: [Code reference](../../reference/moc/#vasttools.moc.VASTMOCS.query_vizier_vast_pilot).
 
 This searches the provided Vizier table for sources that are in the VAST pilot survey epoch 1 footprint, returning a `astropy.table.Table` instance.
 

@@ -8,12 +8,12 @@ The `Tools` sub-package is a mishmash of useful VAST-related functions that do n
   
 ## Using the Tools Component
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/tools).  
+:fontawesome-regular-file-lines: [Code reference](../../reference/tools).  
 
 ### Skymaps and MOCs
 
 #### skymap2moc
-:fontawesome-regular-file-alt: [Code reference](../../reference/tools/#vasttools.tools.skymap2moc).
+:fontawesome-regular-file-lines: [Code reference](../../reference/tools/#vasttools.tools.skymap2moc).
 
 This function returns a MOC of the credible level of a provided skymap.
 The arguments to this function are the path to the skymap file and the requested credible region.
@@ -26,7 +26,7 @@ The arguments to this function are the path to the skymap file and the requested
     ```
 
 #### find_in_moc
-:fontawesome-regular-file-alt: [Code reference](../../reference/tools/#vasttools.tools.find_in_moc).
+:fontawesome-regular-file-lines: [Code reference](../../reference/tools/#vasttools.tools.find_in_moc).
 
 This function returns the indices of sources that are contained within a given MOC, so that source catalogues can be filtered by sky region.
 The arguments to this function are the MOC, the source DataFrame and an optional bool flagging whether the source dataframe is from the pipeline.
@@ -44,7 +44,7 @@ The value returned is a numpy array.
     ```
     
 #### add_credible_levels
-:fontawesome-regular-file-alt: [Code reference](../../reference/tools/#vasttools.tools.add_credible_levels).
+:fontawesome-regular-file-lines: [Code reference](../../reference/tools/#vasttools.tools.add_credible_levels).
 
 This function calculates the smallest credible region a source is contained in and adds it as a column, named `credible_level`, to the source dataframe in-place.
 The arguments to this function are the path to the skymap file, the source DataFrame and an optional bool flagging whether the dataframe is from the pipeline.
@@ -67,7 +67,7 @@ The arguments to this function are the path to the skymap file, the source DataF
     See the [Data Access](../../getting_started/configuration/#data-access) page for details.
 
 #### create_fields_metadata
-:fontawesome-regular-file-alt: [Code reference](../../reference/tools/#vasttools.tools.create_fields_csv).
+:fontawesome-regular-file-lines: [Code reference](../../reference/tools/#vasttools.tools.create_fields_csv).
 
 This function creates a fields csv file and a `SkyCoord` pickle for a given epoch using data from the [`ASKAP_SURVEYS`](https://bitbucket.csiro.au/projects/ASKAP_SURVEYS/repos/vast/browse){:target="_blank"} repository, which must be downloaded separately.
 The arguments to this function are the epoch, the path to the repository and the path to the output directory, which defaults to the current directory.
@@ -80,7 +80,7 @@ The arguments to this function are the epoch, the path to the repository and the
     ```
 
 #### add_obs_date
-:fontawesome-regular-file-alt: [Code reference](../../reference/tools/#vasttools.tools.add_obs_date).
+:fontawesome-regular-file-lines: [Code reference](../../reference/tools/#vasttools.tools.add_obs_date).
 
 This function adds datetime data to all fits files in a given epoch.
 The arguments to this function are the epoch, the image directory and the path to the epoch directory. If the path to the epoch directory is not provided it is generated from the `VAST_DATA_DIR` environment variable and the requested epoch.
@@ -93,7 +93,7 @@ The arguments to this function are the epoch, the image directory and the path t
     ```
 
 #### gen_mocs_image
-:fontawesome-regular-file-alt: [Code reference](../../reference/tools/#vasttools.tools.gen_mocs_image).
+:fontawesome-regular-file-lines: [Code reference](../../reference/tools/#vasttools.tools.gen_mocs_image).
 
 This function creates a MOC and STMOC from a single fits image. It is unlikely that users would ever have to call this directly, and it should instead be called as part of [`gen_mocs_epoch`](./gen_mocs_epoch).
 The arguments to this function are the path to the fits file, whether to write the MOC/STMOC to file or simply return them, and the directory to write them to.
@@ -106,7 +106,7 @@ The arguments to this function are the path to the fits file, whether to write t
     ```
 
 #### gen_mocs_epoch
-:fontawesome-regular-file-alt: [Code reference](../../reference/tools/#vasttools.tools.gen_mocs_epoch).
+:fontawesome-regular-file-lines: [Code reference](../../reference/tools/#vasttools.tools.gen_mocs_epoch).
 
 This function creates all MOCs and STMOCs for the provided epoch, and a new complete Pilot STMOC. It *should not* be run in the `vasttools/data/mocs` directory. Instead, users should run it in a separate directory, check the output and then manually copy the files across.
 The arguments to this function is the path to the fits file.
@@ -121,7 +121,7 @@ The arguments to this function is the path to the fits file.
 ### Plotting niceties
 
 #### offset_postagestamp_axes
-:fontawesome-regular-file-alt: [Code reference](../../reference/tools/#vasttools.tools.offset_postagestamp_axes).
+:fontawesome-regular-file-lines: [Code reference](../../reference/tools/#vasttools.tools.offset_postagestamp_axes).
 
 This function updates a figure to display the axis labels as offsets from a central coordinate, rather than in absolute Right Ascension and Declination.
 The required arguments to this function are the axis and the central coordinate. Refer to the Code Reference for information on all other the arguments.
@@ -147,7 +147,7 @@ The required arguments to this function are the axis and the central coordinate.
 
 #### wise_color_color_plot
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/tools/#vasttools.tools.wise_color_color_plot).
+:fontawesome-regular-file-lines: [Code reference](../../reference/tools/#vasttools.tools.wise_color_color_plot).
 
 This function returns a WISE color-color figure with common object classification regions
 drawn as patches. A set of default object classes are provided, see

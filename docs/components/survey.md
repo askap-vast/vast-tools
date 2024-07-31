@@ -13,13 +13,13 @@ The `Survey` component also contains two classes `Fields` and `Image` that may b
 
 ## Using the Survey Component
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/survey).
+:fontawesome-regular-file-lines: [Code reference](../../reference/survey).
 
 ### Survey Component Functions
 
 #### get_askap_observing_location
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/survey/#vasttools.survey.get_askap_observing_location).
+:fontawesome-regular-file-lines: [Code reference](../../reference/survey/#vasttools.survey.get_askap_observing_location).
 
 This function returns the location of the ASKAP telescope in the form of an [astropy EarthLocation instance](https://docs.astropy.org/en/stable/api/astropy.coordinates.EarthLocation.html){:target="_blank"}.
 There are no arguments available to the function.
@@ -37,7 +37,7 @@ The values returned are the longitude, latitude and height.
 
 #### get_fields_per_epoch_info
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/survey/#vasttools.survey.get_fields_per_epoch_info).
+:fontawesome-regular-file-lines: [Code reference](../../reference/survey/#vasttools.survey.get_fields_per_epoch_info).
 
 This function returns a pandas dataframe containing the field that are present in each epoch along with the SBID value and the date of the observation.
 There are no arguments available to the function.
@@ -75,7 +75,7 @@ There are no arguments available to the function.
 
 #### get_supported_epochs
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/survey/#vasttools.survey.get_supported_epochs).
+:fontawesome-regular-file-lines: [Code reference](../../reference/survey/#vasttools.survey.get_supported_epochs).
 
 Returns a list of the currently supported VAST Pilot Survey epochs.
 
@@ -92,7 +92,7 @@ Returns a list of the currently supported VAST Pilot Survey epochs.
 
 #### load_field_centres
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/survey/#vasttools.survey.load_field_centres).
+:fontawesome-regular-file-lines: [Code reference](../../reference/survey/#vasttools.survey.load_field_centres).
 
 Returns a pandas dataframe containing three columns: 
 
@@ -120,7 +120,7 @@ Returns a pandas dataframe containing three columns:
     | 1015 | RACS_2359-43A |   0.00902694  | -43.8906     |
 
 #### load_fields_skycoords
-:fontawesome-regular-file-alt: [Code reference](../../reference/survey/#vasttools.survey.load_fields_skycoords).
+:fontawesome-regular-file-lines: [Code reference](../../reference/survey/#vasttools.survey.load_fields_skycoords).
 
 Ths function allows the user to load `SkyCoord` objects for all beam centres for a given epoch.
 
@@ -133,7 +133,7 @@ Ths function allows the user to load `SkyCoord` objects for all beam centres for
 
 #### load_fields_file
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/survey/#vasttools.survey.load_fields_file).
+:fontawesome-regular-file-lines: [Code reference](../../reference/survey/#vasttools.survey.load_fields_file).
 
 This function allows the user to load the packaged field information file of the requested epoch as a pandas dataframe.
 The included columns are:
@@ -171,7 +171,7 @@ The included columns are:
     The `Fields` class is not intended for custom user usage and is designed to help internal processes.
     However it is detailed here as it may prove useful in some situations and during development.
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/survey/#vasttools.survey.Fields).
+:fontawesome-regular-file-lines: [Code reference](../../reference/survey/#vasttools.survey.Fields).
 
 The `Fields` class is designed to act as a representation of the fields contained in an epoch.
 It is primarily used by the `Query` component to perform the act of finding matches to provided sky coordinates.
@@ -179,7 +179,7 @@ The class holds details of the fields at the individual beam level rather than t
 
 #### Initialising a Fields Instance
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/survey/#vasttools.survey.Fields.__init__).
+:fontawesome-regular-file-lines: [Code reference](../../reference/survey/#vasttools.survey.Fields.__init__).
 
 A `Fields` instance is initialised by declaring the epoch that is wanted to be represented.
 This is demonstrated below.
@@ -194,7 +194,7 @@ This is demonstrated below.
 
 #### Fields Attributes
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/survey/#vasttools.survey.Fields)
+:fontawesome-regular-file-lines: [Code reference](../../reference/survey/#vasttools.survey.Fields)
 
 The following attributes are available on a `Fields` instance.
 
@@ -251,13 +251,13 @@ An astropy [`SkyCoord`](https://docs.astropy.org/en/stable/api/astropy.coordinat
     The `Image` class is not intended for custom user usage and is designed to help internal processes.
     However it is detailed here as it may prove useful in some situations and during development.
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/survey/#vasttools.survey.Image).
+:fontawesome-regular-file-lines: [Code reference](../../reference/survey/#vasttools.survey.Image).
 
 The `Image` class provides a template of representing an individual ASKAP image, allowing for easy access to properties and common tasks.
 
 #### Initialising an Image Instance
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/survey/#vasttools.survey.Image.__init__).
+:fontawesome-regular-file-lines: [Code reference](../../reference/survey/#vasttools.survey.Image.__init__).
 
 !!! warning "Warning: Pilot Survey Assumption"
     By default the class was written to load images from the VAST Pilot Survey.
