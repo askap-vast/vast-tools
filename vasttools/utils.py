@@ -714,17 +714,21 @@ def strip_fieldnames(fieldnames: pd.Series) -> pd.Series:
 
     return fieldnames.str.rstrip('A')
 
-def open_fits(fits_path: Union[str, Path], memmap: Optional[bool]=True):
+
+def open_fits(
+    fits_path: Union[str, Path],
+    memmap: Optional[bool] = True
+)-> fits.HDUList:
     """
     This function opens both compressed and uncompressed fits files.
-    
+
     Args:
         fits_path: Path to the fits file
         memmap: Open the fits file with mmap.
-    
+
     Returns:
         HDUList loaded from the fits file
-    
+
     Raises:
         ValueError: File extension must be .fits or .fits.fz
     """
