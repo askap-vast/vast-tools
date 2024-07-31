@@ -8,16 +8,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Added
 
+- Support python 3.10 [#334](https://github.com/askap-vast/vast-tools/pull/334)
+
 #### Changed
 
+- Minor changes for matplotlib 3.7: add angle kwarg to Ellipse and change matplotlib.pyplot.cm.get_cmap to matplotlib.colormaps.get_cmap [#334](https://github.com/askap-vast/vast-tools/pull/334)
+- Update emoji names to reflect latest fontawesome naming scheme[#334](https://github.com/askap-vast/vast-tools/pull/334)
+- Fixed minor typos in docs and docstrings [#334](https://github.com/askap-vast/vast-tools/pull/334)
+- Updated old contact information [#334](https://github.com/askap-vast/vast-tools/pull/334)
 - Updated 2023 workshop notebook - fixed Query options and general cleanup [#558](https://github.com/askap-vast/vast-tools/pull/558)
 
 #### Fixed
 
+- Directly compare stmoc times, avoiding conversion to JD, and replace equality requirement with `isclose` [#334](https://github.com/askap-vast/vast-tools/pull/334)
+
 #### Removed
+
+- Removed lightgallery from docs [#334](https://github.com/askap-vast/vast-tools/pull/334)
 
 #### List of PRs
 
+- [#334](https://github.com/askap-vast/vast-tools/pull/334): fix, docs, feat: Dependency refresh including python 3.10 support and corresponding minor updates
 - [#558](https://github.com/askap-vast/vast-tools/pull/558): docs: Updated 2023 workshop notebook - fixed Query options and general cleanup
 
 
