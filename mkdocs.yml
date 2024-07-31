@@ -68,7 +68,6 @@ markdown_extensions:
       toc_depth: 4
       permalink: true
   - codehilite
-#  - lightgallery
 
 nav:
   - Home: index.md
