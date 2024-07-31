@@ -43,7 +43,7 @@ mkdocs-material = "^9.4"
 mkdocstrings = {version="^0.24", extras = ["python-legacy"]}
 mkdocs-minify-plugin = "^0.4.1"
 mkdocs-material-extensions = "^1.0.3"
-mkdocs-gen-files = "^0.3.3"
+mkdocs-gen-files = "^0.5"
 mknotebooks = "^0.8"
 Pygments = "^2.15.0"
 lightgallery = "^0.5"
