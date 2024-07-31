@@ -10,11 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Changed
 
+- Updated 2023 workshop notebook - fixed Query options and general cleanup [#558](https://github.com/askap-vast/vast-tools/pull/558)
+
 #### Fixed
 
 #### Removed
 
 #### List of PRs
+
+- [#558](https://github.com/askap-vast/vast-tools/pull/558): docs: Updated 2023 workshop notebook - fixed Query options and general cleanup
 
 
 ## [3.1.1](https://github.com/askap-vast/vast-tools/releases/v3.1.1) (2024-07-30)
