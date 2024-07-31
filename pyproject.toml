@@ -34,20 +34,20 @@ svgpath2mpl = "^1.0.0"
 setuptools = "^70.0.0"
 pydantic = "<2.0.0"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 ipdb = "^0.13.6"
 jupyterlab = "^3.6.7"
 jupyterlab-execute-time = "^2.0.2"
 jupyterlab-system-monitor = "^0.8.0"
-mkdocs-material = "^8.2.4"
-mkdocstrings = {version = "^0.18", extras = ["python-legacy"]}
+mkdocs-material = "^9.4"
+mkdocstrings = {version="^0.24", extras = ["python-legacy"]}
 mkdocs-minify-plugin = "^0.4.1"
 mkdocs-material-extensions = "^1.0.3"
 mkdocs-gen-files = "^0.3.3"
-mknotebooks = "^0.7.1"
+mknotebooks = "^0.8"
 Pygments = "^2.15.0"
 lightgallery = "^0.5"
-mkdocs-git-revision-date-localized-plugin = "^0.10.0"
+mkdocs-git-revision-date-localized-plugin = "^1.2"
 pytest = "^7.0.0"
 pytest-mock = "^3.6.1"
 autopep8 = "^1.5.7"
