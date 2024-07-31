@@ -2514,7 +2514,7 @@ class Query:
 
         if self.racs or self.vast_full:
             vast_fields = np.array(
-                [f.replace("RACS", "VAST") for f in fields],
+                [f.replace("RACS", "VAST") for f in fields]
             )
 
         if fields.shape[0] == 0:
