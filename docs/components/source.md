@@ -324,13 +324,13 @@ There are a wide variety of options that can style the output plot, please refer
 :fontawesome-regular-file-alt: [Code reference](../../reference/source/#vasttools.source.Source.save_all_ann).
 
 A method to save the [kvis annotation files](https://www.atnf.csiro.au/computing/software/karma/user-manual/node17.html){:target="_blank"} for all epochs.
-Refer to the method [`write_ann`](#write-ann) for saving the annotation file for an individual epoch.
+Refer to the method [`write_ann`](#write_ann) for saving the annotation file for an individual epoch.
 The target source and all surrounding sources are included.
 The files will be saved to the directory specified by the argument `outdir` in the instancing of the `Source`.
 If this was not provided the default location is the current directory.
 
 !!! note "Note: Change Cutout Size"
-    To change the size of the cutout, re-fetch the cutout data using the [`get_cutout_data`](#get-cutout-data) method.
+    To change the size of the cutout, re-fetch the cutout data using the [`get_cutout_data`](#get_cutout_data) method.
 
 !!! example
     ```python
@@ -342,7 +342,7 @@ If this was not provided the default location is the current directory.
 :fontawesome-regular-file-alt: [Code reference](../../reference/source/#vasttools.source.Source.save_all_fits_cutouts).
 
 A method to save the cutouts (or postage stamps) of each epoch as individual FITS files.
-Refer to the method [`save_fits_cutout`](#save-fits-cutout) for saving the FITS of an individual epoch.
+Refer to the method [`save_fits_cutout`](#save_fits_cutout) for saving the FITS of an individual epoch.
 The FITS files will be saved to the directory specified by the argument `outdir` in the instancing of the `Source`.
 If this was not provided the default location is the current directory.
 
@@ -364,7 +364,7 @@ If this was not provided the default location is the current directory.
 :fontawesome-regular-file-alt: [Code reference](../../reference/source/#vasttools.source.Source.save_all_png_cutouts).
 
 A method to save the cutouts (or postage stamps) of each epoch as individual png files.
-Refer to the method [`save_png_cutout`](#save-png-cutout) for saving the png for an individual epoch.
+Refer to the method [`save_png_cutout`](#save_png_cutout) for saving the png for an individual epoch.
 The png files will be saved to the directory specified by the argument `outdir` in the instancing of the `Source`.
 If this was not provided the default location is the current directory.
 
@@ -377,8 +377,8 @@ If this was not provided the default location is the current directory.
     ```
 
 !!! warning
-    This is not an analogous method to [`show_all_png_cutouts`](#show-all-png-cutouts).
-    The method will produce the result from [`save_png_cutout`](#save-png-cutout) but for each epoch.
+    This is not an analogous method to [`show_all_png_cutouts`](#show_all_png_cutouts).
+    The method will produce the result from [`save_png_cutout`](#save_png_cutout) but for each epoch.
     The result from `show_all_png_cutouts` must be saved using the returned figure.
 
 !!! example
@@ -391,13 +391,13 @@ If this was not provided the default location is the current directory.
 :fontawesome-regular-file-alt: [Code reference](../../reference/source/#vasttools.source.Source.save_all_reg).
 
 A method to save the [DS9 region files](https://ds9.si.edu/doc/ref/region.html){:target="_blank"} for all epochs.
-Refer to the method [`write_reg`](#write-reg) for saving the region file for an individual epoch.
+Refer to the method [`write_reg`](#write_reg) for saving the region file for an individual epoch.
 The target source and all surrounding sources are included.
 The files will be saved to the directory specified by the argument `outdir` in the instancing of the `Source`.
 If this was not provided the default location is the current directory.
 
 !!! note "Note: Change Cutout Size"
-    To change the size of the cutout, re-fetch the cutout data using the [`get_cutout_data`](#get-cutout-data) method.
+    To change the size of the cutout, re-fetch the cutout data using the [`get_cutout_data`](#get_cutout_data) method.
 
 !!! example
     ```python
@@ -564,7 +564,7 @@ The file will be saved to the directory specified by the argument `outdir` in th
 If this was not provided the default location is the current directory.
 
 !!! note "Note: Change Cutout Size"
-    To change the size of the cutout, re-fetch the cutout data using the [`get_cutout_data`](#get-cutout-data) method.
+    To change the size of the cutout, re-fetch the cutout data using the [`get_cutout_data`](#get_cutout_data) method.
 
 !!! example
     Save the annotation file for the first observation.
@@ -596,7 +596,7 @@ The file will be saved to the directory specified by the argument `outdir` in th
 If this was not provided the default location is the current directory.
 
 !!! note "Note: Change Cutout Size"
-    To change the size of the cutout, re-fetch the cutout data using the [`get_cutout_data`](#get-cutout-data) method.
+    To change the size of the cutout, re-fetch the cutout data using the [`get_cutout_data`](#get_cutout_data) method.
 
 !!! example
     Save the region file for the first observation.
