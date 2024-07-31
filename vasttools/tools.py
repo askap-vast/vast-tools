@@ -482,7 +482,7 @@ def gen_mocs_image(fits_file: str,
     start = Time([header['DATE-BEG']])
     end = Time([header['DATE-END']])
     stmoc = STMOC.from_spatial_coverages(
-        start, end, [moc], time_depth=61
+        start, end, [moc]
     )
 
     if write:
