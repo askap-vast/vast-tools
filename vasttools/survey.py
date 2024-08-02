@@ -363,9 +363,6 @@ class Image:
         """
         Configure the file names if they have not been provided.
 
-        Args:
-            None
-
         Returns:
             None
         """

@@ -692,7 +692,7 @@ class WisePatchConfig:
             supported by `matplotlib.patches.PathPatch`.
         annotation_text (str): Text to annotate the patch.
         annotation_position (Tuple[float, float]): Position in data coordinates
-        for the annotation text.
+            for the annotation text.
     """
 
     style: Dict[str, Any]

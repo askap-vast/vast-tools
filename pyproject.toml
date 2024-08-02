@@ -40,7 +40,7 @@ jupyterlab = "^3.6.7"
 jupyterlab-execute-time = "^2.0.2"
 jupyterlab-system-monitor = "^0.8.0"
 mkdocs-material = "^9.4"
-mkdocstrings = {version="^0.24", extras = ["python-legacy"]}
+mkdocstrings = {version="^0.25", extras = ["python"]}
 mkdocs-minify-plugin = "^0.4.1"
 mkdocs-material-extensions = "^1.0.3"
 mkdocs-gen-files = "^0.5"
