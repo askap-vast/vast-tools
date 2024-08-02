@@ -184,8 +184,8 @@ class PipeRun(object):
         return measurement_pairs_exists
             
     def combine_with_run(
-        self, other_PipeRun, new_name: Optional[str] = None
-    ):
+        self, other_PipeRun: PipeRun, new_name: Optional[str] = None
+    ) -> PipeRun:
         """
         Combines the output of another PipeRun object with the PipeRun
         from which this method is being called from.
@@ -196,12 +196,12 @@ class PipeRun(object):
             returned.
 
         Args:
-            other_PipeRun (PipeRun): The other pipeline run to merge.
+            other_PipeRun: The other pipeline run to merge.
             new_name: If not None then the PipeRun attribute 'name'
                 is changed to the given value.
 
         Returns:
-            PipeRun: The self object with the other pipeline run added.
+            The self object with the other pipeline run added.
         """
 
         self.images = pd.concat(
@@ -293,8 +293,7 @@ class PipeRun(object):
                 Must be an astropy.unit value.
 
         Returns:
-            Skycoord object of the sources. A
-            `astropy.coordinates.sky_coordinate.SkyCoord` instance.
+            A SkyCoord containing the source coordinates.
         """
         if user_sources is None:
             the_sources = self.sources
@@ -343,7 +342,7 @@ class PipeRun(object):
                 pipeline measurements are used.
 
         Returns:
-            vast tools Source object.
+            A vast-tools `Source` object corresponding to the requested source.
         """
 
         if user_measurements is None:
@@ -630,7 +629,7 @@ class PipeRun(object):
 
         Returns:
             DataFrame with list of planet positions. It will be empty if no
-            planets are found. A `pandas.core.frame.DataFrame` instance.
+                planets are found. A `pandas.core.frame.DataFrame` instance.
         """
         from vasttools import ALLOWED_PLANETS
         ap = ALLOWED_PLANETS.copy()
@@ -717,7 +716,7 @@ class PipeRun(object):
 
         return result
 
-    def filter_by_moc(self, moc: mocpy.MOC):
+    def filter_by_moc(self, moc: mocpy.MOC) -> PipeAnalysis:
         """
         Filters the PipeRun object to only contain the sources that are
         located within the provided moc area.
@@ -726,7 +725,7 @@ class PipeRun(object):
             moc: MOC instance for which to filter the run by.
 
         Returns:
-            PipeAnalysis: new_PipeRun
+            A new `PipeRun` object containing the sources within the MOC.
         """
         source_mask = moc.contains(
             self.sources_skycoord.ra, self.sources_skycoord.dec)
@@ -797,7 +796,7 @@ class PipeRun(object):
                 a large run.
 
         Returns:
-            MOC object.
+            MOC object containing the area covered by the pipeline run.
         """
         images_to_use = self.images.drop_duplicates(
             'skyreg_id'
@@ -2374,8 +2373,8 @@ class PipeAnalysis(PipeRun):
 
         Returns:
             Tuple containing the eta cutoff value, the v cutoff value,
-            dataframe of candidates, candidates plot and, if selected, the
-            diagnostic plot.
+                dataframe of candidates, candidates plot and, if selected, the
+                diagnostic plot.
 
         Raise:
             Exception: Entered `plot_type` is not a valid plot type.

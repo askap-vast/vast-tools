@@ -331,7 +331,7 @@ class Source:
         use_forced_for_all: bool = False,
         hide_legend: bool = False,
         plot_dpi: int = 150
-    ) -> Union[None, plt.Figure]:
+    ) -> Union[None, plt.figure.Figure]:
         """
         Plot source lightcurves and save to file
 
@@ -362,7 +362,7 @@ class Source:
 
         Returns:
             None if save is `True` or the matplotlib figure if save is
-            `False`.
+                `False`.
 
         Raises:
             SourcePlottingError: Source does not have any forced fits when the
@@ -901,7 +901,7 @@ class Source:
             offset_axes: Use offset, rather than absolute, axis labels.
 
         Returns:
-            Figure object.
+            The cutout Figure.
         """
 
         fig = self.make_png(
@@ -1360,7 +1360,7 @@ class Source:
         hide_epoch_labels: bool = False,
         plot_dpi: int = 150,
         offset_axes: bool = True
-    ) -> Union[None, plt.figure]:
+    ) -> Union[None, plt.figure.Figure]:
         """
         Creates a grid plot showing the source in each epoch.
 
@@ -1626,7 +1626,7 @@ class Source:
         size: Optional[Angle] = None,
         force: bool = False,
         plot_dpi: int = 150,
-    ) -> Union[None, plt.figure]:
+    ) -> Union[None, plt.figure.Figure]:
         """
         Fetches a FITS file from SkyView of the requested survey at
         the source location and overlays ASKAP contours.
@@ -1788,7 +1788,7 @@ class Source:
         norms: Optional[ImageNormalize] = None,
         plot_dpi: int = 150,
         offset_axes: bool = True
-    ) -> Union[None, plt.figure]:
+    ) -> Union[None, plt.figure.Figure]:
         """
         Save a PNG of the image postagestamp.
 

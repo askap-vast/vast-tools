@@ -42,6 +42,7 @@ class VASTMOCS(object):
             stmoc_name
         ) as stmoc_path:
             stmoc_path = stmoc_path.resolve()
+            print(stmoc_path)
 
         stmoc = STMOC.from_fits(stmoc_path)
 

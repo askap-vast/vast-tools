@@ -166,6 +166,8 @@ def crosshair() -> None:
     """
     A wrapper function to set the crosshair marker in
     matplotlib using the function written by L. A. Boogaard.
+    
+    See https://stackoverflow.com/a/16655800/5064815.
 
     Returns:
         None
@@ -185,7 +187,7 @@ def check_file(path: str) -> bool:
 
     Returns:
         Boolean representing the file existence, 'True' if present, otherwise
-        'False'.
+            'False'.
     """
     logger = logging.getLogger()
     exists = os.path.isfile(path)
@@ -322,9 +324,11 @@ def read_selavy(
 ) -> pd.DataFrame:
     """
     Load a selavy catalogue from file. Can handle VOTables and csv files.
+
     Args:
         selavy_path: Path to the file.
         cols: Columns to use. Defaults to None, which returns all columns.
+
     Returns:
         Dataframe containing the catalogue.
     """
@@ -444,9 +448,9 @@ def match_planet_to_field(
             planet is considered to be in the field. Unit is degrees.
 
     Returns:
-        The group with planet location information added and
-        filtered for only those which are within 'sep_thresh' degrees. Hence
-        an empty dataframe could be returned.
+        The group with planet location information added and filtered for only
+            those which are within 'sep_thresh' degrees. Hence an empty
+            dataframe could be returned.
     """
 
     if group.empty:
@@ -531,7 +535,7 @@ def gen_skycoord_from_df(
             an astropy.unit value.
 
     Returns:
-        SkyCoord object
+        A SkyCoord object containing the coordinates of the requested sources.
     """
     sc = SkyCoord(
         df[ra_col].values, df[dec_col].values, unit=(ra_unit, dec_unit)
@@ -553,7 +557,7 @@ def pipeline_get_eta_metric(df: pd.DataFrame, peak: bool = False) -> float:
         peak: Whether to use peak flux instead of integrated, defaults to
             False.
 
-    Returns eta:
+    Returns:
         The eta variability metric.
     """
     if df.shape[0] == 1:
@@ -582,7 +586,7 @@ def pipeline_get_variable_metrics(df: pd.DataFrame) -> pd.Series:
 
     Returns:
         The variability metrics, v_int, v_peak, eta_int and eta_peak
-        as a pandas series.
+            as a pandas series.
     """
     d = {}
 
@@ -609,13 +613,13 @@ def calculate_vs_metric(
     for details, DOI: 10.3847/0004-637X/818/2/105.
 
     Args:
-        flux_a (float): flux value "A".
-        flux_b (float): flux value "B".
-        flux_err_a (float): error of `flux_a`.
-        flux_err_b (float): error of `flux_b`.
+        flux_a: flux value "A".
+        flux_b: flux value "B".
+        flux_err_a: error of `flux_a`.
+        flux_err_b: error of `flux_b`.
 
     Returns:
-        float: the Vs metric for flux values "A" and "B".
+        The Vs metric for flux values "A" and "B".
     """
     return (flux_a - flux_b) / np.hypot(flux_err_a, flux_err_b)
 
@@ -629,11 +633,11 @@ def calculate_m_metric(flux_a: float, flux_b: float) -> float:
     DOI: 10.3847/0004-637X/818/2/105.
 
     Args:
-        flux_a (float): flux value "A".
-        flux_b (float): flux value "B".
+        flux_a: flux value "A".
+        flux_b: flux value "B".
 
     Returns:
-        float: the m metric for flux values "A" and "B".
+        The m metric for flux values "A" and "B".
     """
     return 2 * ((flux_a - flux_b) / (flux_a + flux_b))
 
@@ -669,7 +673,7 @@ def create_moc_from_fits(fits_file: str, max_depth: int = 9) -> MOC:
         The MOC generated from the FITS file.
 
     Raises:
-        Exception: When the FITS file cannot be found.
+        Exception: The FITS file does not exist.
     """
     if not os.path.isfile(fits_file):
         raise Exception("{} does not exist".format(fits_file))
