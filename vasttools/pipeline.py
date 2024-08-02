@@ -4,6 +4,8 @@ Attributes:
     HOST_NCPU (int): The number of CPU found on the host using 'cpu_count()'.
 
 """
+from __future__ import annotations
+
 import numexpr
 import os
 import warnings
