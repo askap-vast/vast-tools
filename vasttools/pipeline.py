@@ -2244,8 +2244,8 @@ class PipeAnalysis(PipeRun):
         PLOT_WIDTH = 700
         PLOT_HEIGHT = PLOT_WIDTH
         fig = figure(
-            plot_width=PLOT_WIDTH,
-            plot_height=PLOT_HEIGHT,
+            width=PLOT_WIDTH,
+            height=PLOT_HEIGHT,
             aspect_scale=1,
             x_axis_type="log",
             y_axis_type="log",
@@ -2268,8 +2268,8 @@ class PipeAnalysis(PipeRun):
         # axis histograms
         # filter out any forced-phot points for these
         x_hist = figure(
-            plot_width=PLOT_WIDTH,
-            plot_height=100,
+            width=PLOT_WIDTH,
+            height=100,
             x_range=fig.x_range,
             y_axis_type=None,
             x_axis_type="log",
@@ -2297,8 +2297,8 @@ class PipeAnalysis(PipeRun):
         fig.add_layout(x_hist_sigma_span)
 
         y_hist = figure(
-            plot_height=PLOT_HEIGHT,
-            plot_width=100,
+            height=PLOT_HEIGHT,
+            width=100,
             y_range=fig.y_range,
             x_axis_type=None,
             y_axis_type="log",
