@@ -13,12 +13,12 @@ jobs:
     steps:
         - uses: actions/checkout@v4
 
-        - uses: actions/setup-python@v4
+        - uses: actions/setup-python@v5
           with:
             python-version: ${{ matrix.python_version }}
-        - uses: Gr1N/setup-poetry@v8
+        - uses: Gr1N/setup-poetry@v9
         - name: Cache Python dependencies
-          uses: actions/cache@v3
+          uses: actions/cache@v4
           with:
             path: ~/.cache/pypoetry/virtualenvs
             key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
