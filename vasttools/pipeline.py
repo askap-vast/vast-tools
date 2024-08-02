@@ -62,6 +62,7 @@ class PipelineDirectoryError(Exception):
     """
     pass
 
+
 class MeasPairsDoNotExistError(Exception):
     """
     An error to indicate that the measurement pairs do not exist for a run.
@@ -167,12 +168,12 @@ class PipeRun(object):
 
         self.logger = logging.getLogger('vasttools.pipeline.PipeRun')
         self.logger.debug('Created PipeRun instance')
-        
+
         self._measurement_pairs_exists = self._check_measurement_pairs_file()
 
     def _check_measurement_pairs_file(self):
         measurement_pairs_exists = True
-        
+
         for filepath in self.measurement_pairs_file:
             if not os.path.isfile(filepath):
                 self.logger.warning(f"Measurement pairs file ({filepath}) does"
@@ -182,7 +183,7 @@ class PipeRun(object):
                 measurement_pairs_exists = False
 
         return measurement_pairs_exists
-            
+
     def combine_with_run(
         self, other_PipeRun: PipeRun, new_name: Optional[str] = None
     ) -> PipeRun:
@@ -251,7 +252,7 @@ class PipeRun(object):
         if orig_run_pairs_exist and other_run_pairs_exist:
             for i in other_PipeRun.measurement_pairs_file:
                 self.measurement_pairs_file.append(i)
-        
+
         elif orig_run_pairs_exist:
             self.logger.warning("Not combining measurement pairs because they "
                                 " do not exist for the new run."
@@ -444,10 +445,10 @@ class PipeRun(object):
 
     def _raise_if_no_pairs(self):
         if not self._measurement_pairs_exists:
-             raise MeasPairsDoNotExistError("This method cannot be used as "
-                                            "the measurement pairs are not "
-                                            "available for this pipeline run."
-                                            )
+            raise MeasPairsDoNotExistError("This method cannot be used as "
+                                           "the measurement pairs are not "
+                                           "available for this pipeline run."
+                                           )
 
     def load_two_epoch_metrics(self) -> None:
         """
@@ -468,7 +469,7 @@ class PipeRun(object):
             MeasPairsDoNotExistError: The measurement pairs file(s) do not
                 exist for this run
         """
-        
+
         self._raise_if_no_pairs()
 
         image_ids = self.images.sort_values(by='datetime').index.tolist()
@@ -1091,12 +1092,12 @@ class PipeAnalysis(PipeRun):
         Returns:
             The regenerated sources_df.  A `pandas.core.frame.DataFrame`
             instance.
-        
+
         Raises:
             MeasPairsDoNotExistError: The measurement pairs file(s) do not
                 exist for this run
         """
-        
+
         self._raise_if_no_pairs()
 
         # Two epoch metrics
@@ -1551,7 +1552,7 @@ class PipeAnalysis(PipeRun):
         use_int_flux: bool = False,
         remove_two_forced: bool = False,
         plot_style: str = 'a'
-    ) -> plt.figure:
+    ) -> matplotlib.figure.Figure:
         """
         Plot the results of the two epoch analysis using matplotlib. Currently
         this can only plot one epoch pair at a time.
@@ -1647,7 +1648,7 @@ class PipeAnalysis(PipeRun):
             epoch_pair_id, td_days
         )
         number_string = "Candidates: {}/{} ({:.2f} %)".format(
-            num_candidates, num_pairs, (100.*num_candidates/num_pairs)
+            num_candidates, num_pairs, (100. * num_candidates / num_pairs)
         )
         ax.text(
             0.6, 0.05, date_string + '\n' + number_string,
@@ -1668,7 +1669,7 @@ class PipeAnalysis(PipeRun):
         remove_two_forced: bool = False,
         plot_type: str = 'bokeh',
         plot_style: str = 'a'
-    ) -> Union[Model, plt.figure]:
+    ) -> Union[Model, matplotlib.figure.Figure]:
         """
         Adapted from code written by Andrew O'Brien.
         Plot the results of the two epoch analysis. Currently this can only
@@ -1801,7 +1802,7 @@ class PipeAnalysis(PipeRun):
             MeasPairsDoNotExistError: The measurement pairs file(s) do not
                 exist for this run
         """
-        
+
         self._raise_if_no_pairs()
 
         if not self._loaded_two_epoch_metrics:
@@ -1943,7 +1944,7 @@ class PipeAnalysis(PipeRun):
         self, eta_cutoff: float, v_cutoff: float,
         df: Optional[pd.DataFrame] = None,
         use_int_flux: bool = False
-    ) -> plt.figure:
+    ) -> matplotlib.figure.Figure:
         """
         Adapted from code written by Antonia Rowlinson.
         Produces the eta, V 'diagnostic plot'
@@ -2059,7 +2060,7 @@ class PipeAnalysis(PipeRun):
         eta_cutoff: float,
         v_cutoff: float,
         use_int_flux: bool = False
-    ) -> plt.figure:
+    ) -> matplotlib.figure.Figure:
         """
         Adapted from code written by Antonia Rowlinson.
         Produces the eta, V candidates plot
@@ -2098,7 +2099,7 @@ class PipeAnalysis(PipeRun):
         fontP.set_size('large')
         left, width = 0.1, 0.65
         bottom, height = 0.1, 0.65
-        bottom_h = left_h = left+width+0.02
+        bottom_h = left_h = left + width + 0.02
         rect_scatter = [left, bottom, width, height]
         rect_histx = [left, bottom_h, width, 0.2]
         rect_histy = [left_h, bottom, 0.2, height]
@@ -2138,7 +2139,7 @@ class PipeAnalysis(PipeRun):
         ymin = int(min(y) - 1.1)
         ymax = int(max(y) + 1.1)
         xvals = range(xmin, xmax)
-        xtxts = [r'$10^{'+str(a)+'}$' for a in xvals]
+        xtxts = [r'$10^{' + str(a) + '}$' for a in xvals]
         yvals = range(ymin, ymax)
         ytxts = [r'$10^{' + str(a) + '}$' for a in yvals]
         axScatter.set_xlim([xmin, xmax])
@@ -2344,8 +2345,16 @@ class PipeAnalysis(PipeRun):
         use_int_flux: bool = False, plot_type: str = 'bokeh',
         diagnostic: bool = False
     ) -> Union[
-        Tuple[float, float, pd.DataFrame, plt.figure, plt.figure],
-        Tuple[float, float, pd.DataFrame, gridplot, plt.figure]
+        Tuple[float,
+              float,
+              pd.DataFrame,
+              matplotlib.figure.Figure,
+              matplotlib.figure.Figure],
+        Tuple[float,
+              float,
+              pd.DataFrame,
+              gridplot,
+              matplotlib.figure.Figure]
     ]:
         """
         Run the eta, v analysis on the pipeline run, with optional
