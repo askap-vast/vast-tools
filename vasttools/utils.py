@@ -166,7 +166,7 @@ def crosshair() -> None:
     """
     A wrapper function to set the crosshair marker in
     matplotlib using the function written by L. A. Boogaard.
-    
+
     See https://stackoverflow.com/a/16655800/5064815.
 
     Returns:
