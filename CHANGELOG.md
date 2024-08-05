@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Added
 
+- Add access to epoch 63 [#563](https://github.com/askap-vast/vast-tools/pull/563)
+
 #### Changed
 
 - Updated github actions to latest versions [#562](https://github.com/askap-vast/vast-tools/pull/562)
@@ -19,6 +21,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#563](https://github.com/askap-vast/vast-tools/pull/563): feat: Add access to epoch 63
 - [#562](https://github.com/askap-vast/vast-tools/pull/562): fix: Updated github actions to latest versions
 - [#558](https://github.com/askap-vast/vast-tools/pull/558): docs: Updated 2023 workshop notebook - fixed Query options and general cleanup
 
