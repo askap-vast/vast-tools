@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 #### Added
 
 - Support for Python 3.10 [#334](https://github.com/askap-vast/vast-tools/pull/334)
+- Add access to epoch 63 [#563](https://github.com/askap-vast/vast-tools/pull/563)
 
 #### Changed
 
@@ -32,6 +33,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 #### List of PRs
 
 - [#334](https://github.com/askap-vast/vast-tools/pull/334): fix, docs, feat: Dependency refresh including python 3.10 support and corresponding minor updates
+- [#563](https://github.com/askap-vast/vast-tools/pull/563): feat: Add access to epoch 63
 - [#562](https://github.com/askap-vast/vast-tools/pull/562): fix: Updated github actions to latest versions
 - [#558](https://github.com/askap-vast/vast-tools/pull/558): docs: Updated 2023 workshop notebook - fixed Query options and general cleanup
 
