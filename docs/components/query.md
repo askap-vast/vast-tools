@@ -41,7 +41,7 @@ In full, the `Query` component as the ability to:
 !!! info "Info: Query Notebook Example"
      An example notebook of using the Query component can be found in the example notebooks section [here](../../notebook-examples/source-search-example/).
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/query/#vasttools.query.Query).
+:fontawesome-regular-file-lines: [Code reference](../../reference/query/#vasttools.query.Query).
 
 A `Query` instance can be imported from `vasttools.query`:
 

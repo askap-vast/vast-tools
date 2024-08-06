@@ -160,7 +160,8 @@ def dummy_stmoc() -> Union[MOC, STMOC]:
 def dummy_ax(dummy_fits_open):
     hdu = dummy_fits_open[0]
     wcs = WCS(hdu.header)
-    ax = plt.subplot(projection=wcs)
+    fig = plt.figure()
+    ax = fig.add_subplot(projection=wcs)
 
     return ax
 
@@ -432,8 +433,8 @@ def test_gen_mocs_image(
         mocker_stmoc_write.assert_called_once_with(Path(stmoc_file),
                                                    overwrite=True)
 
-    assert stmoc.max_time.jd == end.jd
-    assert stmoc.min_time.jd == start.jd
+    assert stmoc.max_time.isclose(end, atol=1e-5 * u.s)
+    assert stmoc.min_time.isclose(start, atol=1e-5 * u.s)
 
 
 def test_gen_mocs_epoch(dummy_moc: MOC,

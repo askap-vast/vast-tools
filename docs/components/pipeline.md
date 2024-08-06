@@ -47,7 +47,7 @@ The following methods are available with the `Pipeline` instance.
 
 #### list_images
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/pipeline/#vasttools.pipeline.Pipeline.list_images).
+:fontawesome-regular-file-lines: [Code reference](../../reference/pipeline/#vasttools.pipeline.Pipeline.list_images).
 
 Provides a list of all the images that have been processed in the pipeline.
 
@@ -67,7 +67,7 @@ Provides a list of all the images that have been processed in the pipeline.
 
 #### list_piperuns
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/pipeline/#vasttools.pipeline.Pipeline.list_piperuns).
+:fontawesome-regular-file-lines: [Code reference](../../reference/pipeline/#vasttools.pipeline.Pipeline.list_piperuns).
 
 Provides a list of all the pipeline runs that have been set up in the pipeline.
 
@@ -88,7 +88,7 @@ Provides a list of all the pipeline runs that have been set up in the pipeline.
 
 #### load_run
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/pipeline/#vasttools.pipeline.Pipeline.load_run).
+:fontawesome-regular-file-lines: [Code reference](../../reference/pipeline/#vasttools.pipeline.Pipeline.load_run).
 
 Loads the pipeline run requested returning a `vasttools.pipeline.PipeAnalysis` instance (see sections below).
 
@@ -100,7 +100,7 @@ Loads the pipeline run requested returning a `vasttools.pipeline.PipeAnalysis` i
 
 #### load_runs
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/pipeline/#vasttools.pipeline.Pipeline.load_runs).
+:fontawesome-regular-file-lines: [Code reference](../../reference/pipeline/#vasttools.pipeline.Pipeline.load_runs).
 
 Loads multiple pipeline runs that are requested and merges them to return a single `vasttools.pipeline.PipeAnalysis` instance (see sections below).
 
@@ -122,7 +122,7 @@ The sections below detail what data and methods are available.
 
 ### Accessing PipeAnalysis Run Data
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/pipeline/#vasttools.pipeline.PipeAnalysis).
+:fontawesome-regular-file-lines: [Code reference](../../reference/pipeline/#vasttools.pipeline.PipeAnalysis).
 
 The run data is stored as attributes to the `PipeAnalysis` object, which are all shown in the table below.
 This means that to access any of the pieces of pipeline run data, for example `sources`, the command would be:
@@ -174,7 +174,7 @@ The following methods are available to the `PipeAnalysis` instance.
 
 #### check_for_planets
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/pipeline/#vasttools.pipeline.PipeRun.check_for_planets).
+:fontawesome-regular-file-lines: [Code reference](../../reference/pipeline/#vasttools.pipeline.PipeRun.check_for_planets).
 
 Checks to see if any of the planets, including Pluto, the Sun and the Moon, are observable at any time in the pipeline run.
 A pandas dataframe will be returned containing the positions of found objects. 
@@ -197,7 +197,7 @@ The columns of the returned dataframe are:
 
 #### combine_with_run
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/pipeline/#vasttools.pipeline.PipeRun.combine_with_run).
+:fontawesome-regular-file-lines: [Code reference](../../reference/pipeline/#vasttools.pipeline.PipeRun.combine_with_run).
 
 Combines the current run with another `PipeAnalysis` object that has been loaded, i.e. a second pipeline run.
 It returns a new `PipeAnalysis` object with the two runs combined.
@@ -214,7 +214,7 @@ It returns a new `PipeAnalysis` object with the two runs combined.
 
 #### create_moc
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/pipeline/#vasttools.pipeline.PipeRun.create_moc).
+:fontawesome-regular-file-lines: [Code reference](../../reference/pipeline/#vasttools.pipeline.PipeRun.create_moc).
 
 This creates a Multi-Order Coverage map for the area covered by the pipeline run. 
 
@@ -228,7 +228,7 @@ This creates a Multi-Order Coverage map for the area covered by the pipeline run
 
 #### filter_by_moc
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/pipeline/#vasttools.pipeline.PipeRun.filter_by_moc).
+:fontawesome-regular-file-lines: [Code reference](../../reference/pipeline/#vasttools.pipeline.PipeRun.filter_by_moc).
 
 Returns a new `PipeAnalysis` instance that has had all data filtered to only include data of sources that are within a supplied MOC.
 
@@ -240,7 +240,7 @@ Returns a new `PipeAnalysis` instance that has had all data filtered to only inc
 
 #### get_source
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/pipeline/#vasttools.pipeline.PipeRun.get_source).
+:fontawesome-regular-file-lines: [Code reference](../../reference/pipeline/#vasttools.pipeline.PipeRun.get_source).
 
 Fetches a specific source from the pipeline run, and returns a `vasttools.source.Source` instance.
 The source is selected by using the ID value.
@@ -257,7 +257,7 @@ The source is selected by using the ID value.
 
 #### get_sources_skycoord
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/pipeline/#vasttools.pipeline.PipeRun.get_sources_skycoord).
+:fontawesome-regular-file-lines: [Code reference](../../reference/pipeline/#vasttools.pipeline.PipeRun.get_sources_skycoord).
 
 A convenience function to generate a `SkyCoord` object of all the sources in the `PipeAnalysis.sources` attribute.
 Returns a `astropy.coordines.SkyCoord` instance.
@@ -273,7 +273,7 @@ Returns a `astropy.coordines.SkyCoord` instance.
 
 #### load_two_epoch_metrics
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/pipeline/#vasttools.pipeline.PipeRun.load_two_epoch_metrics).
+:fontawesome-regular-file-lines: [Code reference](../../reference/pipeline/#vasttools.pipeline.PipeRun.load_two_epoch_metrics).
 
 By default the raw two-epoch metrics produced by the pipeline are not loaded.
 This method loads the two-epoch metrics, stored by the pipeline in `measurement_pairs.parquet` (or `measurement_pairs.arrow`) and saves them as an attribute to the `PipeAnalysis` object: `PipeAnalysis.measurement_pairs_df`.
@@ -300,7 +300,7 @@ This is stored as the attribute `PipeAnalysis.pairs_df`.
 
 #### recalc_measurement_pairs_df
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/pipeline/#vasttools.pipeline.PipeAnalysis.recalc_measurement_pairs_df).
+:fontawesome-regular-file-lines: [Code reference](../../reference/pipeline/#vasttools.pipeline.PipeAnalysis.recalc_measurement_pairs_df).
 
 !!! warning "Warning: Run Time & Memory"
     Beware that for large pipeline runs the recalculation can take some time to complete and use up considerable memory.
@@ -319,7 +319,7 @@ For example, some measurements could have been removed or the fluxes could have 
 
 #### recalc_sources_df
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/pipeline/#vasttools.pipeline.PipeAnalysis.recalc_sources_df).
+:fontawesome-regular-file-lines: [Code reference](../../reference/pipeline/#vasttools.pipeline.PipeAnalysis.recalc_sources_df).
 
 !!! warning "Warning: Run Time & Memory"
     Beware that for large pipeline runs the recalculation can take some time to complete and use up considerable memory.
@@ -370,7 +370,7 @@ The following methods are designed to perform common transient search analyses a
 
 #### eta_v_diagnostic_plot
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/pipeline/#vasttools.pipeline.PipeAnalysis.eta_v_diagnostic_plot).
+:fontawesome-regular-file-lines: [Code reference](../../reference/pipeline/#vasttools.pipeline.PipeAnalysis.eta_v_diagnostic_plot).
 
 Produces a diagnostic plot using the η and V metrics as described in [Rowlinson et al., 2019](https://ui.adsabs.harvard.edu/abs/2019A%26C....27..111R/abstract).
 Returns a `matplotlib.pyplot.figure` instance.
@@ -385,7 +385,7 @@ Returns a `matplotlib.pyplot.figure` instance.
 
 #### plot_two_epoch_pairs
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/pipeline/#vasttools.pipeline.PipeAnalysis.plot_two_epoch_pairs).
+:fontawesome-regular-file-lines: [Code reference](../../reference/pipeline/#vasttools.pipeline.PipeAnalysis.plot_two_epoch_pairs).
 
 Produce a two-epoch metric plot of the `m` and `vs` values of the requested pair ID (i.e. the pair of images).
 The pair ID can be found in the `pairs_df` attribute after [`load_two_epoch_metrics()`](#load_two_epoch_metrics) has been used.
@@ -420,7 +420,7 @@ where as style `b` follows the style found in [Radcliffe et al., 2019](https://u
 
 #### run_eta_v_analysis
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/pipeline/#vasttools.pipeline.PipeAnalysis.run_eta_v_analysis).
+:fontawesome-regular-file-lines: [Code reference](../../reference/pipeline/#vasttools.pipeline.PipeAnalysis.run_eta_v_analysis).
 
 Method to perform the η-V transient search method as described in [Rowlinson et al., 2019](https://ui.adsabs.harvard.edu/abs/2019A%26C....27..111R/abstract), to the sigma level provided for each metric.
 It uses the η and V metrics defined in the `sources` dataframe.
@@ -481,7 +481,7 @@ The candidates plot can either be a `matplotlib.pyplot.figure` or `bokeh.layouts
 
 #### run_two_epoch_analysis
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/pipeline/#vasttools.pipeline.PipeAnalysis.run_two_epoch_analysis).
+:fontawesome-regular-file-lines: [Code reference](../../reference/pipeline/#vasttools.pipeline.PipeAnalysis.run_two_epoch_analysis).
 
 Method to perform the two epoch analysis as detailed in [Mooley et al., 2016](https://ui.adsabs.harvard.edu/abs/2016ApJ...818..105M/abstract) to the provided `m` and `vs` threshold values.
 The entire `measurement_pairs_df` is analysed for any pair that exceed the two provided thresholds.

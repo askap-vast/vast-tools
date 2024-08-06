@@ -361,10 +361,7 @@ class Image:
 
     def get_paths_and_names(self) -> None:
         """
-        Configure the file names if they have no been provided.
-
-        Args:
-            None
+        Configure the file names if they have not been provided.
 
         Returns:
             None
