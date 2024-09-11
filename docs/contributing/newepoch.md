@@ -98,7 +98,8 @@ The following steps will allow users to add epoch 99 to the package, from start 
 11. Commit all of the new changes, and push to the github repository with
 !!! example "Example: Push new epoch to git"
     Commit changes required for the addition of epoch 99
-    ```git add vasttools/data/csvs/vast_epoch99_info.csv
+    ```bash
+    git add vasttools/data/csvs/vast_epoch99_info.csv
     git add vasttools/data/pickles/vast_epoch99_fields_sc.pickle
     git add __init__.py
     git add vasttools/data/mocs/VAST_PILOT_EPOCH99.moc.fits
