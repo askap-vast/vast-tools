@@ -569,6 +569,17 @@ class Source:
             detections = measurements_df[
                 ~upper_lim_mask
             ]
+        
+        if self.pipeline:
+            upper_lim_mask = measurements_df.forced
+        else:
+            upper_lim_mask = measurements_df.detection == False
+            if use_forced_for_all:
+                upper_lim_mask = np.array([False for i in upper_lim_mask])
+        upper_lims = measurements[
+            upper_lim_mask
+        ]
+        
         if yaxis_start == "0":
             max_det = detections.loc[:, [flux_col, err_value_col]].sum(axis=1)
             if use_forced_for_limits or self.pipeline:
