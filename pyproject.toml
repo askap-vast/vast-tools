@@ -45,7 +45,6 @@ mkdocstrings = {version="^0.25", extras = ["python"]}
 mkdocs-minify-plugin = "^0.4.1"
 mkdocs-material-extensions = "^1.0.3"
 mkdocs-gen-files = "^0.5"
-mknotebooks = "^0.8"
 Pygments = "^2.15.0"
 mkdocs-git-revision-date-localized-plugin = "^1.2"
 pytest = "^8.3"

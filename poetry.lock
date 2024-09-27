@@ -2816,23 +2816,6 @@ mkdocs-autorefs = ">=1.0"
 mkdocstrings = ">=0.25"
 
 [[package]]
-name = "mknotebooks"
-version = "0.8.0"
-description = "Plugin for mkdocs to generate markdown documents from jupyter notebooks."
-optional = false
-python-versions = "*"
-files = [
-    {file = "mknotebooks-0.8.0-py3-none-any.whl", hash = "sha256:4a9b998260c09bcc311455a19a44cc395a30ee82dc1e86e3316dd09f2445ebd3"},
-]
-
-[package.dependencies]
-gitpython = "*"
-jupyter-client = "*"
-markdown = ">=3.3.3"
-mkdocs = ">=1.5.0"
-nbconvert = ">=6.0.0"
-
-[[package]]
 name = "mocpy"
 version = "0.11.0"
 description = "MOC parsing and manipulation in Python"
@@ -5244,4 +5227,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10.0,<3.11"
-content-hash = "6df7118f98c4b3f8d04a6d3cc942f04e2efca56d782c3028f596ef4e6cc830ac"
+content-hash = "8b3811fd7147e231d677ca5a95f2f433288f244e086e8b51da196044447a3ec5"
