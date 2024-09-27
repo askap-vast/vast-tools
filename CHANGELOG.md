@@ -26,6 +26,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Fixed
 
+- Correctly calculate plot_lightcurve y-axis range for multi-frequency upper limits [#567](https://github.com/askap-vast/vast-tools/pull/567)
 - Fixed formatting of new epoch addition git example [#568](https://github.com/askap-vast/vast-tools/pull/568)
 - Directly compare stmoc times, avoiding conversion to JD, and replace equality requirement with `isclose` [#334](https://github.com/askap-vast/vast-tools/pull/334)
 
@@ -36,6 +37,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 #### List of PRs
 
 - [#569](https://github.com/askap-vast/vast-tools/pull/569): feat: Add epoch 66
+- [#567](https://github.com/askap-vast/vast-tools/pull/567): fix: Correctly calculate plot_lightcurve y-axis range for multi-frequency upper limits
 - [#568](https://github.com/askap-vast/vast-tools/pull/568): feat, docs: Add epochs 64 and 65, and fix new epoch addition docs page syntax
 - [#334](https://github.com/askap-vast/vast-tools/pull/334): fix, docs, feat: Dependency refresh including python 3.10 support and corresponding minor updates
 - [#563](https://github.com/askap-vast/vast-tools/pull/563): feat: Add access to epoch 63
