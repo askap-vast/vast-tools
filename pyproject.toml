@@ -8,16 +8,16 @@ authors = ["Adam Stewart <adam.stewart.astro@gmail.com>", "Dougal Dobie <d.dobie
 include = ["vasttools/data", "example_notebooks"]
 
 [tool.poetry.dependencies]
-python = ">=3.8.0,<3.11"
+python = ">=3.10.0,<3.11"
 astropy = "^5.2"
 astroquery = "^0"
-bokeh = "^3.1"
+bokeh = ">3.5"
 colorcet = "^3.1"
 colorlog = "^6.1"
 dask = {version = "^2022.01.0", extras = ["dataframe"]}
 forced-phot = { git = "https://github.com/askap-vast/forced_phot.git" }
 matplotlib = "^3.7.0"
-mocpy = "^0.11"
+mocpy = "^0.16"
 multiprocessing-logging = "^0.3.1"
 numexpr = "^2.7.1"
 numpy = "~1.22.1"
@@ -25,14 +25,14 @@ pandas = "<2.0"
 pyarrow = "^17.0"
 radio-beam = "^0.3"
 scipy = "^1.4"
-tables = "^3.6.1"
+tables = "^3.9"
 tabulate = "^0"
 vaex-core = "^4.17"
 vaex-hdf5 = "^0.14"
-healpy = "^1.15.0"
+healpy = "^1.17.0"
 svgpath2mpl = "^1.0.0"
 setuptools = "^70.0.0"
-pydantic = "<2.0.0"
+pydantic = "^2.8"
 
 [tool.poetry.group.dev.dependencies]
 ipdb = "^0.13.6"
