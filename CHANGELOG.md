@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Added
 
+- Add epoch 66 [#569](https://github.com/askap-vast/vast-tools/pull/569)
 - Add epochs 64 and 65 [#568](https://github.com/askap-vast/vast-tools/pull/568)
 - Support for Python 3.10 [#334](https://github.com/askap-vast/vast-tools/pull/334)
 - Add access to epoch 63 [#563](https://github.com/askap-vast/vast-tools/pull/563)
@@ -35,6 +36,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#569](https://github.com/askap-vast/vast-tools/pull/569): feat: Add epoch 66
 - [#567](https://github.com/askap-vast/vast-tools/pull/567): fix: Correctly calculate plot_lightcurve y-axis range for multi-frequency upper limits
 - [#568](https://github.com/askap-vast/vast-tools/pull/568): feat, docs: Add epochs 64 and 65, and fix new epoch addition docs page syntax
 - [#334](https://github.com/askap-vast/vast-tools/pull/334): fix, docs, feat: Dependency refresh including python 3.10 support and corresponding minor updates
