@@ -78,6 +78,7 @@ RELEASED_EPOCHS = {
     "64": "64",
     "65": "65",
     "66": "66",
+    "67": "67",
 }
 
 OBSERVED_EPOCHS = {
