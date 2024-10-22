@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Added
 
+- Add epoch 68 [#575](https://github.com/askap-vast/vast-tools/pull/575)
 - Add epoch 67 [#573](https://github.com/askap-vast/vast-tools/pull/573)
 - Add epoch 66 [#569](https://github.com/askap-vast/vast-tools/pull/569)
 - Add epochs 64 and 65 [#568](https://github.com/askap-vast/vast-tools/pull/568)
@@ -37,6 +38,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#575](https://github.com/askap-vast/vast-tools/pull/575): feat: Add epoch 68
 - [#573](https://github.com/askap-vast/vast-tools/pull/573): feat: Add epoch 67
 - [#569](https://github.com/askap-vast/vast-tools/pull/569): feat: Add epoch 66
 - [#567](https://github.com/askap-vast/vast-tools/pull/567): fix: Correctly calculate plot_lightcurve y-axis range for multi-frequency upper limits
