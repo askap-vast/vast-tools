@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Added
 
+- Add epoch 69 [#576](https://github.com/askap-vast/vast-tools/pull/576)
 - Add epoch 68 [#575](https://github.com/askap-vast/vast-tools/pull/575)
 - Add epoch 67 [#573](https://github.com/askap-vast/vast-tools/pull/573)
 - Add epoch 66 [#569](https://github.com/askap-vast/vast-tools/pull/569)
@@ -38,6 +39,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#576](https://github.com/askap-vast/vast-tools/pull/576): feat: Add epoch 69
 - [#575](https://github.com/askap-vast/vast-tools/pull/575): feat: Add epoch 68
 - [#573](https://github.com/askap-vast/vast-tools/pull/573): feat: Add epoch 67
 - [#569](https://github.com/askap-vast/vast-tools/pull/569): feat: Add epoch 66
