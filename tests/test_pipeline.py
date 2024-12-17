@@ -35,7 +35,7 @@ def dummy_pipeline_object(mocker: MockerFixture) -> vtp.Pipeline:
     mocker_getenv = mocker.patch(
         'os.getenv', return_value=expected_path
     )
-    mock_isdir = mocker.patch('vasttools.pipeline.Path.is_dir', 
+    mock_isdir = mocker.patch('vasttools.pipeline.Path.is_dir',
                               return_value=True
                               )
 
@@ -375,11 +375,13 @@ def dummy_PipeAnalysis_base(
     Returns:
         The vtp.PipeAnalysis instance.
     """
-    mock_isdir = mocker.patch('vasttools.pipeline.Path.is_dir', 
-                              #return_value=False,
-                              side_effect=[True,False,False]
+    mock_isdir = mocker.patch('vasttools.pipeline.Path.is_dir',
+                              # return_value=False,
+                              side_effect=[True, False, False]
                               )
-    mock_isfile = mocker.patch('vasttools.pipeline.Path.is_file', return_value=False)
+    mock_isfile = mocker.patch(
+        'vasttools.pipeline.Path.is_file',
+        return_value=False)
     pandas_read_parquet_mocker = mocker.patch(
         'vasttools.pipeline.pd.read_parquet',
         side_effect=load_parquet_side_effect
@@ -476,8 +478,12 @@ def dummy_PipeAnalysis_vaex(
     Returns:
         The vtp.PipeAnalysis instance.
     """
-    mock_isdir = mocker.patch('vasttools.pipeline.Path.is_dir', return_value=True)
-    mock_isfile = mocker.patch('vasttools.pipeline.Path.is_file', return_value=True)
+    mock_isdir = mocker.patch(
+        'vasttools.pipeline.Path.is_dir',
+        return_value=True)
+    mock_isfile = mocker.patch(
+        'vasttools.pipeline.Path.is_file',
+        return_value=True)
     pandas_read_parquet_mocker = mocker.patch(
         'vasttools.pipeline.pd.read_parquet',
         side_effect=load_parquet_side_effect
@@ -675,7 +681,9 @@ class TestPipeline:
         mocker_getenv = mocker.patch(
             'os.getenv', return_value=expected_path
         )
-        mock_isdir = mocker.patch('vasttools.pipeline.Path.is_dir', return_value=True)
+        mock_isdir = mocker.patch(
+            'vasttools.pipeline.Path.is_dir',
+            return_value=True)
 
         pipe = vtp.Pipeline()
 
@@ -698,7 +706,9 @@ class TestPipeline:
         mocker_abspath = mocker.patch(
             'os.path.abspath', return_value=expected_path
         )
-        mock_isdir = mocker.patch('vasttools.pipeline.Path.is_dir', return_value=True)
+        mock_isdir = mocker.patch(
+            'vasttools.pipeline.Path.is_dir',
+            return_value=True)
 
         pipe = vtp.Pipeline(project_dir=expected_path)
 
@@ -744,7 +754,9 @@ class TestPipeline:
         mocker_abspath = mocker.patch(
             'os.path.abspath', return_value=expected_path
         )
-        mock_isdir = mocker.patch('vasttools.pipeline.Path.is_dir', return_value=False)
+        mock_isdir = mocker.patch(
+            'vasttools.pipeline.Path.is_dir',
+            return_value=False)
 
         with pytest.raises(vtp.PipelineDirectoryError) as excinfo:
             pipe = vtp.Pipeline(project_dir=expected_path)
@@ -838,7 +850,9 @@ class TestPipeline:
         Returns:
             None
         """
-        mock_isdir = mocker.patch('vasttools.pipeline.Path.is_dir', return_value=False)
+        mock_isdir = mocker.patch(
+            'vasttools.pipeline.Path.is_dir',
+            return_value=False)
 
         pipe = dummy_pipeline_object
 
@@ -953,8 +967,12 @@ class TestPipeline:
         Returns:
             None
         """
-        mock_isdir = mocker.patch('vasttools.pipeline.Path.is_dir', return_value=True)
-        mock_isfile = mocker.patch('vasttools.pipeline.Path.is_file', return_value=True)
+        mock_isdir = mocker.patch(
+            'vasttools.pipeline.Path.is_dir',
+            return_value=True)
+        mock_isfile = mocker.patch(
+            'vasttools.pipeline.Path.is_file',
+            return_value=True)
         pandas_read_parquet_mocker = mocker.patch(
             'vasttools.pipeline.pd.read_parquet',
             side_effect=load_parquet_side_effect
@@ -991,8 +1009,12 @@ class TestPipeline:
         Returns:
             None
         """
-        mock_isdir = mocker.patch('vasttools.pipeline.Path.is_dir', return_value=True)
-        mock_isfile = mocker.patch('vasttools.pipeline.Path.is_file', return_value=False)
+        mock_isdir = mocker.patch(
+            'vasttools.pipeline.Path.is_dir',
+            return_value=True)
+        mock_isfile = mocker.patch(
+            'vasttools.pipeline.Path.is_file',
+            return_value=False)
         pandas_read_parquet_mocker = mocker.patch(
             'vasttools.pipeline.pd.read_parquet',
             side_effect=load_parquet_side_effect
@@ -1021,9 +1043,9 @@ class TestPipeAnalysis:
         [
             [True],
             [False],
-            [True,True],
-            [False,False],
-            [True,False],
+            [True, True],
+            [False, False],
+            [True, False],
         ],
         ids=("single-exists",
              "single-no-exists",
@@ -1031,21 +1053,21 @@ class TestPipeAnalysis:
              "multiple-no-exists",
              "multiple-some-exists",
              )
-     )
+    )
     def test__check_measurement_pairs_file(self,
-        pairs_existence: List[bool],
-        dummy_PipeAnalysis_base: vtp.PipeAnalysis,
-        mocker: MockerFixture
-        ) -> None:
+                                           pairs_existence: List[bool],
+                                           dummy_PipeAnalysis_base: vtp.PipeAnalysis,
+                                           mocker: MockerFixture
+                                           ) -> None:
         """
         Tests the _check_measurement_pairs_file method.
-        
+
         Args:
             pairs_existence: A list of booleans corresponding to whether a
                 pairs file exists.
             dummy_PipeAnalysis_base: The base dummy PipeAnalysis object.
             mocker: The pytest-mock mocker object.
-        
+
         Returns:
             None
         """
@@ -1053,18 +1075,17 @@ class TestPipeAnalysis:
             "vasttools.pipeline.Path.is_file",
             side_effect=pairs_existence
         )
-        
-        fake_pairs_file = [Path("")]*len(pairs_existence)
-        
+
+        fake_pairs_file = [Path("")] * len(pairs_existence)
+
         dummy_PipeAnalysis_base.measurement_pairs_file = fake_pairs_file
-        
+
         returned_val = dummy_PipeAnalysis_base._check_measurement_pairs_file()
-        
+
         all_exist = sum(pairs_existence) == len(pairs_existence)
-        
+
         assert returned_val == all_exist
-        
-    
+
     def test_combine_with_run(
         self,
         dummy_PipeAnalysis: vtp.PipeAnalysis
