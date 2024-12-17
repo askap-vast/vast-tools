@@ -9,7 +9,6 @@ from __future__ import annotations
 import numexpr
 import os
 import warnings
-import glob
 import vaex
 import dask.dataframe as dd
 import colorcet as cc

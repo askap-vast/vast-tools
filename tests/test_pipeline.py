@@ -2,11 +2,9 @@ import astropy.units as u
 import copy
 import matplotlib.pyplot as plt
 import numpy as np
-import os
 import pandas as pd
 import pytest
 import vaex
-import warnings
 
 from astropy.coordinates import SkyCoord
 from mocpy import MOC
