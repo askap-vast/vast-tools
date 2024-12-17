@@ -1052,11 +1052,13 @@ class TestPipeAnalysis:
              "multiple-some-exists",
              )
     )
-    def test__check_measurement_pairs_file(self,
-                                           pairs_existence: List[bool],
-                                           dummy_PipeAnalysis_base: vtp.PipeAnalysis,
-                                           mocker: MockerFixture
-                                           ) -> None:
+
+    def test__check_measurement_pairs_file(
+        self,
+        pairs_existence: List[bool],
+        dummy_PipeAnalysis_base: vtp.PipeAnalysis,
+        mocker: MockerFixture
+    ) -> None:
         """
         Tests the _check_measurement_pairs_file method.
 

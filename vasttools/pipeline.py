@@ -2686,8 +2686,7 @@ class Pipeline(object):
             measurements = vaex.open(arrow_path / '*.parquet')
             warnings.warn(
                 "Measurements have been loaded with vaex "
-                "from a partitioned file."
-                )
+                "from a partitioned file.")
 
         else:
             m_files = images['measurements_path'].tolist()
