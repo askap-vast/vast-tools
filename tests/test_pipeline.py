@@ -1052,7 +1052,6 @@ class TestPipeAnalysis:
              "multiple-some-exists",
              )
     )
-
     def test__check_measurement_pairs_file(
         self,
         pairs_existence: List[bool],
