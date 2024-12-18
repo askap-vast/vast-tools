@@ -395,7 +395,7 @@ class PipeRun(object):
 
         s = the_sources.loc[id]
 
-        num_measurements = s['n_measurements']
+        num_measurements = len(measurements) #s['n_measurements']
 
         source_coord = SkyCoord(
             s['wavg_ra'],
