@@ -361,7 +361,7 @@ class PipeRun(object):
         if self._vaex_meas:
             measurements = the_measurements[
                 the_measurements['source'] == id
-            ].to_pandas_df()
+            ].extract().to_pandas_df()
 
         else:
             measurements = the_measurements.loc[
