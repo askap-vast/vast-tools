@@ -553,7 +553,7 @@ class PipeRun(object):
                 measurement_pairs_df.pair_epoch_key, agg='count'
             )
 
-            pair_counts = pair_counts.to_pandas_df().rename(
+            pair_counts = pair_counts.extract().to_pandas_df().rename(
                 columns={'count': 'total_pairs'}
             ).set_index('pair_epoch_key')
         else:
@@ -976,7 +976,7 @@ class PipeAnalysis(PipeRun):
         )
 
         if not self._vaex_meas_pairs:
-            new_measurement_pairs = new_measurement_pairs.to_pandas_df()
+            new_measurement_pairs = new_measurement_pairs.extract().to_pandas_df()
 
         return new_measurement_pairs
 
@@ -1025,7 +1025,7 @@ class PipeAnalysis(PipeRun):
 
         # convert a vaex measurements df to panads so an index can be set
         if isinstance(measurements_df, vaex.dataframe.DataFrame):
-            measurements_df = measurements_df[flux_cols].to_pandas_df()
+            measurements_df = measurements_df[flux_cols].extract().to_pandas_df()
         else:
             measurements_df = measurements_df.loc[:, flux_cols].copy()
 
@@ -1211,7 +1211,7 @@ class PipeAnalysis(PipeRun):
         )
 
         # Switch to pandas at this point to perform join
-        sources_df = sources_df.to_pandas_df().set_index('source')
+        sources_df = sources_df.extract().to_pandas_df().set_index('source')
 
         sources_df = sources_df.join(sources_df_fluxes)
 
@@ -1847,7 +1847,7 @@ class PipeAnalysis(PipeRun):
                 (pairs_df[vs_label] > vs) & (pairs_df[m_abs_label] > m)
             ]
 
-            candidate_pairs = candidate_pairs.to_pandas_df()
+            candidate_pairs = candidate_pairs.extract().to_pandas_df()
 
         else:
             candidate_pairs = pairs_df.loc[
