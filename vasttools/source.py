@@ -893,8 +893,8 @@ class Source:
                 crossmatch radius, defaults to `False`.
             hide_beam: Hide the beam on the plot, defaults to `False`.
             size: Size of the cutout, defaults to None.
-            force_cutout_fetch: Whether to force the re-fetching of the cutout data,
-                defaults to `False`.
+            force_cutout_fetch: Whether to force the re-fetching of the cutout
+                data, defaults to `False`.
             offset_axes: Use offset, rather than absolute, axis labels.
 
         Returns:
@@ -1352,7 +1352,7 @@ class Source:
         outfile: Optional[str] = None,
         save: bool = False,
         size: Optional[Angle] = None,
-        stampsize: Optional[Tuple[float, float]] = (4,4),
+        stampsize: Optional[Tuple[float, float]] = (4, 4),
         figsize: Optional[Tuple[float, float]] = None,
         force_cutout_fetch: bool = False,
         no_selavy: bool = False,
@@ -1406,11 +1406,11 @@ class Source:
 
         num_plots = self.measurements.shape[0]
         nrows = int(np.ceil(num_plots / columns))
-        
+
         if figsize is None:
             if stampsize is None:
                 raise ValueError("Stampsize and Figsize cannot both be None")
-            figsize = (stampsize[0]*columns, stampsize[1]*nrows)
+            figsize = (stampsize[0] * columns, stampsize[1] * nrows)
 
         fig = plt.figure(figsize=figsize)
         fig.tight_layout()
@@ -1824,8 +1824,8 @@ class Source:
             save: If `True` the plot is saved rather than the figure being
                 returned, defaults to `False`.
             size: Size of the cutout, defaults to None.
-            force_cutout_fetch: Whether to force the re-fetching of the cutout data,
-                defaults to `False`.
+            force_cutout_fetch: Whether to force the re-fetching of the cutout
+                data, defaults to `False`.
             disable_autoscaling: Turn off the consistent normalization and
                 calculate the normalizations separately for each observation,
                 defaults to `False`.
