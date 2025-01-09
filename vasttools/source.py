@@ -100,9 +100,6 @@ class Source:
             The number of upper limits the source contains. Will be set to
             `None` for pipeline sources.
         forced_fits (int): The number of forced fits the source contains.
-        norms (astropy.visualization.ImageNormalize):
-            Contains the normalization value to use for consistent
-            normalization across the measurements for png representation.
         planet (bool): Set to `True` if the source has been defined
             as a planet.
     """
@@ -162,7 +159,7 @@ class Source:
         Returns:
             None
         """
-        self.logger = logging.getLogger('vasttools.source.Source')
+        self.logger = logging.getLogger(f'vasttools.source.Source[{name}]')
         self.logger.debug('Created Source instance')
         self.pipeline = pipeline
         self.coord = coord
@@ -217,9 +214,6 @@ class Source:
             self.forced_fits = forced_fits
 
         self._cutouts_got = False
-
-        self.norms = None
-        self._checked_norms = False
 
         self.planet = planet
 
