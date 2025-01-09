@@ -699,8 +699,7 @@ class Source:
         percentile: float = 99.9,
         zscale: bool = False,
         z_contrast: float = 0.2,
-        cutout_data: Optional[pd.DataFrame] = None,
-        return_norm: bool = False
+        cutout_data: Optional[pd.DataFrame] = None
     ) -> Union[None, ImageNormalize]:
         """
         Selects the appropriate image to use as the normalization
@@ -718,11 +717,9 @@ class Source:
                 function when zscale is selected, defaults to 0.2.
             cutout_data: Pass external cutout_data to be used
                 instead of fetching the data, defaults to None.
-            return_norm: If `True` the calculated norm is returned
-                by the function, defaults to False.
 
         Returns:
-            None if return_norm is `False` or the normalization if `True`.
+            The normalisation.
 
         Raises:
             ValueError: If the cutout data is yet to be obtained.
@@ -758,12 +755,7 @@ class Source:
                 interval=PercentileInterval(percentile),
                 stretch=LinearStretch())
 
-        if return_norm:
-            return norms
-        else:
-            self.norms = norms
-
-        self._checked_norms = True
+       return norms
 
     def _get_cutout(
         self, row: pd.Series, size: Angle = Angle(5. * u.arcmin)
@@ -1003,7 +995,8 @@ class Source:
             outfile=outfile,
             save=True,
             plot_dpi=plot_dpi,
-            offset_axes=offset_axes
+            offset_axes=offset_axes,
+            disable_autoscaling=True
         )
 
         return
@@ -1313,21 +1306,22 @@ class Source:
             if cutout_data is None:
                 self.get_cutout_data(size)
 
-        if not calc_script_norms:
-            if not self._checked_norms:
-                self._analyse_norm_level(
+        if disable_autoscaling:
+            norms = None
+        else:
+            if not calc_script_norms:
+                norms = self._analyse_norm_level(
                     percentile=percentile,
                     zscale=zscale,
                     z_contrast=contrast
                 )
-            norms = None
-        else:
-            norms = self._analyse_norm_level(
-                percentile=percentile,
-                zscale=zscale,
-                z_contrast=contrast,
-                cutout_data=cutout_data
-            )
+            else:
+                norms = self._analyse_norm_level(
+                    percentile=percentile,
+                    zscale=zscale,
+                    z_contrast=contrast,
+                    cutout_data=cutout_data
+                )
 
         indices = self.measurements.index.to_series()
         indices.apply(
@@ -1419,13 +1413,11 @@ class Source:
 
         plots = {}
 
-        if not self._checked_norms or force:
-            self._analyse_norm_level(
-                percentile=percentile,
-                zscale=zscale,
-                z_contrast=contrast
-            )
-        img_norms = self.norms
+        img_norms = self._analyse_norm_level(
+            percentile=percentile,
+            zscale=zscale,
+            z_contrast=contrast
+        )
 
         for i in range(num_plots):
             cutout_row = self.cutout_df.iloc[i]
@@ -1876,13 +1868,11 @@ class Source:
             if norms is not None:
                 img_norms = norms
             else:
-                if not self._checked_norms:
-                    self._analyse_norm_level(
-                        percentile=percentile,
-                        zscale=zscale,
-                        z_contrast=contrast
-                    )
-                img_norms = self.norms
+                img_norms = self._analyse_norm_level(
+                    percentile=percentile,
+                    zscale=zscale,
+                    z_contrast=contrast
+                )
         else:
             if zscale:
                 img_norms = ImageNormalize(
