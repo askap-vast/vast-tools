@@ -868,7 +868,7 @@ class Source:
         crossmatch_overlay: bool = False,
         hide_beam: bool = False,
         size: Optional[Angle] = None,
-        force: bool = False,
+        force_cutout_fetch: bool = False,
         offset_axes: bool = True,
     ) -> plt.Figure:
         """
@@ -893,7 +893,7 @@ class Source:
                 crossmatch radius, defaults to `False`.
             hide_beam: Hide the beam on the plot, defaults to `False`.
             size: Size of the cutout, defaults to None.
-            force: Whether to force the re-fetching of the cutout data,
+            force_cutout_fetch: Whether to force the re-fetching of the cutout data,
                 defaults to `False`.
             offset_axes: Use offset, rather than absolute, axis labels.
 
@@ -914,7 +914,7 @@ class Source:
             crossmatch_overlay=crossmatch_overlay,
             hide_beam=hide_beam,
             size=size,
-            force=force,
+            force_cutout_fetch=force_cutout_fetch,
             offset_axes=offset_axes,
             disable_autoscaling=True
         )
@@ -935,7 +935,7 @@ class Source:
         crossmatch_overlay: bool = False,
         hide_beam: bool = False,
         size: Optional[Angle] = None,
-        force: bool = False,
+        force_cutout_fetch: bool = False,
         outfile: Optional[str] = None,
         plot_dpi: int = 150,
         offset_axes: bool = True
@@ -962,7 +962,7 @@ class Source:
                 crossmatch radius, defaults to `False`.
             hide_beam: Hide the beam on the plot, defaults to `False`.
             size: Size of the cutout, defaults to None.
-            force: Whether to force the re-fetching
+            force_cutout_fetch: Whether to force the re-fetching
                 of the cutout data, defaults to `False`.
             outfile: Name to give the file, if None then the name is
                 automatically generated, defaults to None.
@@ -985,7 +985,7 @@ class Source:
             crossmatch_overlay=crossmatch_overlay,
             hide_beam=hide_beam,
             size=size,
-            force=force,
+            force_cutout_fetch=force_cutout_fetch,
             outfile=outfile,
             save=True,
             plot_dpi=plot_dpi,
@@ -1032,7 +1032,7 @@ class Source:
         index: int,
         outfile: Optional[str] = None,
         size: Optional[Angle] = None,
-        force: bool = False,
+        force_cutout_fetch: bool = False,
         cutout_data: Optional[pd.DataFrame] = None
     ) -> None:
         """
@@ -1042,7 +1042,7 @@ class Source:
             index: The index of the requested observation.
             outfile: File to save to, defaults to None.
             size: Size of the cutout, defaults to None.
-            force: Whether to force the re-fetching
+            force_cutout_fetch: Whether to force the re-fetching
                 of the cutout data, defaults to `False`.
             cutout_data: Pass external cutout_data to be used
                 instead of fetching the data, defaults to None.
@@ -1054,7 +1054,7 @@ class Source:
             ValueError: If the source does not contain the requested index.
         """
 
-        if (self._cutouts_got is False) or (force):
+        if (self._cutouts_got is False) or force_cutout_fetch:
             if cutout_data is None:
                 self.get_cutout_data(size)
 
@@ -1190,7 +1190,7 @@ class Source:
     def save_all_fits_cutouts(
         self,
         size: Optional[Angle] = None,
-        force: bool = False,
+        force_cutout_fetch: bool = False,
         cutout_data: Optional[pd.DataFrame] = None
     ) -> None:
         """
@@ -1198,7 +1198,7 @@ class Source:
 
         Args:
             size: Size of the cutouts, defaults to None.
-            force: Whether to force the re-fetching
+            force_cutout_fetch: Whether to force the re-fetching
                 of the cutout data, defaults to `False`.
             cutout_data: Pass external cutout_data to be used
                 instead of fetching the data, defaults to None.
@@ -1206,7 +1206,7 @@ class Source:
         Returns:
             None
         """
-        if (self._cutouts_got is False) or (force):
+        if (self._cutouts_got is False) or force_cutout_fetch:
             if cutout_data is None:
                 self.get_cutout_data(size)
 
@@ -1354,7 +1354,7 @@ class Source:
         size: Optional[Angle] = None,
         stampsize: Optional[Tuple[float, float]] = (4,4),
         figsize: Optional[Tuple[float, float]] = None,
-        force: bool = False,
+        force_cutout_fetch: bool = False,
         no_selavy: bool = False,
         disable_autoscaling: bool = False,
         hide_epoch_labels: bool = False,
@@ -1382,7 +1382,7 @@ class Source:
                 the figsize. Default to (4,4).
             figsize: Size of the matplotlib.pyplot figure, which will overwrite
                 the stampsize argument if provided. Defaults to None.
-            force: Whether to force the re-fetching
+            force_cutout_fetch: Whether to force the re-fetching
                 of the cutout data, defaults to `False`.
             no_selavy: When `True` the selavy overlay
                 is hidden, defaults to `False`.
@@ -1401,7 +1401,7 @@ class Source:
             ValueError: Stampsize and Figsize cannot both be None
         """
 
-        if (self._cutouts_got is False) or (force):
+        if (self._cutouts_got is False) or force_cutout_fetch:
             self.get_cutout_data(size)
 
         num_plots = self.measurements.shape[0]
@@ -1630,7 +1630,7 @@ class Source:
         title: Optional[str] = None,
         save: bool = False,
         size: Optional[Angle] = None,
-        force: bool = False,
+        force_cutout_fetch: bool = False,
         plot_dpi: int = 150,
     ) -> Union[None, matplotlib.figure.Figure]:
         """
@@ -1655,7 +1655,7 @@ class Source:
             save: Saves the file instead of returing the figure,
                 defaults to `False`.
             size: Size of the cutout, defaults to None.
-            force: Whether to force the re-fetching
+            force_cutout_fetch: Whether to force the re-fetching
                 of the cutout data, defaults to `False`.
             plot_dpi: Specify the DPI of saved figures, defaults to 150.
 
@@ -1667,7 +1667,7 @@ class Source:
             ValueError: If the requested survey is not valid.
         """
 
-        if (self._cutouts_got is False) or (force):
+        if (self._cutouts_got is False) or force_cutout_fetch:
             self.get_cutout_data(size)
 
         size = self._size
@@ -1788,7 +1788,7 @@ class Source:
         hide_beam: bool = False,
         save: bool = False,
         size: Optional[Angle] = None,
-        force: bool = False,
+        force_cutout_fetch: bool = False,
         disable_autoscaling: bool = False,
         cutout_data: Optional[pd.DataFrame] = None,
         norms: Optional[ImageNormalize] = None,
@@ -1824,7 +1824,7 @@ class Source:
             save: If `True` the plot is saved rather than the figure being
                 returned, defaults to `False`.
             size: Size of the cutout, defaults to None.
-            force: Whether to force the re-fetching of the cutout data,
+            force_cutout_fetch: Whether to force the re-fetching of the cutout data,
                 defaults to `False`.
             disable_autoscaling: Turn off the consistent normalization and
                 calculate the normalizations separately for each observation,
@@ -1843,7 +1843,7 @@ class Source:
             ValueError: If the index is out of range.
         """
 
-        if (self._cutouts_got is False) or (force):
+        if (self._cutouts_got is False) or force_cutout_fetch:
             if cutout_data is None:
                 self.get_cutout_data(size)
 
@@ -2110,7 +2110,7 @@ class Source:
         outfile: str = None,
         crossmatch_overlay: bool = False,
         size: Optional[Angle] = None,
-        force: bool = False,
+        force_cutout_fetch: bool = False,
         cutout_data: Optional[pd.DataFrame] = None
     ) -> None:
         """
@@ -2124,7 +2124,7 @@ class Source:
                 annotation file output denoting the crossmatch radius,
                 defaults to False.
             size: Size of the cutout, defaults to None.
-            force: Whether to force the re-fetching
+            force_cutout_fetch: Whether to force the re-fetching
                 of the cutout data, defaults to `False`
             cutout_data: Pass external cutout_data to be used
                 instead of fetching the data, defaults to None.
@@ -2132,7 +2132,7 @@ class Source:
         Returns:
             None
         """
-        if (self._cutouts_got is False) or (force):
+        if (self._cutouts_got is False) or force_cutout_fetch:
             if cutout_data is None:
                 self.get_cutout_data(size)
 
@@ -2209,7 +2209,7 @@ class Source:
         outfile: Optional[str] = None,
         crossmatch_overlay: bool = False,
         size: Optional[Angle] = None,
-        force: bool = False,
+        force_cutout_fetch: bool = False,
         cutout_data: Optional[pd.DataFrame] = None
     ) -> None:
         """
@@ -2222,7 +2222,7 @@ class Source:
                 annotation file output denoting the crossmatch radius,
                 defaults to False.
             size: Size of the cutout, defaults to None.
-            force: Whether to force the re-fetching
+            force_cutout_fetch: Whether to force the re-fetching
                 of the cutout data, defaults to `False`.
             cutout_data: Pass external cutout_data to be used
                 instead of fetching the data, defaults to None.
@@ -2230,7 +2230,7 @@ class Source:
         Returns:
             None
         """
-        if (self._cutouts_got is False) or (force):
+        if (self._cutouts_got is False) or force_cutout_fetch:
             if cutout_data is None:
                 self.get_cutout_data(size)
 
