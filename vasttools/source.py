@@ -749,7 +749,7 @@ class Source:
                 interval=PercentileInterval(percentile),
                 stretch=LinearStretch())
 
-       return norms
+        return norms
 
     def _get_cutout(
         self, row: pd.Series, size: Angle = Angle(5. * u.arcmin)
