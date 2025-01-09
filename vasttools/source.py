@@ -1352,7 +1352,8 @@ class Source:
         outfile: Optional[str] = None,
         save: bool = False,
         size: Optional[Angle] = None,
-        figsize: Tuple[int, int] = (10, 5),
+        stampsize: Optional[Tuple[float, float]] = (4,4),
+        figsize: Optional[Tuple[float, float]] = None,
         force: bool = False,
         no_selavy: bool = False,
         disable_autoscaling: bool = False,
@@ -1377,8 +1378,10 @@ class Source:
             save: Save the plot instead of displaying,
                 defaults to `False`.
             size: Size of the cutout, defaults to None.
-            figsize: Size of the matplotlib.pyplot figure,
-                defaults to (10, 5).
+            stampsize: Size of each postagestamp, to be used to calculate
+                the figsize. Default to (4,4).
+            figsize: Size of the matplotlib.pyplot figure, which will overwrite
+                the stampsize argument if provided. Defaults to None.
             force: Whether to force the re-fetching
                 of the cutout data, defaults to `False`.
             no_selavy: When `True` the selavy overlay
@@ -1393,6 +1396,9 @@ class Source:
 
         Returns:
             None is save is `True` or the Figure if `False`.
+
+        Raises:
+            ValueError: Stampsize and Figsize cannot both be None
         """
 
         if (self._cutouts_got is False) or (force):
@@ -1400,11 +1406,14 @@ class Source:
 
         num_plots = self.measurements.shape[0]
         nrows = int(np.ceil(num_plots / columns))
+        
+        if figsize is None:
+            if stampsize is None:
+                raise ValueError("Stampsize and Figsize cannot both be None")
+            figsize = (stampsize[0]*columns, stampsize[1]*nrows)
 
         fig = plt.figure(figsize=figsize)
-
         fig.tight_layout()
-
         plots = {}
 
         img_norms = self._analyse_norm_level(
