@@ -395,7 +395,9 @@ class PipeRun(object):
 
         s = the_sources.loc[id]
 
-        num_measurements = len(measurements) #s['n_measurements']
+        # This used to just check s['n_measurements'] which sometimes broke
+        # things. Instead, check the actual length of the measurments df.
+        num_measurements = len(measurements)
 
         source_coord = SkyCoord(
             s['wavg_ra'],
