@@ -49,7 +49,8 @@ from vasttools.utils import (
     gen_skycoord_from_df,
     calculate_vs_metric,
     calculate_m_metric,
-    create_moc_from_fits
+    create_moc_from_fits,
+    pandas_to_dask
 )
 from vasttools.tools import add_credible_levels
 
@@ -70,7 +71,6 @@ class MeasPairsDoNotExistError(Exception):
     An error to indicate that the measurement pairs do not exist for a run.
     """
     pass
-
 
 class PipeRun(object):
     """
@@ -184,28 +184,6 @@ class PipeRun(object):
                 measurement_pairs_exists = False
 
         return measurement_pairs_exists
-
-    def _pandas_to_dask(
-        self,
-        df: pd.DataFrame,
-        partition_size: Optional[int]=100
-    ) -> dd.DataFrame:
-        """
-        Converts a pandas dataframe to a dask dataframe.
-        
-        Args:
-            df: The pandas dataframe to convert.
-            partition_size: The size of each partition in MB
-
-        Returns:
-            The dask dataframe
-        """
-
-        mem_usage = df.memory_usage(deep=True).sum()
-        npartitions = int(np.ceil(mem_usage/(1024**2)/partition_size))
-        ddf = dd.from_pandas(df, npartitions=npartitions)
-        
-        return ddf
 
     def combine_with_run(
         self, other_PipeRun: PipeRun, new_name: Optional[str] = None
@@ -384,7 +362,7 @@ class PipeRun(object):
             the_sources = user_sources
 
         if self._dask_meas:
-            measurements = the_measurements.loc[id].compute()
+            measurements = the_measurements.loc[id].compute().reset_index()
         else:
             measurements = the_measurements.loc[
                 the_measurements['source'] == id
@@ -425,7 +403,7 @@ class PipeRun(object):
             unit=(u.deg, u.deg)
         )
 
-        source_name = "VAST {}".format(
+        source_name = "VAST {}".format( 
             source_coord.to_string(
                 "hmsdms", sep='', precision=1
             ).replace(
@@ -448,6 +426,9 @@ class PipeRun(object):
         source_crossmatch_radius = None
         source_outdir = outdir
         source_image_type = None
+
+        
+        print(measurements.columns)
 
         thesource = Source(
             source_coord,
@@ -1004,7 +985,7 @@ class PipeAnalysis(PipeRun):
     def recalc_measurement_pairs_df(
         self,
         measurements_df: Union[pd.DataFrame, vaex.dataframe.DataFrame]
-    ) -> Union[pd.DataFrame, vaex.dataframe.DataFrame]:
+    ) -> Union[pd.DataFrame, dd.DataFrame]:
         """
         A method to recalculate the two epoch pair metrics based upon a
         provided altered measurements dataframe.
@@ -1018,12 +999,16 @@ class PipeAnalysis(PipeRun):
         Returns:
             The recalculated measurement pairs dataframe.
         """
+
         if not self._loaded_two_epoch_metrics:
             self.load_two_epoch_metrics()
 
         new_measurement_pairs = self._filter_meas_pairs_df(
             measurements_df[['id']]
         )
+        
+        # NOTE: This needs to be re-done to correctly handle measurement pairs
+        # being in dask dataframes
 
         # an attempt to conserve memory
         if isinstance(new_measurement_pairs, vaex.dataframe.DataFrame):
@@ -1044,11 +1029,11 @@ class PipeAnalysis(PipeRun):
             'id'
         ]
 
-        # convert a vaex measurements df to panads so an index can be set
-        if isinstance(measurements_df, vaex.dataframe.DataFrame):
-            measurements_df = measurements_df[flux_cols].to_pandas_df()
-        else:
-            measurements_df = measurements_df.loc[:, flux_cols].copy()
+        # convert pandas measurements to dask for consistency
+        if isinstance(measurements_df, pd.DataFrame):
+            measurements_df = dd.from_pandas(measurements_df)
+        
+        measurements_df = measurements_df[flux_cols]
 
         measurements_df = (
             measurements_df
@@ -1062,7 +1047,8 @@ class PipeAnalysis(PipeRun):
             for j in ['a', 'b']:
                 pairs_i = i + f'_{j}'
                 id_values = new_measurement_pairs[f'meas_id_{j}'].to_numpy()
-                new_flux_values = measurements_df.loc[id_values][i].to_numpy()
+                new_flux_values = measurements_df.loc[id_values][i]
+                new_flux_values = new_flux_values.compute().to_numpy()
                 new_measurement_pairs[pairs_i] = new_flux_values
 
         del measurements_df

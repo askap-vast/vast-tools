@@ -748,3 +748,24 @@ def open_fits(
         return fits.HDUList(hdul[1:])
     else:
         return hdul
+
+def _pandas_to_dask(
+    df: pd.DataFrame,
+    partition_size: Optional[int]=100
+) -> dd.DataFrame:
+    """
+    Converts a pandas dataframe to a dask dataframe.
+    
+    Args:
+        df: The pandas dataframe to convert.
+        partition_size: The size of each partition in MB.
+
+    Returns:
+        The dask dataframe
+    """
+
+    mem_usage = df.memory_usage(deep=True).sum()
+    npartitions = int(np.ceil(mem_usage/(1024**2)/partition_size))
+    ddf = dd.from_pandas(df, npartitions=npartitions)
+    
+    return ddf
