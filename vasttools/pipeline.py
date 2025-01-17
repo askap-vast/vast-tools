@@ -1360,6 +1360,10 @@ class PipeAnalysis(PipeRun):
 
         # Switch relations column to int
         sources_df['n_relations'] = sources_df['n_relations'].astype(int)
+        
+        # Re-order columns:
+        sources_df = sources_df[self.sources.columns].sort_index()
+        sources_df.index.names = ['id']
 
         return sources_df
 

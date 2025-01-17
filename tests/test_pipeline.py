@@ -1748,6 +1748,7 @@ class TestPipeAnalysis:
         Returns:
             None
         """
+        
         pandas_read_parquet_mocker = mocker.patch(
             'vasttools.pipeline.pd.read_parquet',
             side_effect=dummy_pipeline_measurement_pairs
@@ -1804,11 +1805,11 @@ class TestPipeAnalysis:
         print(result)
         print(dummy_PipeAnalysis.sources)
         
-        print(set(result.columns)-set(dummy_PipeAnalysis.sources.columns))
-        print(set(dummy_PipeAnalysis.sources.columns)-set(result.columns))
-
+        
         assert result['n_selavy'].to_list() == [4, 4, 4]
         assert result.shape[1] == dummy_PipeAnalysis.sources.shape[1]
+        pd.testing.assert_frame_equal(result, dummy_PipeAnalysis.sources)
+        assert 1==0
 
     def test__get_epoch_pair_plotting_df(
         self,
