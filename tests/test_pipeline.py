@@ -484,8 +484,8 @@ def dummy_PipeAnalysis_dask(
 
 
 @pytest.fixture
-def dummy_PipeAnalysis_vaex_wtwoepoch(
-    dummy_PipeAnalysis_vaex: vtp.PipeAnalysis,
+def dummy_PipeAnalysis_dask_wtwoepoch(
+    dummy_PipeAnalysis_dask: vtp.PipeAnalysis,
     mocker: MockerFixture
 ) -> vtp.PipeAnalysis:
     """
@@ -505,9 +505,9 @@ def dummy_PipeAnalysis_vaex_wtwoepoch(
         side_effect=dummy_pipeline_measurement_pairs_vaex
     )
 
-    dummy_PipeAnalysis_vaex.load_two_epoch_metrics()
+    dummy_PipeAnalysis_dask.load_two_epoch_metrics()
 
-    return dummy_PipeAnalysis_vaex
+    return dummy_PipeAnalysis_dask
 
 
 @pytest.fixture
@@ -1415,9 +1415,9 @@ class TestPipeAnalysis:
         assert dummy_PipeAnalysis.pairs_df.equals(dummy_pipeline_pairs_df)
         assert dummy_PipeAnalysis.measurement_pairs_df.shape[0] == 30
 
-    def test_pipeanalysis_load_two_epoch_metrics_vaex(
+    def test_pipeanalysis_load_two_epoch_metrics_dask(
         self,
-        dummy_PipeAnalysis_vaex: vtp.PipeAnalysis,
+        dummy_PipeAnalysis_dask: vtp.PipeAnalysis,
         dummy_pipeline_pairs_df: pd.DataFrame,
         mocker: MockerFixture
     ) -> None:
@@ -1440,12 +1440,12 @@ class TestPipeAnalysis:
             side_effect=dummy_pipeline_measurement_pairs_vaex
         )
 
-        dummy_PipeAnalysis_vaex.load_two_epoch_metrics()
+        dummy_PipeAnalysis_dask.load_two_epoch_metrics()
 
-        assert dummy_PipeAnalysis_vaex.pairs_df.equals(
+        assert dummy_PipeAnalysis_dask.pairs_df.equals(
             dummy_pipeline_pairs_df
         )
-        assert dummy_PipeAnalysis_vaex.measurement_pairs_df.shape[0] == 30
+        assert dummy_PipeAnalysis_dask.measurement_pairs_df.shape[0] == 30
 
     @pytest.mark.parametrize("row, kwargs, expected", [
         (
@@ -1648,7 +1648,7 @@ class TestPipeAnalysis:
 
     @pytest.mark.parametrize(
         'fixture_name',
-        ['dummy_PipeAnalysis_wtwoepoch', 'dummy_PipeAnalysis_vaex_wtwoepoch']
+        ['dummy_PipeAnalysis_wtwoepoch', 'dummy_PipeAnalysis_dask_wtwoepoch']
     )
     def test__filter_meas_pairs_df(self, fixture_name: str, request) -> None:
         """
@@ -1671,9 +1671,14 @@ class TestPipeAnalysis:
         ].copy()
 
         # get IDs of those removed
-        meas_ids = (
-            the_fixture.measurements[~mask]['id'].to_numpy()
-        )
+        if fixture_name == 'dummy_PipeAnalysis_dask_wtwoepoch':
+            meas_ids = (
+                the_fixture.measurements[~mask]['id'].compute()
+            )
+        else:
+            meas_ids = (
+                the_fixture.measurements[~mask]['id'].to_numpy()
+            )
 
         result = the_fixture._filter_meas_pairs_df(
             new_measurements
@@ -1685,7 +1690,7 @@ class TestPipeAnalysis:
 
     @pytest.mark.parametrize(
         'fixture_name',
-        ['dummy_PipeAnalysis_wtwoepoch', 'dummy_PipeAnalysis_vaex_wtwoepoch']
+        ['dummy_PipeAnalysis_wtwoepoch', 'dummy_PipeAnalysis_dask_wtwoepoch']
     )
     def test_recalc_measurement_pairs_df(
         self,

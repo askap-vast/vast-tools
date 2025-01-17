@@ -223,13 +223,13 @@ class PipeRun(object):
         elif self._dask_meas and not other_PipeRun._dask_meas:
             self.measurements = dd.concat(
                 [self.measurements,
-                 self._pandas_to_dask(other_PipeRun.measurements)
+                 pandas_to_dask(other_PipeRun.measurements)
                 ]
             )
 
         elif not self._dask_meas and other_PipeRun._dask_meas:
             self.measurements = dd.concat(
-                [self._pandas_to_dask(self.measurements),
+                [pandas_to_dask(self.measurements),
                  other_PipeRun.measurements
                 ]
             )
@@ -1031,7 +1031,7 @@ class PipeAnalysis(PipeRun):
 
         # convert pandas measurements to dask for consistency
         if isinstance(measurements_df, pd.DataFrame):
-            measurements_df = dd.from_pandas(measurements_df)
+            measurements_df = pandas_to_dask(measurements_df)
         
         measurements_df = measurements_df[flux_cols]
 
@@ -1117,7 +1117,7 @@ class PipeAnalysis(PipeRun):
         # rather than assuming it's the same as self.measurements
         # To do: fix that!!
         if not self._dask_meas:
-            measurements_df = self._pandas_to_dask(measurements_df)
+            measurements_df = pandas_to_dask(measurements_df)
 
         # account for RA wrapping
         ra_wrap_mask = measurements_df.ra <= 0.1
