@@ -9,7 +9,6 @@ from __future__ import annotations
 import numexpr
 import os
 import warnings
-import glob
 import vaex
 import dask.dataframe as dd
 import colorcet as cc
@@ -22,6 +21,7 @@ import logging
 import matplotlib.pyplot as plt
 
 from typing import List, Tuple
+from pathlib import Path
 from bokeh.models import (
     Span,
     BoxAnnotation,
@@ -110,7 +110,7 @@ class PipeRun(object):
         associations: pd.DataFrame,
         bands: pd.DataFrame,
         measurements: Union[pd.DataFrame, vaex.dataframe.DataFrame],
-        measurement_pairs_file: List[str],
+        measurement_pairs_file: Union[List[str], List[Path]],
         vaex_meas: bool = False,
         n_workers: int = HOST_NCPU - 1,
         scheduler: str = 'processes'
@@ -161,7 +161,7 @@ class PipeRun(object):
         self.associations = associations
         self.bands = bands
         self.measurements = measurements
-        self.measurement_pairs_file = measurement_pairs_file
+        self.measurement_pairs_file = [Path(i) for i in measurement_pairs_file]
         self.relations = relations
         self.n_workers = n_workers
         self._vaex_meas = vaex_meas
@@ -177,7 +177,7 @@ class PipeRun(object):
         measurement_pairs_exists = True
 
         for filepath in self.measurement_pairs_file:
-            if not os.path.isfile(filepath):
+            if not filepath.is_file():
                 self.logger.warning(f"Measurement pairs file ({filepath}) does"
                                     f" not exist. You will be unable to access"
                                     f" measurement pairs or two-epoch metrics."
@@ -395,7 +395,9 @@ class PipeRun(object):
 
         s = the_sources.loc[id]
 
-        num_measurements = s['n_measurements']
+        # This used to just check s['n_measurements'] which sometimes broke
+        # things. Instead, check the actual length of the measurments df.
+        num_measurements = len(measurements)
 
         source_coord = SkyCoord(
             s['wavg_ra'],
@@ -515,7 +517,7 @@ class PipeRun(object):
         self._vaex_meas_pairs = False
         if len(self.measurement_pairs_file) > 1:
             arrow_files = (
-                [i.endswith(".arrow") for i in self.measurement_pairs_file]
+                [i.suffix == ".arrow" for i in self.measurement_pairs_file]
             )
             if np.any(arrow_files):
                 measurement_pairs_df = vaex.open_many(
@@ -532,7 +534,7 @@ class PipeRun(object):
                     dd.read_parquet(self.measurement_pairs_file).compute()
                 )
         else:
-            if self.measurement_pairs_file[0].endswith('.arrow'):
+            if self.measurement_pairs_file[0].suffix == '.arrow':
                 measurement_pairs_df = (
                     vaex.open(self.measurement_pairs_file[0])
                 )
@@ -2500,10 +2502,12 @@ class Pipeline(object):
                     " must be defined or the 'project_dir' argument defined"
                     " when initialising the pipeline class object."
                 )
+            else:
+                pipeline_run_path = Path(pipeline_run_path)
         else:
-            pipeline_run_path = os.path.abspath(str(project_dir))
+            pipeline_run_path = Path(project_dir).resolve()
 
-        if not os.path.isdir(pipeline_run_path):
+        if not pipeline_run_path.is_dir():
             raise PipelineDirectoryError(
                 "Pipeline run directory {} not found!".format(
                     pipeline_run_path
@@ -2522,11 +2526,9 @@ class Pipeline(object):
         Returns:
             List of pipeline run names present in directory.
         """
-        jobs = sorted(glob.glob(
-            os.path.join(self.project_dir, "*")
-        ))
+        jobs = sorted(self.project_dir.glob("*"))
 
-        jobs = [i.split("/")[-1] for i in jobs]
+        jobs = [i.name for i in jobs]
         jobs.remove('images')
 
         return jobs
@@ -2538,11 +2540,10 @@ class Pipeline(object):
         Returns:
             List of images processed.
         """
-        img_list = sorted(glob.glob(
-            os.path.join(self.project_dir, "images", "*")
-        ))
+        img_dir = self.project_dir / "images"
+        img_list = sorted(img_dir.glob("*"))
 
-        img_list = [i.split("/")[-1] for i in img_list]
+        img_list = [i.name for i in img_list]
 
         return img_list
 
@@ -2596,38 +2597,24 @@ class Pipeline(object):
             ValueError: Entered pipeline run does not exist.
         """
 
-        run_dir = os.path.join(
-            self.project_dir,
-            run_name
-        )
+        run_dir = Path(self.project_dir) / run_name
 
-        if not os.path.isdir(run_dir):
+        if not run_dir.is_dir():
             raise OSError(
                 "Run '%s' directory does not exist!",
                 run_name
             )
             return
 
-        images = pd.read_parquet(
-            os.path.join(
-                run_dir,
-                'images.parquet'
-            )
-        )
+        images = pd.read_parquet(run_dir / 'images.parquet')
 
         skyregions = pd.read_parquet(
-            os.path.join(
-                run_dir,
-                'skyregions.parquet'
-            ),
+            run_dir / 'skyregions.parquet',
             engine='pyarrow'
         )
 
         bands = pd.read_parquet(
-            os.path.join(
-                run_dir,
-                'bands.parquet'
-            ),
+            run_dir / 'bands.parquet',
             engine='pyarrow'
         )
 
@@ -2656,18 +2643,12 @@ class Pipeline(object):
         )
 
         relations = pd.read_parquet(
-            os.path.join(
-                run_dir,
-                'relations.parquet'
-            ),
+            run_dir / 'relations.parquet',
             engine='pyarrow'
         )
 
         sources = pd.read_parquet(
-            os.path.join(
-                run_dir,
-                'sources.parquet'
-            ),
+            run_dir / 'sources.parquet',
             engine='pyarrow'
         )
 
@@ -2688,33 +2669,22 @@ class Pipeline(object):
         )
 
         associations = pd.read_parquet(
-            os.path.join(
-                run_dir,
-                'associations.parquet'
-            ),
+            run_dir / 'associations.parquet',
             engine='pyarrow'
         )
 
         vaex_meas = False
 
-        if os.path.isfile(os.path.join(
-            run_dir,
-            'measurements.arrow'
-        )):
-            measurements = vaex.open(
-                os.path.join(run_dir, 'measurements.arrow')
-            )
+        arrow_path = run_dir / 'measurements.arrow'
 
+        if arrow_path.exists():
             vaex_meas = True
-
-            warnings.warn("Measurements have been loaded with vaex.")
-
+            measurements = vaex.open(arrow_path)
+            warnings.warn(
+                "Measurements have been loaded with vaex.")
         else:
             m_files = images['measurements_path'].tolist()
-            m_files += sorted(glob.glob(os.path.join(
-                run_dir,
-                "forced_measurements*.parquet"
-            )))
+            m_files += sorted(run_dir.glob("forced_measurements*.parquet"))
 
             # use dask to open measurement parquets
             # as they are spread over many different files
@@ -2740,19 +2710,11 @@ class Pipeline(object):
 
         images = images.set_index('id')
 
-        if os.path.isfile(os.path.join(
-            run_dir,
-            "measurement_pairs.arrow"
-        )):
-            measurement_pairs_file = [os.path.join(
-                run_dir,
-                "measurement_pairs.arrow"
-            )]
+        measurement_pairs_arrow = run_dir / "measurement_pairs.arrow"
+        if measurement_pairs_arrow.is_file():
+            measurement_pairs_file = [measurement_pairs_arrow]
         else:
-            measurement_pairs_file = [os.path.join(
-                run_dir,
-                "measurement_pairs.parquet"
-            )]
+            measurement_pairs_file = [run_dir / "measurement_pairs.parquet"]
 
         piperun = PipeAnalysis(
             name=run_name,
