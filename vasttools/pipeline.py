@@ -185,10 +185,22 @@ class PipeRun(object):
 
         return measurement_pairs_exists
 
-    def _pandas_to_dask(df, partition_size):
+    def _pandas_to_dask(
+        self,
+        df: pd.DataFrame,
+        partition_size: Optional[int]=100
+    ) -> dd.DataFrame:
         """
-        """
+        Converts a pandas dataframe to a dask dataframe.
         
+        Args:
+            df: The pandas dataframe to convert.
+            partition_size: The size of each partition in MB
+
+        Returns:
+            The dask dataframe
+        """
+
         mem_usage = df.memory_usage(deep=True).sum()
         npartitions = int(np.ceil(mem_usage/(1024**2)/partition_size))
         ddf = dd.from_pandas(df, npartitions=npartitions)
@@ -238,7 +250,6 @@ class PipeRun(object):
             )
 
         elif not self._dask_meas and other_PipeRun._dask_meas:
-            meas = 
             self.measurements = dd.concat(
                 [self._pandas_to_dask(self.measurements),
                  other_PipeRun.measurements
@@ -1124,10 +1135,8 @@ class PipeAnalysis(PipeRun):
 
         # account for RA wrapping
         ra_wrap_mask = measurements_df.ra <= 0.1
-        measurements_df['ra_wrap'] = measurements_df.func.where(
-            ra_wrap_mask, measurements_df[ra_wrap_mask].ra + 360.,
-            measurements_df['ra']
-        )
+        measurements_df['ra_wrap'] = measurements_df['ra']
+        measurements_df.loc[ra_wrap_mask]['ra_wrap'] = measurements_df[ra_wrap_mask].ra + 360.
 
         measurements_df['interim_ew'] = (
             measurements_df['ra_wrap'] * measurements_df['weight_ew']
@@ -1140,48 +1149,66 @@ class PipeAnalysis(PipeRun):
         for col in ['flux_int', 'flux_peak']:
             measurements_df[f'{col}_sq'] = (measurements_df[col] ** 2.)
 
-        # most of the aggregate calculations done in vaex
-        sources_df = measurements_df.groupby(
-            by='source',
-            agg={
-                'interim_ew_sum': vaex.agg.sum(
-                    'interim_ew', selection='forced==False'
-                ),
-                'interim_ns_sum': vaex.agg.sum(
-                    'interim_ns', selection='forced==False'
-                ),
-                'weight_ew_sum': vaex.agg.sum(
-                    'weight_ew', selection='forced==False'
-                ),
-                'weight_ns_sum': vaex.agg.sum(
-                    'weight_ns', selection='forced==False'
-                ),
-                'avg_compactness': vaex.agg.mean(
-                    'compactness', selection='forced==False'
-                ),
-                'min_snr': vaex.agg.min(
-                    'snr', selection='forced==False'
-                ),
-                'max_snr': vaex.agg.max(
-                    'snr', selection='forced==False'
-                ),
-                'avg_flux_int': vaex.agg.mean('flux_int'),
-                'avg_flux_peak': vaex.agg.mean('flux_peak'),
-                'max_flux_peak': vaex.agg.max('flux_peak'),
-                'max_flux_int': vaex.agg.max('flux_int'),
-                'min_flux_peak': vaex.agg.min('flux_peak'),
-                'min_flux_int': vaex.agg.min('flux_int'),
-                'min_flux_peak_isl_ratio': vaex.agg.min('flux_peak_isl_ratio'),
-                'min_flux_int_isl_ratio': vaex.agg.min('flux_int_isl_ratio'),
-                'n_measurements': vaex.agg.count('id'),
-                'n_selavy': vaex.agg.count('id', selection='forced==False'),
-                'n_forced': vaex.agg.count('id', selection='forced==True'),
-                'n_siblings': vaex.agg.sum('has_siblings')
-            }
-        )
+        # most of the aggregate calculations done in dask
+        det_meas = measurements_df[~measurements_df['forced']]
+        #forced_true = measurements_df[measurements_df['forced']]
+        sources_df = measurements_df.groupby('source').agg({
+            #'interim_ew_sum': (forced_false['interim_ew'], 'sum'),
+            #'interim_ns_sum': (forced_false['interim_ns'], 'sum'),
+            #'weight_ew_sum': (forced_false['weight_ew'], 'sum'),
+            #'weight_ns_sum': (forced_false['weight_ns'], 'sum'),
+            ##'avg_compactness': (forced_false['compactness'], 'mean'),
+            #'min_snr': (forced_false['snr'], 'min'),
+            #'max_snr': (forced_false['snr'], 'max'),
+            'flux_int':['min', 'mean', 'max'],
+            'flux_peak':['min', 'mean', 'max'],
+            'flux_peak_isl_ratio': 'min',
+            'flux_int_isl_ratio': 'min',
+            'id': 'count',
+            #'n_selavy': (forced_false['id'], 'count'),
+            #'n_forced': (forced_true['id'], 'count'),
+            'has_siblings':'sum',
+        })
+        
+        print(sources_df.columns)
+        sources_df.columns = [
+            'min_flux_int',
+            'avg_flux_int',
+            'max_flux_int',
+            'min_flux_peak',
+            'avg_flux_peak',
+            'max_flux_peak',
+            'min_flux_int_isl_ratio',
+            'min_flux_peak_isl_ratio',
+            'n_measurements',
+            'n_siblings'
+        ]
+        
+        det_metrics = det_meas.groupby('source').agg({
+            'interim_ew': 'sum',
+            'interim_ns': 'sum',
+            'weight_ew': 'sum',
+            'weight_ns': 'sum',
+            'compactness': 'mean',
+            'snr': ['min', 'max'],
+            'id': 'count',
+        })
+        det_metrics.columns = [
+            'interim_ew_sum',
+            'interim_ns_sum',
+            'weight_ew_sum',
+            'weight_ns_sum',
+            'avg_compactness',
+            'min_snr',
+            'max_snr',
+            'n_selavy',
+        ]
+        
+        sources_df = dd.concat([sources_df, det_metrics])
+        sources_df['n_forced'] = sources_df['n_measurements']-sources_df['n_selavy']
 
         # Drop sources which no longer have any selavy measurements
-        sources_df = sources_df[sources_df.n_selavy > 0].extract()
+        sources_df = sources_df[sources_df.n_selavy > 0]
 
         # Calculate average position
         sources_df['wavg_ra'] = (
@@ -1198,13 +1225,16 @@ class PipeAnalysis(PipeRun):
             1. / np.sqrt(sources_df['weight_ns_sum'])
         )
 
+        sources_df = sources_df.compute()
         # the RA wrapping is reverted at the end of the function when the
         # df is in pandas format.
 
         # TraP variability metrics, using Dask.
+        #print(type(measurements_df))
+        #exit()
         measurements_df_temp = measurements_df[[
             'flux_int', 'flux_int_err', 'flux_peak', 'flux_peak_err', 'source'
-        ]].extract().to_pandas_df()
+        ]]
 
         col_dtype = {
             'v_int': 'f',
@@ -1214,7 +1244,7 @@ class PipeAnalysis(PipeRun):
         }
 
         sources_df_fluxes = (
-            dd.from_pandas(measurements_df_temp, self.n_workers)
+            measurements_df_temp
             .groupby('source')
             .apply(
                 pipeline_get_variable_metrics,
@@ -1224,8 +1254,6 @@ class PipeAnalysis(PipeRun):
         )
 
         # Switch to pandas at this point to perform join
-        sources_df = sources_df.to_pandas_df().set_index('source')
-
         sources_df = sources_df.join(sources_df_fluxes)
 
         sources_df = sources_df.join(
