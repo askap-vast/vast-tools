@@ -1169,8 +1169,7 @@ class PipeAnalysis(PipeRun):
             #'n_forced': (forced_true['id'], 'count'),
             'has_siblings':'sum',
         })
-        
-        print(sources_df.columns)
+
         sources_df.columns = [
             'min_flux_int',
             'avg_flux_int',
@@ -1230,8 +1229,6 @@ class PipeAnalysis(PipeRun):
         # df is in pandas format.
 
         # TraP variability metrics, using Dask.
-        #print(type(measurements_df))
-        #exit()
         measurements_df_temp = measurements_df[[
             'flux_int', 'flux_int_err', 'flux_peak', 'flux_peak_err', 'source'
         ]]

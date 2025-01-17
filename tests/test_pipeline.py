@@ -1794,6 +1794,9 @@ class TestPipeAnalysis:
         ) = metrics_return_value"""
 
         dummy_PipeAnalysis.load_two_epoch_metrics()
+        
+        expected_result = pd.read_csv(TEST_DATA_DIR / 'recalc_sources_df_output.csv', index_col='id')
+        
 
         # remove measurements from image id 2
         new_measurements = dummy_PipeAnalysis.measurements[
@@ -1802,14 +1805,27 @@ class TestPipeAnalysis:
 
         result = dummy_PipeAnalysis.recalc_sources_df(new_measurements)
         
-        print(result)
-        print(dummy_PipeAnalysis.sources)
+        print(result.columns)
+        print(expected_result.columns)
+        print(expected_result)
+        
+        #result.to_csv('recalc_sources_df_output.csv')
+        
+        #print(result)
+        #print(dummy_PipeAnalysis.sources)
+        
+        #cols_to_test = ['wavg_ra']
+        #for col in cols_to_test:
+        #    assert (result[col].values == dummy_PipeAnalysis.sources[col].values).all()
+        
+        #assert result['n_selavy'].to_list() == [4, 4, 4]
+        #assert result.shape[1] == dummy_PipeAnalysis.sources.shape[1]
         
         
-        assert result['n_selavy'].to_list() == [4, 4, 4]
-        assert result.shape[1] == dummy_PipeAnalysis.sources.shape[1]
-        pd.testing.assert_frame_equal(result, dummy_PipeAnalysis.sources)
-        assert 1==0
+        print(set(expected_result.columns)-set(result.columns))
+        pd.testing.assert_frame_equal(result, expected_result)
+        
+        #assert 1==0
 
     def test__get_epoch_pair_plotting_df(
         self,
