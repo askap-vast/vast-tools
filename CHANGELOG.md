@@ -8,7 +8,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Added
 
-- Add support for storing pipeline measurements as partitioned arrow files [#580](https://github.com/askap-vast/vast-tools/pull/580)
 - Add epoch 69 [#576](https://github.com/askap-vast/vast-tools/pull/576)
 - Add epoch 68 [#575](https://github.com/askap-vast/vast-tools/pull/575)
 - Add epoch 67 [#573](https://github.com/askap-vast/vast-tools/pull/573)
@@ -20,6 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 #### Changed
 
 - Switch os.path to Pathlib in vasttools.pipeline [#580](https://github.com/askap-vast/vast-tools/pull/580)
+- Calculate `n_measurements` directly inside pipeline.get_source() [#580](https://github.com/askap-vast/vast-tools/pull/580)
 - Minor changes to docstring formatting throughout based on updated mkdocs versions [#334](https://github.com/askap-vast/vast-tools/pull/334)
 - Minor changes for matplotlib 3.7: add angle kwarg to Ellipse and change matplotlib.pyplot.cm.get_cmap to matplotlib.colormaps.get_cmap [#334](https://github.com/askap-vast/vast-tools/pull/334)
 - Refreshed dependencies - major changes are python 3.10, mkdocs (and related packages), astropy v5 and matplotlib v3.7 [#334](https://github.com/askap-vast/vast-tools/pull/334)
@@ -41,7 +41,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
-- [#580](https://github.com/askap-vast/vast-tools/pull/580): feat: Add support for partitioned measurement files and switch vasttools.pipeline to use pathlib
+- [#580](https://github.com/askap-vast/vast-tools/pull/580): feat: Switch vasttools.pipeline to use pathlib and correctly calculate n_measurements for pipeline sources
 - [#576](https://github.com/askap-vast/vast-tools/pull/576): feat: Add epoch 69
 - [#575](https://github.com/askap-vast/vast-tools/pull/575): feat: Add epoch 68
 - [#573](https://github.com/askap-vast/vast-tools/pull/573): feat: Add epoch 67
