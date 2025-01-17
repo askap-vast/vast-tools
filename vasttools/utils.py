@@ -749,7 +749,7 @@ def open_fits(
     else:
         return hdul
 
-def _pandas_to_dask(
+def pandas_to_dask(
     df: pd.DataFrame,
     partition_size: Optional[int]=100
 ) -> dd.DataFrame:
