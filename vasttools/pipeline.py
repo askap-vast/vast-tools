@@ -2681,7 +2681,7 @@ class Pipeline(object):
             vaex_meas = True
             measurements = vaex.open(arrow_path)
             warnings.warn(
-                "Measurements have been loaded with vaex from a single file.")
+                "Measurements have been loaded with vaex.")
         else:
             m_files = images['measurements_path'].tolist()
             m_files += sorted(run_dir.glob("forced_measurements*.parquet"))
