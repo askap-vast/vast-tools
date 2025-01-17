@@ -1202,8 +1202,11 @@ class PipeAnalysis(PipeRun):
             'max_snr',
             'n_selavy',
         ]
+        print(sources_df[['min_flux_int', 'avg_flux_int', 'max_flux_int']].compute())
         
-        sources_df = dd.concat([sources_df, det_metrics])
+        sources_df = dd.concat([sources_df, det_metrics], axis=1)
+        print(sources_df[['min_flux_int', 'avg_flux_int', 'max_flux_int']].compute())
+        
         sources_df['n_forced'] = sources_df['n_measurements']-sources_df['n_selavy']
 
         # Drop sources which no longer have any selavy measurements
@@ -1225,6 +1228,8 @@ class PipeAnalysis(PipeRun):
         )
 
         sources_df = sources_df.compute()
+        print(sources_df[['min_flux_int', 'avg_flux_int', 'max_flux_int']])
+
         # the RA wrapping is reverted at the end of the function when the
         # df is in pandas format.
 

@@ -1814,9 +1814,13 @@ class TestPipeAnalysis:
         #print(result)
         #print(dummy_PipeAnalysis.sources)
         
-        #cols_to_test = ['wavg_ra']
-        #for col in cols_to_test:
-        #    assert (result[col].values == dummy_PipeAnalysis.sources[col].values).all()
+        cols_to_test = ['min_flux_int', 'avg_flux_int', 'max_flux_int']
+        for col in cols_to_test:
+            check = (result[col].values == dummy_PipeAnalysis.sources[col].values).all()
+            if not check:
+                print(col)
+                print(result[col])
+                print(dummy_PipeAnalysis.sources[col])
         
         #assert result['n_selavy'].to_list() == [4, 4, 4]
         #assert result.shape[1] == dummy_PipeAnalysis.sources.shape[1]
