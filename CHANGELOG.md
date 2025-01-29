@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Added
 
+- Add epochs 71 and 72 [#583](https://github.com/askap-vast/vast-tools/pull/583)
 - Add epoch 69 [#576](https://github.com/askap-vast/vast-tools/pull/576)
 - Add epoch 68 [#575](https://github.com/askap-vast/vast-tools/pull/575)
 - Add epoch 67 [#573](https://github.com/askap-vast/vast-tools/pull/573)
@@ -42,6 +43,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Removed lightgallery functionality from docs [#334](https://github.com/askap-vast/vast-tools/pull/334)
 
 #### List of PRs
+
+- [#583](https://github.com/askap-vast/vast-tools/pull/583): feat: Add epoch 71s and 72
 - [#581](https://github.com/askap-vast/vast-tools/pull/581/): feat: Improve source cutout handling and other minor changes
 - [#576](https://github.com/askap-vast/vast-tools/pull/576): feat: Add epoch 69
 - [#575](https://github.com/askap-vast/vast-tools/pull/575): feat: Add epoch 68
