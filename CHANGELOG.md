@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Changed
 
+- V4: Switch measurements to be loaded with dask rather than vaex [#582](https://github.com/askap-vast/vast-tools/pull/582)
 - Minor changes to docstring formatting throughout based on updated mkdocs versions [#334](https://github.com/askap-vast/vast-tools/pull/334)
 - Minor changes for matplotlib 3.7: add angle kwarg to Ellipse and change matplotlib.pyplot.cm.get_cmap to matplotlib.colormaps.get_cmap [#334](https://github.com/askap-vast/vast-tools/pull/334)
 - Refreshed dependencies - major changes are python 3.10, mkdocs (and related packages), astropy v5 and matplotlib v3.7 [#334](https://github.com/askap-vast/vast-tools/pull/334)
@@ -38,7 +39,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Removed lightgallery functionality from docs [#334](https://github.com/askap-vast/vast-tools/pull/334)
 
 #### List of PRs
-
+- V4: [#582](https://github.com/askap-vast/vast-tools/pull/582): feat: Switch measurements to be loaded with dask rather than vaex
 - [#576](https://github.com/askap-vast/vast-tools/pull/576): feat: Add epoch 69
 - [#575](https://github.com/askap-vast/vast-tools/pull/575): feat: Add epoch 68
 - [#573](https://github.com/askap-vast/vast-tools/pull/573): feat: Add epoch 67
