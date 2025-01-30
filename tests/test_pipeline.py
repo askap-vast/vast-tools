@@ -843,8 +843,8 @@ class TestPipeline:
         """
         Tests the load run method.
 
-        Specifically when the measurements.parquet file is not present so dask 
-        is not used. The usual mocks are in place, including using the 
+        Specifically when the measurements.parquet file is not present so dask
+        is not used. The usual mocks are in place, including using the
         load_parquet side effect.
 
         Args:
@@ -923,7 +923,7 @@ class TestPipeline:
         """
         Tests the load run method.
 
-        Specifically when the measurements.parquet files is present, so dask 
+        Specifically when the measurements.parquet files is present, so dask
         is used. The usual mocks are in place, including using the
         load_parquet side effect.
 
