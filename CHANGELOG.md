@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Added
 
+- Add epochs 71 and 72 [#583](https://github.com/askap-vast/vast-tools/pull/583)
+- Add epoch 69 [#576](https://github.com/askap-vast/vast-tools/pull/576)
+- Add epoch 68 [#575](https://github.com/askap-vast/vast-tools/pull/575)
+- Add epoch 67 [#573](https://github.com/askap-vast/vast-tools/pull/573)
 - Add epoch 66 [#569](https://github.com/askap-vast/vast-tools/pull/569)
 - Add epochs 64 and 65 [#568](https://github.com/askap-vast/vast-tools/pull/568)
 - Support for Python 3.10 [#334](https://github.com/askap-vast/vast-tools/pull/334)
@@ -15,6 +19,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Changed
 
+- Calculate cutout normalisation each time, rather than storing a normalisation with no easy way to change it [#581](https://github.com/askap-vast/vast-tools/pull/581/)
+- Renamed "force" variable to "force_cutout_fetch" for clarity [#581](https://github.com/askap-vast/vast-tools/pull/581/)
+- Allow users to specify the size of a single cutout in show_all_png_cutouts, rather than forcing them to specify the total figure size [#581](https://github.com/askap-vast/vast-tools/pull/581/)
+- Updated vasttools.source.Source logger to include the source name [#581](https://github.com/askap-vast/vast-tools/pull/581/)
 - Minor changes to docstring formatting throughout based on updated mkdocs versions [#334](https://github.com/askap-vast/vast-tools/pull/334)
 - Minor changes for matplotlib 3.7: add angle kwarg to Ellipse and change matplotlib.pyplot.cm.get_cmap to matplotlib.colormaps.get_cmap [#334](https://github.com/askap-vast/vast-tools/pull/334)
 - Refreshed dependencies - major changes are python 3.10, mkdocs (and related packages), astropy v5 and matplotlib v3.7 [#334](https://github.com/askap-vast/vast-tools/pull/334)
@@ -36,6 +44,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#583](https://github.com/askap-vast/vast-tools/pull/583): feat: Add epoch 71s and 72
+- [#581](https://github.com/askap-vast/vast-tools/pull/581/): feat: Improve source cutout handling and other minor changes
+- [#576](https://github.com/askap-vast/vast-tools/pull/576): feat: Add epoch 69
+- [#575](https://github.com/askap-vast/vast-tools/pull/575): feat: Add epoch 68
+- [#573](https://github.com/askap-vast/vast-tools/pull/573): feat: Add epoch 67
 - [#569](https://github.com/askap-vast/vast-tools/pull/569): feat: Add epoch 66
 - [#567](https://github.com/askap-vast/vast-tools/pull/567): fix: Correctly calculate plot_lightcurve y-axis range for multi-frequency upper limits
 - [#568](https://github.com/askap-vast/vast-tools/pull/568): feat, docs: Add epochs 64 and 65, and fix new epoch addition docs page syntax
