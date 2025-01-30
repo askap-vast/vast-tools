@@ -428,8 +428,6 @@ class PipeRun(object):
         source_outdir = outdir
         source_image_type = None
 
-        print(measurements.columns)
-
         thesource = Source(
             source_coord,
             source_name,
@@ -2724,7 +2722,7 @@ class Pipeline(object):
 
         dask_meas = False
 
-        if os.path.isfile(os.path.join(
+        if os.path.exists(os.path.join(
             run_dir,
             'measurements.parquet'
         )):
