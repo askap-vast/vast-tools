@@ -965,9 +965,9 @@ class TestPipeAnalysis:
         [
             [True],
             [False],
-            [True,True],
-            [False,False],
-            [True,False],
+            [True, True],
+            [False, False],
+            [True, False],
         ],
         ids=("single-exists",
              "single-no-exists",
@@ -975,21 +975,22 @@ class TestPipeAnalysis:
              "multiple-no-exists",
              "multiple-some-exists",
              )
-     )
-    def test__check_measurement_pairs_file(self,
+    )
+    def test__check_measurement_pairs_file(
+        self,
         pairs_existence: List[bool],
         dummy_PipeAnalysis_base: vtp.PipeAnalysis,
         mocker: MockerFixture
-        ) -> None:
+    ) -> None:
         """
         Tests the _check_measurement_pairs_file method.
-        
+
         Args:
             pairs_existence: A list of booleans corresponding to whether a
                 pairs file exists.
             dummy_PipeAnalysis_base: The base dummy PipeAnalysis object.
             mocker: The pytest-mock mocker object.
-        
+
         Returns:
             None
         """
@@ -997,18 +998,17 @@ class TestPipeAnalysis:
             "os.path.isfile",
             side_effect=pairs_existence
         )
-        
-        fake_pairs_file = [""]*len(pairs_existence)
-        
+
+        fake_pairs_file = [""] * len(pairs_existence)
+
         dummy_PipeAnalysis_base.measurement_pairs_file = fake_pairs_file
-        
+
         returned_val = dummy_PipeAnalysis_base._check_measurement_pairs_file()
-        
+
         all_exist = sum(pairs_existence) == len(pairs_existence)
-        
+
         assert returned_val == all_exist
-        
-    
+
     def test_combine_with_run(
         self,
         dummy_PipeAnalysis: vtp.PipeAnalysis
@@ -1753,7 +1753,7 @@ class TestPipeAnalysis:
         Returns:
             None
         """
-        
+
         pandas_read_parquet_mocker = mocker.patch(
             'vasttools.pipeline.pd.read_parquet',
             side_effect=dummy_pipeline_measurement_pairs
@@ -1799,9 +1799,11 @@ class TestPipeAnalysis:
         ) = metrics_return_value"""
 
         dummy_PipeAnalysis.load_two_epoch_metrics()
-        
-        expected_result = pd.read_csv(TEST_DATA_DIR / 'recalc_sources_df_output.csv', index_col='id')
-        
+
+        expected_result = pd.read_csv(
+            TEST_DATA_DIR /
+            'recalc_sources_df_output.csv',
+            index_col='id')
 
         # remove measurements from image id 2
         new_measurements = dummy_PipeAnalysis.measurements[
@@ -1809,32 +1811,32 @@ class TestPipeAnalysis:
         ].copy()
 
         result = dummy_PipeAnalysis.recalc_sources_df(new_measurements)
-        
+
         print(result.columns)
         print(expected_result.columns)
         print(expected_result)
-        
-        #result.to_csv('recalc_sources_df_output.csv')
-        
-        #print(result)
-        #print(dummy_PipeAnalysis.sources)
-        
+
+        # result.to_csv('recalc_sources_df_output.csv')
+
+        # print(result)
+        # print(dummy_PipeAnalysis.sources)
+
         cols_to_test = ['min_flux_int', 'avg_flux_int', 'max_flux_int']
         for col in cols_to_test:
-            check = (result[col].values == dummy_PipeAnalysis.sources[col].values).all()
+            check = (result[col].values ==
+                     dummy_PipeAnalysis.sources[col].values).all()
             if not check:
                 print(col)
                 print(result[col])
                 print(dummy_PipeAnalysis.sources[col])
-        
-        #assert result['n_selavy'].to_list() == [4, 4, 4]
-        #assert result.shape[1] == dummy_PipeAnalysis.sources.shape[1]
-        
-        
-        print(set(expected_result.columns)-set(result.columns))
+
+        # assert result['n_selavy'].to_list() == [4, 4, 4]
+        # assert result.shape[1] == dummy_PipeAnalysis.sources.shape[1]
+
+        print(set(expected_result.columns) - set(result.columns))
         pd.testing.assert_frame_equal(result, expected_result)
-        
-        #assert 1==0
+
+        # assert 1==0
 
     def test__get_epoch_pair_plotting_df(
         self,

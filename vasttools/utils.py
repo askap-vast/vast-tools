@@ -738,25 +738,26 @@ def open_fits(
         ValueError: File extension must be .fits or .fits.fz
     """
 
-    if type(fits_path) == Path:
+    if isinstace(fits_path, Path):
         fits_path = str(fits_path)
 
     hdul = fits.open(fits_path, memmap=memmap)
 
     if len(hdul) == 1:
         return hdul
-    elif type(hdul[1]) == fits.hdu.compressed.CompImageHDU:
+    elif isinstance(hdul[1] fits.hdu.compressed.CompImageHDU):
         return fits.HDUList(hdul[1:])
     else:
         return hdul
 
+
 def pandas_to_dask(
     df: pd.DataFrame,
-    partition_size: Optional[int]=100
+    partition_size: Optional[int] = 100
 ) -> dd.DataFrame:
     """
     Converts a pandas dataframe to a dask dataframe.
-    
+
     Args:
         df: The pandas dataframe to convert.
         partition_size: The size of each partition in MB.
@@ -766,7 +767,7 @@ def pandas_to_dask(
     """
 
     mem_usage = df.memory_usage(deep=True).sum()
-    npartitions = int(np.ceil(mem_usage/(1024**2)/partition_size))
+    npartitions = int(np.ceil(mem_usage / (1024**2) / partition_size))
     ddf = dd.from_pandas(df, npartitions=npartitions)
-    
+
     return ddf

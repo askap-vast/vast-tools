@@ -10,7 +10,6 @@ import numexpr
 import os
 import warnings
 import glob
-import vaex
 import dask.dataframe as dd
 import colorcet as cc
 import numpy as np
@@ -19,6 +18,7 @@ import astropy
 import mocpy
 import matplotlib
 import logging
+import vaex
 import matplotlib.pyplot as plt
 
 from typing import List, Tuple
@@ -72,6 +72,7 @@ class MeasPairsDoNotExistError(Exception):
     """
     pass
 
+
 class PipeRun(object):
     """
     Class that represents a Pipeline run.
@@ -83,7 +84,7 @@ class PipeRun(object):
             pipeline run loaded from 'bands.parquet'.
         images (pandas.core.frame.DataFrame): Dataframe containing all the
             information on the images of the pipeline run.
-        measurements (Union[pd.DataFrame, vaex.dataframe.DataFrame, dd.DataFrame]):
+        measurements (Union[pd.DataFrame, dd.DataFrame]):
             Dataframe containing all the information on the measurements of
             the pipeline run.
         measurement_pairs_file (List[str]): List containing the locations of
@@ -109,7 +110,7 @@ class PipeRun(object):
         sources: pd.DataFrame,
         associations: pd.DataFrame,
         bands: pd.DataFrame,
-        measurements: Union[pd.DataFrame, vaex.dataframe.DataFrame, dd.DataFrame],
+        measurements: Union[pd.DataFrame, dd.DataFrame],
         measurement_pairs_file: List[str],
         dask_meas: bool = False,
         n_workers: int = HOST_NCPU - 1,
@@ -136,7 +137,7 @@ class PipeRun(object):
             measurements: Measurements dataframe from the pipeline run
                 loaded from measurements.parquet and the forced measurements
                 parquet files.  A `pandas.core.frame.DataFrame` or
-                `vaex.dataframe.DataFrame` instance.
+                `dask.dataframe.DataFrame` instance.
             measurement_pairs_file: The location of the two epoch pairs file
                 from the pipeline. It is a list of locations due to the fact
                 that two pipeline runs could be combined.
@@ -224,14 +225,14 @@ class PipeRun(object):
             self.measurements = dd.concat(
                 [self.measurements,
                  pandas_to_dask(other_PipeRun.measurements)
-                ]
+                 ]
             )
 
         elif not self._dask_meas and other_PipeRun._dask_meas:
             self.measurements = dd.concat(
                 [pandas_to_dask(self.measurements),
                  other_PipeRun.measurements
-                ]
+                 ]
             )
             self._dask_meas = True
 
@@ -403,7 +404,7 @@ class PipeRun(object):
             unit=(u.deg, u.deg)
         )
 
-        source_name = "VAST {}".format( 
+        source_name = "VAST {}".format(
             source_coord.to_string(
                 "hmsdms", sep='', precision=1
             ).replace(
@@ -427,7 +428,6 @@ class PipeRun(object):
         source_outdir = outdir
         source_image_type = None
 
-        
         print(measurements.columns)
 
         thesource = Source(
@@ -1006,7 +1006,7 @@ class PipeAnalysis(PipeRun):
         new_measurement_pairs = self._filter_meas_pairs_df(
             measurements_df[['id']]
         )
-        
+
         # NOTE: This needs to be re-done to correctly handle measurement pairs
         # being in dask dataframes
 
@@ -1032,7 +1032,7 @@ class PipeAnalysis(PipeRun):
         # convert pandas measurements to dask for consistency
         if isinstance(measurements_df, pd.DataFrame):
             measurements_df = pandas_to_dask(measurements_df)
-        
+
         measurements_df = measurements_df[flux_cols]
 
         measurements_df = (
@@ -1115,7 +1115,7 @@ class PipeAnalysis(PipeRun):
 
         # this should actually check the type of the measurements_df
         # rather than assuming it's the same as self.measurements
-        # To do: fix that!!
+        # TO DO: fix that!!
         if not self._dask_meas:
             measurements_df = pandas_to_dask(measurements_df)
 
@@ -1137,23 +1137,13 @@ class PipeAnalysis(PipeRun):
 
         # most of the aggregate calculations done in dask
         det_meas = measurements_df[~measurements_df['forced']]
-        #forced_true = measurements_df[measurements_df['forced']]
         sources_df = measurements_df.groupby('source').agg({
-            #'interim_ew_sum': (forced_false['interim_ew'], 'sum'),
-            #'interim_ns_sum': (forced_false['interim_ns'], 'sum'),
-            #'weight_ew_sum': (forced_false['weight_ew'], 'sum'),
-            #'weight_ns_sum': (forced_false['weight_ns'], 'sum'),
-            ##'avg_compactness': (forced_false['compactness'], 'mean'),
-            #'min_snr': (forced_false['snr'], 'min'),
-            #'max_snr': (forced_false['snr'], 'max'),
-            'flux_int':['min', 'mean', 'max'],
-            'flux_peak':['min', 'mean', 'max'],
+            'flux_int': ['min', 'mean', 'max'],
+            'flux_peak': ['min', 'mean', 'max'],
             'flux_peak_isl_ratio': 'min',
             'flux_int_isl_ratio': 'min',
             'id': 'count',
-            #'n_selavy': (forced_false['id'], 'count'),
-            #'n_forced': (forced_true['id'], 'count'),
-            'has_siblings':'sum',
+            'has_siblings': 'sum',
         })
 
         sources_df.columns = [
@@ -1168,7 +1158,7 @@ class PipeAnalysis(PipeRun):
             'n_measurements',
             'n_siblings'
         ]
-        
+
         det_metrics = det_meas.groupby('source').agg({
             'interim_ew': 'sum',
             'interim_ns': 'sum',
@@ -1188,12 +1178,11 @@ class PipeAnalysis(PipeRun):
             'max_snr',
             'n_selavy',
         ]
-        print(sources_df[['min_flux_int', 'avg_flux_int', 'max_flux_int']].compute())
-        
+
         sources_df = dd.concat([sources_df, det_metrics], axis=1)
-        print(sources_df[['min_flux_int', 'avg_flux_int', 'max_flux_int']].compute())
-        
-        sources_df['n_forced'] = sources_df['n_measurements']-sources_df['n_selavy']
+
+        sources_df['n_forced'] = sources_df['n_measurements'] - \
+            sources_df['n_selavy']
 
         # Drop sources which no longer have any selavy measurements
         sources_df = sources_df[sources_df.n_selavy > 0]
@@ -1214,7 +1203,6 @@ class PipeAnalysis(PipeRun):
         )
 
         sources_df = sources_df.compute()
-        print(sources_df[['min_flux_int', 'avg_flux_int', 'max_flux_int']])
 
         # the RA wrapping is reverted at the end of the function when the
         # df is in pandas format.
@@ -1348,7 +1336,7 @@ class PipeAnalysis(PipeRun):
 
         # Switch relations column to int
         sources_df['n_relations'] = sources_df['n_relations'].astype(int)
-        
+
         # Re-order columns:
         sources_df = sources_df[self.sources.columns].sort_index()
         sources_df.index.names = ['id']
@@ -1406,7 +1394,8 @@ class PipeAnalysis(PipeRun):
         ][['id', 'forced']]
 
         if self._dask_meas:
-            temp_meas = self.measurements.loc[unique_meas_ids][['id', 'forced']]
+            temp_meas = self.measurements.loc[unique_meas_ids][[
+                'id', 'forced']]
             temp_meas = temp_meas.compute()
         else:
             temp_meas = self.measurements[
