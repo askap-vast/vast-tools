@@ -745,7 +745,7 @@ def open_fits(
 
     if len(hdul) == 1:
         return hdul
-    elif isinstance(hdul[1] fits.hdu.compressed.CompImageHDU):
+    elif isinstance(hdul[1], fits.hdu.compressed.CompImageHDU):
         return fits.HDUList(hdul[1:])
     else:
         return hdul
