@@ -29,7 +29,7 @@ def get_measurements() -> pd.DataFrame:
     Load the measurement dataframes for the dummy source.
 
     The dataframe is loaded from the test data directory.
-    Note that all source measurements dataframes are pandas so no vaex
+    Note that all source measurements dataframes are pandas so no dask
     testing is required.
 
     Returns:
