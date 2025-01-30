@@ -29,7 +29,7 @@ tests
 │   ├── test_images.csv
 │   ├── test_measurement_pairs.csv
 │   ├── test_measurements.csv
-│   ├── test_measurements_vaex.csv
+│   ├── test_measurements_dask.csv
 │   ├── test_pairs_df_result.csv
 │   ├── test_skymap_gw190814.fits.gz
 │   ├── test_sources.csv
@@ -65,7 +65,7 @@ This is detailed in the table below.
 |  test_images.csv                    | Images dataframe used by the dummy pipeline run.                                          | test_pipeline | 
 |  test_measurement_pairs.csv         | Measurement pairs dataframe used by the dummy pipeline run.                               | test_pipeline | 
 |  test_measurements.csv              | Measurements dataframe used by the dummy pipeline run.                                    | test_pipeline | 
-|  test_measurements_vaex.csv         | Measurements dataframe used by the dummy pipeline run, written by vaex instead of pandas. | test_pipeline | 
+|  test_measurements_dask.csv         | Measurements dataframe used by the dummy pipeline run, written by dask instead of pandas. | test_pipeline | 
 |  test_pairs_df_result.csv           | Pairs dataframe used by the dummy pipeline run.                                           | test_pipeline | 
 |  test_skymap_gw190814.fits.gz       | A skymap file used for testing the skymap methods in tools.py.                            | test_tools    | 
 |  test_sources.csv                   | Sources dataframe used by the dummy pipeline run.                                         | test_pipeline |

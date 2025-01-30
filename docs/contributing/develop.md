@@ -24,15 +24,11 @@ Below is a checklist to refer to when adding new features or fixes to vast tools
 
 This section includes specific notes from previous developers.
 
-### Pipeline Component & vaex
+### Pipeline Component & dask
 
-As stated in the [`Pipeline`](../../components/pipeline) component section, reading the measurements of a large pipeline run is sometimes done by using `vaex`.
-In particular, `vaex` is used if the VAST Pipeline has produced a `measurements.arrow` file that contains all the measurements of a run compiled into one `arrow` file.
-This is instead of VAST Tools reading in the measurements from the individual `measurements.parquet` files for every image, which can be very memory and time consuming using `pandas`.
-Version 4.0 of `vaex` introduced the ability to open `parquet` files in an out-of-core context, however testing proved that the resulting dataframe was very slow to query compared to the compiled `.arrow` file.
-See [this issue](https://github.com/askap-vast/vast-tools/issues/225){:target="_blank"} for more information.
-
-Hence, as of the current VAST Tools version the decision was made to keep the `.arrow` functionality of the pipeline, but this should be revisited in the future to see if the `parquet` files could be used directly as originally intended.
+As stated in the [`Pipeline`](../../components/pipeline) component section, reading the measurements of a large pipeline run is sometimes done by using `dask`.
+In particular, `dask` is used if the VAST Pipeline has produced a `measurements.parquet` file that contains all the measurements of a run compiled into one `parquet` file.
+This is instead of VAST Tools reading in the measurements from the individual `.parquet` files for every image, which can be very memory and time consuming using `pandas`.
 
 ### Adding new epochs
 
