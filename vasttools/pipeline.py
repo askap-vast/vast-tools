@@ -10,7 +10,6 @@ import numexpr
 import os
 import warnings
 import glob
-import vaex
 import dask.dataframe as dd
 import colorcet as cc
 import numpy as np
@@ -19,6 +18,7 @@ import astropy
 import mocpy
 import matplotlib
 import logging
+import vaex
 import matplotlib.pyplot as plt
 
 from typing import List, Tuple
@@ -49,7 +49,8 @@ from vasttools.utils import (
     gen_skycoord_from_df,
     calculate_vs_metric,
     calculate_m_metric,
-    create_moc_from_fits
+    create_moc_from_fits,
+    pandas_to_dask
 )
 from vasttools.tools import add_credible_levels
 
@@ -83,7 +84,7 @@ class PipeRun(object):
             pipeline run loaded from 'bands.parquet'.
         images (pandas.core.frame.DataFrame): Dataframe containing all the
             information on the images of the pipeline run.
-        measurements (Union[pd.DataFrame, vaex.dataframe.DataFrame]):
+        measurements (Union[pd.DataFrame, dd.DataFrame]):
             Dataframe containing all the information on the measurements of
             the pipeline run.
         measurement_pairs_file (List[str]): List containing the locations of
@@ -109,9 +110,9 @@ class PipeRun(object):
         sources: pd.DataFrame,
         associations: pd.DataFrame,
         bands: pd.DataFrame,
-        measurements: Union[pd.DataFrame, vaex.dataframe.DataFrame],
+        measurements: Union[pd.DataFrame, dd.DataFrame],
         measurement_pairs_file: List[str],
-        vaex_meas: bool = False,
+        dask_meas: bool = False,
         n_workers: int = HOST_NCPU - 1,
         scheduler: str = 'processes'
     ) -> None:
@@ -136,13 +137,12 @@ class PipeRun(object):
             measurements: Measurements dataframe from the pipeline run
                 loaded from measurements.parquet and the forced measurements
                 parquet files.  A `pandas.core.frame.DataFrame` or
-                `vaex.dataframe.DataFrame` instance.
+                `dask.dataframe.DataFrame` instance.
             measurement_pairs_file: The location of the two epoch pairs file
                 from the pipeline. It is a list of locations due to the fact
                 that two pipeline runs could be combined.
-            vaex_meas: 'True' if the measurements have been loaded using
-                vaex from an arrow file. `False` means the measurements are
-                loaded into a pandas DataFrame.
+            dask_meas: `True` if the measurements have been loaded using dask.
+                `False means they have been loaded with pandas.
             n_workers: Number of workers (cpus) available. Default is
                 determined by running `cpu_count()`.
             scheduler: Dask scheduling option to use. Options are "processes"
@@ -164,7 +164,7 @@ class PipeRun(object):
         self.measurement_pairs_file = measurement_pairs_file
         self.relations = relations
         self.n_workers = n_workers
-        self._vaex_meas = vaex_meas
+        self._dask_meas = dask_meas
         self._loaded_two_epoch_metrics = False
         self.scheduler = scheduler
 
@@ -216,21 +216,25 @@ class PipeRun(object):
             ignore_index=True
         ).drop_duplicates('id')
 
-        if self._vaex_meas and other_PipeRun._vaex_meas:
-            self.measurements = self.measurements.concat(
-                other_PipeRun.measurements
+        if self._dask_meas and other_PipeRun._dask_meas:
+            self.measurements = dd.concat(
+                [self.measurements, other_PipeRun.measurements]
             )
 
-        elif self._vaex_meas and not other_PipeRun._vaex_meas:
-            self.measurements = self.measurements.concat(
-                vaex.from_pandas(other_PipeRun.measurements)
+        elif self._dask_meas and not other_PipeRun._dask_meas:
+            self.measurements = dd.concat(
+                [self.measurements,
+                 pandas_to_dask(other_PipeRun.measurements)
+                 ]
             )
 
-        elif not self._vaex_meas and other_PipeRun._vaex_meas:
-            self.measurements = vaex.from_pandas(self.measurements).concat(
-                other_PipeRun.measurements
+        elif not self._dask_meas and other_PipeRun._dask_meas:
+            self.measurements = dd.concat(
+                [pandas_to_dask(self.measurements),
+                 other_PipeRun.measurements
+                 ]
             )
-            self._vaex_meas = True
+            self._dask_meas = True
 
         else:
             self.measurements = pd.concat(
@@ -317,7 +321,7 @@ class PipeRun(object):
         stokes: str = 'I',
         outdir: str = '.',
         user_measurements: Optional[Union[
-            pd.DataFrame, vaex.dataframe.DataFrame]
+            pd.DataFrame, dd.DataFrame]
         ] = None,
         user_sources: Optional[pd.DataFrame] = None
     ) -> Source:
@@ -337,7 +341,7 @@ class PipeRun(object):
                 be saved, defauls to '.' (the current working directory).
             user_measurements: A user generated measurements dataframe to
                 use instead of the default pipeline result. The type must match
-                the default type of the pipeline (vaex or pandas). Defaults to
+                the default type of the pipeline (pandas or dask). Defaults to
                 None, in which case the default pipeline measurements are used.
             user_sources: A user generated sources dataframe to use
                 instead of the default pipeline result. Format is always a
@@ -358,11 +362,8 @@ class PipeRun(object):
         else:
             the_sources = user_sources
 
-        if self._vaex_meas:
-            measurements = the_measurements[
-                the_measurements['source'] == id
-            ].to_pandas_df()
-
+        if self._dask_meas:
+            measurements = the_measurements.loc[id].compute().reset_index()
         else:
             measurements = the_measurements.loc[
                 the_measurements['source'] == id
@@ -426,6 +427,8 @@ class PipeRun(object):
         source_crossmatch_radius = None
         source_outdir = outdir
         source_image_type = None
+
+        print(measurements.columns)
 
         thesource = Source(
             source_coord,
@@ -735,10 +738,9 @@ class PipeRun(object):
 
         new_sources = self.sources.loc[source_mask].copy()
 
-        if self._vaex_meas:
-            new_meas = self.measurements[
-                self.measurements['source'].isin(new_sources.index.values)]
-            new_meas = new_meas.extract()
+        if self._dask_meas:
+            new_meas = self.measurements.loc[new_sources.index.values]
+            new_meas = new_meas.compute()
         else:
             new_meas = self.measurements.loc[
                 self.measurements['source'].isin(
@@ -777,7 +779,7 @@ class PipeRun(object):
             bands=new_bands,
             measurements=new_meas,
             measurement_pairs_file=self.measurement_pairs_file,
-            vaex_meas=self._vaex_meas
+            dask_meas=self._dask_meas
         )
 
         return new_PipeRun
@@ -875,9 +877,9 @@ class PipeAnalysis(PipeRun):
         sources: pd.DataFrame,
         associations: pd.DataFrame,
         bands: pd.DataFrame,
-        measurements: Union[pd.DataFrame, vaex.dataframe.DataFrame],
+        measurements: Union[pd.DataFrame, dd.DataFrame],
         measurement_pairs_file: str,
-        vaex_meas: bool = False,
+        dask_meas: bool = False,
         n_workers: int = HOST_NCPU - 1,
         scheduler: str = 'processes',
     ) -> None:
@@ -906,12 +908,12 @@ class PipeAnalysis(PipeRun):
             measurements: Measurements dataframe from the pipeline run
                 loaded from measurements.parquet and the forced measurements
                 parquet files.  A `pandas.core.frame.DataFrame` or
-                `vaex.dataframe.DataFrame` instance.
+                `dask.dataframe.DataFrame` instance.
             measurement_pairs_file: The location of the two epoch pairs file
                 from the pipeline. It is a list of locations due to the fact
                 that two pipeline runs could be combined.
-            vaex_meas: 'True' if the measurements have been loaded using
-                vaex from an arrow file. `False` means the measurements are
+            dask_meas: 'True' if the measurements have been loaded using
+                dask from a parquet file. `False` means the measurements are
                 loaded into a pandas DataFrame.
             n_workers: Number of workers (cpus) available.
             scheduler: Dask scheduling option to use. Options are "processes"
@@ -923,7 +925,7 @@ class PipeAnalysis(PipeRun):
         """
         super().__init__(
             name, images, skyregions, relations, sources, associations,
-            bands, measurements, measurement_pairs_file, vaex_meas, n_workers,
+            bands, measurements, measurement_pairs_file, dask_meas, n_workers,
             scheduler
         )
 
@@ -983,7 +985,7 @@ class PipeAnalysis(PipeRun):
     def recalc_measurement_pairs_df(
         self,
         measurements_df: Union[pd.DataFrame, vaex.dataframe.DataFrame]
-    ) -> Union[pd.DataFrame, vaex.dataframe.DataFrame]:
+    ) -> Union[pd.DataFrame, dd.DataFrame]:
         """
         A method to recalculate the two epoch pair metrics based upon a
         provided altered measurements dataframe.
@@ -997,12 +999,16 @@ class PipeAnalysis(PipeRun):
         Returns:
             The recalculated measurement pairs dataframe.
         """
+
         if not self._loaded_two_epoch_metrics:
             self.load_two_epoch_metrics()
 
         new_measurement_pairs = self._filter_meas_pairs_df(
             measurements_df[['id']]
         )
+
+        # NOTE: This needs to be re-done to correctly handle measurement pairs
+        # being in dask dataframes
 
         # an attempt to conserve memory
         if isinstance(new_measurement_pairs, vaex.dataframe.DataFrame):
@@ -1023,11 +1029,11 @@ class PipeAnalysis(PipeRun):
             'id'
         ]
 
-        # convert a vaex measurements df to panads so an index can be set
-        if isinstance(measurements_df, vaex.dataframe.DataFrame):
-            measurements_df = measurements_df[flux_cols].to_pandas_df()
-        else:
-            measurements_df = measurements_df.loc[:, flux_cols].copy()
+        # convert pandas measurements to dask for consistency
+        if isinstance(measurements_df, pd.DataFrame):
+            measurements_df = pandas_to_dask(measurements_df)
+
+        measurements_df = measurements_df[flux_cols]
 
         measurements_df = (
             measurements_df
@@ -1041,7 +1047,8 @@ class PipeAnalysis(PipeRun):
             for j in ['a', 'b']:
                 pairs_i = i + f'_{j}'
                 id_values = new_measurement_pairs[f'meas_id_{j}'].to_numpy()
-                new_flux_values = measurements_df.loc[id_values][i].to_numpy()
+                new_flux_values = measurements_df.loc[id_values][i]
+                new_flux_values = new_flux_values.compute().to_numpy()
                 new_measurement_pairs[pairs_i] = new_flux_values
 
         del measurements_df
@@ -1072,7 +1079,7 @@ class PipeAnalysis(PipeRun):
 
     def recalc_sources_df(
         self,
-        measurements_df: Union[pd.DataFrame, vaex.dataframe.DataFrame],
+        measurements_df: Union[pd.DataFrame, dd.DataFrame],
         min_vs: float = 4.3,
         measurement_pairs_df: Optional[pd.DataFrame] = None
     ) -> pd.DataFrame:
@@ -1083,7 +1090,7 @@ class PipeAnalysis(PipeRun):
         Args:
             measurements_df: Dataframe of measurements with default pipeline
                 columns. A `pandas.core.frame.DataFrame` or
-                `vaex.dataframe.DataFrame` instance.
+                `dask.dataframe.DataFrame` instance.
             min_vs: Minimum value of the Vs two epoch parameter to use
                 when appending the two epoch metrics maximum.
             measurement_pairs_df: The recalculated measurement pairs dataframe
@@ -1106,15 +1113,16 @@ class PipeAnalysis(PipeRun):
         if not self._loaded_two_epoch_metrics:
             self.load_two_epoch_metrics()
 
-        if not self._vaex_meas:
-            measurements_df = vaex.from_pandas(measurements_df)
+        # this should actually check the type of the measurements_df
+        # rather than assuming it's the same as self.measurements
+        # TO DO: fix that!!
+        if not self._dask_meas:
+            measurements_df = pandas_to_dask(measurements_df)
 
         # account for RA wrapping
         ra_wrap_mask = measurements_df.ra <= 0.1
-        measurements_df['ra_wrap'] = measurements_df.func.where(
-            ra_wrap_mask, measurements_df[ra_wrap_mask].ra + 360.,
-            measurements_df['ra']
-        )
+        measurements_df['ra_wrap'] = measurements_df['ra']
+        measurements_df.loc[ra_wrap_mask]['ra_wrap'] = measurements_df[ra_wrap_mask].ra + 360.
 
         measurements_df['interim_ew'] = (
             measurements_df['ra_wrap'] * measurements_df['weight_ew']
@@ -1127,48 +1135,57 @@ class PipeAnalysis(PipeRun):
         for col in ['flux_int', 'flux_peak']:
             measurements_df[f'{col}_sq'] = (measurements_df[col] ** 2.)
 
-        # most of the aggregate calculations done in vaex
-        sources_df = measurements_df.groupby(
-            by='source',
-            agg={
-                'interim_ew_sum': vaex.agg.sum(
-                    'interim_ew', selection='forced==False'
-                ),
-                'interim_ns_sum': vaex.agg.sum(
-                    'interim_ns', selection='forced==False'
-                ),
-                'weight_ew_sum': vaex.agg.sum(
-                    'weight_ew', selection='forced==False'
-                ),
-                'weight_ns_sum': vaex.agg.sum(
-                    'weight_ns', selection='forced==False'
-                ),
-                'avg_compactness': vaex.agg.mean(
-                    'compactness', selection='forced==False'
-                ),
-                'min_snr': vaex.agg.min(
-                    'snr', selection='forced==False'
-                ),
-                'max_snr': vaex.agg.max(
-                    'snr', selection='forced==False'
-                ),
-                'avg_flux_int': vaex.agg.mean('flux_int'),
-                'avg_flux_peak': vaex.agg.mean('flux_peak'),
-                'max_flux_peak': vaex.agg.max('flux_peak'),
-                'max_flux_int': vaex.agg.max('flux_int'),
-                'min_flux_peak': vaex.agg.min('flux_peak'),
-                'min_flux_int': vaex.agg.min('flux_int'),
-                'min_flux_peak_isl_ratio': vaex.agg.min('flux_peak_isl_ratio'),
-                'min_flux_int_isl_ratio': vaex.agg.min('flux_int_isl_ratio'),
-                'n_measurements': vaex.agg.count('id'),
-                'n_selavy': vaex.agg.count('id', selection='forced==False'),
-                'n_forced': vaex.agg.count('id', selection='forced==True'),
-                'n_siblings': vaex.agg.sum('has_siblings')
-            }
-        )
+        # most of the aggregate calculations done in dask
+        det_meas = measurements_df[~measurements_df['forced']]
+        sources_df = measurements_df.groupby('source').agg({
+            'flux_int': ['min', 'mean', 'max'],
+            'flux_peak': ['min', 'mean', 'max'],
+            'flux_peak_isl_ratio': 'min',
+            'flux_int_isl_ratio': 'min',
+            'id': 'count',
+            'has_siblings': 'sum',
+        })
+
+        sources_df.columns = [
+            'min_flux_int',
+            'avg_flux_int',
+            'max_flux_int',
+            'min_flux_peak',
+            'avg_flux_peak',
+            'max_flux_peak',
+            'min_flux_int_isl_ratio',
+            'min_flux_peak_isl_ratio',
+            'n_measurements',
+            'n_siblings'
+        ]
+
+        det_metrics = det_meas.groupby('source').agg({
+            'interim_ew': 'sum',
+            'interim_ns': 'sum',
+            'weight_ew': 'sum',
+            'weight_ns': 'sum',
+            'compactness': 'mean',
+            'snr': ['min', 'max'],
+            'id': 'count',
+        })
+        det_metrics.columns = [
+            'interim_ew_sum',
+            'interim_ns_sum',
+            'weight_ew_sum',
+            'weight_ns_sum',
+            'avg_compactness',
+            'min_snr',
+            'max_snr',
+            'n_selavy',
+        ]
+
+        sources_df = dd.concat([sources_df, det_metrics], axis=1)
+
+        sources_df['n_forced'] = sources_df['n_measurements'] - \
+            sources_df['n_selavy']
 
         # Drop sources which no longer have any selavy measurements
-        sources_df = sources_df[sources_df.n_selavy > 0].extract()
+        sources_df = sources_df[sources_df.n_selavy > 0]
 
         # Calculate average position
         sources_df['wavg_ra'] = (
@@ -1185,13 +1202,15 @@ class PipeAnalysis(PipeRun):
             1. / np.sqrt(sources_df['weight_ns_sum'])
         )
 
+        sources_df = sources_df.compute()
+
         # the RA wrapping is reverted at the end of the function when the
         # df is in pandas format.
 
         # TraP variability metrics, using Dask.
         measurements_df_temp = measurements_df[[
             'flux_int', 'flux_int_err', 'flux_peak', 'flux_peak_err', 'source'
-        ]].extract().to_pandas_df()
+        ]]
 
         col_dtype = {
             'v_int': 'f',
@@ -1201,7 +1220,7 @@ class PipeAnalysis(PipeRun):
         }
 
         sources_df_fluxes = (
-            dd.from_pandas(measurements_df_temp, self.n_workers)
+            measurements_df_temp
             .groupby('source')
             .apply(
                 pipeline_get_variable_metrics,
@@ -1211,8 +1230,6 @@ class PipeAnalysis(PipeRun):
         )
 
         # Switch to pandas at this point to perform join
-        sources_df = sources_df.to_pandas_df().set_index('source')
-
         sources_df = sources_df.join(sources_df_fluxes)
 
         sources_df = sources_df.join(
@@ -1320,6 +1337,10 @@ class PipeAnalysis(PipeRun):
         # Switch relations column to int
         sources_df['n_relations'] = sources_df['n_relations'].astype(int)
 
+        # Re-order columns:
+        sources_df = sources_df[self.sources.columns].sort_index()
+        sources_df.index.names = ['id']
+
         return sources_df
 
     def _get_epoch_pair_plotting_df(
@@ -1372,8 +1393,14 @@ class PipeAnalysis(PipeRun):
             self.measurements['id'].isin(unique_meas_ids)
         ][['id', 'forced']]
 
-        if self._vaex_meas:
-            temp_meas = temp_meas.extract().to_pandas_df()
+        if self._dask_meas:
+            temp_meas = self.measurements.loc[unique_meas_ids][[
+                'id', 'forced']]
+            temp_meas = temp_meas.compute()
+        else:
+            temp_meas = self.measurements[
+                self.measurements['id'].isin(unique_meas_ids)
+            ][['id', 'forced']]
 
         temp_meas = temp_meas.drop_duplicates('id').set_index('id')
 
@@ -2695,19 +2722,20 @@ class Pipeline(object):
             engine='pyarrow'
         )
 
-        vaex_meas = False
+        dask_meas = False
 
         if os.path.isfile(os.path.join(
             run_dir,
-            'measurements.arrow'
+            'measurements.parquet'
         )):
-            measurements = vaex.open(
-                os.path.join(run_dir, 'measurements.arrow')
+            measurements = dd.read_parquet(
+                os.path.join(run_dir, 'measurements.parquet'),
+                calculate_divisions=True,
             )
 
-            vaex_meas = True
+            dask_meas = True
 
-            warnings.warn("Measurements have been loaded with vaex.")
+            warnings.warn("Measurements have been loaded with dask.")
 
         else:
             m_files = images['measurements_path'].tolist()
@@ -2764,7 +2792,7 @@ class Pipeline(object):
             bands=bands,
             measurements=measurements,
             measurement_pairs_file=measurement_pairs_file,
-            vaex_meas=vaex_meas
+            dask_meas=dask_meas
         )
 
         return piperun

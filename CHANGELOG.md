@@ -19,6 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Changed
 
+- V4: Switch measurements to be loaded with dask rather than vaex [#582](https://github.com/askap-vast/vast-tools/pull/582)
 - Calculate cutout normalisation each time, rather than storing a normalisation with no easy way to change it [#581](https://github.com/askap-vast/vast-tools/pull/581/)
 - Renamed "force" variable to "force_cutout_fetch" for clarity [#581](https://github.com/askap-vast/vast-tools/pull/581/)
 - Allow users to specify the size of a single cutout in show_all_png_cutouts, rather than forcing them to specify the total figure size [#581](https://github.com/askap-vast/vast-tools/pull/581/)
@@ -44,6 +45,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- V4: [#582](https://github.com/askap-vast/vast-tools/pull/582): feat: Switch measurements to be loaded with dask rather than vaex
 - [#583](https://github.com/askap-vast/vast-tools/pull/583): feat: Add epoch 71s and 72
 - [#581](https://github.com/askap-vast/vast-tools/pull/581/): feat: Improve source cutout handling and other minor changes
 - [#576](https://github.com/askap-vast/vast-tools/pull/576): feat: Add epoch 69

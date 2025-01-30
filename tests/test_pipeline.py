@@ -6,12 +6,13 @@ import os
 import pandas as pd
 import pytest
 import vaex
+import dask.dataframe as dd
 
 from astropy.coordinates import SkyCoord
 from mocpy import MOC
 from pathlib import Path
 from pytest_mock import mocker, MockerFixture  # noqa: F401
-from typing import Dict, List, Union
+from typing import Dict, List
 
 import vasttools.pipeline as vtp
 
@@ -216,21 +217,17 @@ def dummy_pipeline_associations() -> pd.DataFrame:
     return associations_df
 
 
-def dummy_pipeline_measurements_vaex() -> vaex.dataframe.DataFrame:
+def dummy_pipeline_measurements_dask() -> dd.DataFrame:
     """
-    A dummy pipeline measurements dataframe, as a vaex dataframe.
+    A dummy pipeline measurements dataframe, as a dask dataframe.
 
     Loaded from the test data directory.
 
     Returns:
-        The dummy pipeline measurements vaex dataframe.
+        The dummy pipeline measurements dask dataframe.
     """
-    filepath = TEST_DATA_DIR / 'test_measurements_vaex.csv'
-    # TODO: check measurements_df = vaex.read_csv(filepath)
-    #       Annoyingly vaex fails to read directly from within the testing
-    #       environment - it thinks the file is a directory!
-    measurements_df = pd.read_csv(filepath)
-    measurements_df = vaex.from_pandas(measurements_df)
+    filepath = TEST_DATA_DIR / 'test_measurements_dask.csv'
+    measurements_df = dd.read_csv(filepath).set_index('source')
 
     return measurements_df
 
@@ -317,7 +314,7 @@ def dummy_pipeline_pairs_df() -> pd.DataFrame:
 def load_parquet_side_effect(
     value: str,
     **kwargs
-) -> Union[pd.DataFrame, vaex.dataframe.DataFrame]:
+) -> pd.DataFrame:
     """
     A side effect function for the loading of the parquet files during the
     loading of a pipeline run.
@@ -330,8 +327,7 @@ def load_parquet_side_effect(
         kwargs: Keyword arguments.
 
     Returns:
-        The relevant dataframe which is returned from the function. Can be
-        pandas or vaex.
+        The relevant pandas dataframe which is returned from the function.
     """
     if 'bands.parquet' in value:
         return dummy_pipeline_bands()
@@ -449,12 +445,12 @@ def dummy_PipeAnalysis_wtwoepoch(
 
 
 @pytest.fixture
-def dummy_PipeAnalysis_vaex(
+def dummy_PipeAnalysis_dask(
     dummy_pipeline_object: vtp.Pipeline,
     mocker: MockerFixture
 ) -> vtp.PipeAnalysis:
     """
-    A dummy PipeAnalysis object used in testing, a vaex version.
+    A dummy PipeAnalysis object used in testing, a dask version.
 
     Because the raw pipeline outputs are processed in the load run function
     it is easier to test while creating the object each time. It is a little
@@ -475,9 +471,9 @@ def dummy_PipeAnalysis_vaex(
         'vasttools.pipeline.pd.read_parquet',
         side_effect=load_parquet_side_effect
     )
-    vaex_open_mocker = mocker.patch(
-        'vasttools.pipeline.vaex.open',
-        return_value=dummy_pipeline_measurements_vaex()
+    dask_open_mocker = mocker.patch(
+        'vasttools.pipeline.dd.read_parquet',
+        return_value=dummy_pipeline_measurements_dask()
     )
 
     pipe = dummy_pipeline_object
@@ -488,8 +484,8 @@ def dummy_PipeAnalysis_vaex(
 
 
 @pytest.fixture
-def dummy_PipeAnalysis_vaex_wtwoepoch(
-    dummy_PipeAnalysis_vaex: vtp.PipeAnalysis,
+def dummy_PipeAnalysis_dask_wtwoepoch(
+    dummy_PipeAnalysis_dask: vtp.PipeAnalysis,
     mocker: MockerFixture
 ) -> vtp.PipeAnalysis:
     """
@@ -509,9 +505,9 @@ def dummy_PipeAnalysis_vaex_wtwoepoch(
         side_effect=dummy_pipeline_measurement_pairs_vaex
     )
 
-    dummy_PipeAnalysis_vaex.load_two_epoch_metrics()
+    dummy_PipeAnalysis_dask.load_two_epoch_metrics()
 
-    return dummy_PipeAnalysis_vaex
+    return dummy_PipeAnalysis_dask
 
 
 @pytest.fixture
@@ -839,7 +835,7 @@ class TestPipeline:
         with pytest.raises(OSError) as excinfo:
             pipe.load_run('test')
 
-    def test_load_run_no_vaex(
+    def test_load_run_no_dask(
         self,
         dummy_pipeline_object: vtp.Pipeline,
         mocker: MockerFixture
@@ -847,9 +843,9 @@ class TestPipeline:
         """
         Tests the load run method.
 
-        Specifically when the arrow files are not present so vaex is not used.
-        The usual mocks are in place, including using the read parquet side
-        effect.
+        Specifically when the measurements.parquet file is not present so dask
+        is not used. The usual mocks are in place, including using the
+        load_parquet side effect.
 
         Args:
             dummy_pipeline_object: The dummy Pipeline object that is used
@@ -877,9 +873,9 @@ class TestPipeline:
         run = pipe.load_run(run_name)
 
         assert run.name == run_name
-        assert run._vaex_meas is False
+        assert run._dask_meas is False
 
-    def test_load_run_no_vaex_check_columns(
+    def test_load_run_no_dask_check_columns(
         self,
         dummy_pipeline_object: vtp.Pipeline,
         mocker: MockerFixture
@@ -888,7 +884,7 @@ class TestPipeline:
         Tests the load run method.
 
         Specifically checks that the dataframes have been constructed
-        correctly in the non vaex case.
+        correctly in the non dask case.
 
         Args:
             dummy_pipeline_object: The dummy Pipeline object that is used
@@ -919,7 +915,7 @@ class TestPipeline:
         assert run.images.shape[1] == 29
         assert run.measurements.shape[1] == 42
 
-    def test_load_run_vaex(
+    def test_load_run_dask(
         self,
         dummy_pipeline_object: vtp.Pipeline,
         mocker: MockerFixture
@@ -927,9 +923,9 @@ class TestPipeline:
         """
         Tests the load run method.
 
-        Specifically when the arrow files are present so vaex is used.
-        The usual mocks are in place, including using the read parquet side
-        effect.
+        Specifically when the measurements.parquet files is present, so dask
+        is used. The usual mocks are in place, including using the
+        load_parquet side effect.
 
         Args:
             dummy_pipeline_object: The dummy Pipeline object that is used
@@ -945,9 +941,9 @@ class TestPipeline:
             'vasttools.pipeline.pd.read_parquet',
             side_effect=load_parquet_side_effect
         )
-        vaex_open_mocker = mocker.patch(
-            'vasttools.pipeline.vaex.open',
-            return_value=dummy_pipeline_measurements_vaex()
+        dask_open_mocker = mocker.patch(
+            'vasttools.pipeline.dd.read_parquet',
+            return_value=dummy_pipeline_measurements_dask()
         )
 
         pipe = dummy_pipeline_object
@@ -955,7 +951,7 @@ class TestPipeline:
         run = pipe.load_run(run_name)
 
         assert run.name == run_name
-        assert run._vaex_meas is True
+        assert run._dask_meas is True
 
 
 class TestPipeAnalysis:
@@ -969,9 +965,9 @@ class TestPipeAnalysis:
         [
             [True],
             [False],
-            [True,True],
-            [False,False],
-            [True,False],
+            [True, True],
+            [False, False],
+            [True, False],
         ],
         ids=("single-exists",
              "single-no-exists",
@@ -979,21 +975,22 @@ class TestPipeAnalysis:
              "multiple-no-exists",
              "multiple-some-exists",
              )
-     )
-    def test__check_measurement_pairs_file(self,
+    )
+    def test__check_measurement_pairs_file(
+        self,
         pairs_existence: List[bool],
         dummy_PipeAnalysis_base: vtp.PipeAnalysis,
         mocker: MockerFixture
-        ) -> None:
+    ) -> None:
         """
         Tests the _check_measurement_pairs_file method.
-        
+
         Args:
             pairs_existence: A list of booleans corresponding to whether a
                 pairs file exists.
             dummy_PipeAnalysis_base: The base dummy PipeAnalysis object.
             mocker: The pytest-mock mocker object.
-        
+
         Returns:
             None
         """
@@ -1001,18 +998,17 @@ class TestPipeAnalysis:
             "os.path.isfile",
             side_effect=pairs_existence
         )
-        
-        fake_pairs_file = [""]*len(pairs_existence)
-        
+
+        fake_pairs_file = [""] * len(pairs_existence)
+
         dummy_PipeAnalysis_base.measurement_pairs_file = fake_pairs_file
-        
+
         returned_val = dummy_PipeAnalysis_base._check_measurement_pairs_file()
-        
+
         all_exist = sum(pairs_existence) == len(pairs_existence)
-        
+
         assert returned_val == all_exist
-        
-    
+
     def test_combine_with_run(
         self,
         dummy_PipeAnalysis: vtp.PipeAnalysis
@@ -1036,53 +1032,53 @@ class TestPipeAnalysis:
 
         assert new_run.sources.shape[0] == 6
 
-    def test_combine_with_run_pandas_vaex(
+    def test_combine_with_run_pandas_dask(
         self,
         dummy_PipeAnalysis: vtp.PipeAnalysis,
-        dummy_PipeAnalysis_vaex: vtp.PipeAnalysis
+        dummy_PipeAnalysis_dask: vtp.PipeAnalysis
     ) -> None:
         """
         Tests the combine with other run method.
 
-        The original run is pandas based and the second run is vaex based.
+        The original run is pandas based and the second run is dask based.
 
         Args:
             dummy_PipeAnalysis: The dummy PipeAnalysis object that is used
                 for testing.
-            dummy_PipeAnalysis_vaex: The dummy PipeAnalysis object that is
-                used for testing that has vaex loaded measurements.
+            dummy_PipeAnalysis_dask: The dummy PipeAnalysis object that is
+                used for testing that has dask loaded measurements.
 
         Returns:
             None
         """
         dummy_PipeAnalysis.sources.index = [100, 200, 300]
         new_run = dummy_PipeAnalysis.combine_with_run(
-            dummy_PipeAnalysis_vaex
+            dummy_PipeAnalysis_dask
         )
 
         assert new_run.sources.shape[0] == 6
 
-    def test_combine_with_run_both_vaex(
+    def test_combine_with_run_both_dask(
         self,
-        dummy_PipeAnalysis_vaex: vtp.PipeAnalysis
+        dummy_PipeAnalysis_dask: vtp.PipeAnalysis
     ) -> None:
         """
         Tests the combine with other run method.
 
         To mimic a second run the PipeAnalysis object is copied and the source
         id's are changed to be different. Both are pandas based. Both runs
-        are vaex based.
+        are dask based.
 
         Args:
-            dummy_PipeAnalysis_vaex: The dummy PipeAnalysis object that is
-                used for testing that has vaex loaded measurements.
+            dummy_PipeAnalysis_dask: The dummy PipeAnalysis object that is
+                used for testing that has dask loaded measurements.
 
         Returns:
             None
         """
-        run_2 = copy.deepcopy(dummy_PipeAnalysis_vaex)
+        run_2 = copy.deepcopy(dummy_PipeAnalysis_dask)
         run_2.sources.index = [100, 200, 300]
-        new_run = dummy_PipeAnalysis_vaex.combine_with_run(run_2)
+        new_run = dummy_PipeAnalysis_dask.combine_with_run(run_2)
 
         assert new_run.sources.shape[0] == 6
 
@@ -1290,9 +1286,9 @@ class TestPipeAnalysis:
         assert mocker_calls.args[0] == expected_sources_skycoord[0]
         assert the_source == -99
 
-    def test_pipeanalysis_get_source_vaex(
+    def test_pipeanalysis_get_source_dask(
         self,
-        dummy_PipeAnalysis_vaex: vtp.PipeAnalysis,
+        dummy_PipeAnalysis_dask: vtp.PipeAnalysis,
         expected_sources_skycoord: SkyCoord,
         expected_source_measurements_pd: pd.DataFrame,
         mocker: MockerFixture
@@ -1302,7 +1298,7 @@ class TestPipeAnalysis:
         vasttools.source.Source instance.
 
         The Source instance call is mocked with the call args checked. This
-        test performs the check on a vaex loaded run.
+        test performs the check on a dask loaded run.
 
         Args:
             dummy_PipeAnalysis: The dummy PipeAnalysis object that is used
@@ -1379,7 +1375,7 @@ class TestPipeAnalysis:
             pipeline=True
         )
 
-        the_source = dummy_PipeAnalysis_vaex.get_source(729)
+        the_source = dummy_PipeAnalysis_dask.get_source(729)
 
         mocker_source.assert_called_once()
 
@@ -1419,9 +1415,9 @@ class TestPipeAnalysis:
         assert dummy_PipeAnalysis.pairs_df.equals(dummy_pipeline_pairs_df)
         assert dummy_PipeAnalysis.measurement_pairs_df.shape[0] == 30
 
-    def test_pipeanalysis_load_two_epoch_metrics_vaex(
+    def test_pipeanalysis_load_two_epoch_metrics_dask(
         self,
-        dummy_PipeAnalysis_vaex: vtp.PipeAnalysis,
+        dummy_PipeAnalysis_dask: vtp.PipeAnalysis,
         dummy_pipeline_pairs_df: pd.DataFrame,
         mocker: MockerFixture
     ) -> None:
@@ -1444,12 +1440,12 @@ class TestPipeAnalysis:
             side_effect=dummy_pipeline_measurement_pairs_vaex
         )
 
-        dummy_PipeAnalysis_vaex.load_two_epoch_metrics()
+        dummy_PipeAnalysis_dask.load_two_epoch_metrics()
 
-        assert dummy_PipeAnalysis_vaex.pairs_df.equals(
+        assert dummy_PipeAnalysis_dask.pairs_df.equals(
             dummy_pipeline_pairs_df
         )
-        assert dummy_PipeAnalysis_vaex.measurement_pairs_df.shape[0] == 30
+        assert dummy_PipeAnalysis_dask.measurement_pairs_df.shape[0] == 30
 
     @pytest.mark.parametrize("row, kwargs, expected", [
         (
@@ -1652,7 +1648,7 @@ class TestPipeAnalysis:
 
     @pytest.mark.parametrize(
         'fixture_name',
-        ['dummy_PipeAnalysis_wtwoepoch', 'dummy_PipeAnalysis_vaex_wtwoepoch']
+        ['dummy_PipeAnalysis_wtwoepoch', 'dummy_PipeAnalysis_dask_wtwoepoch']
     )
     def test__filter_meas_pairs_df(self, fixture_name: str, request) -> None:
         """
@@ -1675,9 +1671,14 @@ class TestPipeAnalysis:
         ].copy()
 
         # get IDs of those removed
-        meas_ids = (
-            the_fixture.measurements[~mask]['id'].to_numpy()
-        )
+        if fixture_name == 'dummy_PipeAnalysis_dask_wtwoepoch':
+            meas_ids = (
+                the_fixture.measurements[~mask]['id'].compute()
+            )
+        else:
+            meas_ids = (
+                the_fixture.measurements[~mask]['id'].to_numpy()
+            )
 
         result = the_fixture._filter_meas_pairs_df(
             new_measurements
@@ -1689,7 +1690,7 @@ class TestPipeAnalysis:
 
     @pytest.mark.parametrize(
         'fixture_name',
-        ['dummy_PipeAnalysis_wtwoepoch', 'dummy_PipeAnalysis_vaex_wtwoepoch']
+        ['dummy_PipeAnalysis_wtwoepoch', 'dummy_PipeAnalysis_dask_wtwoepoch']
     )
     def test_recalc_measurement_pairs_df(
         self,
@@ -1752,14 +1753,15 @@ class TestPipeAnalysis:
         Returns:
             None
         """
+
         pandas_read_parquet_mocker = mocker.patch(
             'vasttools.pipeline.pd.read_parquet',
             side_effect=dummy_pipeline_measurement_pairs
         )
 
         # define this to speed up the test to avoid dask
-        dask_from_pandas_mocker = mocker.patch(
-            'vasttools.pipeline.dd.from_pandas',
+        """dask_from_pandas_mocker = mocker.patch(
+            'vasttools.pipeline.dd.from_pandas'
         )
 
         metrics_return_value = pd.DataFrame(data={
@@ -1794,9 +1796,14 @@ class TestPipeAnalysis:
             .return_value
             .compute
             .return_value
-        ) = metrics_return_value
+        ) = metrics_return_value"""
 
         dummy_PipeAnalysis.load_two_epoch_metrics()
+
+        expected_result = pd.read_csv(
+            TEST_DATA_DIR /
+            'recalc_sources_df_output.csv',
+            index_col='id')
 
         # remove measurements from image id 2
         new_measurements = dummy_PipeAnalysis.measurements[
@@ -1805,8 +1812,31 @@ class TestPipeAnalysis:
 
         result = dummy_PipeAnalysis.recalc_sources_df(new_measurements)
 
-        assert result['n_selavy'].to_list() == [4, 4, 4]
-        assert result.shape[1] == dummy_PipeAnalysis.sources.shape[1]
+        print(result.columns)
+        print(expected_result.columns)
+        print(expected_result)
+
+        # result.to_csv('recalc_sources_df_output.csv')
+
+        # print(result)
+        # print(dummy_PipeAnalysis.sources)
+
+        cols_to_test = ['min_flux_int', 'avg_flux_int', 'max_flux_int']
+        for col in cols_to_test:
+            check = (result[col].values ==
+                     dummy_PipeAnalysis.sources[col].values).all()
+            if not check:
+                print(col)
+                print(result[col])
+                print(dummy_PipeAnalysis.sources[col])
+
+        # assert result['n_selavy'].to_list() == [4, 4, 4]
+        # assert result.shape[1] == dummy_PipeAnalysis.sources.shape[1]
+
+        print(set(expected_result.columns) - set(result.columns))
+        pd.testing.assert_frame_equal(result, expected_result)
+
+        # assert 1==0
 
     def test__get_epoch_pair_plotting_df(
         self,

@@ -150,19 +150,19 @@ This means that to access any of the pieces of pipeline run data, for example `s
 | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
 | `associations`     | The pipeline output `associations.parquet` loaded into a pandas dataframe.                                                         |
 | `images`           | The pipeline output `images.parqeut` loaded into a pandas dataframe.                                                               |
-| `measurements`     | The pipeline output `measurements.parquet` or `measurements.arrow` loaded into a pandas dataframe or vaex dataframe, respectively. |
+| `measurements`     | The pipeline output `measurements.parquet` or `measurements.arrow` loaded into a pandas dataframe or dask dataframe, respectively. |
 | `relations`        | The pipeline output `relations.parqeut` loaded into a pandas dataframe.                                                            |
 | `skyregions`       | The pipeline output `skyregions.parqeut` loaded into a pandas dataframe.                                                           |
 | `sources`          | The pipeline output `sources.parqeut` loaded into a pandas dataframe.                                                              |
 | `sources_skycoord` | A `astropy.coords.SkyCoordinate` instance of the all the `sources` positions for convenience.                                      |
 
-!!!info "Info: vaex"
-    For large pipeline runs, the individual measurements of the run are loaded into a `vaex` dataframe, instead of using `pandas`.
-    `vaex` is a recently developed data analysis package that loads data in an 'out-of-core' context, which means the data is not loaded into memory.
-    This makes the exploration much faster and lightweight, but `vaex` does have some differences to `pandas`.
-    It is recommended to refer to the [`vaex` documentation](https://vaex.io/docs/index.html){:target="_blank"} if you are new to the package.
+!!!info "Info: dask"
+    For large pipeline runs, the individual measurements of the run are loaded into a `dask` dataframe, instead of using `pandas`.
+    `dask` loads data in an 'out-of-core' context, which means the data is not loaded into memory.
+    This makes the exploration much faster and lightweight, but there are some differences to `pandas`.
+    It is recommended to refer to the [`dask` documentation](https://docs.dask.org/en/stable/dataframe.html){:target="_blank"} if you are new to the package.
     
-    User warnings will appear when `vaex` has been used to load data.
+    User warnings will appear when `dask` has been used to load data.
 
 ### Available PipeAnalysis Methods
 
