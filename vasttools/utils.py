@@ -738,7 +738,7 @@ def open_fits(
         ValueError: File extension must be .fits or .fits.fz
     """
 
-    if isinstace(fits_path, Path):
+    if isinstance(fits_path, Path):
         fits_path = str(fits_path)
 
     hdul = fits.open(fits_path, memmap=memmap)
