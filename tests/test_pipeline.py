@@ -12,7 +12,7 @@ from astropy.coordinates import SkyCoord
 from mocpy import MOC
 from pathlib import Path
 from pytest_mock import mocker, MockerFixture  # noqa: F401
-from typing import Dict, List, Union
+from typing import Dict, List
 
 import vasttools.pipeline as vtp
 
