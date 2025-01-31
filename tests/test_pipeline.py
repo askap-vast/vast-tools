@@ -467,7 +467,7 @@ def dummy_PipeAnalysis_dask(
     """
     mock_isdir = mocker.patch('os.path.isdir', return_value=True)
     
-    # NOTE: This is really not great - we're basically mindlessly mocking 
+    # NOTE: This is really not great - we're basically mindlessly mocking
     # functions that are called potentially several times
     mock_isfile = mocker.patch('os.path.isfile', return_value=True)
     mock_exists = mocker.patch('os.path.exists', return_value=True)
