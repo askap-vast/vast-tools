@@ -466,7 +466,12 @@ def dummy_PipeAnalysis_dask(
         The vtp.PipeAnalysis instance.
     """
     mock_isdir = mocker.patch('os.path.isdir', return_value=True)
+    
+    # NOTE: This is really not great - we're basically mindlessly mocking 
+    # functions that are called potentially several times
     mock_isfile = mocker.patch('os.path.isfile', return_value=True)
+    mock_exists = mocker.patch('os.path.exists', return_value=True)
+
     pandas_read_parquet_mocker = mocker.patch(
         'vasttools.pipeline.pd.read_parquet',
         side_effect=load_parquet_side_effect
@@ -1670,6 +1675,7 @@ class TestPipeAnalysis:
             mask
         ].copy()
 
+        print(the_fixture.measurements)
         # get IDs of those removed
         if fixture_name == 'dummy_PipeAnalysis_dask_wtwoepoch':
             meas_ids = (
