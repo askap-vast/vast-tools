@@ -1675,7 +1675,6 @@ class TestPipeAnalysis:
             mask
         ].copy()
 
-        print(the_fixture.measurements)
         # get IDs of those removed
         if fixture_name == 'dummy_PipeAnalysis_dask_wtwoepoch':
             meas_ids = (
