@@ -936,7 +936,7 @@ class TestPipeline:
             None
         """
         mock_isdir = mocker.patch('os.path.isdir', return_value=True)
-        mock_isfile = mocker.patch('os.path.isfile', return_value=True)
+        mock_isfile = mocker.patch('os.path.exists', return_value=True)
         pandas_read_parquet_mocker = mocker.patch(
             'vasttools.pipeline.pd.read_parquet',
             side_effect=load_parquet_side_effect
