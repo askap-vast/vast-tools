@@ -1065,10 +1065,7 @@ class PipeAnalysis(PipeRun):
         if not self._loaded_two_epoch_metrics:
             self.load_two_epoch_metrics()
 
-        # this should actually check the type of the measurements_df
-        # rather than assuming it's the same as self.measurements
-        # TO DO: fix that!!
-        if not self._dask_meas:
+        if isinstance(measurements_df, pd.DataFrame):
             measurements_df = pandas_to_dask(measurements_df)
 
         # account for RA wrapping
