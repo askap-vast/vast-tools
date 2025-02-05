@@ -266,7 +266,7 @@ def dummy_pipeline_measurement_pairs(*args, **kwargs) -> pd.DataFrame:
     return measurement_pairs_df
 
 
-def dummy_pipeline_measurement_pairs_vaex(
+def dummy_pipeline_measurement_pairs_dask(
     *args, **kwargs
 ) -> vaex.dataframe.DataFrame:
     """
@@ -282,11 +282,10 @@ def dummy_pipeline_measurement_pairs_vaex(
         The dummy pipeline measurements pairs vaex dataframe.
     """
     filepath = TEST_DATA_DIR / 'test_measurement_pairs.csv'
-    measurements_pairs_df = pd.read_csv(filepath)
-    measurements_pairs_df = vaex.from_pandas(measurements_pairs_df)
+    temp_df = pd.read_csv(filepath)
+    measurements_pairs_df = dd.from_pandas(temp_df, npartitions=1)
 
     return measurements_pairs_df
-
 
 @pytest.fixture
 def dummy_pipeline_pairs_df() -> pd.DataFrame:
@@ -506,8 +505,8 @@ def dummy_PipeAnalysis_dask_wtwoepoch(
         The vtp.PipeAnalysis instance with two epoch data attached.
     """
     vaex_open_mocker = mocker.patch(
-        'vasttools.pipeline.vaex.open',
-        side_effect=dummy_pipeline_measurement_pairs_vaex
+        'vasttools.pipeline.dd.read_parquet',
+        side_effect=dummy_pipeline_measurement_pairs_dask
     )
 
     dummy_PipeAnalysis_dask.load_two_epoch_metrics()
@@ -1390,40 +1389,16 @@ class TestPipeAnalysis:
         assert mocker_calls.args[0] == expected_sources_skycoord[0]
         assert the_source == -99
 
-    def test_pipeanalysis_load_two_epoch_metrics_pandas(
-        self,
-        dummy_PipeAnalysis: vtp.PipeAnalysis,
-        dummy_pipeline_pairs_df: pd.DataFrame,
-        mocker: MockerFixture
-    ) -> None:
-        """
-        Tests the method that loads the two epoch metrics.
-
-        This test is for pandas loaded dataframes.
-
-        Args:
-            dummy_PipeAnalysis: The dummy PipeAnalysis object that is used
-                for testing.
-            dummy_pipeline_pairs_df: The dummy pairs dataframe.
-            mocker: The pytest mocker mock object.
-
-        Returns:
-            None
-        """
-        pandas_read_parquet_mocker = mocker.patch(
-            'vasttools.pipeline.pd.read_parquet',
-            side_effect=dummy_pipeline_measurement_pairs
-        )
-
-        dummy_PipeAnalysis.load_two_epoch_metrics()
-
-        assert dummy_PipeAnalysis.pairs_df.equals(dummy_pipeline_pairs_df)
-        assert dummy_PipeAnalysis.measurement_pairs_df.shape[0] == 30
-
+    @pytest.mark.parametrize(
+        "compute",
+        [True, False],
+        ids=('compute', 'no-compute')
+    )
     def test_pipeanalysis_load_two_epoch_metrics_dask(
         self,
         dummy_PipeAnalysis_dask: vtp.PipeAnalysis,
         dummy_pipeline_pairs_df: pd.DataFrame,
+        compute: bool,
         mocker: MockerFixture
     ) -> None:
         """
@@ -1435,22 +1410,39 @@ class TestPipeAnalysis:
             dummy_PipeAnalysis: The dummy PipeAnalysis object that is used
                 for testing.
             dummy_pipeline_pairs_df: The dummy pairs dataframe.
+            compute: Whether or not to compute the dask dataframe as part of
+                the loading process.
             mocker: The pytest mocker mock object.
 
         Returns:
             None
         """
-        vaex_open_mocker = mocker.patch(
-            'vasttools.pipeline.vaex.open',
-            side_effect=dummy_pipeline_measurement_pairs_vaex
+        dask_open_mocker = mocker.patch(
+            'vasttools.pipeline.dd.read_parquet',
+            side_effect=dummy_pipeline_measurement_pairs_dask
         )
 
-        dummy_PipeAnalysis_dask.load_two_epoch_metrics()
+        dummy_PipeAnalysis_dask.load_two_epoch_metrics(compute=compute)
 
         assert dummy_PipeAnalysis_dask.pairs_df.equals(
             dummy_pipeline_pairs_df
         )
-        assert dummy_PipeAnalysis_dask.measurement_pairs_df.shape[0] == 30
+        
+        assert compute != dummy_PipeAnalysis_dask._dask_meas_pairs
+        
+        assert len(dummy_PipeAnalysis_dask.measurement_pairs_df.index) == 30
+        if compute:
+            assert isinstance(
+                dummy_PipeAnalysis_dask.measurement_pairs_df,
+                pd.DataFrame
+            )
+        else:
+            assert isinstance(
+                dummy_PipeAnalysis_dask.measurement_pairs_df,
+                dd.DataFrame
+            )
+            
+            
 
     @pytest.mark.parametrize("row, kwargs, expected", [
         (
