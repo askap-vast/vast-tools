@@ -1000,7 +1000,7 @@ class TestPipeAnalysis:
             None
         """
         mocker_isfile = mocker.patch(
-            "os.path.isfile",
+            "os.path.exists",
             side_effect=pairs_existence
         )
 
