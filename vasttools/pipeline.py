@@ -916,7 +916,10 @@ class PipeAnalysis(PipeRun):
 
         new_measurement_pairs = self.measurement_pairs_df.copy()
 
-        measurement_ids = measurements_df['id'].compute().values
+        if self._dask_meas:
+            measurement_ids = measurements_df['id'].compute().values
+        else:
+            measurement_ids = measurements_df['id'].values
 
         mask_a = new_measurement_pairs['meas_id_a'].isin(
             measurement_ids

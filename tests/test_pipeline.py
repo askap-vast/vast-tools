@@ -434,8 +434,8 @@ def dummy_PipeAnalysis_wtwoepoch(
         The vtp.PipeAnalysis instance with two epoch data attached.
     """
     pandas_read_parquet_mocker = mocker.patch(
-        'vasttools.pipeline.pd.read_parquet',
-        side_effect=dummy_pipeline_measurement_pairs
+        'vasttools.pipeline.dd.read_parquet',
+        side_effect=dummy_pipeline_measurement_pairs_dask
     )
 
     dummy_PipeAnalysis.load_two_epoch_metrics()
@@ -1679,11 +1679,11 @@ class TestPipeAnalysis:
 
         result = the_fixture._filter_meas_pairs_df(
             new_measurements
-        )
+        ).compute()
 
-        assert result.shape[0] == 18
-        assert np.any(result['meas_id_a'].isin(meas_ids).to_numpy()) == False
-        assert np.any(result['meas_id_b'].isin(meas_ids).to_numpy()) == False
+        assert len(result.index) == 18
+        assert np.any(result['meas_id_a'].isin(meas_ids)) == False
+        assert np.any(result['meas_id_b'].isin(meas_ids)) == False
 
     @pytest.mark.parametrize(
         'fixture_name',
