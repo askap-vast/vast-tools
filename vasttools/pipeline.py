@@ -916,30 +916,21 @@ class PipeAnalysis(PipeRun):
 
         new_measurement_pairs = self.measurement_pairs_df.copy()
 
-        print(new_measurement_pairs['meas_id_a'].isin(
-            measurements_df['id'].values
-        ))
+        measurement_ids = measurements_df['id'].compute().values
+
         mask_a = new_measurement_pairs['meas_id_a'].isin(
-            measurements_df['id'].values
-        ).values
+            measurement_ids
+        )
 
         mask_b = new_measurement_pairs['meas_id_b'].isin(
-            measurements_df['id'].values
-        ).values
-
-        new_measurement_pairs['mask_a'] = mask_a
-        new_measurement_pairs['mask_b'] = mask_b
-
-        mask = np.logical_and(mask_a, mask_b)
-        new_measurement_pairs['mask'] = mask
-        new_measurement_pairs = new_measurement_pairs[
-            new_measurement_pairs['mask'] == True
-        ]
-
-        new_measurement_pairs = new_measurement_pairs.extract()
-        new_measurement_pairs = new_measurement_pairs.drop(
-            ['mask_a', 'mask_b', 'mask']
+            measurement_ids
         )
+
+        if isinstance(new_measurement_pairs, dd.DataFrame):
+            new_measurement_pairs = new_measurement_pairs[mask_a & mask_b]
+        else:
+            mask = np.logical_and(mask_a.values, mask_b.values)
+            new_measurement_pairs = new_measurement_pairs[mask]
 
         return new_measurement_pairs
 
@@ -984,6 +975,8 @@ class PipeAnalysis(PipeRun):
         # convert pandas measurements to dask for consistency
         if isinstance(measurements_df, pd.DataFrame):
             measurements_df = pandas_to_dask(measurements_df)
+        if isinstance(new_measurement_pairs, pd.DataFrame):
+            new_measurement_pairs = pandas_to_dask(new_measurement_pairs)
 
         measurements_df = measurements_df[flux_cols]
 
@@ -998,33 +991,32 @@ class PipeAnalysis(PipeRun):
                 continue
             for j in ['a', 'b']:
                 pairs_i = i + f'_{j}'
-                id_values = new_measurement_pairs[f'meas_id_{j}'].to_numpy()
-                new_flux_values = measurements_df.loc[id_values][i]
-                new_flux_values = new_flux_values.compute().to_numpy()
+                id_values = new_measurement_pairs[f'meas_id_{j}'].compute().values
+                new_flux_values = measurements_df.loc[id_values][i].values
                 new_measurement_pairs[pairs_i] = new_flux_values
 
         del measurements_df
 
         # calculate 2-epoch metrics
         new_measurement_pairs["vs_peak"] = calculate_vs_metric(
-            new_measurement_pairs['flux_peak_a'].to_numpy(),
-            new_measurement_pairs['flux_peak_b'].to_numpy(),
-            new_measurement_pairs['flux_peak_err_a'].to_numpy(),
-            new_measurement_pairs['flux_peak_err_b'].to_numpy()
+            new_measurement_pairs['flux_peak_a'],#.to_numpy(),
+            new_measurement_pairs['flux_peak_b'],#.to_numpy(),
+            new_measurement_pairs['flux_peak_err_a'],#.to_numpy(),
+            new_measurement_pairs['flux_peak_err_b']#.to_numpy()
         )
         new_measurement_pairs["vs_int"] = calculate_vs_metric(
-            new_measurement_pairs['flux_int_a'].to_numpy(),
-            new_measurement_pairs['flux_int_b'].to_numpy(),
-            new_measurement_pairs['flux_int_err_a'].to_numpy(),
-            new_measurement_pairs['flux_int_err_b'].to_numpy()
+            new_measurement_pairs['flux_int_a'],#.to_numpy(),
+            new_measurement_pairs['flux_int_b'],#.to_numpy(),
+            new_measurement_pairs['flux_int_err_a'],#.to_numpy(),
+            new_measurement_pairs['flux_int_err_b'],#.to_numpy()
         )
         new_measurement_pairs["m_peak"] = calculate_m_metric(
-            new_measurement_pairs['flux_peak_a'].to_numpy(),
-            new_measurement_pairs['flux_peak_b'].to_numpy()
+            new_measurement_pairs['flux_peak_a'],#.to_numpy(),
+            new_measurement_pairs['flux_peak_b'],#.to_numpy()
         )
         new_measurement_pairs["m_int"] = calculate_m_metric(
-            new_measurement_pairs['flux_int_a'].to_numpy(),
-            new_measurement_pairs['flux_int_b'].to_numpy()
+            new_measurement_pairs['flux_int_a'],#.to_numpy(),
+            new_measurement_pairs['flux_int_b'],#.to_numpy()
         )
 
         return new_measurement_pairs
@@ -1190,20 +1182,17 @@ class PipeAnalysis(PipeRun):
                 measurements_df[['id']]
             )
 
-        if isinstance(measurement_pairs_df, dd.dataframe.DataFrame):
-            new_measurement_pairs = (
-                measurement_pairs_df[
-                    measurement_pairs_df['vs_int'].abs() >= min_vs
-                    or measurement_pairs_df['vs_peak'].abs() >= min_vs
-                ]
-            )
+        if isinstance(measurement_pairs_df, dd.DataFrame):
+            mask_int = measurement_pairs_df['vs_int'].abs() >= min_vs
+            mask_peak = measurement_pairs_df['vs_peak'].abs() >= min_vs
+            new_measurement_pairs = measurement_pairs_df[mask_int | mask_peak]
         else:
             min_vs_mask = np.logical_or(
                 (measurement_pairs_df['vs_int'].abs() >= min_vs).to_numpy(),
                 (measurement_pairs_df['vs_peak'].abs() >= min_vs).to_numpy()
             )
             new_measurement_pairs = measurement_pairs_df.loc[min_vs_mask]
-            new_measurement_pairs = dd.from_pandas(new_measurement_pairs)
+            new_measurement_pairs = pandas_to_dask(new_measurement_pairs)
 
         new_measurement_pairs['vs_int_abs'] = (
             new_measurement_pairs['vs_int'].abs()
@@ -1221,29 +1210,27 @@ class PipeAnalysis(PipeRun):
             new_measurement_pairs['m_peak'].abs()
         )
 
-        sources_df_two_epochs = new_measurement_pairs.groupby(
-            'source_id',
-            agg={
-                'vs_int_abs': 'max',
-                'vs_peak_abs': 'max',
-                'm_int_abs': 'max',
-                'm_peak_abs': 'max',
-            }
-        )
-        sources_df_two_epochs.columns = [
-            'vs_significant_max_int',
-            'vs_significant_max_peak',
+        sources_df_metrics = new_measurement_pairs.groupby('source_id').agg({
+            'vs_int_abs': 'max',
+            'vs_peak_abs': 'max',
+            'm_int_abs': 'max',
+            'm_peak_abs': 'max',
+        })
+
+        sources_df_metrics.columns = [
+            'vs_abs_significant_max_int',
+            'vs_abs_significant_max_peak',
             'm_abs_significant_max_int',
             'm_abs_significant_max_peak'
         ]
 
-        sources_df_two_epochs = (
-            sources_df_two_epochs.compute().set_index('source_id')
+        sources_df_metrics = (
+            sources_df_metrics.compute()
         )
 
-        sources_df = sources_df.join(sources_df_two_epochs)
+        sources_df = sources_df.join(sources_df_metrics)
 
-        del sources_df_two_epochs
+        del sources_df_metrics
 
         # new relation numbers
         relation_mask = np.logical_and(
@@ -1271,9 +1258,9 @@ class PipeAnalysis(PipeRun):
 
         # Fill the NaN values.
         sources_df = sources_df.fillna(value={
-            "vs_significant_max_peak": 0.0,
+            "vs_abs_significant_max_peak": 0.0,
             "m_abs_significant_max_peak": 0.0,
-            "vs_significant_max_int": 0.0,
+            "vs_abs_significant_max_int": 0.0,
             "m_abs_significant_max_int": 0.0,
             'n_relations': 0,
             'v_int': 0.,
