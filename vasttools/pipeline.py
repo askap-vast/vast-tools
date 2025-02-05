@@ -1332,6 +1332,10 @@ class PipeAnalysis(PipeRun):
             (df_filter[vs_label] > vs_min) & (df_filter[m_label].abs() > m_min)
         ].shape[0]
 
+        print("Values here")
+        print(df_filter[['meas_id_a', 'meas_id_b']].values)
+        #print(pd.unique(df_filter[['meas_id_a', 'meas_id_b']].values.ravel('K'))
+        #exit()
         unique_meas_ids = (
             pd.unique(df_filter[['meas_id_a', 'meas_id_b']].values.ravel('K'))
         )
@@ -1715,7 +1719,8 @@ class PipeAnalysis(PipeRun):
                 self.measurement_pairs_df.pair_epoch_key == pair_epoch_key
             ]
         )
-
+        print("Printing pairs df:")
+        print(pairs_df)
         if self._dask_meas_pairs:
             pairs_df = pairs_df.compute()
 

@@ -12,7 +12,7 @@ from astropy.coordinates import SkyCoord
 from mocpy import MOC
 from pathlib import Path
 from pytest_mock import mocker, MockerFixture  # noqa: F401
-from typing import Dict, List
+from typing import Dict, List, Union
 
 import vasttools.pipeline as vtp
 
@@ -585,7 +585,7 @@ def filter_moc() -> MOC:
 @pytest.fixture
 def gen_measurement_pairs_df(
     dummy_PipeAnalysis_wtwoepoch: vtp.PipeAnalysis
-) -> pd.DataFrame:
+) -> Union[pd.DataFrame, dd.DataFrame]:
     """
     Generates a measurement pairs dataframe for a specific 'pair epoch'.
 
@@ -596,12 +596,14 @@ def gen_measurement_pairs_df(
     Returns:
         The measurement pairs df filtered for a pair epoch.
     """
-    def _gen_df(epoch_id: int = 2) -> pd.DataFrame:
+    def _gen_df(epoch_id: int = 2, compute: bool = False
+    ) -> Union[pd.DataFrame, dd.DataFrame]:
         """
         Filters a measurement pairs dataframe for a specific 'pair epoch'.
 
         Args:
             epoch_id: The id of the measurement pair epoch.
+            compute: Whether or not to compute the DataFrame. Defaults to True.
 
         Returns:
             The measurement pairs df filtered for a pair epoch.
@@ -618,7 +620,8 @@ def gen_measurement_pairs_df(
                 ] == epoch_key
             ]
         ).copy()
-
+        if compute:
+            measurement_pairs_df = measurement_pairs_df.compute()
         return measurement_pairs_df
     return _gen_df
 
@@ -1860,7 +1863,7 @@ class TestPipeAnalysis:
 
         df_filter, num_pairs, num_candidates, td_days = (
             dummy_PipeAnalysis_wtwoepoch._get_epoch_pair_plotting_df(
-                dummy_PipeAnalysis_wtwoepoch.measurement_pairs_df,
+                dummy_PipeAnalysis_wtwoepoch.measurement_pairs_df.compute(),
                 epoch_id,
                 'vs_peak',
                 'm_peak',
@@ -1897,7 +1900,7 @@ class TestPipeAnalysis:
             None
         """
         epoch_id = 2
-        expected_measurement_pairs_df = gen_measurement_pairs_df(epoch_id)
+        expected_measurement_pairs_df = gen_measurement_pairs_df(epoch_id, compute=True)
 
         result = dummy_PipeAnalysis_wtwoepoch._plot_epoch_pair_matplotlib(
             epoch_id,
@@ -1942,7 +1945,7 @@ class TestPipeAnalysis:
             None
         """
         epoch_id = 2
-        expected_measurement_pairs_df = gen_measurement_pairs_df(epoch_id)
+        expected_measurement_pairs_df = gen_measurement_pairs_df(epoch_id, compute=True)
 
         result = dummy_PipeAnalysis_wtwoepoch._plot_epoch_pair_matplotlib(
             epoch_id,
@@ -1988,7 +1991,7 @@ class TestPipeAnalysis:
             None
         """
         epoch_id = 2
-        expected_measurement_pairs_df = gen_measurement_pairs_df(epoch_id)
+        expected_measurement_pairs_df = gen_measurement_pairs_df(epoch_id, compute=True)
 
         result = dummy_PipeAnalysis_wtwoepoch._plot_epoch_pair_matplotlib(
             epoch_id,
@@ -2033,7 +2036,7 @@ class TestPipeAnalysis:
             None
         """
         epoch_id = 2
-        expected_measurement_pairs_df = gen_measurement_pairs_df(epoch_id)
+        expected_measurement_pairs_df = gen_measurement_pairs_df(epoch_id, compute=True)
 
         result = dummy_PipeAnalysis_wtwoepoch._plot_epoch_pair_bokeh(
             epoch_id,
@@ -2064,7 +2067,7 @@ class TestPipeAnalysis:
             None
         """
         epoch_id = 2
-        expected_measurement_pairs_df = gen_measurement_pairs_df(epoch_id)
+        expected_measurement_pairs_df = gen_measurement_pairs_df(epoch_id, compute=True)
 
         result = dummy_PipeAnalysis_wtwoepoch._plot_epoch_pair_bokeh(
             epoch_id,
@@ -2102,7 +2105,7 @@ class TestPipeAnalysis:
         )
 
         epoch_id = 2
-        expected_measurement_pairs_df = gen_measurement_pairs_df(epoch_id)
+        expected_measurement_pairs_df = gen_measurement_pairs_df(epoch_id, compute=True)
 
         result = dummy_PipeAnalysis_wtwoepoch.plot_two_epoch_pairs(
             epoch_id,
@@ -2142,7 +2145,7 @@ class TestPipeAnalysis:
         )
 
         epoch_id = 2
-        expected_measurement_pairs_df = gen_measurement_pairs_df(epoch_id)
+        expected_measurement_pairs_df = gen_measurement_pairs_df(epoch_id, compute=True)
 
         result = dummy_PipeAnalysis_wtwoepoch.plot_two_epoch_pairs(epoch_id)
 
