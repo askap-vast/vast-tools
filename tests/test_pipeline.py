@@ -1719,19 +1719,21 @@ class TestPipeAnalysis:
 
         expected_m_peak = the_fixture.measurement_pairs_df['m_peak']
         expected_m_int = the_fixture.measurement_pairs_df['m_int']
+        
+        result = result.compute()
 
-        assert result['vs_peak'].to_numpy() == pytest.approx(
-            expected_vs_peak.to_numpy()
+        assert result['vs_peak'].values == pytest.approx(
+            expected_vs_peak.values
         )
-        assert result['vs_int'].to_numpy() == pytest.approx(
-            expected_vs_int.to_numpy()
+        assert result['vs_int'].values == pytest.approx(
+            expected_vs_int.values
         )
 
-        assert result['m_peak'].to_numpy() == pytest.approx(
-            expected_m_peak.to_numpy()
+        assert result['m_peak'].values == pytest.approx(
+            expected_m_peak.values
         )
-        assert result['m_int'].to_numpy() == pytest.approx(
-            expected_m_int.to_numpy()
+        assert result['m_int'].values == pytest.approx(
+            expected_m_int.values
         )
 
     def test_recalc_sources_df(

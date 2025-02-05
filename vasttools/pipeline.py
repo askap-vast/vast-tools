@@ -1022,6 +1022,8 @@ class PipeAnalysis(PipeRun):
             new_measurement_pairs['flux_int_b'],#.to_numpy()
         )
 
+        if not self._dask_meas_pairs:
+            new_measurement_pairs = new_measurement_pairs.compute()
         return new_measurement_pairs
 
     def recalc_sources_df(
