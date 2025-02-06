@@ -557,7 +557,7 @@ def expected_source_measurements_pd(
             The measurements dataframe for a requested source.
         """
         meas = dummy_PipeAnalysis.measurements
-        meas = meas.loc[meas['source'] == id]
+        meas = meas.loc[id]
 
         return meas
     return _filter_source
@@ -920,7 +920,7 @@ class TestPipeline:
 
         assert 'centre_ra' in run.images.columns
         assert run.images.shape[1] == 29
-        assert run.measurements.shape[1] == 42
+        assert run.measurements.shape[1] == 41
 
     def test_load_run_dask(
         self,
@@ -1741,7 +1741,7 @@ class TestPipeAnalysis:
 
     def test_recalc_sources_df(
         self,
-        dummy_PipeAnalysis: vtp.PipeAnalysis,
+        dummy_PipeAnalysis_wtwoepoch: vtp.PipeAnalysis,
         mocker: MockerFixture
     ) -> None:
         """
@@ -1756,10 +1756,11 @@ class TestPipeAnalysis:
             None
         """
 
-        pandas_read_parquet_mocker = mocker.patch(
-            'vasttools.pipeline.pd.read_parquet',
-            side_effect=dummy_pipeline_measurement_pairs
-        )
+        #pandas_read_parquet_mocker = mocker.patch(
+        #    'vasttools.pipeline.pd.read_parquet',
+        #    side_effect=dummy_pipeline_measurement_pairs
+        #)
+        
 
         # define this to speed up the test to avoid dask
         """dask_from_pandas_mocker = mocker.patch(
@@ -1800,19 +1801,21 @@ class TestPipeAnalysis:
             .return_value
         ) = metrics_return_value"""
 
-        dummy_PipeAnalysis.load_two_epoch_metrics()
+        #dummy_PipeAnalysis.load_two_epoch_metrics()
 
         expected_result = pd.read_csv(
             TEST_DATA_DIR /
             'recalc_sources_df_output.csv',
             index_col='id')
 
+        print(dummy_PipeAnalysis_wtwoepoch.measurements)
+
         # remove measurements from image id 2
-        new_measurements = dummy_PipeAnalysis.measurements[
-            dummy_PipeAnalysis.measurements.image_id != 2
+        new_measurements = dummy_PipeAnalysis_wtwoepoch.measurements[
+            dummy_PipeAnalysis_wtwoepoch.measurements.image_id != 2
         ].copy()
 
-        result = dummy_PipeAnalysis.recalc_sources_df(new_measurements)
+        result = dummy_PipeAnalysis_wtwoepoch.recalc_sources_df(new_measurements)
 
         print(result.columns)
         print(expected_result.columns)
@@ -1826,11 +1829,11 @@ class TestPipeAnalysis:
         cols_to_test = ['min_flux_int', 'avg_flux_int', 'max_flux_int']
         for col in cols_to_test:
             check = (result[col].values ==
-                     dummy_PipeAnalysis.sources[col].values).all()
+                     dummy_PipeAnalysis_wtwoepoch.sources[col].values).all()
             if not check:
                 print(col)
                 print(result[col])
-                print(dummy_PipeAnalysis.sources[col])
+                print(dummy_PipeAnalysis_wtwoepoch.sources[col])
 
         # assert result['n_selavy'].to_list() == [4, 4, 4]
         # assert result.shape[1] == dummy_PipeAnalysis.sources.shape[1]

@@ -238,8 +238,7 @@ class PipeRun(object):
         else:
             self.measurements = pd.concat(
                 [self.measurements, other_PipeRun.measurements],
-                ignore_index=True
-            ).drop_duplicates(['id', 'source'])
+            ).reset_index().drop_duplicates(['id', 'source']).set_index('source', drop=True)
 
         sources_to_add = other_PipeRun.sources.loc[
             ~(other_PipeRun.sources.index.isin(
@@ -361,12 +360,9 @@ class PipeRun(object):
         else:
             the_sources = user_sources
 
+        measurements = the_measurements.loc[id].reset_index()
         if self._dask_meas:
-            measurements = the_measurements.loc[id].compute().reset_index()
-        else:
-            measurements = the_measurements.loc[
-                the_measurements['source'] == id
-            ]
+            measurements = measurements.compute()
 
         measurements = measurements.merge(
             self.images[[
@@ -704,14 +700,9 @@ class PipeRun(object):
 
         new_sources = self.sources.loc[source_mask].copy()
 
+        new_meas = self.measurements.loc[new_sources.index.values]
         if self._dask_meas:
-            new_meas = self.measurements.loc[new_sources.index.values]
             new_meas = new_meas.compute()
-        else:
-            new_meas = self.measurements.loc[
-                self.measurements['source'].isin(
-                    new_sources.index.values
-                )].copy()
 
         new_images = self.images.loc[
             self.images.index.isin(new_meas['image_id'].tolist())].copy()
@@ -916,7 +907,7 @@ class PipeAnalysis(PipeRun):
 
         new_measurement_pairs = self.measurement_pairs_df.copy()
 
-        if self._dask_meas:
+        if isinstance(measurements_df, dd.DataFrame):
             measurement_ids = measurements_df['id'].compute().values
         else:
             measurement_ids = measurements_df['id'].values
@@ -2703,7 +2694,7 @@ class Pipeline(object):
                     right_on='id'
                 )
                 .rename(columns={'source_id': 'source'})
-            ).reset_index(drop=True)
+            ).set_index('source')
 
         images = images.set_index('id')
 
