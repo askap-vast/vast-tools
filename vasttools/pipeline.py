@@ -928,6 +928,68 @@ class PipeAnalysis(PipeRun):
 
         return new_measurement_pairs
 
+    def _assign_new_flux_values(self, measurement_pairs_df, flux_cols, measurements_df):
+        new_cols = {}
+        for j in ['a', 'b']:
+            id_values = measurement_pairs_df[f'meas_id_{j}'].to_numpy()
+            
+            for i in flux_cols:
+                if i == 'id':
+                    continue
+                pairs_i = i + f'_{j}'
+                #print(pairs_i)
+                new_flux_values = measurements_df.loc[id_values,i].values
+                new_cols[pairs_i] = new_flux_values
+        new_cols_df = pd.DataFrame(new_cols, index=measurement_pairs_df.index)
+        print("new_cols_df")
+        print(new_cols_df.flux_peak_a)
+        out_df = pd.concat([measurement_pairs_df.drop(new_cols_df.columns, axis=1), new_cols_df], axis=1)
+        print("out_df flux_peak_a")
+        print(out_df.flux_peak_a)
+        print(out_df.columns)
+        print(measurement_pairs_df.columns)
+
+        return out_df
+    
+    def _assign_new_flux_values_inplace(self, measurement_pairs_df, flux_cols, measurements_df):
+        for j in ['a', 'b']:
+            id_values = measurement_pairs_df[f'meas_id_{j}'].to_numpy()
+            
+            for i in flux_cols:
+                if i == 'id':
+                    continue
+                pairs_i = i + f'_{j}'
+                #print(pairs_i)
+                new_flux_values = measurements_df.loc[id_values,i].values
+                measurement_pairs_df[pairs_i] = new_flux_values
+        
+        return measurement_pairs_df
+    
+    def assign_new_flux_values_v2(self, measurement_pairs_df, measurements_df, flux_col, j):
+        pairs_i = flux_col + f'_{j}'
+        id_values = measurement_pairs_df[f'meas_id_{j}']#.compute().values
+        
+        """
+        print(measurement_pairs_df)
+        print(measurements_df)
+        print(id_values)
+        print(pairs_i)
+        print(flux_col)
+        print(j)
+        """
+        new_flux_values = measurements_df.loc[id_values][flux_col].values
+        measurement_pairs_df[pairs_i] = new_flux_values
+        
+        return measurement_pairs_df
+    
+    def assign_new_flux_values_v3(self, measurement_pairs_df, measurements_df, flux_col, j):
+        pairs_i = flux_col + f'_{j}'
+        id_values = measurement_pairs_df[f'meas_id_{j}']
+        new_flux_values = measurements_df.loc[id_values][flux_col].values
+        measurement_pairs_df[pairs_i] = new_flux_values
+        
+        return measurement_pairs_df
+    
     def recalc_measurement_pairs_df(
         self,
         measurements_df: Union[pd.DataFrame, dd.DataFrame]
@@ -952,7 +1014,6 @@ class PipeAnalysis(PipeRun):
         new_measurement_pairs = self._filter_meas_pairs_df(
             measurements_df[['id']]
         )
-
         new_measurement_pairs = new_measurement_pairs.drop(
             ['vs_peak', 'vs_int', 'm_peak', 'm_int'],
             axis=1
@@ -979,38 +1040,118 @@ class PipeAnalysis(PipeRun):
             .drop_duplicates('id')
             .set_index('id')
         )
+        
+        """
+        new_measurement_pairs_df = new_measurement_pairs.compute()
+        
+        print(new_measurement_pairs_df['meas_id_a'])
+        
+        for flux_col in flux_cols:
+            if flux_col == 'id':
+                continue
+            for j in ['a', 'b']:
+                new_measurement_pairs = new_measurement_pairs.map_partitions(self.assign_new_flux_values_v2, measurements_df, flux_col, j, align_dataframes=False)
+        """
 
+        """
         for i in flux_cols:
             if i == 'id':
                 continue
             for j in ['a', 'b']:
                 pairs_i = i + f'_{j}'
                 id_values = new_measurement_pairs[f'meas_id_{j}'].compute().values
-                new_flux_values = measurements_df.loc[id_values][i].values
+                new_flux_values = measurements_df.loc[id_values][i].compute().values
                 new_measurement_pairs[pairs_i] = new_flux_values
+        """
+        #"""
+        
+        #new_measurement_pairs.compute()
+        #exit()
+        
+        
+        #print(meta)
+        new_cols = []
+        for j in ['a', 'b']:
+            for i in flux_cols:
+                if i == 'id':
+                    continue
+            
+                pairs_i = i + f'_{j}'
+                new_cols.append(pairs_i)
+        cols = list(new_measurement_pairs.columns)+new_cols
+        meta = pd.DataFrame(columns=cols, dtype=float)
+        
+        n_partitions = new_measurement_pairs.npartitions
+        print(n_partitions)
+
+        """for i in range(n_partitions):
+            partition_df = new_measurement_pairs.partitions[i].compute()
+            print(partition_df.columns)
+            self._assign_new_flux_values(
+                partition_df,
+                flux_cols,
+                measurements_df
+            )
+        """
+        #print("new_measurement_pairs")
+        #print(new_measurement_pairs.compute())
+        
+        #print("new_measurement_pairs columns")
+        #print(new_measurement_pairs.compute().columns)
+        #print(new_measurement_pairs['flux_peak_a'].compute())
+        """
+        new_measurement_pairs = new_measurement_pairs.map_partitions(
+            self._assign_new_flux_values,
+            flux_cols,
+            measurements_df,
+            align_dataframes=False,
+            meta=meta
+        )
+        """
+        
+        new_measurement_pairs = new_measurement_pairs.map_partitions(
+            self._assign_new_flux_values_inplace,
+            flux_cols,
+            measurements_df,
+            align_dataframes=False,
+            meta=new_measurement_pairs.head()
+        )
 
         del measurements_df
 
-        # calculate 2-epoch metrics
+        #print(self.measurement_pairs_df['flux_peak_a'].values.compute())
+        #print(new_measurement_pairs['flux_peak_a'].values.compute())
+        #exit()
+        
+        print("Running calculate_vs_metric")
+
         new_measurement_pairs["vs_peak"] = calculate_vs_metric(
-            new_measurement_pairs['flux_peak_a'],#.to_numpy(),
-            new_measurement_pairs['flux_peak_b'],#.to_numpy(),
-            new_measurement_pairs['flux_peak_err_a'],#.to_numpy(),
-            new_measurement_pairs['flux_peak_err_b']#.to_numpy()
+            new_measurement_pairs['flux_peak_a'].values,
+            new_measurement_pairs['flux_peak_b'].values,
+            new_measurement_pairs['flux_peak_err_a'].values,
+            new_measurement_pairs['flux_peak_err_b'].values,
         )
+        #print("vs_peak output")
+        #print(type(vs_peak))
+        #print(vs_peak)
+        #print(vs_peak.compute())
+        #exit()
+        
+        
+        # calculate 2-epoch metrics
         new_measurement_pairs["vs_int"] = calculate_vs_metric(
-            new_measurement_pairs['flux_int_a'],#.to_numpy(),
-            new_measurement_pairs['flux_int_b'],#.to_numpy(),
-            new_measurement_pairs['flux_int_err_a'],#.to_numpy(),
-            new_measurement_pairs['flux_int_err_b'],#.to_numpy()
+            new_measurement_pairs['flux_int_a'].values,
+            new_measurement_pairs['flux_int_b'].values,
+            new_measurement_pairs['flux_int_err_a'].values,
+            new_measurement_pairs['flux_int_err_b'].values,
         )
         new_measurement_pairs["m_peak"] = calculate_m_metric(
-            new_measurement_pairs['flux_peak_a'],#.to_numpy(),
-            new_measurement_pairs['flux_peak_b'],#.to_numpy()
+            new_measurement_pairs['flux_peak_a'].values,
+            new_measurement_pairs['flux_peak_b'].values,
         )
         new_measurement_pairs["m_int"] = calculate_m_metric(
-            new_measurement_pairs['flux_int_a'],#.to_numpy(),
-            new_measurement_pairs['flux_int_b'],#.to_numpy()
+            new_measurement_pairs['flux_int_a'].values,
+            new_measurement_pairs['flux_int_b'].values,
         )
 
         if not self._dask_meas_pairs:
