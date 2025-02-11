@@ -928,7 +928,8 @@ class PipeAnalysis(PipeRun):
 
         return new_measurement_pairs
 
-    def _assign_new_flux_values(self, measurement_pairs_df, flux_cols, measurements_df):
+    """
+    def _assign_new_flux_values_garbage(self, measurement_pairs_df, flux_cols, measurements_df):
         new_cols = {}
         for j in ['a', 'b']:
             id_values = measurement_pairs_df[f'meas_id_{j}'].to_numpy()
@@ -950,8 +951,8 @@ class PipeAnalysis(PipeRun):
         print(measurement_pairs_df.columns)
 
         return out_df
-    
-    def _assign_new_flux_values_inplace(self, measurement_pairs_df, flux_cols, measurements_df):
+    """
+    def _assign_new_flux_values(self, measurement_pairs_df, flux_cols, measurements_df):
         for j in ['a', 'b']:
             id_values = measurement_pairs_df[f'meas_id_{j}'].to_numpy()
             
@@ -964,32 +965,8 @@ class PipeAnalysis(PipeRun):
                 measurement_pairs_df[pairs_i] = new_flux_values
         
         return measurement_pairs_df
-    
-    def assign_new_flux_values_v2(self, measurement_pairs_df, measurements_df, flux_col, j):
-        pairs_i = flux_col + f'_{j}'
-        id_values = measurement_pairs_df[f'meas_id_{j}']#.compute().values
-        
-        """
-        print(measurement_pairs_df)
-        print(measurements_df)
-        print(id_values)
-        print(pairs_i)
-        print(flux_col)
-        print(j)
-        """
-        new_flux_values = measurements_df.loc[id_values][flux_col].values
-        measurement_pairs_df[pairs_i] = new_flux_values
-        
-        return measurement_pairs_df
-    
-    def assign_new_flux_values_v3(self, measurement_pairs_df, measurements_df, flux_col, j):
-        pairs_i = flux_col + f'_{j}'
-        id_values = measurement_pairs_df[f'meas_id_{j}']
-        new_flux_values = measurements_df.loc[id_values][flux_col].values
-        measurement_pairs_df[pairs_i] = new_flux_values
-        
-        return measurement_pairs_df
-    
+
+
     def recalc_measurement_pairs_df(
         self,
         measurements_df: Union[pd.DataFrame, dd.DataFrame]
@@ -1040,36 +1017,7 @@ class PipeAnalysis(PipeRun):
             .drop_duplicates('id')
             .set_index('id')
         )
-        
-        """
-        new_measurement_pairs_df = new_measurement_pairs.compute()
-        
-        print(new_measurement_pairs_df['meas_id_a'])
-        
-        for flux_col in flux_cols:
-            if flux_col == 'id':
-                continue
-            for j in ['a', 'b']:
-                new_measurement_pairs = new_measurement_pairs.map_partitions(self.assign_new_flux_values_v2, measurements_df, flux_col, j, align_dataframes=False)
-        """
 
-        """
-        for i in flux_cols:
-            if i == 'id':
-                continue
-            for j in ['a', 'b']:
-                pairs_i = i + f'_{j}'
-                id_values = new_measurement_pairs[f'meas_id_{j}'].compute().values
-                new_flux_values = measurements_df.loc[id_values][i].compute().values
-                new_measurement_pairs[pairs_i] = new_flux_values
-        """
-        #"""
-        
-        #new_measurement_pairs.compute()
-        #exit()
-        
-        
-        #print(meta)
         new_cols = []
         for j in ['a', 'b']:
             for i in flux_cols:
@@ -1080,7 +1028,7 @@ class PipeAnalysis(PipeRun):
                 new_cols.append(pairs_i)
         cols = list(new_measurement_pairs.columns)+new_cols
         meta = pd.DataFrame(columns=cols, dtype=float)
-        
+
         n_partitions = new_measurement_pairs.npartitions
         print(n_partitions)
 
@@ -1110,7 +1058,7 @@ class PipeAnalysis(PipeRun):
         """
         
         new_measurement_pairs = new_measurement_pairs.map_partitions(
-            self._assign_new_flux_values_inplace,
+            self._assign_new_flux_values,
             flux_cols,
             measurements_df,
             align_dataframes=False,
