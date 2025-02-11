@@ -928,30 +928,7 @@ class PipeAnalysis(PipeRun):
 
         return new_measurement_pairs
 
-    """
-    def _assign_new_flux_values_garbage(self, measurement_pairs_df, flux_cols, measurements_df):
-        new_cols = {}
-        for j in ['a', 'b']:
-            id_values = measurement_pairs_df[f'meas_id_{j}'].to_numpy()
-            
-            for i in flux_cols:
-                if i == 'id':
-                    continue
-                pairs_i = i + f'_{j}'
-                #print(pairs_i)
-                new_flux_values = measurements_df.loc[id_values,i].values
-                new_cols[pairs_i] = new_flux_values
-        new_cols_df = pd.DataFrame(new_cols, index=measurement_pairs_df.index)
-        print("new_cols_df")
-        print(new_cols_df.flux_peak_a)
-        out_df = pd.concat([measurement_pairs_df.drop(new_cols_df.columns, axis=1), new_cols_df], axis=1)
-        print("out_df flux_peak_a")
-        print(out_df.flux_peak_a)
-        print(out_df.columns)
-        print(measurement_pairs_df.columns)
 
-        return out_df
-    """
     def _assign_new_flux_values(self, measurement_pairs_df, flux_cols, measurements_df):
         for j in ['a', 'b']:
             id_values = measurement_pairs_df[f'meas_id_{j}'].to_numpy()
@@ -960,7 +937,6 @@ class PipeAnalysis(PipeRun):
                 if i == 'id':
                     continue
                 pairs_i = i + f'_{j}'
-                #print(pairs_i)
                 new_flux_values = measurements_df.loc[id_values,i].values
                 measurement_pairs_df[pairs_i] = new_flux_values
         
@@ -1030,33 +1006,7 @@ class PipeAnalysis(PipeRun):
         meta = pd.DataFrame(columns=cols, dtype=float)
 
         n_partitions = new_measurement_pairs.npartitions
-        print(n_partitions)
 
-        """for i in range(n_partitions):
-            partition_df = new_measurement_pairs.partitions[i].compute()
-            print(partition_df.columns)
-            self._assign_new_flux_values(
-                partition_df,
-                flux_cols,
-                measurements_df
-            )
-        """
-        #print("new_measurement_pairs")
-        #print(new_measurement_pairs.compute())
-        
-        #print("new_measurement_pairs columns")
-        #print(new_measurement_pairs.compute().columns)
-        #print(new_measurement_pairs['flux_peak_a'].compute())
-        """
-        new_measurement_pairs = new_measurement_pairs.map_partitions(
-            self._assign_new_flux_values,
-            flux_cols,
-            measurements_df,
-            align_dataframes=False,
-            meta=meta
-        )
-        """
-        
         new_measurement_pairs = new_measurement_pairs.map_partitions(
             self._assign_new_flux_values,
             flux_cols,
@@ -1067,26 +1017,14 @@ class PipeAnalysis(PipeRun):
 
         del measurements_df
 
-        #print(self.measurement_pairs_df['flux_peak_a'].values.compute())
-        #print(new_measurement_pairs['flux_peak_a'].values.compute())
-        #exit()
-        
-        print("Running calculate_vs_metric")
-
+        # calculate 2-epoch metrics
         new_measurement_pairs["vs_peak"] = calculate_vs_metric(
             new_measurement_pairs['flux_peak_a'].values,
             new_measurement_pairs['flux_peak_b'].values,
             new_measurement_pairs['flux_peak_err_a'].values,
             new_measurement_pairs['flux_peak_err_b'].values,
         )
-        #print("vs_peak output")
-        #print(type(vs_peak))
-        #print(vs_peak)
-        #print(vs_peak.compute())
-        #exit()
-        
-        
-        # calculate 2-epoch metrics
+
         new_measurement_pairs["vs_int"] = calculate_vs_metric(
             new_measurement_pairs['flux_int_a'].values,
             new_measurement_pairs['flux_int_b'].values,
@@ -1104,6 +1042,7 @@ class PipeAnalysis(PipeRun):
 
         if not self._dask_meas_pairs:
             new_measurement_pairs = new_measurement_pairs.compute()
+
         return new_measurement_pairs
 
     def recalc_sources_df(
@@ -1412,10 +1351,6 @@ class PipeAnalysis(PipeRun):
             (df_filter[vs_label] > vs_min) & (df_filter[m_label].abs() > m_min)
         ].shape[0]
 
-        print("Values here")
-        print(df_filter[['meas_id_a', 'meas_id_b']].values)
-        #print(pd.unique(df_filter[['meas_id_a', 'meas_id_b']].values.ravel('K'))
-        #exit()
         unique_meas_ids = (
             pd.unique(df_filter[['meas_id_a', 'meas_id_b']].values.ravel('K'))
         )
@@ -1799,8 +1734,7 @@ class PipeAnalysis(PipeRun):
                 self.measurement_pairs_df.pair_epoch_key == pair_epoch_key
             ]
         )
-        print("Printing pairs df:")
-        print(pairs_df)
+
         if self._dask_meas_pairs:
             pairs_df = pairs_df.compute()
 

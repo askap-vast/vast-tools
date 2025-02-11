@@ -1808,8 +1808,6 @@ class TestPipeAnalysis:
             'recalc_sources_df_output.csv',
             index_col='id')
 
-        print(dummy_PipeAnalysis_wtwoepoch.measurements)
-
         # remove measurements from image id 2
         new_measurements = dummy_PipeAnalysis_wtwoepoch.measurements[
             dummy_PipeAnalysis_wtwoepoch.measurements.image_id != 2
@@ -1817,28 +1815,6 @@ class TestPipeAnalysis:
 
         result = dummy_PipeAnalysis_wtwoepoch.recalc_sources_df(new_measurements)
 
-        print(result.columns)
-        print(expected_result.columns)
-        print(expected_result)
-
-        # result.to_csv('recalc_sources_df_output.csv')
-
-        # print(result)
-        # print(dummy_PipeAnalysis.sources)
-
-        cols_to_test = ['min_flux_int', 'avg_flux_int', 'max_flux_int']
-        for col in cols_to_test:
-            check = (result[col].values ==
-                     dummy_PipeAnalysis_wtwoepoch.sources[col].values).all()
-            if not check:
-                print(col)
-                print(result[col])
-                print(dummy_PipeAnalysis_wtwoepoch.sources[col])
-
-        # assert result['n_selavy'].to_list() == [4, 4, 4]
-        # assert result.shape[1] == dummy_PipeAnalysis.sources.shape[1]
-
-        print(set(expected_result.columns) - set(result.columns))
         pd.testing.assert_frame_equal(result, expected_result)
 
         # assert 1==0
