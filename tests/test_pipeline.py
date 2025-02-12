@@ -5,7 +5,6 @@ import numpy as np
 import os
 import pandas as pd
 import pytest
-import vaex
 import dask.dataframe as dd
 
 from astropy.coordinates import SkyCoord
@@ -268,9 +267,9 @@ def dummy_pipeline_measurement_pairs(*args, **kwargs) -> pd.DataFrame:
 
 def dummy_pipeline_measurement_pairs_dask(
     *args, **kwargs
-) -> vaex.dataframe.DataFrame:
+) -> dd.DataFrame:
     """
-    A dummy pipeline measurements pairs dataframe, as a vaex dataframe.
+    A dummy pipeline measurements pairs dataframe, as a dask dataframe.
 
     Loaded from the test data directory.
 
@@ -279,7 +278,7 @@ def dummy_pipeline_measurement_pairs_dask(
         kwargs: Keyword arguments.
 
     Returns:
-        The dummy pipeline measurements pairs vaex dataframe.
+        The dummy pipeline measurements pairs dask dataframe.
     """
     filepath = TEST_DATA_DIR / 'test_measurement_pairs.csv'
     temp_df = pd.read_csv(filepath)
@@ -495,17 +494,17 @@ def dummy_PipeAnalysis_dask_wtwoepoch(
 ) -> vtp.PipeAnalysis:
     """
     A dummy PipeAnalysis object used in testing with the two epoch data
-    pre-loaded. Vaex version.
+    pre-loaded. Dask version.
 
     Args:
-        dummy_PipeAnalysis_vaex: The dummy vtp.PipeAnalysis fixture that is
-            used to load the run, vaex version.
+        dummy_PipeAnalysis_dask: The dummy vtp.PipeAnalysis fixture that is
+            used to load the run, dask version.
         mocker: The pytest mock mocker object.
 
     Returns:
         The vtp.PipeAnalysis instance with two epoch data attached.
     """
-    vaex_open_mocker = mocker.patch(
+    dask_open_mocker = mocker.patch(
         'vasttools.pipeline.dd.read_parquet',
         side_effect=dummy_pipeline_measurement_pairs_dask
     )
@@ -1408,7 +1407,7 @@ class TestPipeAnalysis:
         """
         Tests the method that loads the two epoch metrics.
 
-        This test is for vaex loaded dataframes.
+        This test is for dask loaded dataframes.
 
         Args:
             dummy_PipeAnalysis: The dummy PipeAnalysis object that is used
