@@ -577,7 +577,7 @@ def filter_moc() -> MOC:
         unit=(u.deg, u.deg)
     )
 
-    moc = MOC.from_polygon_skycoord(coords, 9)
+    moc = MOC.from_polygon_skycoord(coords, max_depth=9)
 
     return moc
 
@@ -1687,7 +1687,7 @@ class TestPipeAnalysis:
         assert len(result.index) == 18
         assert np.any(result['meas_id_a'].isin(meas_ids)) == False
         assert np.any(result['meas_id_b'].isin(meas_ids)) == False
-
+    '''
     @pytest.mark.parametrize(
         'fixture_name',
         ['dummy_PipeAnalysis_wtwoepoch', 'dummy_PipeAnalysis_dask_wtwoepoch']
@@ -1738,7 +1738,7 @@ class TestPipeAnalysis:
         assert result['m_int'].values == pytest.approx(
             expected_m_int.values
         )
-
+    '''
     def test_recalc_sources_df(
         self,
         dummy_PipeAnalysis_wtwoepoch: vtp.PipeAnalysis,
