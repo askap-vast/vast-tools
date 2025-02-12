@@ -34,6 +34,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Fixed
 
+- Updated ubuntu-20.04 -> ubuntu-24.04 in github workflows [#592](https://github.com/askap-vast/vast-tools/pull/592)
 - Correctly calculate plot_lightcurve y-axis range for multi-frequency upper limits [#567](https://github.com/askap-vast/vast-tools/pull/567)
 - Fixed formatting of new epoch addition git example [#568](https://github.com/askap-vast/vast-tools/pull/568)
 - Directly compare stmoc times, avoiding conversion to JD, and replace equality requirement with `isclose` [#334](https://github.com/askap-vast/vast-tools/pull/334)
@@ -44,6 +45,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#592](https://github.com/askap-vast/vast-tools/pull/592): fix: Updated ubuntu-20.04 -> ubuntu-24.04 in github workflows
 - [#583](https://github.com/askap-vast/vast-tools/pull/583): feat: Add epoch 71s and 72
 - [#581](https://github.com/askap-vast/vast-tools/pull/581/): feat: Improve source cutout handling and other minor changes
 - [#576](https://github.com/askap-vast/vast-tools/pull/576): feat: Add epoch 69
