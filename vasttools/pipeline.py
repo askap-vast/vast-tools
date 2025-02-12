@@ -238,7 +238,9 @@ class PipeRun(object):
         else:
             self.measurements = pd.concat(
                 [self.measurements, other_PipeRun.measurements],
-            ).reset_index().drop_duplicates(['id', 'source']).set_index('source', drop=True)
+            ).reset_index().drop_duplicates(
+                ['id', 'source']
+            ).set_index('source', drop=True)
 
         sources_to_add = other_PipeRun.sources.loc[
             ~(other_PipeRun.sources.index.isin(
@@ -458,7 +460,7 @@ class PipeRun(object):
 
         Also creates a 'pairs_df' that lists all the possible epoch pairs.
         This is stored as the attribute self.pairs_df.
-        
+
         Args:
             compute: If `True`, compute the measurement_pairs_df, otherwise
                 leave it as a dask dataframe. Defaults to `False`.
@@ -928,20 +930,19 @@ class PipeAnalysis(PipeRun):
 
         return new_measurement_pairs
 
-
-    def _assign_new_flux_values(self, measurement_pairs_df, flux_cols, measurements_df):
+    def _assign_new_flux_values(
+            self, measurement_pairs_df, flux_cols, measurements_df):
         for j in ['a', 'b']:
             id_values = measurement_pairs_df[f'meas_id_{j}'].to_numpy()
-            
+
             for i in flux_cols:
                 if i == 'id':
                     continue
                 pairs_i = i + f'_{j}'
-                new_flux_values = measurements_df.loc[id_values,i].values
+                new_flux_values = measurements_df.loc[id_values, i].values
                 measurement_pairs_df[pairs_i] = new_flux_values
-        
-        return measurement_pairs_df
 
+        return measurement_pairs_df
 
     def recalc_measurement_pairs_df(
         self,
@@ -999,10 +1000,10 @@ class PipeAnalysis(PipeRun):
             for i in flux_cols:
                 if i == 'id':
                     continue
-            
+
                 pairs_i = i + f'_{j}'
                 new_cols.append(pairs_i)
-        cols = list(new_measurement_pairs.columns)+new_cols
+        cols = list(new_measurement_pairs.columns) + new_cols
         meta = pd.DataFrame(columns=cols, dtype=float)
 
         n_partitions = new_measurement_pairs.npartitions
@@ -1173,9 +1174,9 @@ class PipeAnalysis(PipeRun):
         # df is in pandas format.
 
         # TraP variability metrics, using Dask.
-        measurements_df_temp = measurements_df[[
-            'flux_int', 'flux_int_err', 'flux_peak', 'flux_peak_err'#, 'source'
-        ]]
+        measurements_df_temp = measurements_df[
+            ['flux_int', 'flux_int_err', 'flux_peak', 'flux_peak_err']
+        ]
 
         col_dtype = {
             'v_int': 'f',
@@ -1782,8 +1783,8 @@ class PipeAnalysis(PipeRun):
                 If None then the sources from the PipeAnalysis object are used.
             use_int_flux: Use integrated fluxes for the analysis instead of
                 peak fluxes, defaults to 'False'.
-            compute: Whether or not to compute the resulting dataframes if 
-                the pairs are loaded with dask. This is only relevant if 
+            compute: Whether or not to compute the resulting dataframes if
+                the pairs are loaded with dask. This is only relevant if
                 `self._dask_meas_pairs==True`. Defaults to `True`.
 
         Returns:
@@ -1834,7 +1835,7 @@ class PipeAnalysis(PipeRun):
         unique_sources = candidate_pairs['source_id'].unique()
 
         candidate_sources = self.sources.loc[unique_sources]
-        
+
         if self._dask_meas_pairs and compute:
             candidate_pairs = candidate_pairs.compute()
 
