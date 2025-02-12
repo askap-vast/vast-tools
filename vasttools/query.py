@@ -2371,7 +2371,7 @@ class Query:
                 'sbids',
                 'dates',
                 'freqs'
-            ]] = (
+            ]]  = (
                 dd.from_pandas(self.fields_df, self.ncpu)
                 .apply(
                     self._field_matching,
@@ -2617,7 +2617,7 @@ class Query:
                     epochs.append(i)
                     field_per_epochs.append([i, field, sbid, date, freq])
 
-        return_vals = (fields,
+        return_vals = (fields.tolist(),
                        primary_field,
                        epochs,
                        field_per_epochs,
