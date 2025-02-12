@@ -2617,7 +2617,7 @@ class Query:
                     epochs.append(i)
                     field_per_epochs.append([i, field, sbid, date, freq])
 
-        return_vals = (fields.tolist(),
+        return_vals = (fields,
                        primary_field,
                        epochs,
                        field_per_epochs,
