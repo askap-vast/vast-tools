@@ -2371,7 +2371,7 @@ class Query:
                 'sbids',
                 'dates',
                 'freqs'
-            ]]  = (
+            ]] = (
                 dd.from_pandas(self.fields_df, self.ncpu)
                 .apply(
                     self._field_matching,
