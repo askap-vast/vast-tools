@@ -1537,18 +1537,20 @@ class TestPipeAnalysis:
             'Mercury': 10,
             'Venus': 10,
             'Mars': 10,
-            'Jupiter': 10,
             'Saturn': 10,
-            'Uranus': 10,
+            'Jupiter': 10,
             'Neptune': 10,
-        })
+            'Uranus': 10,
+        }, name='count')
+        expected_planet_counts.index.name = 'planet'
 
         result = dummy_PipeAnalysis.check_for_planets()
         call = dask_from_pandas_mocker.call_args.args[0]
+        result_counts = call.planet.value_counts()
 
         dask_from_pandas_mocker.assert_called_once()
         assert call.isnull().values.any() == False
-        assert call.planet.value_counts().equals(expected_planet_counts)
+        pd.testing.assert_series_equal(result_counts, expected_planet_counts)
 
     def test_filter_by_moc(
         self,
