@@ -18,7 +18,6 @@ import astropy
 import mocpy
 import matplotlib
 import logging
-import vaex
 import matplotlib.pyplot as plt
 
 from typing import List, Tuple
@@ -88,7 +87,7 @@ class PipeRun(object):
             Dataframe containing all the information on the measurements of
             the pipeline run.
         measurement_pairs_file (List[str]): List containing the locations of
-            the measurement_pairs.parquet (or.arrow) file(s).
+            the measurement_pairs.parquet file(s).
         name (str): The pipeline run name.
         n_workers (int): Number of workers (cpus) available.
         relations (pandas.core.frame.DataFrame): Dataframe containing all the
@@ -177,7 +176,7 @@ class PipeRun(object):
         measurement_pairs_exists = True
 
         for filepath in self.measurement_pairs_file:
-            if not os.path.isfile(filepath):
+            if not os.path.exists(filepath):
                 self.logger.warning(f"Measurement pairs file ({filepath}) does"
                                     f" not exist. You will be unable to access"
                                     f" measurement pairs or two-epoch metrics."
@@ -239,8 +238,9 @@ class PipeRun(object):
         else:
             self.measurements = pd.concat(
                 [self.measurements, other_PipeRun.measurements],
-                ignore_index=True
-            ).drop_duplicates(['id', 'source'])
+            ).reset_index().drop_duplicates(
+                ['id', 'source']
+            ).set_index('source', drop=True)
 
         sources_to_add = other_PipeRun.sources.loc[
             ~(other_PipeRun.sources.index.isin(
@@ -362,12 +362,9 @@ class PipeRun(object):
         else:
             the_sources = user_sources
 
+        measurements = the_measurements.loc[id].reset_index()
         if self._dask_meas:
-            measurements = the_measurements.loc[id].compute().reset_index()
-        else:
-            measurements = the_measurements.loc[
-                the_measurements['source'] == id
-            ]
+            measurements = measurements.compute()
 
         measurements = measurements.merge(
             self.images[[
@@ -453,10 +450,9 @@ class PipeRun(object):
                                            "available for this pipeline run."
                                            )
 
-    def load_two_epoch_metrics(self) -> None:
+    def load_two_epoch_metrics(self, compute: bool = False) -> None:
         """
-        Loads the two epoch metrics dataframe, usually stored as either
-        'measurement_pairs.parquet' or 'measurement_pairs.arrow'.
+        Loads the two epoch metrics dataframe from 'measurement_pairs.parquet'.
 
         The two epoch metrics dataframe is stored as an attribute to the
         PipeRun object as self.measurement_pairs_df. An epoch 'key' is also
@@ -464,6 +460,10 @@ class PipeRun(object):
 
         Also creates a 'pairs_df' that lists all the possible epoch pairs.
         This is stored as the attribute self.pairs_df.
+
+        Args:
+            compute: If `True`, compute the measurement_pairs_df, otherwise
+                leave it as a dask dataframe. Defaults to `False`.
 
         Returns:
             None
@@ -513,64 +513,24 @@ class PipeRun(object):
             )
         )
 
-        self._vaex_meas_pairs = False
-        if len(self.measurement_pairs_file) > 1:
-            arrow_files = (
-                [i.endswith(".arrow") for i in self.measurement_pairs_file]
-            )
-            if np.any(arrow_files):
-                measurement_pairs_df = vaex.open_many(
-                    self.measurement_pairs_file[arrow_files]
-                )
-                for i in self.measurement_pairs_file[~arrow_files]:
-                    temp = pd.read_parquet(i)
-                    temp = vaex.from_pandas(temp)
-                    measurement_pairs_df = measurement_pairs_df.concat(temp)
-                self._vaex_meas_pairs = True
-                warnings.warn("Measurement pairs have been loaded with vaex.")
-            else:
-                measurement_pairs_df = (
-                    dd.read_parquet(self.measurement_pairs_file).compute()
-                )
-        else:
-            if self.measurement_pairs_file[0].endswith('.arrow'):
-                measurement_pairs_df = (
-                    vaex.open(self.measurement_pairs_file[0])
-                )
-                self._vaex_meas_pairs = True
-                warnings.warn("Measurement pairs have been loaded with vaex.")
-            else:
-                measurement_pairs_df = (
-                    pd.read_parquet(self.measurement_pairs_file[0])
-                )
+        measurement_pairs_df = (
+            dd.read_parquet(self.measurement_pairs_file)
+        )
 
-        if self._vaex_meas_pairs:
-            measurement_pairs_df['pair_epoch_key'] = (
-                measurement_pairs_df['image_name_a'] + "_"
-                + measurement_pairs_df['image_name_b']
+        measurement_pairs_df['pair_epoch_key'] = (
+            measurement_pairs_df[['image_name_a', 'image_name_b']]
+            .apply(
+                lambda x: f"{x['image_name_a']}_{x['image_name_b']}",
+                axis=1,
+                meta=(None, 'object')
             )
+        )
 
-            pair_counts = measurement_pairs_df.groupby(
-                measurement_pairs_df.pair_epoch_key, agg='count'
-            )
-
-            pair_counts = pair_counts.to_pandas_df().rename(
-                columns={'count': 'total_pairs'}
-            ).set_index('pair_epoch_key')
-        else:
-            measurement_pairs_df['pair_epoch_key'] = (
-                measurement_pairs_df[['image_name_a', 'image_name_b']]
-                .apply(
-                    lambda x: f"{x['image_name_a']}_{x['image_name_b']}",
-                    axis=1
-                )
-            )
-
-            pair_counts = measurement_pairs_df[
-                ['pair_epoch_key', 'image_name_a']
-            ].groupby('pair_epoch_key').count().rename(
-                columns={'image_name_a': 'total_pairs'}
-            )
+        pair_counts = measurement_pairs_df[
+            ['pair_epoch_key', 'image_name_a']
+        ].groupby('pair_epoch_key').count().rename(
+            columns={'image_name_a': 'total_pairs'}
+        ).compute()
 
         pairs_df = pairs_df.merge(
             pair_counts, left_on='pair_epoch_key', right_index=True
@@ -580,7 +540,13 @@ class PipeRun(object):
 
         pairs_df = pairs_df.dropna(subset=['total_pairs']).set_index('id')
 
-        self.measurement_pairs_df = measurement_pairs_df
+        if compute:
+            self.measurement_pairs_df = measurement_pairs_df.compute()
+            self._dask_meas_pairs = False
+        else:
+            self.measurement_pairs_df = measurement_pairs_df
+            self._dask_meas_pairs = True
+
         self.pairs_df = pairs_df.sort_values(by='td')
 
         self._loaded_two_epoch_metrics = True
@@ -736,14 +702,9 @@ class PipeRun(object):
 
         new_sources = self.sources.loc[source_mask].copy()
 
+        new_meas = self.measurements.loc[new_sources.index.values]
         if self._dask_meas:
-            new_meas = self.measurements.loc[new_sources.index.values]
             new_meas = new_meas.compute()
-        else:
-            new_meas = self.measurements.loc[
-                self.measurements['source'].isin(
-                    new_sources.index.values
-                )].copy()
 
         new_images = self.images.loc[
             self.images.index.isin(new_meas['image_id'].tolist())].copy()
@@ -847,8 +808,8 @@ class PipeAnalysis(PipeRun):
             Dataframe containing all the information on the measurements
             of the pipeline run.
         measurement_pairs_file (List[str]):
-            List containing the locations of the measurement_pairs.parquet (or
-            .arrow) file(s).
+            List containing the locations of the measurement_pairs.parquet
+            file(s).
         name (str):
             The pipeline run name.
         n_workers (int):
@@ -929,8 +890,8 @@ class PipeAnalysis(PipeRun):
 
     def _filter_meas_pairs_df(
         self,
-        measurements_df: Union[pd.DataFrame, vaex.dataframe.DataFrame]
-    ) -> Union[pd.DataFrame, vaex.dataframe.DataFrame]:
+        measurements_df: Union[pd.DataFrame, dd.DataFrame]
+    ) -> Union[pd.DataFrame, dd.DataFrame]:
         """
         A utility method to filter the measurement pairs dataframe to remove
         pairs that are no longer in the measurements dataframe.
@@ -946,43 +907,46 @@ class PipeAnalysis(PipeRun):
         if not self._loaded_two_epoch_metrics:
             self.load_two_epoch_metrics()
 
-        if self._vaex_meas_pairs:
-            new_measurement_pairs = self.measurement_pairs_df.copy()
+        new_measurement_pairs = self.measurement_pairs_df.copy()
+
+        if isinstance(measurements_df, dd.DataFrame):
+            measurement_ids = measurements_df['id'].compute().values
         else:
-            new_measurement_pairs = vaex.from_pandas(
-                self.measurement_pairs_df
-            )
+            measurement_ids = measurements_df['id'].values
 
         mask_a = new_measurement_pairs['meas_id_a'].isin(
-            measurements_df['id'].values
-        ).values
-
-        mask_b = new_measurement_pairs['meas_id_b'].isin(
-            measurements_df['id'].values
-        ).values
-
-        new_measurement_pairs['mask_a'] = mask_a
-        new_measurement_pairs['mask_b'] = mask_b
-
-        mask = np.logical_and(mask_a, mask_b)
-        new_measurement_pairs['mask'] = mask
-        new_measurement_pairs = new_measurement_pairs[
-            new_measurement_pairs['mask'] == True
-        ]
-
-        new_measurement_pairs = new_measurement_pairs.extract()
-        new_measurement_pairs = new_measurement_pairs.drop(
-            ['mask_a', 'mask_b', 'mask']
+            measurement_ids
         )
 
-        if not self._vaex_meas_pairs:
-            new_measurement_pairs = new_measurement_pairs.to_pandas_df()
+        mask_b = new_measurement_pairs['meas_id_b'].isin(
+            measurement_ids
+        )
+
+        if isinstance(new_measurement_pairs, dd.DataFrame):
+            new_measurement_pairs = new_measurement_pairs[mask_a & mask_b]
+        else:
+            mask = np.logical_and(mask_a.values, mask_b.values)
+            new_measurement_pairs = new_measurement_pairs[mask]
 
         return new_measurement_pairs
 
+    def _assign_new_flux_values(
+            self, measurement_pairs_df, flux_cols, measurements_df):
+        for j in ['a', 'b']:
+            id_values = measurement_pairs_df[f'meas_id_{j}'].to_numpy()
+
+            for i in flux_cols:
+                if i == 'id':
+                    continue
+                pairs_i = i + f'_{j}'
+                new_flux_values = measurements_df.loc[id_values, i].values
+                measurement_pairs_df[pairs_i] = new_flux_values
+
+        return measurement_pairs_df
+
     def recalc_measurement_pairs_df(
         self,
-        measurements_df: Union[pd.DataFrame, vaex.dataframe.DataFrame]
+        measurements_df: Union[pd.DataFrame, dd.DataFrame]
     ) -> Union[pd.DataFrame, dd.DataFrame]:
         """
         A method to recalculate the two epoch pair metrics based upon a
@@ -1004,20 +968,10 @@ class PipeAnalysis(PipeRun):
         new_measurement_pairs = self._filter_meas_pairs_df(
             measurements_df[['id']]
         )
-
-        # NOTE: This needs to be re-done to correctly handle measurement pairs
-        # being in dask dataframes
-
-        # an attempt to conserve memory
-        if isinstance(new_measurement_pairs, vaex.dataframe.DataFrame):
-            new_measurement_pairs = new_measurement_pairs.drop(
-                ['vs_peak', 'vs_int', 'm_peak', 'm_int']
-            )
-        else:
-            new_measurement_pairs = new_measurement_pairs.drop(
-                ['vs_peak', 'vs_int', 'm_peak', 'm_int'],
-                axis=1
-            )
+        new_measurement_pairs = new_measurement_pairs.drop(
+            ['vs_peak', 'vs_int', 'm_peak', 'm_int'],
+            axis=1
+        )
 
         flux_cols = [
             'flux_int',
@@ -1030,6 +984,8 @@ class PipeAnalysis(PipeRun):
         # convert pandas measurements to dask for consistency
         if isinstance(measurements_df, pd.DataFrame):
             measurements_df = pandas_to_dask(measurements_df)
+        if isinstance(new_measurement_pairs, pd.DataFrame):
+            new_measurement_pairs = pandas_to_dask(new_measurement_pairs)
 
         measurements_df = measurements_df[flux_cols]
 
@@ -1039,39 +995,54 @@ class PipeAnalysis(PipeRun):
             .set_index('id')
         )
 
-        for i in flux_cols:
-            if i == 'id':
-                continue
-            for j in ['a', 'b']:
+        new_cols = []
+        for j in ['a', 'b']:
+            for i in flux_cols:
+                if i == 'id':
+                    continue
+
                 pairs_i = i + f'_{j}'
-                id_values = new_measurement_pairs[f'meas_id_{j}'].to_numpy()
-                new_flux_values = measurements_df.loc[id_values][i]
-                new_flux_values = new_flux_values.compute().to_numpy()
-                new_measurement_pairs[pairs_i] = new_flux_values
+                new_cols.append(pairs_i)
+        cols = list(new_measurement_pairs.columns) + new_cols
+        meta = pd.DataFrame(columns=cols, dtype=float)
+
+        n_partitions = new_measurement_pairs.npartitions
+
+        new_measurement_pairs = new_measurement_pairs.map_partitions(
+            self._assign_new_flux_values,
+            flux_cols,
+            measurements_df,
+            align_dataframes=False,
+            meta=new_measurement_pairs.head()
+        )
 
         del measurements_df
 
         # calculate 2-epoch metrics
         new_measurement_pairs["vs_peak"] = calculate_vs_metric(
-            new_measurement_pairs['flux_peak_a'].to_numpy(),
-            new_measurement_pairs['flux_peak_b'].to_numpy(),
-            new_measurement_pairs['flux_peak_err_a'].to_numpy(),
-            new_measurement_pairs['flux_peak_err_b'].to_numpy()
+            new_measurement_pairs['flux_peak_a'].values,
+            new_measurement_pairs['flux_peak_b'].values,
+            new_measurement_pairs['flux_peak_err_a'].values,
+            new_measurement_pairs['flux_peak_err_b'].values,
         )
+
         new_measurement_pairs["vs_int"] = calculate_vs_metric(
-            new_measurement_pairs['flux_int_a'].to_numpy(),
-            new_measurement_pairs['flux_int_b'].to_numpy(),
-            new_measurement_pairs['flux_int_err_a'].to_numpy(),
-            new_measurement_pairs['flux_int_err_b'].to_numpy()
+            new_measurement_pairs['flux_int_a'].values,
+            new_measurement_pairs['flux_int_b'].values,
+            new_measurement_pairs['flux_int_err_a'].values,
+            new_measurement_pairs['flux_int_err_b'].values,
         )
         new_measurement_pairs["m_peak"] = calculate_m_metric(
-            new_measurement_pairs['flux_peak_a'].to_numpy(),
-            new_measurement_pairs['flux_peak_b'].to_numpy()
+            new_measurement_pairs['flux_peak_a'].values,
+            new_measurement_pairs['flux_peak_b'].values,
         )
         new_measurement_pairs["m_int"] = calculate_m_metric(
-            new_measurement_pairs['flux_int_a'].to_numpy(),
-            new_measurement_pairs['flux_int_b'].to_numpy()
+            new_measurement_pairs['flux_int_a'].values,
+            new_measurement_pairs['flux_int_b'].values,
         )
+
+        if not self._dask_meas_pairs:
+            new_measurement_pairs = new_measurement_pairs.compute()
 
         return new_measurement_pairs
 
@@ -1111,10 +1082,7 @@ class PipeAnalysis(PipeRun):
         if not self._loaded_two_epoch_metrics:
             self.load_two_epoch_metrics()
 
-        # this should actually check the type of the measurements_df
-        # rather than assuming it's the same as self.measurements
-        # TO DO: fix that!!
-        if not self._dask_meas:
+        if isinstance(measurements_df, pd.DataFrame):
             measurements_df = pandas_to_dask(measurements_df)
 
         # account for RA wrapping
@@ -1206,9 +1174,9 @@ class PipeAnalysis(PipeRun):
         # df is in pandas format.
 
         # TraP variability metrics, using Dask.
-        measurements_df_temp = measurements_df[[
-            'flux_int', 'flux_int_err', 'flux_peak', 'flux_peak_err', 'source'
-        ]]
+        measurements_df_temp = measurements_df[
+            ['flux_int', 'flux_int_err', 'flux_peak', 'flux_peak_err']
+        ]
 
         col_dtype = {
             'v_int': 'f',
@@ -1239,20 +1207,17 @@ class PipeAnalysis(PipeRun):
                 measurements_df[['id']]
             )
 
-        if isinstance(measurement_pairs_df, vaex.dataframe.DataFrame):
-            new_measurement_pairs = (
-                measurement_pairs_df[
-                    measurement_pairs_df['vs_int'].abs() >= min_vs
-                    or measurement_pairs_df['vs_peak'].abs() >= min_vs
-                ]
-            )
+        if isinstance(measurement_pairs_df, dd.DataFrame):
+            mask_int = measurement_pairs_df['vs_int'].abs() >= min_vs
+            mask_peak = measurement_pairs_df['vs_peak'].abs() >= min_vs
+            new_measurement_pairs = measurement_pairs_df[mask_int | mask_peak]
         else:
             min_vs_mask = np.logical_or(
                 (measurement_pairs_df['vs_int'].abs() >= min_vs).to_numpy(),
                 (measurement_pairs_df['vs_peak'].abs() >= min_vs).to_numpy()
             )
             new_measurement_pairs = measurement_pairs_df.loc[min_vs_mask]
-            new_measurement_pairs = vaex.from_pandas(new_measurement_pairs)
+            new_measurement_pairs = pandas_to_dask(new_measurement_pairs)
 
         new_measurement_pairs['vs_int_abs'] = (
             new_measurement_pairs['vs_int'].abs()
@@ -1270,23 +1235,27 @@ class PipeAnalysis(PipeRun):
             new_measurement_pairs['m_peak'].abs()
         )
 
-        sources_df_two_epochs = new_measurement_pairs.groupby(
-            'source_id',
-            agg={
-                'vs_significant_max_int': vaex.agg.max('vs_int_abs'),
-                'vs_significant_max_peak': vaex.agg.max('vs_peak_abs'),
-                'm_abs_significant_max_int': vaex.agg.max('m_int_abs'),
-                'm_abs_significant_max_peak': vaex.agg.max('m_peak_abs'),
-            }
+        sources_df_metrics = new_measurement_pairs.groupby('source_id').agg({
+            'vs_int_abs': 'max',
+            'vs_peak_abs': 'max',
+            'm_int_abs': 'max',
+            'm_peak_abs': 'max',
+        })
+
+        sources_df_metrics.columns = [
+            'vs_abs_significant_max_int',
+            'vs_abs_significant_max_peak',
+            'm_abs_significant_max_int',
+            'm_abs_significant_max_peak'
+        ]
+
+        sources_df_metrics = (
+            sources_df_metrics.compute()
         )
 
-        sources_df_two_epochs = (
-            sources_df_two_epochs.to_pandas_df().set_index('source_id')
-        )
+        sources_df = sources_df.join(sources_df_metrics)
 
-        sources_df = sources_df.join(sources_df_two_epochs)
-
-        del sources_df_two_epochs
+        del sources_df_metrics
 
         # new relation numbers
         relation_mask = np.logical_and(
@@ -1314,9 +1283,9 @@ class PipeAnalysis(PipeRun):
 
         # Fill the NaN values.
         sources_df = sources_df.fillna(value={
-            "vs_significant_max_peak": 0.0,
+            "vs_abs_significant_max_peak": 0.0,
             "m_abs_significant_max_peak": 0.0,
-            "vs_significant_max_int": 0.0,
+            "vs_abs_significant_max_int": 0.0,
             "m_abs_significant_max_int": 0.0,
             'n_relations': 0,
             'v_int': 0.,
@@ -1392,13 +1361,7 @@ class PipeAnalysis(PipeRun):
         ][['id', 'forced']]
 
         if self._dask_meas:
-            temp_meas = self.measurements.loc[unique_meas_ids][[
-                'id', 'forced']]
             temp_meas = temp_meas.compute()
-        else:
-            temp_meas = self.measurements[
-                self.measurements['id'].isin(unique_meas_ids)
-            ][['id', 'forced']]
 
         temp_meas = temp_meas.drop_duplicates('id').set_index('id')
 
@@ -1773,8 +1736,8 @@ class PipeAnalysis(PipeRun):
             ]
         )
 
-        if self._vaex_meas_pairs:
-            pairs_df = pairs_df.extract().to_pandas_df()
+        if self._dask_meas_pairs:
+            pairs_df = pairs_df.compute()
 
         pairs_df = pairs_df[pairs_df['source_id'].isin(df.index.values)]
 
@@ -1803,7 +1766,8 @@ class PipeAnalysis(PipeRun):
 
     def run_two_epoch_analysis(
         self, vs: float, m: float, query: Optional[str] = None,
-        df: Optional[pd.DataFrame] = None, use_int_flux: bool = False
+        df: Optional[pd.DataFrame] = None, use_int_flux: bool = False,
+        compute: bool = True
     ) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
         Run the two epoch analysis on the pipeline run, with optional
@@ -1819,6 +1783,9 @@ class PipeAnalysis(PipeRun):
                 If None then the sources from the PipeAnalysis object are used.
             use_int_flux: Use integrated fluxes for the analysis instead of
                 peak fluxes, defaults to 'False'.
+            compute: Whether or not to compute the resulting dataframes if
+                the pairs are loaded with dask. This is only relevant if
+                `self._dask_meas_pairs==True`. Defaults to `True`.
 
         Returns:
             Tuple containing two dataframes of the candidate sources and pairs.
@@ -1851,14 +1818,9 @@ class PipeAnalysis(PipeRun):
         pairs_df = self.measurement_pairs_df.copy()
 
         if len(allowed_sources) != self.sources.shape[0]:
-            if self._vaex_meas_pairs:
-                pairs_df = pairs_df[
-                    pairs_df['source_id'].isin(allowed_sources)
-                ]
-            else:
-                pairs_df = pairs_df.loc[
-                    pairs_df['source_id'].isin(allowed_sources)
-                ]
+            pairs_df = pairs_df.loc[
+                pairs_df['source_id'].isin(allowed_sources)
+            ]
 
         vs_label = 'vs_int' if use_int_flux else 'vs_peak'
         m_abs_label = 'm_int' if use_int_flux else 'm_peak'
@@ -1866,22 +1828,16 @@ class PipeAnalysis(PipeRun):
         pairs_df[vs_label] = pairs_df[vs_label].abs()
         pairs_df[m_abs_label] = pairs_df[m_abs_label].abs()
 
-        # If vaex convert these to pandas
-        if self._vaex_meas_pairs:
-            candidate_pairs = pairs_df[
-                (pairs_df[vs_label] > vs) & (pairs_df[m_abs_label] > m)
-            ]
-
-            candidate_pairs = candidate_pairs.to_pandas_df()
-
-        else:
-            candidate_pairs = pairs_df.loc[
-                (pairs_df[vs_label] > vs) & (pairs_df[m_abs_label] > m)
-            ]
+        candidate_pairs = pairs_df.loc[
+            (pairs_df[vs_label] > vs) & (pairs_df[m_abs_label] > m)
+        ]
 
         unique_sources = candidate_pairs['source_id'].unique()
 
         candidate_sources = self.sources.loc[unique_sources]
+
+        if self._dask_meas_pairs and compute:
+            candidate_pairs = candidate_pairs.compute()
 
         return candidate_sources, candidate_pairs
 
@@ -2762,23 +2718,14 @@ class Pipeline(object):
                     right_on='id'
                 )
                 .rename(columns={'source_id': 'source'})
-            ).reset_index(drop=True)
+            ).set_index('source')
 
         images = images.set_index('id')
 
-        if os.path.isfile(os.path.join(
+        measurement_pairs_file = [os.path.join(
             run_dir,
-            "measurement_pairs.arrow"
-        )):
-            measurement_pairs_file = [os.path.join(
-                run_dir,
-                "measurement_pairs.arrow"
-            )]
-        else:
-            measurement_pairs_file = [os.path.join(
-                run_dir,
-                "measurement_pairs.parquet"
-            )]
+            "measurement_pairs.parquet"
+        )]
 
         piperun = PipeAnalysis(
             name=run_name,

@@ -12,7 +12,7 @@ from astropy.coordinates import SkyCoord
 from mocpy import MOC
 from pathlib import Path
 from pytest_mock import mocker, MockerFixture  # noqa: F401
-from typing import Dict, List
+from typing import Dict, List, Union
 
 import vasttools.pipeline as vtp
 
@@ -266,7 +266,7 @@ def dummy_pipeline_measurement_pairs(*args, **kwargs) -> pd.DataFrame:
     return measurement_pairs_df
 
 
-def dummy_pipeline_measurement_pairs_vaex(
+def dummy_pipeline_measurement_pairs_dask(
     *args, **kwargs
 ) -> vaex.dataframe.DataFrame:
     """
@@ -282,8 +282,8 @@ def dummy_pipeline_measurement_pairs_vaex(
         The dummy pipeline measurements pairs vaex dataframe.
     """
     filepath = TEST_DATA_DIR / 'test_measurement_pairs.csv'
-    measurements_pairs_df = pd.read_csv(filepath)
-    measurements_pairs_df = vaex.from_pandas(measurements_pairs_df)
+    temp_df = pd.read_csv(filepath)
+    measurements_pairs_df = dd.from_pandas(temp_df, npartitions=1)
 
     return measurements_pairs_df
 
@@ -435,8 +435,8 @@ def dummy_PipeAnalysis_wtwoepoch(
         The vtp.PipeAnalysis instance with two epoch data attached.
     """
     pandas_read_parquet_mocker = mocker.patch(
-        'vasttools.pipeline.pd.read_parquet',
-        side_effect=dummy_pipeline_measurement_pairs
+        'vasttools.pipeline.dd.read_parquet',
+        side_effect=dummy_pipeline_measurement_pairs_dask
     )
 
     dummy_PipeAnalysis.load_two_epoch_metrics()
@@ -466,7 +466,7 @@ def dummy_PipeAnalysis_dask(
         The vtp.PipeAnalysis instance.
     """
     mock_isdir = mocker.patch('os.path.isdir', return_value=True)
-    
+
     # NOTE: This is really not great - we're basically mindlessly mocking
     # functions that are called potentially several times
     mock_isfile = mocker.patch('os.path.isfile', return_value=True)
@@ -506,8 +506,8 @@ def dummy_PipeAnalysis_dask_wtwoepoch(
         The vtp.PipeAnalysis instance with two epoch data attached.
     """
     vaex_open_mocker = mocker.patch(
-        'vasttools.pipeline.vaex.open',
-        side_effect=dummy_pipeline_measurement_pairs_vaex
+        'vasttools.pipeline.dd.read_parquet',
+        side_effect=dummy_pipeline_measurement_pairs_dask
     )
 
     dummy_PipeAnalysis_dask.load_two_epoch_metrics()
@@ -558,7 +558,7 @@ def expected_source_measurements_pd(
             The measurements dataframe for a requested source.
         """
         meas = dummy_PipeAnalysis.measurements
-        meas = meas.loc[meas['source'] == id]
+        meas = meas.loc[id]
 
         return meas
     return _filter_source
@@ -586,7 +586,7 @@ def filter_moc() -> MOC:
 @pytest.fixture
 def gen_measurement_pairs_df(
     dummy_PipeAnalysis_wtwoepoch: vtp.PipeAnalysis
-) -> pd.DataFrame:
+) -> Union[pd.DataFrame, dd.DataFrame]:
     """
     Generates a measurement pairs dataframe for a specific 'pair epoch'.
 
@@ -597,12 +597,14 @@ def gen_measurement_pairs_df(
     Returns:
         The measurement pairs df filtered for a pair epoch.
     """
-    def _gen_df(epoch_id: int = 2) -> pd.DataFrame:
+    def _gen_df(epoch_id: int = 2, compute: bool = False
+                ) -> Union[pd.DataFrame, dd.DataFrame]:
         """
         Filters a measurement pairs dataframe for a specific 'pair epoch'.
 
         Args:
             epoch_id: The id of the measurement pair epoch.
+            compute: Whether or not to compute the DataFrame. Defaults to True.
 
         Returns:
             The measurement pairs df filtered for a pair epoch.
@@ -619,7 +621,8 @@ def gen_measurement_pairs_df(
                 ] == epoch_key
             ]
         ).copy()
-
+        if compute:
+            measurement_pairs_df = measurement_pairs_df.compute()
         return measurement_pairs_df
     return _gen_df
 
@@ -918,7 +921,7 @@ class TestPipeline:
 
         assert 'centre_ra' in run.images.columns
         assert run.images.shape[1] == 29
-        assert run.measurements.shape[1] == 42
+        assert run.measurements.shape[1] == 41
 
     def test_load_run_dask(
         self,
@@ -1000,7 +1003,7 @@ class TestPipeAnalysis:
             None
         """
         mocker_isfile = mocker.patch(
-            "os.path.isfile",
+            "os.path.exists",
             side_effect=pairs_existence
         )
 
@@ -1390,40 +1393,16 @@ class TestPipeAnalysis:
         assert mocker_calls.args[0] == expected_sources_skycoord[0]
         assert the_source == -99
 
-    def test_pipeanalysis_load_two_epoch_metrics_pandas(
-        self,
-        dummy_PipeAnalysis: vtp.PipeAnalysis,
-        dummy_pipeline_pairs_df: pd.DataFrame,
-        mocker: MockerFixture
-    ) -> None:
-        """
-        Tests the method that loads the two epoch metrics.
-
-        This test is for pandas loaded dataframes.
-
-        Args:
-            dummy_PipeAnalysis: The dummy PipeAnalysis object that is used
-                for testing.
-            dummy_pipeline_pairs_df: The dummy pairs dataframe.
-            mocker: The pytest mocker mock object.
-
-        Returns:
-            None
-        """
-        pandas_read_parquet_mocker = mocker.patch(
-            'vasttools.pipeline.pd.read_parquet',
-            side_effect=dummy_pipeline_measurement_pairs
-        )
-
-        dummy_PipeAnalysis.load_two_epoch_metrics()
-
-        assert dummy_PipeAnalysis.pairs_df.equals(dummy_pipeline_pairs_df)
-        assert dummy_PipeAnalysis.measurement_pairs_df.shape[0] == 30
-
+    @pytest.mark.parametrize(
+        "compute",
+        [True, False],
+        ids=('compute', 'no-compute')
+    )
     def test_pipeanalysis_load_two_epoch_metrics_dask(
         self,
         dummy_PipeAnalysis_dask: vtp.PipeAnalysis,
         dummy_pipeline_pairs_df: pd.DataFrame,
+        compute: bool,
         mocker: MockerFixture
     ) -> None:
         """
@@ -1435,22 +1414,37 @@ class TestPipeAnalysis:
             dummy_PipeAnalysis: The dummy PipeAnalysis object that is used
                 for testing.
             dummy_pipeline_pairs_df: The dummy pairs dataframe.
+            compute: Whether or not to compute the dask dataframe as part of
+                the loading process.
             mocker: The pytest mocker mock object.
 
         Returns:
             None
         """
-        vaex_open_mocker = mocker.patch(
-            'vasttools.pipeline.vaex.open',
-            side_effect=dummy_pipeline_measurement_pairs_vaex
+        dask_open_mocker = mocker.patch(
+            'vasttools.pipeline.dd.read_parquet',
+            side_effect=dummy_pipeline_measurement_pairs_dask
         )
 
-        dummy_PipeAnalysis_dask.load_two_epoch_metrics()
+        dummy_PipeAnalysis_dask.load_two_epoch_metrics(compute=compute)
 
         assert dummy_PipeAnalysis_dask.pairs_df.equals(
             dummy_pipeline_pairs_df
         )
-        assert dummy_PipeAnalysis_dask.measurement_pairs_df.shape[0] == 30
+
+        assert compute != dummy_PipeAnalysis_dask._dask_meas_pairs
+
+        assert len(dummy_PipeAnalysis_dask.measurement_pairs_df.index) == 30
+        if compute:
+            assert isinstance(
+                dummy_PipeAnalysis_dask.measurement_pairs_df,
+                pd.DataFrame
+            )
+        else:
+            assert isinstance(
+                dummy_PipeAnalysis_dask.measurement_pairs_df,
+                dd.DataFrame
+            )
 
     @pytest.mark.parametrize("row, kwargs, expected", [
         (
@@ -1687,11 +1681,11 @@ class TestPipeAnalysis:
 
         result = the_fixture._filter_meas_pairs_df(
             new_measurements
-        )
+        ).compute()
 
-        assert result.shape[0] == 18
-        assert np.any(result['meas_id_a'].isin(meas_ids).to_numpy()) == False
-        assert np.any(result['meas_id_b'].isin(meas_ids).to_numpy()) == False
+        assert len(result.index) == 18
+        assert np.any(result['meas_id_a'].isin(meas_ids)) == False
+        assert np.any(result['meas_id_b'].isin(meas_ids)) == False
 
     @pytest.mark.parametrize(
         'fixture_name',
@@ -1728,23 +1722,25 @@ class TestPipeAnalysis:
         expected_m_peak = the_fixture.measurement_pairs_df['m_peak']
         expected_m_int = the_fixture.measurement_pairs_df['m_int']
 
-        assert result['vs_peak'].to_numpy() == pytest.approx(
-            expected_vs_peak.to_numpy()
+        result = result.compute()
+
+        assert result['vs_peak'].values == pytest.approx(
+            expected_vs_peak.values
         )
-        assert result['vs_int'].to_numpy() == pytest.approx(
-            expected_vs_int.to_numpy()
+        assert result['vs_int'].values == pytest.approx(
+            expected_vs_int.values
         )
 
-        assert result['m_peak'].to_numpy() == pytest.approx(
-            expected_m_peak.to_numpy()
+        assert result['m_peak'].values == pytest.approx(
+            expected_m_peak.values
         )
-        assert result['m_int'].to_numpy() == pytest.approx(
-            expected_m_int.to_numpy()
+        assert result['m_int'].values == pytest.approx(
+            expected_m_int.values
         )
 
     def test_recalc_sources_df(
         self,
-        dummy_PipeAnalysis: vtp.PipeAnalysis,
+        dummy_PipeAnalysis_wtwoepoch: vtp.PipeAnalysis,
         mocker: MockerFixture
     ) -> None:
         """
@@ -1759,10 +1755,10 @@ class TestPipeAnalysis:
             None
         """
 
-        pandas_read_parquet_mocker = mocker.patch(
-            'vasttools.pipeline.pd.read_parquet',
-            side_effect=dummy_pipeline_measurement_pairs
-        )
+        # pandas_read_parquet_mocker = mocker.patch(
+        #    'vasttools.pipeline.pd.read_parquet',
+        #    side_effect=dummy_pipeline_measurement_pairs
+        # )
 
         # define this to speed up the test to avoid dask
         """dask_from_pandas_mocker = mocker.patch(
@@ -1803,7 +1799,7 @@ class TestPipeAnalysis:
             .return_value
         ) = metrics_return_value"""
 
-        dummy_PipeAnalysis.load_two_epoch_metrics()
+        # dummy_PipeAnalysis.load_two_epoch_metrics()
 
         expected_result = pd.read_csv(
             TEST_DATA_DIR /
@@ -1811,34 +1807,13 @@ class TestPipeAnalysis:
             index_col='id')
 
         # remove measurements from image id 2
-        new_measurements = dummy_PipeAnalysis.measurements[
-            dummy_PipeAnalysis.measurements.image_id != 2
+        new_measurements = dummy_PipeAnalysis_wtwoepoch.measurements[
+            dummy_PipeAnalysis_wtwoepoch.measurements.image_id != 2
         ].copy()
 
-        result = dummy_PipeAnalysis.recalc_sources_df(new_measurements)
+        result = dummy_PipeAnalysis_wtwoepoch.recalc_sources_df(
+            new_measurements)
 
-        print(result.columns)
-        print(expected_result.columns)
-        print(expected_result)
-
-        # result.to_csv('recalc_sources_df_output.csv')
-
-        # print(result)
-        # print(dummy_PipeAnalysis.sources)
-
-        cols_to_test = ['min_flux_int', 'avg_flux_int', 'max_flux_int']
-        for col in cols_to_test:
-            check = (result[col].values ==
-                     dummy_PipeAnalysis.sources[col].values).all()
-            if not check:
-                print(col)
-                print(result[col])
-                print(dummy_PipeAnalysis.sources[col])
-
-        # assert result['n_selavy'].to_list() == [4, 4, 4]
-        # assert result.shape[1] == dummy_PipeAnalysis.sources.shape[1]
-
-        print(set(expected_result.columns) - set(result.columns))
         pd.testing.assert_frame_equal(result, expected_result)
 
         # assert 1==0
@@ -1866,7 +1841,7 @@ class TestPipeAnalysis:
 
         df_filter, num_pairs, num_candidates, td_days = (
             dummy_PipeAnalysis_wtwoepoch._get_epoch_pair_plotting_df(
-                dummy_PipeAnalysis_wtwoepoch.measurement_pairs_df,
+                dummy_PipeAnalysis_wtwoepoch.measurement_pairs_df.compute(),
                 epoch_id,
                 'vs_peak',
                 'm_peak',
@@ -1903,7 +1878,8 @@ class TestPipeAnalysis:
             None
         """
         epoch_id = 2
-        expected_measurement_pairs_df = gen_measurement_pairs_df(epoch_id)
+        expected_measurement_pairs_df = gen_measurement_pairs_df(
+            epoch_id, compute=True)
 
         result = dummy_PipeAnalysis_wtwoepoch._plot_epoch_pair_matplotlib(
             epoch_id,
@@ -1948,7 +1924,8 @@ class TestPipeAnalysis:
             None
         """
         epoch_id = 2
-        expected_measurement_pairs_df = gen_measurement_pairs_df(epoch_id)
+        expected_measurement_pairs_df = gen_measurement_pairs_df(
+            epoch_id, compute=True)
 
         result = dummy_PipeAnalysis_wtwoepoch._plot_epoch_pair_matplotlib(
             epoch_id,
@@ -1994,7 +1971,8 @@ class TestPipeAnalysis:
             None
         """
         epoch_id = 2
-        expected_measurement_pairs_df = gen_measurement_pairs_df(epoch_id)
+        expected_measurement_pairs_df = gen_measurement_pairs_df(
+            epoch_id, compute=True)
 
         result = dummy_PipeAnalysis_wtwoepoch._plot_epoch_pair_matplotlib(
             epoch_id,
@@ -2039,7 +2017,8 @@ class TestPipeAnalysis:
             None
         """
         epoch_id = 2
-        expected_measurement_pairs_df = gen_measurement_pairs_df(epoch_id)
+        expected_measurement_pairs_df = gen_measurement_pairs_df(
+            epoch_id, compute=True)
 
         result = dummy_PipeAnalysis_wtwoepoch._plot_epoch_pair_bokeh(
             epoch_id,
@@ -2070,7 +2049,8 @@ class TestPipeAnalysis:
             None
         """
         epoch_id = 2
-        expected_measurement_pairs_df = gen_measurement_pairs_df(epoch_id)
+        expected_measurement_pairs_df = gen_measurement_pairs_df(
+            epoch_id, compute=True)
 
         result = dummy_PipeAnalysis_wtwoepoch._plot_epoch_pair_bokeh(
             epoch_id,
@@ -2108,7 +2088,8 @@ class TestPipeAnalysis:
         )
 
         epoch_id = 2
-        expected_measurement_pairs_df = gen_measurement_pairs_df(epoch_id)
+        expected_measurement_pairs_df = gen_measurement_pairs_df(
+            epoch_id, compute=True)
 
         result = dummy_PipeAnalysis_wtwoepoch.plot_two_epoch_pairs(
             epoch_id,
@@ -2148,7 +2129,8 @@ class TestPipeAnalysis:
         )
 
         epoch_id = 2
-        expected_measurement_pairs_df = gen_measurement_pairs_df(epoch_id)
+        expected_measurement_pairs_df = gen_measurement_pairs_df(
+            epoch_id, compute=True)
 
         result = dummy_PipeAnalysis_wtwoepoch.plot_two_epoch_pairs(epoch_id)
 
