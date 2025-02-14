@@ -53,6 +53,8 @@ from vasttools.utils import (
 )
 from vasttools.tools import add_credible_levels
 
+from timeit import default_timer as timer
+
 HOST_NCPU = cpu_count()
 numexpr.set_num_threads(int(HOST_NCPU / 4))
 matplotlib.pyplot.switch_backend('Agg')
@@ -474,9 +476,11 @@ class PipeRun(object):
         """
 
         self._raise_if_no_pairs()
-
         image_ids = self.images.sort_values(by='datetime').index.tolist()
-
+        
+        self.logger.info("Computing pairs_df")
+        s = timer()
+        
         pairs_df = pd.DataFrame.from_dict(
             {'pair': combinations(image_ids, 2)}
         )
@@ -512,11 +516,24 @@ class PipeRun(object):
                 lambda x: f"{x['image_name_a']}_{x['image_name_b']}", axis=1
             )
         )
-
+        
+        e = timer()
+        
+        self.logger.info(f"pairs_df computed ({e-s} s)")
+        s = timer()
         measurement_pairs_df = (
             dd.read_parquet(self.measurement_pairs_file)
         )
-
+        e = timer()
+        self.logger.info("read pairs parquet")
+        
+        s = timer()
+        measurement_pairs_df.compute()
+        e = timer()
+        self.logger.info(f"Compute pairs parquet: {e-s}")
+        self.logger.info("read measurement_pairs parquet")
+        s = timer()
+        """
         measurement_pairs_df['pair_epoch_key'] = (
             measurement_pairs_df[['image_name_a', 'image_name_b']]
             .apply(
@@ -525,20 +542,68 @@ class PipeRun(object):
                 meta=(None, 'object')
             )
         )
-
+        """
+        measurement_pairs_df['pair_epoch_key'] = measurement_pairs_df['image_name_a'].astype(str) + "_" + measurement_pairs_df['image_name_b'].astype(str)
+        e = timer()
+        
+        self.logger.info(f"Generated pair epoch key ({e-s} s)")
+        
+        s = timer()
+        measurement_pairs_df.compute()
+        e = timer()
+        self.logger.info(f"Computed pairs w/ pair epoch key ({e-s} s)")
+        
+        s = timer()
+        pair_counts = measurement_pairs_df[
+            ['pair_epoch_key', 'image_name_a']
+        ]
+        pair_counts.compute()
+        e = timer()
+        self.logger.info(f"build df ({e-s} s)")
+        
+        s = timer()
+        pair_counts = pair_counts.groupby('pair_epoch_key').count()
+        pair_counts.compute()
+        e = timer()
+        self.logger.info(f"count ({e-s} s)")
+        
+        s = timer()
+        pair_counts = pair_counts.rename(
+            columns={'image_name_a': 'total_pairs'}
+        )
+        pair_counts.compute()
+        e = timer()
+        self.logger.info(f"rename ({e-s} s)")
+        
+        exit()
+        
+        
+        s = timer()
         pair_counts = measurement_pairs_df[
             ['pair_epoch_key', 'image_name_a']
         ].groupby('pair_epoch_key').count().rename(
             columns={'image_name_a': 'total_pairs'}
-        ).compute()
+        )
+        e = timer()
+        
+        self.logger.info(f"Generated pair counts ddf ({e-s} s)")
+        
+        s = timer()
+        pair_counts = pair_counts.compute()
+        e = timer()
+        self.logger.info(f"Computed pair counts ({e-s} s)")
 
         pairs_df = pairs_df.merge(
             pair_counts, left_on='pair_epoch_key', right_index=True
         )
+        
+        self.logger.info("Added pair counts to pairs_df")
 
         del pair_counts
 
         pairs_df = pairs_df.dropna(subset=['total_pairs']).set_index('id')
+        
+        self.logger.info("Dropped na from pairs_df")
 
         if compute:
             self.measurement_pairs_df = measurement_pairs_df.compute()
@@ -546,8 +611,12 @@ class PipeRun(object):
         else:
             self.measurement_pairs_df = measurement_pairs_df
             self._dask_meas_pairs = True
+        
+        self.logger.info("Computed (or not) measurement pairs df)")
 
         self.pairs_df = pairs_df.sort_values(by='td')
+        
+        self.logger.info("Set pairs df)")
 
         self._loaded_two_epoch_metrics = True
 
