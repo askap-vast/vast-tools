@@ -477,10 +477,8 @@ class PipeRun(object):
 
         self._raise_if_no_pairs()
         image_ids = self.images.sort_values(by='datetime').index.tolist()
-        
-        self.logger.info("Computing pairs_df")
-        s = timer()
-        
+
+        self.logger.debug("Computing pairs_df...")
         pairs_df = pd.DataFrame.from_dict(
             {'pair': combinations(image_ids, 2)}
         )
@@ -516,93 +514,36 @@ class PipeRun(object):
                 lambda x: f"{x['image_name_a']}_{x['image_name_b']}", axis=1
             )
         )
-        
-        e = timer()
-        
-        self.logger.info(f"pairs_df computed ({e-s} s)")
-        s = timer()
+
         measurement_pairs_df = (
             dd.read_parquet(self.measurement_pairs_file)
         )
-        e = timer()
-        self.logger.info("read pairs parquet")
-        
-        s = timer()
-        measurement_pairs_df.compute()
-        e = timer()
-        self.logger.info(f"Compute pairs parquet: {e-s}")
-        self.logger.info("read measurement_pairs parquet")
-        s = timer()
-        """
+
         measurement_pairs_df['pair_epoch_key'] = (
-            measurement_pairs_df[['image_name_a', 'image_name_b']]
-            .apply(
-                lambda x: f"{x['image_name_a']}_{x['image_name_b']}",
-                axis=1,
-                meta=(None, 'object')
-            )
+            measurement_pairs_df['image_name_a'].astype(str) + "_"
+            + measurement_pairs_df['image_name_b'].astype(str)
         )
-        """
-        measurement_pairs_df['pair_epoch_key'] = measurement_pairs_df['image_name_a'].astype(str) + "_" + measurement_pairs_df['image_name_b'].astype(str)
-        e = timer()
-        
-        self.logger.info(f"Generated pair epoch key ({e-s} s)")
-        
-        s = timer()
-        measurement_pairs_df.compute()
-        e = timer()
-        self.logger.info(f"Computed pairs w/ pair epoch key ({e-s} s)")
-        
-        s = timer()
+
         pair_counts = measurement_pairs_df[
             ['pair_epoch_key', 'image_name_a']
-        ]
-        pair_counts.compute()
-        e = timer()
-        self.logger.info(f"build df ({e-s} s)")
-        
-        s = timer()
-        pair_counts = pair_counts.groupby('pair_epoch_key').count()
-        pair_counts.compute()
-        e = timer()
-        self.logger.info(f"count ({e-s} s)")
-        
-        s = timer()
-        pair_counts = pair_counts.rename(
+        ].groupby(
+            'pair_epoch_key'
+        ).count(
+        ).rename(
             columns={'image_name_a': 'total_pairs'}
+        ).compute(
         )
-        pair_counts.compute()
-        e = timer()
-        self.logger.info(f"rename ({e-s} s)")
-        
-        exit()
-        
-        
-        s = timer()
-        pair_counts = measurement_pairs_df[
-            ['pair_epoch_key', 'image_name_a']
-        ].groupby('pair_epoch_key').count().rename(
-            columns={'image_name_a': 'total_pairs'}
-        )
-        e = timer()
-        
-        self.logger.info(f"Generated pair counts ddf ({e-s} s)")
-        
-        s = timer()
-        pair_counts = pair_counts.compute()
-        e = timer()
-        self.logger.info(f"Computed pair counts ({e-s} s)")
 
         pairs_df = pairs_df.merge(
             pair_counts, left_on='pair_epoch_key', right_index=True
         )
-        
+
         self.logger.info("Added pair counts to pairs_df")
 
         del pair_counts
 
         pairs_df = pairs_df.dropna(subset=['total_pairs']).set_index('id')
-        
+
         self.logger.info("Dropped na from pairs_df")
 
         if compute:
@@ -611,11 +552,11 @@ class PipeRun(object):
         else:
             self.measurement_pairs_df = measurement_pairs_df
             self._dask_meas_pairs = True
-        
+
         self.logger.info("Computed (or not) measurement pairs df)")
 
         self.pairs_df = pairs_df.sort_values(by='td')
-        
+
         self.logger.info("Set pairs df)")
 
         self._loaded_two_epoch_metrics = True
@@ -766,8 +707,7 @@ class PipeRun(object):
         Returns:
             A new `PipeRun` object containing the sources within the MOC.
         """
-        source_mask = moc.contains(
-            self.sources_skycoord.ra, self.sources_skycoord.dec)
+        source_mask = moc.contains_skycoords(self.sources_skycoord)
 
         new_sources = self.sources.loc[source_mask].copy()
 
@@ -1087,28 +1027,26 @@ class PipeAnalysis(PipeRun):
 
         del measurements_df
 
-        # calculate 2-epoch metrics
-        new_measurement_pairs["vs_peak"] = calculate_vs_metric(
-            new_measurement_pairs['flux_peak_a'].values,
-            new_measurement_pairs['flux_peak_b'].values,
-            new_measurement_pairs['flux_peak_err_a'].values,
-            new_measurement_pairs['flux_peak_err_b'].values,
-        )
+        for flux_type in ['peak', 'int']:
+            v_out = new_measurement_pairs.map_partitions(
+                lambda df: calculate_vs_metric(
+                    df[f"flux_{flux_type}_a"],
+                    df[f"flux_{flux_type}_b"],
+                    df[f"flux_{flux_type}_err_a"],
+                    df[f"flux_{flux_type}_err_b"]
+                ),
+                meta=(f"vs_{flux_type}", "f8"),
+            )
+            new_measurement_pairs[f"vs_{flux_type}"] = v_out
 
-        new_measurement_pairs["vs_int"] = calculate_vs_metric(
-            new_measurement_pairs['flux_int_a'].values,
-            new_measurement_pairs['flux_int_b'].values,
-            new_measurement_pairs['flux_int_err_a'].values,
-            new_measurement_pairs['flux_int_err_b'].values,
-        )
-        new_measurement_pairs["m_peak"] = calculate_m_metric(
-            new_measurement_pairs['flux_peak_a'].values,
-            new_measurement_pairs['flux_peak_b'].values,
-        )
-        new_measurement_pairs["m_int"] = calculate_m_metric(
-            new_measurement_pairs['flux_int_a'].values,
-            new_measurement_pairs['flux_int_b'].values,
-        )
+            m_out = new_measurement_pairs.map_partitions(
+                lambda df: calculate_m_metric(
+                    df[f"flux_{flux_type}_a"],
+                    df[f"flux_{flux_type}_b"]
+                ),
+                meta=(f"m_{flux_type}", "f8"),
+            )
+            new_measurement_pairs[f"m_{flux_type}"] = m_out
 
         if not self._dask_meas_pairs:
             new_measurement_pairs = new_measurement_pairs.compute()
@@ -1157,7 +1095,9 @@ class PipeAnalysis(PipeRun):
         # account for RA wrapping
         ra_wrap_mask = measurements_df.ra <= 0.1
         measurements_df['ra_wrap'] = measurements_df['ra']
-        measurements_df.loc[ra_wrap_mask]['ra_wrap'] = measurements_df[ra_wrap_mask].ra + 360.
+        measurements_df.loc[ra_wrap_mask]['ra_wrap'] = (
+            measurements_df[ra_wrap_mask].ra + 360.
+        )
 
         measurements_df['interim_ew'] = (
             measurements_df['ra_wrap'] * measurements_df['weight_ew']
