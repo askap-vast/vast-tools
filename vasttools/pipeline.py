@@ -53,8 +53,6 @@ from vasttools.utils import (
 )
 from vasttools.tools import add_credible_levels
 
-from timeit import default_timer as timer
-
 HOST_NCPU = cpu_count()
 numexpr.set_num_threads(int(HOST_NCPU / 4))
 matplotlib.pyplot.switch_backend('Agg')
