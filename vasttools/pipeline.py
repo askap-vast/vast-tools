@@ -937,8 +937,11 @@ class PipeAnalysis(PipeRun):
 
         return new_measurement_pairs
 
-    def _assign_new_flux_values(
+    def _assign_new_flux_values_old(
             self, measurement_pairs_df, flux_cols, measurements_df):
+        
+        print(measurement_pairs_df)
+        print(type(measurements_df))
         for j in ['a', 'b']:
             id_values = measurement_pairs_df[f'meas_id_{j}'].to_numpy()
 
@@ -946,8 +949,45 @@ class PipeAnalysis(PipeRun):
                 if i == 'id':
                     continue
                 pairs_i = i + f'_{j}'
-                new_flux_values = measurements_df.loc[id_values, i].values
-                measurement_pairs_df[pairs_i] = new_flux_values
+                
+                """print('meas_df', measurements_df)
+                print('index', measurements_df.index)
+                print('id_values', id_values)
+                print(len(id_values))
+                print('i', i)"""
+                id_val_set = set(id_values)
+                index_set = set(measurements_df.index)
+                diff = id_val_set - index_set
+                
+                #print(diff)
+                print(len(diff))
+                #exit()
+                try:
+                    new_flux_values = measurements_df.loc[id_values, i].values
+                    measurement_pairs_df[pairs_i] = new_flux_values
+                except:
+                    print("Failed...")
+                
+
+        return measurement_pairs_df
+
+    def _assign_new_flux_values(self, measurement_pairs_df, flux_cols, measurements_df):
+        for j in ['a', 'b']:
+            id_col = f'meas_id_{j}'
+
+            # Merge measurement_pairs_df with measurements_df on the measurement ID
+            merged_df = measurement_pairs_df.merge(
+                measurements_df, 
+                left_on=id_col, 
+                right_index=True,  # Assuming meas_id is the index in measurements_df
+                how="left"
+            )
+
+            # Assign the new flux values
+            for i in flux_cols:
+                if i == 'id':
+                    continue
+                measurement_pairs_df[f'{i}_{j}'] = merged_df[i]
 
         return measurement_pairs_df
 
@@ -1002,6 +1042,7 @@ class PipeAnalysis(PipeRun):
             .set_index('id')
         )
 
+        """
         new_cols = []
         for j in ['a', 'b']:
             for i in flux_cols:
@@ -1012,16 +1053,186 @@ class PipeAnalysis(PipeRun):
                 new_cols.append(pairs_i)
         cols = list(new_measurement_pairs.columns) + new_cols
         meta = pd.DataFrame(columns=cols, dtype=float)
+        """
+        #print(new_measurement_pairs.npartitions)
+        #print(measurements_df.npartitions)
+        #exit()
+        
+        #meta = new_measurement_pairs.head()
+        #print(meta)
+        
+        #print("Computed meta")
+        
+        print(new_measurement_pairs.columns)
+        
+        pairs_flux_cols = []
+        for j in ['a', 'b']:
+            for flux_col in flux_cols:
+                #print(flux_col)
+                if flux_col == 'id':
+                    continue
+                pairs_flux_cols.append(f"{flux_col}_{j}")
+        
+        print(pairs_flux_cols)
+        
+        new_measurement_pairs = new_measurement_pairs.drop(pairs_flux_cols, axis=1)
+        
+        
+        """        
+        print(new_measurement_pairs.columns)
+        
+        for suffix in ["a", "b"]:
+            col_dict = {}
+            for flux_col in flux_cols:
+                if flux_col == 'id':
+                    continue
+                col_dict[flux_col] = f"{flux_col}_{suffix}"
+            
+            new_measurement_pairs = new_measurement_pairs.merge(
+                measurements_df.rename(columns=col_dict), left_on=f"meas_id_a", right_index=True, how="left"
+            )
+        
+        print(new_measurement_pairs.columns)
+        print(new_measurement_pairs.head())
+        
+        exit()
+        
+        
+        print(measurements_df.columns)
+        
+        print("\n\n\n----Merge happening----")
+        col_dict = {}
+        for flux_col in flux_cols:
+            if flux_col == 'id':
+                continue
+            col_dict[flux_col] = f"{flux_col}_a"
+        print(col_dict)
+        print(measurements_df.columns)
+        
+        new_measurement_pairs = new_measurement_pairs.merge(
+            measurements_df.rename(columns=col_dict), left_on=f"meas_id_a", right_index=True, how="left"
+        )
+        new_measurement_pairs = new_measurement_pairs.merge(
+            measurements_df, left_on=f"meas_id_a", right_index=True, how="left"
+        )
+        new_measurement_pairs = new_measurement_pairs.rename(columns=col_dict)
+        
+        print(new_measurement_pairs.head())
+        print(new_measurement_pairs.columns)
+        print(measurements_df.columns)
+        
+        
+        # Rename columns and inspect again
+        #new_measurement_pairs = new_measurement_pairs.rename(columns=col_dict)
+        
+        print(new_measurement_pairs.columns)
+        
+        col_dict = {}
+        for flux_col in flux_cols:
+            if flux_col == 'id':
+                continue
+            col_dict[flux_col] = f"{flux_col}_b"
+        print(measurements_df.columns)
+        new_measurement_pairs = new_measurement_pairs.merge(
+            measurements_df.rename(columns=col_dict), left_on=f"meas_id_b", right_index=True, how="left"
+        )
+        new_measurement_pairs = new_measurement_pairs.merge(
+            measurements_df, left_on=f"meas_id_b", right_index=True, how="left"
+        )
+        print(new_measurement_pairs.columns)
+        print(new_measurement_pairs.head())
+        print(new_measurement_pairs.columns)
+        print(measurements_df.columns)
+        
+        
+        # Rename columns and inspect again
+        new_measurement_pairs = new_measurement_pairs.rename(columns=col_dict)
+        
+        print(new_measurement_pairs.columns)
+        exit()
+        
+        for j in ['b', 'a']:
+            print("\n\n\n")
+            print(f"Processing j={j}")
+            
+            # Print the current columns in new_measurement_pairs before merge
+            print("Columns before merge:", new_measurement_pairs.columns)
+            new_measurement_pairs.compute()  # Force computation to check state
+            
+            # Check if the column 'meas_id_{j}' exists before merging
+            if f"meas_id_{j}" not in new_measurement_pairs.columns:
+                print(f"Column meas_id_{j} not found in new_measurement_pairs!")
+                continue
+            
+            # Merge the two DataFrames
+            print("\n\n")
+            print(new_measurement_pairs[f"meas_id_{j}"].compute())
+            print(measurements_df.index.compute())
+            print("\n\n")
+            
+            left_merge_vals = new_measurement_pairs[f"meas_id_{j}"].compute()
+            right_merge_vals = measurements_df.index.compute()
+            
+            print(type(left_merge_vals))
+            left_not_in_right = ~left_merge_vals.isin(right_merge_vals)
+            print(left_not_in_right.sum())
+            print(left_merge_vals[left_not_in_right])
+            
+            print(len(np.unique(left_merge_vals)))
+            print((~right_merge_vals.isin(left_merge_vals)).sum())
+            
+            new_measurement_pairs = new_measurement_pairs.merge(
+                measurements_df, left_on=f"meas_id_{j}", right_index=True, how="left"
+            )
 
-        n_partitions = new_measurement_pairs.npartitions
+            # Print the columns after merge to inspect changes
+            print("Columns after merge:", new_measurement_pairs.columns)
+            new_measurement_pairs.compute()  # Check the resulting DataFrame state
 
+            # Rename the columns based on col_dict
+            col_dict = {}
+            for flux_col in flux_cols:
+                if flux_col == 'id':
+                    continue
+                col_dict[flux_col] = f"{flux_col}_{j}"
+            
+            # Rename columns and inspect again
+            new_measurement_pairs = new_measurement_pairs.rename(columns=col_dict)
+            print("Columns after renaming:", new_measurement_pairs.columns)
+            
+            # Check for potential partitioning issue
+            print("Partitions in new_measurement_pairs:", new_measurement_pairs.npartitions)
+            
+            # Final computation to ensure everything is correct
+            new_measurement_pairs.compute()  # Final computation check
+        new_measurement_pairs.compute()
+        
+        new_measurement_pairs = new_measurement_pairs.merge(
+            measurements_df, left_on="meas_id_a", right_index=True, how="left"
+        )
+        
         new_measurement_pairs = new_measurement_pairs.map_partitions(
             self._assign_new_flux_values,
             flux_cols,
-            measurements_df,
-            align_dataframes=False,
-            meta=new_measurement_pairs.head()
+            align_dataframes=False
         )
+
+        
+        
+        
+        """
+        new_measurement_pairs = new_measurement_pairs.map_partitions(
+            self._assign_new_flux_values,
+            flux_cols,
+            measurements_df_delayed,
+            align_dataframes=False,
+            meta=meta
+        )
+        """
+        
+        new_measurement_pairs.compute()
+        
+        exit()
 
         del measurements_df
 
