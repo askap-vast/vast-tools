@@ -1041,7 +1041,6 @@ class PipeAnalysis(PipeRun):
 
         if isinstance(measurements_df, pd.DataFrame):
             measurements_df = pandas_to_dask(measurements_df)
-
         # account for RA wrapping
         ra_wrap_mask = measurements_df.ra <= 0.1
         measurements_df['ra_wrap'] = measurements_df['ra']
@@ -1127,8 +1126,6 @@ class PipeAnalysis(PipeRun):
             1. / np.sqrt(sources_df['weight_ns_sum'])
         )
 
-        sources_df = sources_df.compute()
-
         # the RA wrapping is reverted at the end of the function when the
         # df is in pandas format.
 
@@ -1143,7 +1140,7 @@ class PipeAnalysis(PipeRun):
             'eta_int': 'f',
             'eta_peak': 'f',
         }
-
+        
         sources_df_fluxes = (
             measurements_df_temp
             .groupby('source')
@@ -1211,7 +1208,6 @@ class PipeAnalysis(PipeRun):
         sources_df_metrics = (
             sources_df_metrics.compute()
         )
-
         sources_df = sources_df.join(sources_df_metrics)
 
         del sources_df_metrics
@@ -1229,7 +1225,9 @@ class PipeAnalysis(PipeRun):
         ).rename(columns={'to_source_id': 'n_relations'})
 
         sources_df = sources_df.join(sources_df_relations)
+
         # nearest neighbour
+
         sources_sky_coord = gen_skycoord_from_df(
             sources_df, ra_col='wavg_ra', dec_col='wavg_dec'
         )
