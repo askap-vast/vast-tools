@@ -1756,52 +1756,6 @@ class TestPipeAnalysis:
             None
         """
 
-        # pandas_read_parquet_mocker = mocker.patch(
-        #    'vasttools.pipeline.pd.read_parquet',
-        #    side_effect=dummy_pipeline_measurement_pairs
-        # )
-
-        # define this to speed up the test to avoid dask
-        """dask_from_pandas_mocker = mocker.patch(
-            'vasttools.pipeline.dd.from_pandas'
-        )
-
-        metrics_return_value = pd.DataFrame(data={
-            'v_int': {
-                729: 0.01738472025034037,
-                730: 0.1481646810260763,
-                2251: 0.01738472025034037
-            },
-            'v_peak': {
-                729: 0.06053938024395404,
-                730: 0.04956644262980651,
-                2251: 0.06053938024395403
-            },
-            'eta_int': {
-                729: 16.072133072157158,
-                730: 15.489511624915242,
-                2251: 16.072133072157158
-            },
-            'eta_peak': {
-                729: 327.6134309054469,
-                730: 5.842483557954741,
-                2251: 327.61343090548564
-            }
-        })
-
-        (
-            dask_from_pandas_mocker
-            .return_value
-            .groupby
-            .return_value
-            .apply
-            .return_value
-            .compute
-            .return_value
-        ) = metrics_return_value"""
-
-        # dummy_PipeAnalysis.load_two_epoch_metrics()
-
         expected_result = pd.read_csv(
             TEST_DATA_DIR /
             'recalc_sources_df_output.csv',
@@ -1816,8 +1770,6 @@ class TestPipeAnalysis:
             new_measurements)
 
         pd.testing.assert_frame_equal(result, expected_result)
-
-        # assert 1==0
 
     def test__get_epoch_pair_plotting_df(
         self,
