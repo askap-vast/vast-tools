@@ -1715,6 +1715,7 @@ class TestPipeAnalysis:
         new_meas['flux_int'] = new_meas['flux_int'] * 100.
         new_meas['flux_peak'] = new_meas['flux_peak'] * 100.
 
+        #print(the_fixture.measurement_pairs_df)
         result = the_fixture.recalc_measurement_pairs_df(new_meas)
 
         expected_vs_peak = the_fixture.measurement_pairs_df['vs_peak'] * 100.

@@ -937,7 +937,6 @@ class PipeAnalysis(PipeRun):
 
         return new_measurement_pairs
 
-
     def recalc_measurement_pairs_df(
         self,
         measurements_df: Union[pd.DataFrame, dd.DataFrame]
@@ -989,6 +988,7 @@ class PipeAnalysis(PipeRun):
             .set_index('id')
         )
 
+        # Drop existing pairs flux columns
         pairs_flux_cols = []
         for j in ['a', 'b']:
             for flux_col in flux_cols:
@@ -996,7 +996,48 @@ class PipeAnalysis(PipeRun):
                     continue
                 pairs_flux_cols.append(f"{flux_col}_{j}")
 
-        new_measurement_pairs = new_measurement_pairs.drop(pairs_flux_cols, axis=1)
+        new_measurement_pairs = new_measurement_pairs.drop(
+            pairs_flux_cols, axis=1)
+
+        # Recalculate new pairs flux columns with a simple merge
+        for suffix in ["a", "b"]:
+            col_dict = {}
+            for flux_col in flux_cols:
+                if flux_col == 'id':
+                    continue
+                col_dict[flux_col] = f"{flux_col}_{suffix}"
+
+            new_measurement_pairs = new_measurement_pairs.merge(
+                measurements_df.rename(columns=col_dict),
+                left_on=f"meas_id_{suffix}",
+                right_index=True,
+                how="left"
+            )
+
+        del measurements_df
+
+        # Compute Vs and m metrics for both peak and integrated flux
+        # Note: this can probably be done in a better way, but it works
+        for flux_type in ['peak', 'int']:
+            vs_out = new_measurement_pairs.map_partitions(
+                lambda df, ft=flux_type: calculate_vs_metric(
+                    df[f"flux_{ft}_a"],
+                    df[f"flux_{ft}_b"],
+                    df[f"flux_{ft}_err_a"],
+                    df[f"flux_{ft}_err_b"]
+                ),
+                meta=(f"vs_{flux_type}", "f8"),
+            )
+            new_measurement_pairs[f"vs_{flux_type}"] = vs_out
+
+            m_out = new_measurement_pairs.map_partitions(
+                lambda df, ft=flux_type: calculate_m_metric(
+                    df[f"flux_{ft}_a"],
+                    df[f"flux_{ft}_b"]
+                ),
+                meta=(f"m_{flux_type}", "f8"),
+            )
+            new_measurement_pairs[f"m_{flux_type}"] = m_out
 
         if not self._dask_meas_pairs:
             new_measurement_pairs = new_measurement_pairs.compute(
@@ -1143,7 +1184,7 @@ class PipeAnalysis(PipeRun):
             'eta_int': 'f',
             'eta_peak': 'f',
         }
-        
+
         sources_df_fluxes = (
             measurements_df_temp
             .groupby('source')
@@ -1218,9 +1259,6 @@ class PipeAnalysis(PipeRun):
         sources_df = sources_df.join(sources_df_metrics)
 
         del sources_df_metrics
-        
-        print(sources_df)
-        print(type(sources_df))
 
         # new relation numbers
         relation_mask = np.logical_and(
