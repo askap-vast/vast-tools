@@ -999,7 +999,10 @@ class PipeAnalysis(PipeRun):
         new_measurement_pairs = new_measurement_pairs.drop(pairs_flux_cols, axis=1)
 
         if not self._dask_meas_pairs:
-            new_measurement_pairs = new_measurement_pairs.compute()
+            new_measurement_pairs = new_measurement_pairs.compute(
+                num_workers=self.n_workers,
+                scheduler=self.scheduler
+            )
 
         return new_measurement_pairs
 
@@ -1148,7 +1151,6 @@ class PipeAnalysis(PipeRun):
                 pipeline_get_variable_metrics,
                 meta=col_dtype
             )
-            .compute(num_workers=self.n_workers, scheduler=self.scheduler)
         )
 
         # Switch to pandas at this point to perform join
@@ -1156,6 +1158,10 @@ class PipeAnalysis(PipeRun):
 
         sources_df = sources_df.join(
             self.sources[['new', 'new_high_sigma']],
+        )
+        sources_df = sources_df.compute(
+            num_workers=self.n_workers,
+            scheduler=self.scheduler
         )
 
         if measurement_pairs_df is None:
@@ -1205,12 +1211,16 @@ class PipeAnalysis(PipeRun):
             'm_abs_significant_max_peak'
         ]
 
-        sources_df_metrics = (
-            sources_df_metrics.compute()
+        sources_df_metrics = sources_df_metrics.compute(
+            num_workers=self.n_workers,
+            scheduler=self.scheduler
         )
         sources_df = sources_df.join(sources_df_metrics)
 
         del sources_df_metrics
+        
+        print(sources_df)
+        print(type(sources_df))
 
         # new relation numbers
         relation_mask = np.logical_and(
