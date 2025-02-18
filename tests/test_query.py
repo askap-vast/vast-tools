@@ -993,6 +993,9 @@ class TestQuery:
             [['2019-08-27 18:52:00.556', '2019-10-30 10:11:56.913']],
             [[887.5, 887.5]]
         )
+        
+        mocked_field_matching_results = np.asarray(mocked_field_matching_results, dtype='object')
+        
 
         dask_from_pandas_mocker = mocker.patch(
             'vasttools.query.dd.from_pandas',

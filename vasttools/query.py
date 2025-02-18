@@ -16,6 +16,7 @@ import signal
 import numexpr
 import gc
 import time
+import dask
 import dask.dataframe as dd
 import logging
 import logging.handlers
@@ -67,6 +68,7 @@ warnings.filterwarnings('ignore',
 HOST_NCPU = cpu_count()
 numexpr.set_num_threads(int(HOST_NCPU / 4))
 
+dask.config.set({"dataframe.convert-string": False})
 
 class QueryInitError(Exception):
     """

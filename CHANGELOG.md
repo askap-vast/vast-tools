@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Added
 
+- V4: Added support for Python 3.11 and 3.12 [#593](https://github.com/askap-vast/vast-tools/pull/593/)
 - Add epochs 71 and 72 [#583](https://github.com/askap-vast/vast-tools/pull/583)
 - Add epoch 69 [#576](https://github.com/askap-vast/vast-tools/pull/576)
 - Add epoch 68 [#575](https://github.com/askap-vast/vast-tools/pull/575)
@@ -19,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Changed
 
+- V4: Recreated all coordinate pickle files to be compatible with astropy v7 [#593](https://github.com/askap-vast/vast-tools/pull/593/)
 - V4: Switch measurements to be loaded with dask rather than vaex [#582](https://github.com/askap-vast/vast-tools/pull/582)
 - Calculate cutout normalisation each time, rather than storing a normalisation with no easy way to change it [#581](https://github.com/askap-vast/vast-tools/pull/581/)
 - Renamed "force" variable to "force_cutout_fetch" for clarity [#581](https://github.com/askap-vast/vast-tools/pull/581/)
@@ -43,10 +45,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Removed
 
+- V4: Removed vaex dependency and support for Python 3.8-3.10 [#593](https://github.com/askap-vast/vast-tools/pull/593/)
 - Removed lightgallery functionality from docs [#334](https://github.com/askap-vast/vast-tools/pull/334)
 
 #### List of PRs
 
+- V4: [#593](https://github.com/askap-vast/vast-tools/pull/593/): fix,feat,docs: Updated dependencies including requiring Python 3.11 or 3.12. Other minor changes to code and tests based on new package behaviour.
 - V4: [#586](https://github.com/askap-vast/vast-tools/pull/586): fix: Fix to oversight in [#582](https://github.com/askap-vast/vast-tools/pull/582) - check whether measurement.pairs exists rather than is a file
 - V4: [#582](https://github.com/askap-vast/vast-tools/pull/582): feat: Switch measurements to be loaded with dask rather than vaex
 - [#592](https://github.com/askap-vast/vast-tools/pull/592): fix: Updated ubuntu-20.04 -> ubuntu-24.04 in github workflows

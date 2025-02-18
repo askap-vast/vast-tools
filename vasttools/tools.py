@@ -32,13 +32,14 @@ from vasttools.utils import create_moc_from_fits
 from vasttools import FREQ_CONVERSION
 
 
-def skymap2moc(filename: str, cutoff: float) -> MOC:
+def skymap2moc(filename: str, cutoff: float, max_depth: float) -> MOC:
     """
     Creates a MOC of the specified credible region of a given skymap.
 
     Args:
         filename: Path to the healpix skymap file.
         cutoff: Credible level cutoff.
+        max_depth: max_depth of the resulting MOC file
 
     Returns:
         A MOC containing the credible region.
@@ -67,7 +68,7 @@ def skymap2moc(filename: str, cutoff: float) -> MOC:
     idx = np.where(credible_levels < cutoff)[0]
     levels = np.ones(len(idx)) * level
 
-    moc = MOC.from_healpix_cells(idx, depth=levels)
+    moc = MOC.from_healpix_cells(idx, depth=levels, max_depth=max_depth)
 
     return moc
 

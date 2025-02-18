@@ -16,13 +16,13 @@ The `Tools` sub-package is a mishmash of useful VAST-related functions that do n
 :fontawesome-regular-file-lines: [Code reference](../../reference/tools/#vasttools.tools.skymap2moc).
 
 This function returns a MOC of the credible level of a provided skymap.
-The arguments to this function are the path to the skymap file and the requested credible region.
+The arguments to this function are the path to the skymap file, the requested credible region, and the depth of the MOC.
 
 !!! example "Example: Converting a gravitational wave skymap to MOC"
     Build a MOC of the 90% credible region of GW170817
     ```python
     from vasttools.tools import skymap2moc
-    GW170817_moc = skymap2moc('gw170817.fits.gz', 0.9)
+    GW170817_moc = skymap2moc('gw170817.fits.gz', 0.9, 8)
     ```
 
 #### find_in_moc
