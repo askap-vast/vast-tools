@@ -40,7 +40,7 @@ If a `Source` instance is required to be initialised then the first step is to i
 A number of arguments are required to initialise a `Source` instance.
 Those that are required are described below, along with an example.
 
-!!! info ":fontawesome-regular-file-alt: Code Reference"
+!!! info ":fontawesome-regular-file-lines: Code Reference"
     See the [Code reference](../../reference/source/#vasttools.source.Source.__init__) section for all the initialisation options.
 
 !!! warning "Warning: `Query` biased"
@@ -131,7 +131,7 @@ The standard VAST Pilot Survey data release structure is assumed (refer to [Conf
 
 A `Source` instance contains several useful attributes.
 
-!!! info ":fontawesome-regular-file-alt: Code Reference"
+!!! info ":fontawesome-regular-file-lines: Code Reference"
     See the [Code reference](../../reference/source/#vasttools.source.Source) section for all the `Source` attributes.
 
 The two most commonly accessed attributes are:
@@ -181,7 +181,7 @@ The following methods are available with the `Source` instance.
 
 #### calc_eta_and_v_metrics
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/source/#vasttools.source.Source.calc_eta_and_v_metrics).
+:fontawesome-regular-file-lines: [Code reference](../../reference/source/#vasttools.source.Source.calc_eta_and_v_metrics).
 
 Calculates the `η` and `V` variability metrics.
 By default the peak flux is used.
@@ -193,7 +193,7 @@ By default the peak flux is used.
 
 #### calc_eta_metric
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/source/#vasttools.source.Source.calc_eta_metric).
+:fontawesome-regular-file-lines: [Code reference](../../reference/source/#vasttools.source.Source.calc_eta_metric).
 
 Calculates the `η` variability metric.
 By default the peak flux is used.
@@ -205,7 +205,7 @@ By default the peak flux is used.
 
 #### calc_v_metric
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/source/#vasttools.source.Source.calc_v_metric).
+:fontawesome-regular-file-lines: [Code reference](../../reference/source/#vasttools.source.Source.calc_v_metric).
 
 Calculates the `V` variability metric.
 By default the peak flux is used.
@@ -217,7 +217,7 @@ By default the peak flux is used.
 
 #### casda_search
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/source/#vasttools.source.Source.casda_search).
+:fontawesome-regular-file-lines: [Code reference](../../reference/source/#vasttools.source.Source.casda_search).
 
 Uses the [`astoquery CASDA Queries`](https://astroquery.readthedocs.io/en/latest/casda/casda.html){:target="_blank"} service to perform a search of the 
 [CSIRO ASKAP Science Data Archive (CASDA)](https://research.csiro.au/casda/){:target="_blank"} for all ASKAP observations that contain the respective source.
@@ -232,7 +232,7 @@ Results are returned as an [`astropy table`](https://docs.astropy.org/en/stable/
 
 #### get_cutout_data
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/source/#vasttools.source.Source.get_cutout_data).
+:fontawesome-regular-file-lines: [Code reference](../../reference/source/#vasttools.source.Source.get_cutout_data).
 
 This method fetches the cutout data that is required to generate the postage stamps and additional overlays.
 The cutout data is stored in a dataframe as the attribute `Source.cutout_df`.
@@ -248,7 +248,7 @@ The cutout data is stored in a dataframe as the attribute `Source.cutout_df`.
 
 #### make_png
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/source/#vasttools.source.Source.make_png).
+:fontawesome-regular-file-lines: [Code reference](../../reference/source/#vasttools.source.Source.make_png).
 
 The main method that generates all the PNG images that is called by other methods.
 Note that this method can only produce a single epoch at a time, and the required argument is the index of the observation to plot.
@@ -289,7 +289,7 @@ By default the axis labels will measure the offset from the central coordinate. 
 
 #### ned_search
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/source/#vasttools.source.Source.ned_search).
+:fontawesome-regular-file-lines: [Code reference](../../reference/source/#vasttools.source.Source.ned_search).
 
 Uses the [`astoquery NED Queries`](https://astroquery.readthedocs.io/en/latest/ned/ned.html){:target="_blank"} service to perform a search of the 
 [NASA/IPAC Extragalactic Database (NED)](https://ned.ipac.caltech.edu){:target="_blank"} for possible counterparts to the source.
@@ -304,7 +304,7 @@ Results are returned as an [`astropy table`](https://docs.astropy.org/en/stable/
 
 #### plot_lightcurve
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/source/#vasttools.source.Source.plot_lightcurve).
+:fontawesome-regular-file-lines: [Code reference](../../reference/source/#vasttools.source.Source.plot_lightcurve).
 
 A method that returns a plot of the source lightcurve.
 The result is returned a [`matplotlib.pyplot.figure`](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html){:target="_blank"} instance.
@@ -321,16 +321,16 @@ There are a wide variety of options that can style the output plot, please refer
 
 #### save_all_ann
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/source/#vasttools.source.Source.save_all_ann).
+:fontawesome-regular-file-lines: [Code reference](../../reference/source/#vasttools.source.Source.save_all_ann).
 
 A method to save the [kvis annotation files](https://www.atnf.csiro.au/computing/software/karma/user-manual/node17.html){:target="_blank"} for all epochs.
-Refer to the method [`write_ann`](#write-ann) for saving the annotation file for an individual epoch.
+Refer to the method [`write_ann`](#write_ann) for saving the annotation file for an individual epoch.
 The target source and all surrounding sources are included.
 The files will be saved to the directory specified by the argument `outdir` in the instancing of the `Source`.
 If this was not provided the default location is the current directory.
 
 !!! note "Note: Change Cutout Size"
-    To change the size of the cutout, re-fetch the cutout data using the [`get_cutout_data`](#get-cutout-data) method.
+    To change the size of the cutout, re-fetch the cutout data using the [`get_cutout_data`](#get_cutout_data) method.
 
 !!! example
     ```python
@@ -339,10 +339,10 @@ If this was not provided the default location is the current directory.
 
 #### save_all_fits_cutouts
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/source/#vasttools.source.Source.save_all_fits_cutouts).
+:fontawesome-regular-file-lines: [Code reference](../../reference/source/#vasttools.source.Source.save_all_fits_cutouts).
 
 A method to save the cutouts (or postage stamps) of each epoch as individual FITS files.
-Refer to the method [`save_fits_cutout`](#save-fits-cutout) for saving the FITS of an individual epoch.
+Refer to the method [`save_fits_cutout`](#save_fits_cutout) for saving the FITS of an individual epoch.
 The FITS files will be saved to the directory specified by the argument `outdir` in the instancing of the `Source`.
 If this was not provided the default location is the current directory.
 
@@ -361,10 +361,10 @@ If this was not provided the default location is the current directory.
 
 #### save_all_png_cutouts
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/source/#vasttools.source.Source.save_all_png_cutouts).
+:fontawesome-regular-file-lines: [Code reference](../../reference/source/#vasttools.source.Source.save_all_png_cutouts).
 
 A method to save the cutouts (or postage stamps) of each epoch as individual png files.
-Refer to the method [`save_png_cutout`](#save-png-cutout) for saving the png for an individual epoch.
+Refer to the method [`save_png_cutout`](#save_png_cutout) for saving the png for an individual epoch.
 The png files will be saved to the directory specified by the argument `outdir` in the instancing of the `Source`.
 If this was not provided the default location is the current directory.
 
@@ -377,8 +377,8 @@ If this was not provided the default location is the current directory.
     ```
 
 !!! warning
-    This is not an analogous method to [`show_all_png_cutouts`](#show-all-png-cutouts).
-    The method will produce the result from [`save_png_cutout`](#save-png-cutout) but for each epoch.
+    This is not an analogous method to [`show_all_png_cutouts`](#show_all_png_cutouts).
+    The method will produce the result from [`save_png_cutout`](#save_png_cutout) but for each epoch.
     The result from `show_all_png_cutouts` must be saved using the returned figure.
 
 !!! example
@@ -388,16 +388,16 @@ If this was not provided the default location is the current directory.
 
 #### save_all_reg
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/source/#vasttools.source.Source.save_all_reg).
+:fontawesome-regular-file-lines: [Code reference](../../reference/source/#vasttools.source.Source.save_all_reg).
 
 A method to save the [DS9 region files](https://ds9.si.edu/doc/ref/region.html){:target="_blank"} for all epochs.
-Refer to the method [`write_reg`](#write-reg) for saving the region file for an individual epoch.
+Refer to the method [`write_reg`](#write_reg) for saving the region file for an individual epoch.
 The target source and all surrounding sources are included.
 The files will be saved to the directory specified by the argument `outdir` in the instancing of the `Source`.
 If this was not provided the default location is the current directory.
 
 !!! note "Note: Change Cutout Size"
-    To change the size of the cutout, re-fetch the cutout data using the [`get_cutout_data`](#get-cutout-data) method.
+    To change the size of the cutout, re-fetch the cutout data using the [`get_cutout_data`](#get_cutout_data) method.
 
 !!! example
     ```python
@@ -406,7 +406,7 @@ If this was not provided the default location is the current directory.
 
 #### save_fits_cutout
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/source/#vasttools.source.Source.save_fits_cutout).
+:fontawesome-regular-file-lines: [Code reference](../../reference/source/#vasttools.source.Source.save_fits_cutout).
 
 A method to save the cutout (or postage stamp) of a single observation in the FITS format.
 The required argument is the zero-based index of the observation to be saved.
@@ -430,7 +430,7 @@ If this was not provided the default location is the current directory.
 
 #### save_png_cutout
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/source/#vasttools.source.Source.save_png_cutout).
+:fontawesome-regular-file-lines: [Code reference](../../reference/source/#vasttools.source.Source.save_png_cutout).
 
 A method to save the cutout (or postage stamp) of a single observation as a png image.
 The required argument is the zero-based index of the epoch to be saved.
@@ -457,7 +457,7 @@ If this was not provided the default location is the current directory.
 
 #### show_all_png_cutouts
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/source/#vasttools.source.Source.show_all_png_cutouts).
+:fontawesome-regular-file-lines: [Code reference](../../reference/source/#vasttools.source.Source.show_all_png_cutouts).
 
 A method to produce a single image containing all the cutouts of the source, i.e. those from each epoch, displayed.
 Refer to the code reference for all other available options.
@@ -485,7 +485,7 @@ The result is returned a [`matplotlib.pyplot.figure`](https://matplotlib.org/sta
 
 #### show_png_cutout
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/source/#vasttools.source.Source.show_png_cutout).
+:fontawesome-regular-file-lines: [Code reference](../../reference/source/#vasttools.source.Source.show_png_cutout).
 
 A method to produce the cutout (or postage stamp) of a single observation as a png image.
 The required argument is the zero-based index of the observation to be saved.
@@ -511,7 +511,7 @@ The result is returned a [`matplotlib.pyplot.figure`](https://matplotlib.org/sta
 
 #### simbad_search
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/source/#vasttools.source.Source.simbad_search).
+:fontawesome-regular-file-lines: [Code reference](../../reference/source/#vasttools.source.Source.simbad_search).
 
 Uses the [`astoquery SIMBAD Queries`](https://astroquery.readthedocs.io/en/latest/simbad/simbad.html){:target="_blank"} service to perform a search of 
 [SIMBD](https://simbad.u-strasbg.fr/simbad/){:target="_blank"} for possible counterparts to the source.
@@ -526,7 +526,7 @@ Results are returned as an [`astropy table`](https://docs.astropy.org/en/stable/
 
 #### skyview_contour_plot
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/source/#vasttools.source.Source.skyview_contour_plot).
+:fontawesome-regular-file-lines: [Code reference](../../reference/source/#vasttools.source.Source.skyview_contour_plot).
 
 Uses the [`astroquery Skyview Queries`](https://astroquery.readthedocs.io/en/latest/skyview/skyview.html){:target="_blank"} service to download and display a cutout from an available external survey
 and overlay contours of the source from the selected observation. 
@@ -555,7 +555,7 @@ The result is returned a [`matplotlib.pyplot.figure`](https://matplotlib.org/sta
 
 #### write_ann
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/source/#vasttools.source.Source.write_ann).
+:fontawesome-regular-file-lines: [Code reference](../../reference/source/#vasttools.source.Source.write_ann).
 
 Saves the kvis annotation file equal to the generated cutout size for the provided observation.
 The target source and all surrounding sources are included.
@@ -564,7 +564,7 @@ The file will be saved to the directory specified by the argument `outdir` in th
 If this was not provided the default location is the current directory.
 
 !!! note "Note: Change Cutout Size"
-    To change the size of the cutout, re-fetch the cutout data using the [`get_cutout_data`](#get-cutout-data) method.
+    To change the size of the cutout, re-fetch the cutout data using the [`get_cutout_data`](#get_cutout_data) method.
 
 !!! example
     Save the annotation file for the first observation.
@@ -574,7 +574,7 @@ If this was not provided the default location is the current directory.
 
 #### write_measurements
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/source/#vasttools.source.Source.write_measurements).
+:fontawesome-regular-file-lines: [Code reference](../../reference/source/#vasttools.source.Source.write_measurements).
 
 A convenience method to save the measurements dataframe (i.e. `Source.measurements`) to a file.
 The file will be saved to the directory specified by the argument `outdir` in the instancing of the `Source`.
@@ -587,7 +587,7 @@ If this was not provided the default location is the current directory.
 
 #### write_reg
 
-:fontawesome-regular-file-alt: [Code reference](../../reference/source/#vasttools.source.Source.write_reg).
+:fontawesome-regular-file-lines: [Code reference](../../reference/source/#vasttools.source.Source.write_reg).
 
 Saves the ds9 region file of the generated cutout size for the provided observation.
 The target source and all surrounding sources are included.
@@ -596,7 +596,7 @@ The file will be saved to the directory specified by the argument `outdir` in th
 If this was not provided the default location is the current directory.
 
 !!! note "Note: Change Cutout Size"
-    To change the size of the cutout, re-fetch the cutout data using the [`get_cutout_data`](#get-cutout-data) method.
+    To change the size of the cutout, re-fetch the cutout data using the [`get_cutout_data`](#get_cutout_data) method.
 
 !!! example
     Save the region file for the first observation.

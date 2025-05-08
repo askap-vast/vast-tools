@@ -4,6 +4,8 @@ Attributes:
     HOST_NCPU (int): The number of CPU found on the host using 'cpu_count()'.
 
 """
+from __future__ import annotations
+
 import numexpr
 import os
 import warnings
@@ -61,6 +63,7 @@ class PipelineDirectoryError(Exception):
     An error to indicate an error with the pipeline directory.
     """
     pass
+
 
 class MeasPairsDoNotExistError(Exception):
     """
@@ -167,12 +170,12 @@ class PipeRun(object):
 
         self.logger = logging.getLogger('vasttools.pipeline.PipeRun')
         self.logger.debug('Created PipeRun instance')
-        
+
         self._measurement_pairs_exists = self._check_measurement_pairs_file()
 
     def _check_measurement_pairs_file(self):
         measurement_pairs_exists = True
-        
+
         for filepath in self.measurement_pairs_file:
             if not os.path.isfile(filepath):
                 self.logger.warning(f"Measurement pairs file ({filepath}) does"
@@ -182,10 +185,10 @@ class PipeRun(object):
                 measurement_pairs_exists = False
 
         return measurement_pairs_exists
-            
+
     def combine_with_run(
-        self, other_PipeRun, new_name: Optional[str] = None
-    ):
+        self, other_PipeRun: PipeRun, new_name: Optional[str] = None
+    ) -> PipeRun:
         """
         Combines the output of another PipeRun object with the PipeRun
         from which this method is being called from.
@@ -196,12 +199,12 @@ class PipeRun(object):
             returned.
 
         Args:
-            other_PipeRun (PipeRun): The other pipeline run to merge.
+            other_PipeRun: The other pipeline run to merge.
             new_name: If not None then the PipeRun attribute 'name'
                 is changed to the given value.
 
         Returns:
-            PipeRun: The self object with the other pipeline run added.
+            The self object with the other pipeline run added.
         """
 
         self.images = pd.concat(
@@ -251,7 +254,7 @@ class PipeRun(object):
         if orig_run_pairs_exist and other_run_pairs_exist:
             for i in other_PipeRun.measurement_pairs_file:
                 self.measurement_pairs_file.append(i)
-        
+
         elif orig_run_pairs_exist:
             self.logger.warning("Not combining measurement pairs because they "
                                 " do not exist for the new run."
@@ -293,8 +296,7 @@ class PipeRun(object):
                 Must be an astropy.unit value.
 
         Returns:
-            Skycoord object of the sources. A
-            `astropy.coordinates.sky_coordinate.SkyCoord` instance.
+            A SkyCoord containing the source coordinates.
         """
         if user_sources is None:
             the_sources = self.sources
@@ -343,7 +345,7 @@ class PipeRun(object):
                 pipeline measurements are used.
 
         Returns:
-            vast tools Source object.
+            A vast-tools `Source` object corresponding to the requested source.
         """
 
         if user_measurements is None:
@@ -445,10 +447,10 @@ class PipeRun(object):
 
     def _raise_if_no_pairs(self):
         if not self._measurement_pairs_exists:
-             raise MeasPairsDoNotExistError("This method cannot be used as "
-                                            "the measurement pairs are not "
-                                            "available for this pipeline run."
-                                            )
+            raise MeasPairsDoNotExistError("This method cannot be used as "
+                                           "the measurement pairs are not "
+                                           "available for this pipeline run."
+                                           )
 
     def load_two_epoch_metrics(self) -> None:
         """
@@ -469,7 +471,7 @@ class PipeRun(object):
             MeasPairsDoNotExistError: The measurement pairs file(s) do not
                 exist for this run
         """
-        
+
         self._raise_if_no_pairs()
 
         image_ids = self.images.sort_values(by='datetime').index.tolist()
@@ -630,7 +632,7 @@ class PipeRun(object):
 
         Returns:
             DataFrame with list of planet positions. It will be empty if no
-            planets are found. A `pandas.core.frame.DataFrame` instance.
+                planets are found. A `pandas.core.frame.DataFrame` instance.
         """
         from vasttools import ALLOWED_PLANETS
         ap = ALLOWED_PLANETS.copy()
@@ -717,7 +719,7 @@ class PipeRun(object):
 
         return result
 
-    def filter_by_moc(self, moc: mocpy.MOC):
+    def filter_by_moc(self, moc: mocpy.MOC) -> PipeAnalysis:
         """
         Filters the PipeRun object to only contain the sources that are
         located within the provided moc area.
@@ -726,7 +728,7 @@ class PipeRun(object):
             moc: MOC instance for which to filter the run by.
 
         Returns:
-            PipeAnalysis: new_PipeRun
+            A new `PipeRun` object containing the sources within the MOC.
         """
         source_mask = moc.contains(
             self.sources_skycoord.ra, self.sources_skycoord.dec)
@@ -797,7 +799,7 @@ class PipeRun(object):
                 a large run.
 
         Returns:
-            MOC object.
+            MOC object containing the area covered by the pipeline run.
         """
         images_to_use = self.images.drop_duplicates(
             'skyreg_id'
@@ -1092,12 +1094,12 @@ class PipeAnalysis(PipeRun):
         Returns:
             The regenerated sources_df.  A `pandas.core.frame.DataFrame`
             instance.
-        
+
         Raises:
             MeasPairsDoNotExistError: The measurement pairs file(s) do not
                 exist for this run
         """
-        
+
         self._raise_if_no_pairs()
 
         # Two epoch metrics
@@ -1284,7 +1286,6 @@ class PipeAnalysis(PipeRun):
         ).rename(columns={'to_source_id': 'n_relations'})
 
         sources_df = sources_df.join(sources_df_relations)
-
         # nearest neighbour
         sources_sky_coord = gen_skycoord_from_df(
             sources_df, ra_col='wavg_ra', dec_col='wavg_dec'
@@ -1553,7 +1554,7 @@ class PipeAnalysis(PipeRun):
         use_int_flux: bool = False,
         remove_two_forced: bool = False,
         plot_style: str = 'a'
-    ) -> plt.figure:
+    ) -> matplotlib.figure.Figure:
         """
         Plot the results of the two epoch analysis using matplotlib. Currently
         this can only plot one epoch pair at a time.
@@ -1649,7 +1650,7 @@ class PipeAnalysis(PipeRun):
             epoch_pair_id, td_days
         )
         number_string = "Candidates: {}/{} ({:.2f} %)".format(
-            num_candidates, num_pairs, (100.*num_candidates/num_pairs)
+            num_candidates, num_pairs, (100. * num_candidates / num_pairs)
         )
         ax.text(
             0.6, 0.05, date_string + '\n' + number_string,
@@ -1670,7 +1671,7 @@ class PipeAnalysis(PipeRun):
         remove_two_forced: bool = False,
         plot_type: str = 'bokeh',
         plot_style: str = 'a'
-    ) -> Union[Model, plt.figure]:
+    ) -> Union[Model, matplotlib.figure.Figure]:
         """
         Adapted from code written by Andrew O'Brien.
         Plot the results of the two epoch analysis. Currently this can only
@@ -1803,7 +1804,7 @@ class PipeAnalysis(PipeRun):
             MeasPairsDoNotExistError: The measurement pairs file(s) do not
                 exist for this run
         """
-        
+
         self._raise_if_no_pairs()
 
         if not self._loaded_two_epoch_metrics:
@@ -1945,7 +1946,7 @@ class PipeAnalysis(PipeRun):
         self, eta_cutoff: float, v_cutoff: float,
         df: Optional[pd.DataFrame] = None,
         use_int_flux: bool = False
-    ) -> plt.figure:
+    ) -> matplotlib.figure.Figure:
         """
         Adapted from code written by Antonia Rowlinson.
         Produces the eta, V 'diagnostic plot'
@@ -2061,7 +2062,7 @@ class PipeAnalysis(PipeRun):
         eta_cutoff: float,
         v_cutoff: float,
         use_int_flux: bool = False
-    ) -> plt.figure:
+    ) -> matplotlib.figure.Figure:
         """
         Adapted from code written by Antonia Rowlinson.
         Produces the eta, V candidates plot
@@ -2100,7 +2101,7 @@ class PipeAnalysis(PipeRun):
         fontP.set_size('large')
         left, width = 0.1, 0.65
         bottom, height = 0.1, 0.65
-        bottom_h = left_h = left+width+0.02
+        bottom_h = left_h = left + width + 0.02
         rect_scatter = [left, bottom, width, height]
         rect_histx = [left, bottom_h, width, 0.2]
         rect_histy = [left_h, bottom, 0.2, height]
@@ -2140,7 +2141,7 @@ class PipeAnalysis(PipeRun):
         ymin = int(min(y) - 1.1)
         ymax = int(max(y) + 1.1)
         xvals = range(xmin, xmax)
-        xtxts = [r'$10^{'+str(a)+'}$' for a in xvals]
+        xtxts = [r'$10^{' + str(a) + '}$' for a in xvals]
         yvals = range(ymin, ymax)
         ytxts = [r'$10^{' + str(a) + '}$' for a in yvals]
         axScatter.set_xlim([xmin, xmax])
@@ -2245,8 +2246,8 @@ class PipeAnalysis(PipeRun):
         PLOT_WIDTH = 700
         PLOT_HEIGHT = PLOT_WIDTH
         fig = figure(
-            plot_width=PLOT_WIDTH,
-            plot_height=PLOT_HEIGHT,
+            width=PLOT_WIDTH,
+            height=PLOT_HEIGHT,
             aspect_scale=1,
             x_axis_type="log",
             y_axis_type="log",
@@ -2269,8 +2270,8 @@ class PipeAnalysis(PipeRun):
         # axis histograms
         # filter out any forced-phot points for these
         x_hist = figure(
-            plot_width=PLOT_WIDTH,
-            plot_height=100,
+            width=PLOT_WIDTH,
+            height=100,
             x_range=fig.x_range,
             y_axis_type=None,
             x_axis_type="log",
@@ -2298,8 +2299,8 @@ class PipeAnalysis(PipeRun):
         fig.add_layout(x_hist_sigma_span)
 
         y_hist = figure(
-            plot_height=PLOT_HEIGHT,
-            plot_width=100,
+            height=PLOT_HEIGHT,
+            width=100,
             y_range=fig.y_range,
             x_axis_type=None,
             y_axis_type="log",
@@ -2346,8 +2347,16 @@ class PipeAnalysis(PipeRun):
         use_int_flux: bool = False, plot_type: str = 'bokeh',
         diagnostic: bool = False
     ) -> Union[
-        Tuple[float, float, pd.DataFrame, plt.figure, plt.figure],
-        Tuple[float, float, pd.DataFrame, gridplot, plt.figure]
+        Tuple[float,
+              float,
+              pd.DataFrame,
+              matplotlib.figure.Figure,
+              matplotlib.figure.Figure],
+        Tuple[float,
+              float,
+              pd.DataFrame,
+              gridplot,
+              matplotlib.figure.Figure]
     ]:
         """
         Run the eta, v analysis on the pipeline run, with optional
@@ -2375,8 +2384,8 @@ class PipeAnalysis(PipeRun):
 
         Returns:
             Tuple containing the eta cutoff value, the v cutoff value,
-            dataframe of candidates, candidates plot and, if selected, the
-            diagnostic plot.
+                dataframe of candidates, candidates plot and, if selected, the
+                diagnostic plot.
 
         Raise:
             Exception: Entered `plot_type` is not a valid plot type.

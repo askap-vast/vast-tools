@@ -42,6 +42,7 @@ class VASTMOCS(object):
             stmoc_name
         ) as stmoc_path:
             stmoc_path = stmoc_path.resolve()
+            print(stmoc_path)
 
         stmoc = STMOC.from_fits(stmoc_path)
 
@@ -220,7 +221,7 @@ class VASTMOCS(object):
 
         return survey_moc.degrade_to_order(order)
 
-    def load_survey_footprint(self, survey, order: int = 10) -> MOC:
+    def load_survey_footprint(self, survey: str, order: int = 10) -> MOC:
         """
         Load the footprint of either the pilot or full VAST surveys
 
