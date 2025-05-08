@@ -721,14 +721,20 @@ def strip_fieldnames(fieldnames: pd.Series) -> pd.Series:
 
 def open_fits(
     fits_path: Union[str, Path],
-    memmap: Optional[bool] = True
+    memmap: Optional[bool] = True,
+    comp_nan_fill: Optional[bool]= True,
+    comp_nan_fill_cut = -1e4,
 ) -> fits.HDUList:
     """
     This function opens both compressed and uncompressed fits files.
 
     Args:
         fits_path: Path to the fits file
-        memmap: Open the fits file with mmap.
+        memmap: Open the fits file with mmap. Defaults to True.
+        comp_nan_fill: Fill formerly-NaN values with NaNs in compressed images.
+            Defaults to True.
+        comp_nan_fill_cut: The cutoff value for replacing negative numbers
+            with NaNs. Only relevant if `comp_nan_fill=True`. Defaults to -1e4.
 
     Returns:
         HDUList loaded from the fits file
@@ -737,14 +743,17 @@ def open_fits(
         ValueError: File extension must be .fits or .fits.fz
     """
 
-    if type(fits_path) == Path:
+    if isinstance(fits_path, Path):
         fits_path = str(fits_path)
 
     hdul = fits.open(fits_path, memmap=memmap)
 
     if len(hdul) == 1:
         return hdul
-    elif type(hdul[1]) == fits.hdu.compressed.CompImageHDU:
+    elif isinstance(hdul[1], fits.hdu.compressed.CompImageHDU):
+        if comp_nan_fill:
+            data = hdul[1].data
+            data[data<comp_nan_fill_cut] = np.nan
         return fits.HDUList(hdul[1:])
     else:
         return hdul
