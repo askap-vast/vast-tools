@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "vasttools"
-version = "3.2.0"
+version = "3.2.0-dev"
 description = "Python module to interact with ASKAP VAST data."
 license = "MIT"
 homepage = "https://github.com/askap-vast/vasttools/"
