@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Added
 
+- Add epochs 73 and 74 [#598](https://github.com/askap-vast/vast-tools/pull/598)
 - Add epochs 71 and 72 [#583](https://github.com/askap-vast/vast-tools/pull/583)
 - Add epoch 69 [#576](https://github.com/askap-vast/vast-tools/pull/576)
 - Add epoch 68 [#575](https://github.com/askap-vast/vast-tools/pull/575)
@@ -45,7 +46,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Removed lightgallery functionality from docs [#334](https://github.com/askap-vast/vast-tools/pull/334)
 
 #### List of PRs
-
+- [#598](https://github.com/askap-vast/vast-tools/pull/598): feat: Add epochs 73 and 74
 - [#597](https://github.com/askap-vast/vast-tools/pull/597): fix: Updated open_fits to correctly handle NaN padding in CompImageHDUs
 - [#592](https://github.com/askap-vast/vast-tools/pull/592): fix: Updated ubuntu-20.04 -> ubuntu-24.04 in github workflows
 - [#583](https://github.com/askap-vast/vast-tools/pull/583): feat: Add epoch 71s and 72
