@@ -4,10 +4,32 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), with an added `List of PRs` section and links to the relevant PRs on the individal updates. This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased](https://github.com/askap-vast/vast-pipeline/compare/v3.1.1...HEAD)
+## [Unreleased](https://github.com/askap-vast/vast-pipeline/compare/v3.2.0...HEAD)
 
 #### Added
 
+#### Changed
+
+- V4: Switch measurements to be loaded with dask rather than vaex [#582](https://github.com/askap-vast/vast-tools/pull/582)
+
+#### Fixed
+
+- V4: Fix to oversight in [#582](https://github.com/askap-vast/vast-tools/pull/582) - check whether measurement.pairs exists rather than is a file [#586](https://github.com/askap-vast/vast-tools/pull/586)
+
+
+#### Removed
+
+#### List of PRs
+
+- V4: [#586](https://github.com/askap-vast/vast-tools/pull/586): fix: Fix to oversight in [#582](https://github.com/askap-vast/vast-tools/pull/582) - check whether measurement.pairs exists rather than is a file
+- V4: [#582](https://github.com/askap-vast/vast-tools/pull/582): feat: Switch measurements to be loaded with dask rather than vaex
+
+
+## [3.2.0](https://github.com/askap-vast/vast-tools/releases/v3.2.0) (2024-05-08)
+
+#### Added
+
+- Add epochs 73 and 74 [#598](https://github.com/askap-vast/vast-tools/pull/598)
 - Add epochs 71 and 72 [#583](https://github.com/askap-vast/vast-tools/pull/583)
 - Add epoch 69 [#576](https://github.com/askap-vast/vast-tools/pull/576)
 - Add epoch 68 [#575](https://github.com/askap-vast/vast-tools/pull/575)
@@ -19,7 +41,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Changed
 
-- V4: Switch measurements to be loaded with dask rather than vaex [#582](https://github.com/askap-vast/vast-tools/pull/582)
 - Calculate cutout normalisation each time, rather than storing a normalisation with no easy way to change it [#581](https://github.com/askap-vast/vast-tools/pull/581/)
 - Renamed "force" variable to "force_cutout_fetch" for clarity [#581](https://github.com/askap-vast/vast-tools/pull/581/)
 - Allow users to specify the size of a single cutout in show_all_png_cutouts, rather than forcing them to specify the total figure size [#581](https://github.com/askap-vast/vast-tools/pull/581/)
@@ -35,7 +56,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Fixed
 
-- V4: Fix to oversight in [#582](https://github.com/askap-vast/vast-tools/pull/582) - check whether measurement.pairs exists rather than is a file [#586](https://github.com/askap-vast/vast-tools/pull/586)
+- Updated open_fits to correctly handle NaN padding in CompImageHDUs [#597](https://github.com/askap-vast/vast-tools/pull/597)
 - Updated ubuntu-20.04 -> ubuntu-24.04 in github workflows [#592](https://github.com/askap-vast/vast-tools/pull/592)
 - Correctly calculate plot_lightcurve y-axis range for multi-frequency upper limits [#567](https://github.com/askap-vast/vast-tools/pull/567)
 - Fixed formatting of new epoch addition git example [#568](https://github.com/askap-vast/vast-tools/pull/568)
@@ -47,8 +68,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
-- V4: [#586](https://github.com/askap-vast/vast-tools/pull/586): fix: Fix to oversight in [#582](https://github.com/askap-vast/vast-tools/pull/582) - check whether measurement.pairs exists rather than is a file
-- V4: [#582](https://github.com/askap-vast/vast-tools/pull/582): feat: Switch measurements to be loaded with dask rather than vaex
+- [#598](https://github.com/askap-vast/vast-tools/pull/598): feat: Add epochs 73 and 74
+- [#597](https://github.com/askap-vast/vast-tools/pull/597): fix: Updated open_fits to correctly handle NaN padding in CompImageHDUs
 - [#592](https://github.com/askap-vast/vast-tools/pull/592): fix: Updated ubuntu-20.04 -> ubuntu-24.04 in github workflows
 - [#583](https://github.com/askap-vast/vast-tools/pull/583): feat: Add epoch 71s and 72
 - [#581](https://github.com/askap-vast/vast-tools/pull/581/): feat: Improve source cutout handling and other minor changes
