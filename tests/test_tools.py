@@ -179,7 +179,7 @@ def test_find_in_moc(source_df: pd.DataFrame) -> None:
     filename = TEST_DATA_DIR / 'test_skymap_gw190814.fits.gz'
     results = np.array([0, 1])
 
-    moc_skymap = vtt.skymap2moc(filename, 0.9)
+    moc_skymap = vtt.skymap2moc(filename, 0.9, 8)
 
     func_output = vtt.find_in_moc(moc_skymap, source_df, pipe=False)
 

@@ -18,8 +18,8 @@ import copy
 from astropy.visualization import LinearStretch
 from astropy.visualization import PercentileInterval
 from astropy.visualization import ZScaleInterval, ImageNormalize
-from mpl_toolkits.axes_grid1.anchored_artists import AnchoredEllipse
 from astropy.coordinates import Angle
+from matplotlib.offsetbox import AnchoredOffsetbox, AuxTransformBox
 from astropy.visualization.wcsaxes import SphericalCircle
 from matplotlib.collections import PatchCollection
 from astropy.wcs.utils import proj_plane_pixel_scales
@@ -2052,17 +2052,23 @@ class Source:
                 degrees_per_pixel = np.sqrt(sx * sy)
                 minor /= degrees_per_pixel
                 major /= degrees_per_pixel
+                
+                png_beam = Ellipse((0, 0), width=minor, height=major, angle=pa)
 
-                png_beam = AnchoredEllipse(
-                    ax.transData, width=minor,
-                    height=major, angle=pa, loc="lower right",
-                    pad=0.5, borderpad=0.4,
-                    frameon=False)
-                png_beam.ellipse.set_edgecolor("k")
-                png_beam.ellipse.set_facecolor("w")
-                png_beam.ellipse.set_linewidth(1.5)
+                png_beam.set_edgecolor("k")
+                png_beam.set_facecolor("w")
+                png_beam.set_linewidth(1.5)
+                
+                aux_tr_box = AuxTransformBox(ax.transData)
+                aux_tr_box.add_artist(png_beam)
+                box = AnchoredOffsetbox(child=aux_tr_box,
+                                        loc="lower right",
+                                        frameon=False,
+                                        pad=0.5,
+                                        borderpad=0.4
+                )
 
-                ax.add_artist(png_beam)
+                ax.add_artist(box)
         else:
             self.logger.debug("Hiding beam.")
 

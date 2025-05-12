@@ -474,9 +474,9 @@ class PipeRun(object):
         """
 
         self._raise_if_no_pairs()
-
         image_ids = self.images.sort_values(by='datetime').index.tolist()
 
+        self.logger.debug("Computing pairs_df...")
         pairs_df = pd.DataFrame.from_dict(
             {'pair': combinations(image_ids, 2)}
         )
@@ -518,27 +518,31 @@ class PipeRun(object):
         )
 
         measurement_pairs_df['pair_epoch_key'] = (
-            measurement_pairs_df[['image_name_a', 'image_name_b']]
-            .apply(
-                lambda x: f"{x['image_name_a']}_{x['image_name_b']}",
-                axis=1,
-                meta=(None, 'object')
-            )
+            measurement_pairs_df['image_name_a'].astype(str) + "_"
+            + measurement_pairs_df['image_name_b'].astype(str)
         )
 
         pair_counts = measurement_pairs_df[
             ['pair_epoch_key', 'image_name_a']
-        ].groupby('pair_epoch_key').count().rename(
+        ].groupby(
+            'pair_epoch_key'
+        ).count(
+        ).rename(
             columns={'image_name_a': 'total_pairs'}
-        ).compute()
+        ).compute(
+        )
 
         pairs_df = pairs_df.merge(
             pair_counts, left_on='pair_epoch_key', right_index=True
         )
 
+        self.logger.info("Added pair counts to pairs_df")
+
         del pair_counts
 
         pairs_df = pairs_df.dropna(subset=['total_pairs']).set_index('id')
+
+        self.logger.info("Dropped na from pairs_df")
 
         if compute:
             self.measurement_pairs_df = measurement_pairs_df.compute()
@@ -547,7 +551,11 @@ class PipeRun(object):
             self.measurement_pairs_df = measurement_pairs_df
             self._dask_meas_pairs = True
 
+        self.logger.info("Computed (or not) measurement pairs df)")
+
         self.pairs_df = pairs_df.sort_values(by='td')
+
+        self.logger.info("Set pairs df)")
 
         self._loaded_two_epoch_metrics = True
 
@@ -697,8 +705,7 @@ class PipeRun(object):
         Returns:
             A new `PipeRun` object containing the sources within the MOC.
         """
-        source_mask = moc.contains(
-            self.sources_skycoord.ra, self.sources_skycoord.dec)
+        source_mask = moc.contains_skycoords(self.sources_skycoord)
 
         new_sources = self.sources.loc[source_mask].copy()
 
@@ -930,20 +937,6 @@ class PipeAnalysis(PipeRun):
 
         return new_measurement_pairs
 
-    def _assign_new_flux_values(
-            self, measurement_pairs_df, flux_cols, measurements_df):
-        for j in ['a', 'b']:
-            id_values = measurement_pairs_df[f'meas_id_{j}'].to_numpy()
-
-            for i in flux_cols:
-                if i == 'id':
-                    continue
-                pairs_i = i + f'_{j}'
-                new_flux_values = measurements_df.loc[id_values, i].values
-                measurement_pairs_df[pairs_i] = new_flux_values
-
-        return measurement_pairs_df
-
     def recalc_measurement_pairs_df(
         self,
         measurements_df: Union[pd.DataFrame, dd.DataFrame]
@@ -995,54 +988,62 @@ class PipeAnalysis(PipeRun):
             .set_index('id')
         )
 
-        new_cols = []
+        # Drop existing pairs flux columns
+        pairs_flux_cols = []
         for j in ['a', 'b']:
-            for i in flux_cols:
-                if i == 'id':
+            for flux_col in flux_cols:
+                if flux_col == 'id':
                     continue
+                pairs_flux_cols.append(f"{flux_col}_{j}")
 
-                pairs_i = i + f'_{j}'
-                new_cols.append(pairs_i)
-        cols = list(new_measurement_pairs.columns) + new_cols
-        meta = pd.DataFrame(columns=cols, dtype=float)
+        new_measurement_pairs = new_measurement_pairs.drop(
+            pairs_flux_cols, axis=1)
 
-        n_partitions = new_measurement_pairs.npartitions
+        # Recalculate new pairs flux columns with a simple merge
+        for suffix in ["a", "b"]:
+            col_dict = {}
+            for flux_col in flux_cols:
+                if flux_col == 'id':
+                    continue
+                col_dict[flux_col] = f"{flux_col}_{suffix}"
 
-        new_measurement_pairs = new_measurement_pairs.map_partitions(
-            self._assign_new_flux_values,
-            flux_cols,
-            measurements_df,
-            align_dataframes=False,
-            meta=new_measurement_pairs.head()
-        )
+            new_measurement_pairs = new_measurement_pairs.merge(
+                measurements_df.rename(columns=col_dict),
+                left_on=f"meas_id_{suffix}",
+                right_index=True,
+                how="left"
+            )
 
         del measurements_df
 
-        # calculate 2-epoch metrics
-        new_measurement_pairs["vs_peak"] = calculate_vs_metric(
-            new_measurement_pairs['flux_peak_a'].values,
-            new_measurement_pairs['flux_peak_b'].values,
-            new_measurement_pairs['flux_peak_err_a'].values,
-            new_measurement_pairs['flux_peak_err_b'].values,
-        )
+        # Compute Vs and m metrics for both peak and integrated flux
+        # Note: this can probably be done in a better way, but it works
+        for flux_type in ['peak', 'int']:
+            vs_out = new_measurement_pairs.map_partitions(
+                lambda df, ft=flux_type: calculate_vs_metric(
+                    df[f"flux_{ft}_a"],
+                    df[f"flux_{ft}_b"],
+                    df[f"flux_{ft}_err_a"],
+                    df[f"flux_{ft}_err_b"]
+                ),
+                meta=(f"vs_{flux_type}", "f8"),
+            )
+            new_measurement_pairs[f"vs_{flux_type}"] = vs_out
 
-        new_measurement_pairs["vs_int"] = calculate_vs_metric(
-            new_measurement_pairs['flux_int_a'].values,
-            new_measurement_pairs['flux_int_b'].values,
-            new_measurement_pairs['flux_int_err_a'].values,
-            new_measurement_pairs['flux_int_err_b'].values,
-        )
-        new_measurement_pairs["m_peak"] = calculate_m_metric(
-            new_measurement_pairs['flux_peak_a'].values,
-            new_measurement_pairs['flux_peak_b'].values,
-        )
-        new_measurement_pairs["m_int"] = calculate_m_metric(
-            new_measurement_pairs['flux_int_a'].values,
-            new_measurement_pairs['flux_int_b'].values,
-        )
+            m_out = new_measurement_pairs.map_partitions(
+                lambda df, ft=flux_type: calculate_m_metric(
+                    df[f"flux_{ft}_a"],
+                    df[f"flux_{ft}_b"]
+                ),
+                meta=(f"m_{flux_type}", "f8"),
+            )
+            new_measurement_pairs[f"m_{flux_type}"] = m_out
 
         if not self._dask_meas_pairs:
-            new_measurement_pairs = new_measurement_pairs.compute()
+            new_measurement_pairs = new_measurement_pairs.compute(
+                num_workers=self.n_workers,
+                scheduler=self.scheduler
+            )
 
         return new_measurement_pairs
 
@@ -1084,11 +1085,12 @@ class PipeAnalysis(PipeRun):
 
         if isinstance(measurements_df, pd.DataFrame):
             measurements_df = pandas_to_dask(measurements_df)
-
         # account for RA wrapping
         ra_wrap_mask = measurements_df.ra <= 0.1
         measurements_df['ra_wrap'] = measurements_df['ra']
-        measurements_df.loc[ra_wrap_mask]['ra_wrap'] = measurements_df[ra_wrap_mask].ra + 360.
+        measurements_df.loc[ra_wrap_mask]['ra_wrap'] = (
+            measurements_df[ra_wrap_mask].ra + 360.
+        )
 
         measurements_df['interim_ew'] = (
             measurements_df['ra_wrap'] * measurements_df['weight_ew']
@@ -1168,8 +1170,6 @@ class PipeAnalysis(PipeRun):
             1. / np.sqrt(sources_df['weight_ns_sum'])
         )
 
-        sources_df = sources_df.compute()
-
         # the RA wrapping is reverted at the end of the function when the
         # df is in pandas format.
 
@@ -1192,7 +1192,6 @@ class PipeAnalysis(PipeRun):
                 pipeline_get_variable_metrics,
                 meta=col_dtype
             )
-            .compute(num_workers=self.n_workers, scheduler=self.scheduler)
         )
 
         # Switch to pandas at this point to perform join
@@ -1200,6 +1199,10 @@ class PipeAnalysis(PipeRun):
 
         sources_df = sources_df.join(
             self.sources[['new', 'new_high_sigma']],
+        )
+        sources_df = sources_df.compute(
+            num_workers=self.n_workers,
+            scheduler=self.scheduler
         )
 
         if measurement_pairs_df is None:
@@ -1249,10 +1252,10 @@ class PipeAnalysis(PipeRun):
             'm_abs_significant_max_peak'
         ]
 
-        sources_df_metrics = (
-            sources_df_metrics.compute()
+        sources_df_metrics = sources_df_metrics.compute(
+            num_workers=self.n_workers,
+            scheduler=self.scheduler
         )
-
         sources_df = sources_df.join(sources_df_metrics)
 
         del sources_df_metrics
@@ -1270,7 +1273,9 @@ class PipeAnalysis(PipeRun):
         ).rename(columns={'to_source_id': 'n_relations'})
 
         sources_df = sources_df.join(sources_df_relations)
+
         # nearest neighbour
+
         sources_sky_coord = gen_skycoord_from_df(
             sources_df, ra_col='wavg_ra', dec_col='wavg_dec'
         )

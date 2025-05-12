@@ -5,7 +5,6 @@ import numpy as np
 import os
 import pandas as pd
 import pytest
-import vaex
 import dask.dataframe as dd
 
 from astropy.coordinates import SkyCoord
@@ -268,9 +267,9 @@ def dummy_pipeline_measurement_pairs(*args, **kwargs) -> pd.DataFrame:
 
 def dummy_pipeline_measurement_pairs_dask(
     *args, **kwargs
-) -> vaex.dataframe.DataFrame:
+) -> dd.DataFrame:
     """
-    A dummy pipeline measurements pairs dataframe, as a vaex dataframe.
+    A dummy pipeline measurements pairs dataframe, as a dask dataframe.
 
     Loaded from the test data directory.
 
@@ -279,7 +278,7 @@ def dummy_pipeline_measurement_pairs_dask(
         kwargs: Keyword arguments.
 
     Returns:
-        The dummy pipeline measurements pairs vaex dataframe.
+        The dummy pipeline measurements pairs dask dataframe.
     """
     filepath = TEST_DATA_DIR / 'test_measurement_pairs.csv'
     temp_df = pd.read_csv(filepath)
@@ -495,17 +494,17 @@ def dummy_PipeAnalysis_dask_wtwoepoch(
 ) -> vtp.PipeAnalysis:
     """
     A dummy PipeAnalysis object used in testing with the two epoch data
-    pre-loaded. Vaex version.
+    pre-loaded. Dask version.
 
     Args:
-        dummy_PipeAnalysis_vaex: The dummy vtp.PipeAnalysis fixture that is
-            used to load the run, vaex version.
+        dummy_PipeAnalysis_dask: The dummy vtp.PipeAnalysis fixture that is
+            used to load the run, dask version.
         mocker: The pytest mock mocker object.
 
     Returns:
         The vtp.PipeAnalysis instance with two epoch data attached.
     """
-    vaex_open_mocker = mocker.patch(
+    dask_open_mocker = mocker.patch(
         'vasttools.pipeline.dd.read_parquet',
         side_effect=dummy_pipeline_measurement_pairs_dask
     )
@@ -578,7 +577,7 @@ def filter_moc() -> MOC:
         unit=(u.deg, u.deg)
     )
 
-    moc = MOC.from_polygon_skycoord(coords, 9)
+    moc = MOC.from_polygon_skycoord(coords, max_depth=9)
 
     return moc
 
@@ -1408,7 +1407,7 @@ class TestPipeAnalysis:
         """
         Tests the method that loads the two epoch metrics.
 
-        This test is for vaex loaded dataframes.
+        This test is for dask loaded dataframes.
 
         Args:
             dummy_PipeAnalysis: The dummy PipeAnalysis object that is used
@@ -1538,18 +1537,20 @@ class TestPipeAnalysis:
             'Mercury': 10,
             'Venus': 10,
             'Mars': 10,
-            'Jupiter': 10,
             'Saturn': 10,
-            'Uranus': 10,
+            'Jupiter': 10,
             'Neptune': 10,
-        })
+            'Uranus': 10,
+        }, name='count')
+        expected_planet_counts.index.name = 'planet'
 
         result = dummy_PipeAnalysis.check_for_planets()
         call = dask_from_pandas_mocker.call_args.args[0]
+        result_counts = call.planet.value_counts()
 
         dask_from_pandas_mocker.assert_called_once()
         assert call.isnull().values.any() == False
-        assert call.planet.value_counts().equals(expected_planet_counts)
+        pd.testing.assert_series_equal(result_counts, expected_planet_counts)
 
     def test_filter_by_moc(
         self,
@@ -1714,6 +1715,7 @@ class TestPipeAnalysis:
         new_meas['flux_int'] = new_meas['flux_int'] * 100.
         new_meas['flux_peak'] = new_meas['flux_peak'] * 100.
 
+        #print(the_fixture.measurement_pairs_df)
         result = the_fixture.recalc_measurement_pairs_df(new_meas)
 
         expected_vs_peak = the_fixture.measurement_pairs_df['vs_peak'] * 100.
@@ -1755,52 +1757,6 @@ class TestPipeAnalysis:
             None
         """
 
-        # pandas_read_parquet_mocker = mocker.patch(
-        #    'vasttools.pipeline.pd.read_parquet',
-        #    side_effect=dummy_pipeline_measurement_pairs
-        # )
-
-        # define this to speed up the test to avoid dask
-        """dask_from_pandas_mocker = mocker.patch(
-            'vasttools.pipeline.dd.from_pandas'
-        )
-
-        metrics_return_value = pd.DataFrame(data={
-            'v_int': {
-                729: 0.01738472025034037,
-                730: 0.1481646810260763,
-                2251: 0.01738472025034037
-            },
-            'v_peak': {
-                729: 0.06053938024395404,
-                730: 0.04956644262980651,
-                2251: 0.06053938024395403
-            },
-            'eta_int': {
-                729: 16.072133072157158,
-                730: 15.489511624915242,
-                2251: 16.072133072157158
-            },
-            'eta_peak': {
-                729: 327.6134309054469,
-                730: 5.842483557954741,
-                2251: 327.61343090548564
-            }
-        })
-
-        (
-            dask_from_pandas_mocker
-            .return_value
-            .groupby
-            .return_value
-            .apply
-            .return_value
-            .compute
-            .return_value
-        ) = metrics_return_value"""
-
-        # dummy_PipeAnalysis.load_two_epoch_metrics()
-
         expected_result = pd.read_csv(
             TEST_DATA_DIR /
             'recalc_sources_df_output.csv',
@@ -1815,8 +1771,6 @@ class TestPipeAnalysis:
             new_measurements)
 
         pd.testing.assert_frame_equal(result, expected_result)
-
-        # assert 1==0
 
     def test__get_epoch_pair_plotting_df(
         self,

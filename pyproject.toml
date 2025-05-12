@@ -8,28 +8,26 @@ authors = ["Adam Stewart <adam.stewart.astro@gmail.com>", "Dougal Dobie <d.dobie
 include = ["vasttools/data", "example_notebooks"]
 
 [tool.poetry.dependencies]
-python = ">=3.8.0,<3.11"
-astropy = "^5.2"
-astroquery = "^0"
-bokeh = "^3.1"
+python = ">=3.11,<3.13"
+astropy = "^7.0"
+astroquery = "==0.4.7"
+bokeh = "^3.5"
 colorcet = "^3.1"
 colorlog = "^6.1"
-dask = {version = "^2022.01.0", extras = ["dataframe"]}
+dask = {version = "^2025.1.0", extras = ["dataframe"]}
 forced-phot = { git = "https://github.com/askap-vast/forced_phot.git" }
 matplotlib = "^3.7.0"
-mocpy = "^0.11"
+mocpy = "^0.17"
 multiprocessing-logging = "^0.3.1"
 numexpr = "^2.7.1"
-numpy = "~1.22.1"
-pandas = "<2.0"
+numpy = "^2.0"
+pandas = "^2.2"
 pyarrow = "^17.0"
 radio-beam = "^0.3"
 scipy = "^1.4"
-tables = "^3.6.1"
+tables = "^3.9"
 tabulate = "^0"
-vaex-core = "^4.17"
-vaex-hdf5 = "^0.14"
-healpy = "^1.15.0"
+healpy = "^1.17.0"
 svgpath2mpl = "^1.0.0"
 setuptools = "^70.0.0"
 pydantic = "<2.0.0"
@@ -44,7 +42,7 @@ mkdocstrings = {version="^0.25", extras = ["python"]}
 mkdocs-minify-plugin = "^0.4.1"
 mkdocs-material-extensions = "^1.0.3"
 mkdocs-gen-files = "^0.5"
-mknotebooks = "^0.8"
+mkdocs-jupyter = "^0.25.0"
 Pygments = "^2.15.0"
 mkdocs-git-revision-date-localized-plugin = "^1.2"
 pytest = "^8.3"
@@ -52,7 +50,7 @@ pytest-mock = "^3.14"
 autopep8 = "^2.3"
 pytest-cov = "^5.0"
 jinja2 = "3.0.3"
-flake8 = {version="^7.1", python=">=3.8.1,<3.11"}
+flake8 = "^7.1"
 
 [tool.poetry.scripts]
 build_lightcurves = "vasttools.bin.build_lightcurves:main"

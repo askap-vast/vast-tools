@@ -561,6 +561,7 @@ def pipeline_get_eta_metric(df: pd.DataFrame, peak: bool = False) -> float:
     Returns:
         The eta variability metric.
     """
+
     if df.shape[0] == 1:
         return 0.
 
@@ -589,8 +590,9 @@ def pipeline_get_variable_metrics(df: pd.DataFrame) -> pd.Series:
         The variability metrics, v_int, v_peak, eta_int and eta_peak
             as a pandas series.
     """
-    d = {}
 
+    d = {}
+    
     if df.shape[0] == 1:
         d['v_int'] = 0.
         d['v_peak'] = 0.
@@ -601,8 +603,10 @@ def pipeline_get_variable_metrics(df: pd.DataFrame) -> pd.Series:
         d['v_peak'] = df['flux_peak'].std() / df['flux_peak'].mean()
         d['eta_int'] = pipeline_get_eta_metric(df)
         d['eta_peak'] = pipeline_get_eta_metric(df, peak=True)
-
     return pd.Series(d)
+    
+
+    
 
 
 def calculate_vs_metric(
