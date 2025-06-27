@@ -36,7 +36,7 @@ pydantic = "<2.0.0"
 
 [tool.poetry.group.dev.dependencies]
 ipdb = "^0.13.6"
-jupyterlab = "^3.6.7"
+jupyterlab = "^3.6.8"
 jupyterlab-execute-time = "^2.0.2"
 jupyterlab-system-monitor = "^0.8.0"
 mkdocs-material = "^9.4"
