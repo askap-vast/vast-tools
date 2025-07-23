@@ -12,10 +12,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Fixed
 
+- Ensure that pipeline image paths match the pipeline project path [#602](https://github.com/askap-vast/vast-tools/pull/602)
+
 #### Removed
 
 #### List of PRs
 
+- [#602](https://github.com/askap-vast/vast-tools/pull/602): fix: Ensure that pipeline image paths match the pipeline project path
 
 
 ## [3.2.0](https://github.com/askap-vast/vast-tools/releases/v3.2.0) (2024-05-08)
