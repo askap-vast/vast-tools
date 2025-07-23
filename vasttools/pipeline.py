@@ -2616,7 +2616,7 @@ class Pipeline(object):
         )
         
         # Hacky fix for new nectar instance:
-        images['measurements_path'] = self.project_dir+'/images/'images['measurements_path'].str.split('/images/', expand=True)[1]
+        images['measurements_path'] = self.project_dir+'/images/'+images['measurements_path'].str.split('/images/', expand=True)[1]
 
         skyregions = pd.read_parquet(
             os.path.join(
