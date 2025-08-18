@@ -1100,10 +1100,10 @@ class PipeAnalysis(PipeRun):
                 exist for this run
         """
 
-        self._raise_if_no_pairs()
+        do_pairs = self._measurement_pairs_exists
 
         # Two epoch metrics
-        if not self._loaded_two_epoch_metrics:
+        if do_pairs and not self._loaded_two_epoch_metrics:
             self.load_two_epoch_metrics()
 
         if not self._vaex_meas:
@@ -1219,59 +1219,60 @@ class PipeAnalysis(PipeRun):
             self.sources[['new', 'new_high_sigma']],
         )
 
-        if measurement_pairs_df is None:
-            measurement_pairs_df = self._filter_meas_pairs_df(
-                measurements_df[['id']]
+        if do_pairs:
+            if measurement_pairs_df is None:
+                measurement_pairs_df = self._filter_meas_pairs_df(
+                    measurements_df[['id']]
+                )
+
+            if isinstance(measurement_pairs_df, vaex.dataframe.DataFrame):
+                new_measurement_pairs = (
+                    measurement_pairs_df[
+                        measurement_pairs_df['vs_int'].abs() >= min_vs
+                        or measurement_pairs_df['vs_peak'].abs() >= min_vs
+                    ]
+                )
+            else:
+                min_vs_mask = np.logical_or(
+                    (measurement_pairs_df['vs_int'].abs() >= min_vs).to_numpy(),
+                    (measurement_pairs_df['vs_peak'].abs() >= min_vs).to_numpy()
+                )
+                new_measurement_pairs = measurement_pairs_df.loc[min_vs_mask]
+                new_measurement_pairs = vaex.from_pandas(new_measurement_pairs)
+
+            new_measurement_pairs['vs_int_abs'] = (
+                new_measurement_pairs['vs_int'].abs()
             )
 
-        if isinstance(measurement_pairs_df, vaex.dataframe.DataFrame):
-            new_measurement_pairs = (
-                measurement_pairs_df[
-                    measurement_pairs_df['vs_int'].abs() >= min_vs
-                    or measurement_pairs_df['vs_peak'].abs() >= min_vs
-                ]
+            new_measurement_pairs['vs_peak_abs'] = (
+                new_measurement_pairs['vs_peak'].abs()
             )
-        else:
-            min_vs_mask = np.logical_or(
-                (measurement_pairs_df['vs_int'].abs() >= min_vs).to_numpy(),
-                (measurement_pairs_df['vs_peak'].abs() >= min_vs).to_numpy()
+
+            new_measurement_pairs['m_int_abs'] = (
+                new_measurement_pairs['m_int'].abs()
             )
-            new_measurement_pairs = measurement_pairs_df.loc[min_vs_mask]
-            new_measurement_pairs = vaex.from_pandas(new_measurement_pairs)
 
-        new_measurement_pairs['vs_int_abs'] = (
-            new_measurement_pairs['vs_int'].abs()
-        )
+            new_measurement_pairs['m_peak_abs'] = (
+                new_measurement_pairs['m_peak'].abs()
+            )
 
-        new_measurement_pairs['vs_peak_abs'] = (
-            new_measurement_pairs['vs_peak'].abs()
-        )
+            sources_df_two_epochs = new_measurement_pairs.groupby(
+                'source_id',
+                agg={
+                    'vs_significant_max_int': vaex.agg.max('vs_int_abs'),
+                    'vs_significant_max_peak': vaex.agg.max('vs_peak_abs'),
+                    'm_abs_significant_max_int': vaex.agg.max('m_int_abs'),
+                    'm_abs_significant_max_peak': vaex.agg.max('m_peak_abs'),
+                }
+            )
 
-        new_measurement_pairs['m_int_abs'] = (
-            new_measurement_pairs['m_int'].abs()
-        )
+            sources_df_two_epochs = (
+                sources_df_two_epochs.to_pandas_df().set_index('source_id')
+            )
 
-        new_measurement_pairs['m_peak_abs'] = (
-            new_measurement_pairs['m_peak'].abs()
-        )
+            sources_df = sources_df.join(sources_df_two_epochs)
 
-        sources_df_two_epochs = new_measurement_pairs.groupby(
-            'source_id',
-            agg={
-                'vs_significant_max_int': vaex.agg.max('vs_int_abs'),
-                'vs_significant_max_peak': vaex.agg.max('vs_peak_abs'),
-                'm_abs_significant_max_int': vaex.agg.max('m_int_abs'),
-                'm_abs_significant_max_peak': vaex.agg.max('m_peak_abs'),
-            }
-        )
-
-        sources_df_two_epochs = (
-            sources_df_two_epochs.to_pandas_df().set_index('source_id')
-        )
-
-        sources_df = sources_df.join(sources_df_two_epochs)
-
-        del sources_df_two_epochs
+            del sources_df_two_epochs
 
         # new relation numbers
         relation_mask = np.logical_and(
