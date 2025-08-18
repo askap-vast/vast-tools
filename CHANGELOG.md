@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Added
 
+- Allow recalculation of sources_df without pairs existing [#605](https://github.com/askap-vast/vast-tools/pull/605)
+
 #### Changed
 
 #### Fixed
@@ -18,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#605](https://github.com/askap-vast/vast-tools/pull/605): feat: Allow recalculation of sources_df without pairs existing
 - [#602](https://github.com/askap-vast/vast-tools/pull/602): fix: Ensure that pipeline image paths match the pipeline project path
 
 
@@ -63,6 +66,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Removed lightgallery functionality from docs [#334](https://github.com/askap-vast/vast-tools/pull/334)
 
 #### List of PRs
+
 - [#598](https://github.com/askap-vast/vast-tools/pull/598): feat: Add epochs 73 and 74
 - [#597](https://github.com/askap-vast/vast-tools/pull/597): fix: Updated open_fits to correctly handle NaN padding in CompImageHDUs
 - [#592](https://github.com/askap-vast/vast-tools/pull/592): fix: Updated ubuntu-20.04 -> ubuntu-24.04 in github workflows
@@ -136,6 +140,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 #### Removed
 
 #### List of PRs
+
 - [#537](https://github.com/askap-vast/vast-tools/pull/537): fix: Convert all Source names to strings
 - [#538](https://github.com/askap-vast/vast-tools/pull/538): fix: Fix incorrect warnings when using COMBINED data
 - [#537](https://github.com/askap-vast/vast-tools/pull/537): feat: Add epoch 61
