@@ -14,12 +14,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Fixed
 
+- Fixed inaccurate planet crossmatching by changing solar system ephemeris to JPL de432s [#609](https://github.com/askap-vast/vast-tools/pull/609)
 - Ensure that pipeline image paths match the pipeline project path [#602](https://github.com/askap-vast/vast-tools/pull/602)
 
 #### Removed
 
 #### List of PRs
 
+- [#609](https://github.com/askap-vast/vast-tools/pull/609: fix: Fixed inaccurate planet crossmatching by changing solar system ephemeris to JPL de432s
 - [#605](https://github.com/askap-vast/vast-tools/pull/605): feat: Allow recalculation of sources_df without pairs existing
 - [#602](https://github.com/askap-vast/vast-tools/pull/602): fix: Ensure that pipeline image paths match the pipeline project path
 
