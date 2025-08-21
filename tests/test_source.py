@@ -8,6 +8,7 @@ from astropy.coordinates import Angle, SkyCoord
 from astropy.io import fits
 from astropy.time import Time
 from astropy.wcs import WCS
+from astropy.table import Table
 from matplotlib.pyplot import Figure
 from pathlib import Path
 from pytest_mock import mocker, MockerFixture  # noqa: F401
@@ -96,6 +97,13 @@ def dummy_filter_selavy_components(x, *args, **kwargs) -> pd.DataFrame:
     """
     return x
 
+@pytest.fixture
+def dummy_external_crossmatch_Table() -> Table:
+    tb = Table(
+        [['21:29:45.3',], ['-04:29:11',], [0.912398003447214*u.arcsec,]],
+        names=('RA', 'DEC', 'Separation')
+    )
+    return tb
 
 @pytest.fixture
 def dummy_selavy_components() -> pd.DataFrame:
@@ -1166,6 +1174,7 @@ class TestSource:
 
     def test_simbad_search(self,
                            source_instance: vts.Source,
+                           dummy_external_crossmatch_Table: Table,
                            mocker: MockerFixture
     ) -> None:
         """
@@ -1176,6 +1185,9 @@ class TestSource:
 
         Args:
             source_instance: The pytest source_instance fixture.
+            dummy_external_crossmatch_Table: The pytest fixture that provides a
+                dummy set of external crossmatches to mimic querying SIMBAD
+                or NED.
             mocker: The pytest-mock mocker object.
 
         Returns:
@@ -1185,8 +1197,10 @@ class TestSource:
 
         mocker_simbad = mocker.patch(
             'vasttools.source.Simbad.query_region',
-            return_value=-99
+            return_value=dummy_external_crossmatch_Table
         )
+        
+        true_sep = dummy_external_crossmatch_Table['Separation'].value[0]
 
         test_radius = Angle(30. * u.arcsec)
         result = source.simbad_search(radius=test_radius)
@@ -1194,10 +1208,14 @@ class TestSource:
         mocker_simbad.assert_called_once_with(
             source.coord, radius=test_radius
         )
-        assert result == -99
+        
+        assert len(result) == len(dummy_external_crossmatch_Table)
+        assert '_r' in result.columns
+        assert result['_r'][0] == true_sep
 
     def test_ned_search(self,
                         source_instance: vts.Source,
+                        dummy_external_crossmatch_Table: Table,
                         mocker: MockerFixture
     ) -> None:
         """
@@ -1208,6 +1226,9 @@ class TestSource:
 
         Args:
             source_instance: The pytest source_instance fixture.
+            dummy_external_crossmatch_Table: The pytest fixture that provides a
+                dummy set of external crossmatches to mimic querying SIMBAD
+                or NED.
             mocker: The pytest-mock mocker object.
 
         Returns:
@@ -1217,7 +1238,7 @@ class TestSource:
 
         mocker_simbad = mocker.patch(
             'vasttools.source.Ned.query_region',
-            return_value=-99
+            return_value=dummy_external_crossmatch_Table
         )
 
         test_radius = Angle(30. * u.arcsec)
@@ -1226,7 +1247,10 @@ class TestSource:
         mocker_simbad.assert_called_once_with(
             source.coord, radius=test_radius
         )
-        assert result == -99
+
+        assert len(result) == len(dummy_external_crossmatch_Table)
+        assert '_r' in result.columns
+        assert 'Separation' not in result.columns
 
     def test_casda_search(self,
                           source_instance: vts.Source,
