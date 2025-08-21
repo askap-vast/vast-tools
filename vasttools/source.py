@@ -18,32 +18,31 @@ import copy
 from astropy.visualization import LinearStretch
 from astropy.visualization import PercentileInterval
 from astropy.visualization import ZScaleInterval, ImageNormalize
-from mpl_toolkits.axes_grid1.anchored_artists import AnchoredEllipse
-from astropy.coordinates import Angle
 from astropy.visualization.wcsaxes import SphericalCircle
-from matplotlib.collections import PatchCollection
 from astropy.wcs.utils import proj_plane_pixel_scales
-from matplotlib.patches import Patch
-from matplotlib.lines import Line2D
-from matplotlib.container import ErrorbarContainer
-from matplotlib.collections import LineCollection
-from matplotlib.patches import Ellipse
+from astropy.wcs import WCS
 from astropy.io import fits
-from astropy.coordinates import SkyCoord
+from astropy.coordinates import Angle, Distance, SkyCoord
 from astropy.nddata.utils import Cutout2D
 from astropy import units as u
 from astropy.time import Time
 from astropy.table import Table
+
 from astroquery.simbad import Simbad
 from astroquery.ipac.ned import Ned
 from astroquery.vizier import Vizier
 from astroquery.casda import Casda
 from astropy.stats import sigma_clipped_stats
 from astroquery.skyview import SkyView
-from astropy.wcs import WCS
 
+from matplotlib.collections import PatchCollection
+from mpl_toolkits.axes_grid1.anchored_artists import AnchoredEllipse
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from mpl_toolkits.axes_grid1 import make_axes_locatable
+from matplotlib.patches import Patch
+from matplotlib.lines import Line2D
+from matplotlib.container import ErrorbarContainer
+from matplotlib.collections import LineCollection
+from matplotlib.patches import Ellipse
 
 from typing import List, Tuple, Optional, Union
 
