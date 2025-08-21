@@ -9,6 +9,7 @@ from astropy.io import fits
 from astropy.time import Time
 from astropy.wcs import WCS
 from astropy.table import Table
+from astroquery.skyview import SkyView
 from matplotlib.pyplot import Figure
 from pathlib import Path
 from pytest_mock import mocker, MockerFixture  # noqa: F401
@@ -894,11 +895,23 @@ class TestSource:
             None
         """
         source = source_instance(pipeline=pipeline, add_cutout_data=True)
+        
+        print(vts.SkyView)
+        
+        #assert 1==0
 
-        mocker_skyview = mocker.patch(
+        mocker_skyview_get_images = mocker.patch(
             'vasttools.source.SkyView.get_images',
             return_value=[dummy_fits]
         )
+        """mocker.patch.object(
+            'vts.SkyView.survey_dict',
+            new_callable=mocker.PropertyMock,
+            return_value = np.array(['DSS2 Blue'])
+        )"""
+        
+        with mocker.patch(vts.SkyView.survey_dict, new_callable=mocker.PropertyMock) as mock_dict:
+            mock_dict.return_value = np.array(['DSS2 Blue'])
 
         result = source.skyview_contour_plot(0, 'DSS2 Blue')
 

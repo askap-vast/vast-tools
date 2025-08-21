@@ -1673,8 +1673,9 @@ class Source:
             self.get_cutout_data(size)
 
         size = self._size
-
+        print("About to get survey_dict")
         surveys = list(SkyView.survey_dict.values())
+        print("Got survey_dict")
         survey_list = [item for sublist in surveys for item in sublist]
 
         if survey not in survey_list:
