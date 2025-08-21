@@ -2420,6 +2420,10 @@ class Source:
         """
         try:
             result_table = Ned.query_region(self.coord, radius=radius)
+            
+            seps = result_table['Separation'].to(u.arcsec)
+            result_table.remove_column('Separation')
+            result_table.add_column(seps, name='_r', index=0)
 
             return result_table
 
