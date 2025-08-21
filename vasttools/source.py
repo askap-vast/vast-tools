@@ -2385,6 +2385,16 @@ class Source:
             if result_table is None:
                 return None
 
+            simbad_sc = SkyCoord(
+                result_table['RA'],
+                result_table['DEC'],
+                unit=(u.hourangle, u.deg)
+            )
+
+            seps = self.coord.separation(simbad_sc)
+
+            simbad_results.add_column(seps.to(u.arcsec), name='_r', index=0)
+
             return result_table
 
         except Exception as e:
@@ -2423,7 +2433,7 @@ class Source:
         self,
         radius: Angle = Angle(20. * u.arcsec),
         catalogs: Optional[Union[List, str]]=None
-    ) -> Union[None, TableList]:
+    ) -> Union[None, astroquery.utils.commons.TableList]:
         """
         Searches the specified Vizier catalogs for objects and returns matches
 
@@ -2512,8 +2522,6 @@ class Source:
         """
     
     Gaia.MAIN_GAIA_TABLE = gaia_table
-    
-    # time=Time('2023-02-01T00:00:00', format='isot', scale='utc'),
 
     gaia_query = Gaia.cone_search_async(self.coord, radius=search_radius)
     gaia_results = gaia_query.get_results().to_pandas()
