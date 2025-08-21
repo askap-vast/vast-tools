@@ -33,6 +33,7 @@ healpy = "^1.15.0"
 svgpath2mpl = "^1.0.0"
 setuptools = "^70.0.0"
 pydantic = "<2.0.0"
+jplephem = "^2.23"
 
 [tool.poetry.group.dev.dependencies]
 ipdb = "^0.13.6"
