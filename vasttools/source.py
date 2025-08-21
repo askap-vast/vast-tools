@@ -2456,23 +2456,23 @@ class Source:
         Raises:
             ValueError: Error in performing the Vizier query.
         """
-        
+
         _default_catalogs = [
-            'I/355', # Gaia DR3
-            'IV/39', # TESS input catalogue v8.2
-            'B/psr', # PSRcat
-            'VIII/65', # NVSS
-            'J/ApJS/255/30', # VLASS
-            'II/365' # CatWISE
+            'I/355',  # Gaia DR3
+            'IV/39',  # TESS input catalogue v8.2
+            'B/psr',  # PSRcat
+            'VIII/65',  # NVSS
+            'J/ApJS/255/30',  # VLASS
+            'II/365'  # CatWISE
         ]
-        
+
         vizier = Vizier(columns=["*", "+_r"])
 
         if catalogs is None:
             catalogs = _default_catalogs
         if catalogs == 'all':
             catalogs = None
-        
+
         try:
             vizier_results = vizier.query_region(
                 self.coord,
@@ -2508,11 +2508,11 @@ class Source:
         the provided data release.
 
         Args:
-            time: The time to correct the stellar proper motion to. For a 
-                persistent source this should usually be roughly the middle of the
-                observing period.
+            time: The time to correct the stellar proper motion to. For a
+                persistent source this should usually be roughly the middle of
+                the observing period.
             search_radius: The initial radius to search within - this should be
-                much larger than your crossmatch radius to account for high 
+                much larger than your crossmatch radius to account for high
                 proper motion stars. Defaults to 1 arcmin.
             match_radius: The radius to use for crossmatching after applying
                 proper motion corrections, i.e. the typical crossmatch
@@ -2525,14 +2525,14 @@ class Source:
         Returns:
             A pandas dataframe containing the relevant crossmatch information.
         """
-    
+
         Gaia.MAIN_GAIA_TABLE = gaia_table
 
         gaia_query = Gaia.cone_search_async(self.coord, radius=search_radius)
         gaia_results = gaia_query.get_results().to_pandas()
 
         good_gaia = gaia_results.query("parallax >= 0", engine='python').copy()
-        
+
         if len(good_gaia) == 0:
             return good_gaia
 
@@ -2559,9 +2559,8 @@ class Source:
         good_gaia['pm_corr_ra'] = newpos.ra.deg
         good_gaia['pm_corr_dec'] = newpos.dec.deg
         good_gaia['pm_corr_offset'] = offsets.arcsec
-        
-        return good_gaia[offsets<match_radius].sort_values('pm_corr_offset')
 
+        return good_gaia[offsets < match_radius].sort_values('pm_corr_offset')
 
     def casda_search(
         self,
