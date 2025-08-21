@@ -14,6 +14,7 @@ import os
 import pandas as pd
 import warnings
 import copy
+import astroquery
 
 from astropy.visualization import LinearStretch
 from astropy.visualization import PercentileInterval
@@ -2393,7 +2394,7 @@ class Source:
 
             seps = self.coord.separation(simbad_sc)
 
-            simbad_results.add_column(seps.to(u.arcsec), name='_r', index=0)
+            result_table.add_column(seps.to(u.arcsec), name='_r', index=0)
 
             return result_table
 
@@ -2469,7 +2470,7 @@ class Source:
 
         if catalogs is None:
             catalogs = _default_catalogs
-        if catalogs is 'all':
+        if catalogs == 'all':
             catalogs = None
         
         try:
@@ -2495,8 +2496,8 @@ class Source:
         time: Time,
         search_radius: Angle = 1*u.arcmin,
         match_radius: Angle = 10*u.arcsec,
-        gaia_table: str = "gaiadr3.gaia_source"
-        gaia_epoch: str = "J2016.0"
+        gaia_table: str = "gaiadr3.gaia_source",
+        gaia_epoch: str = "J2016.0",
     ) -> pd.DataFrame:
         """
         Searches Gaia within the specified `search_radius`, calculates proper
@@ -2525,41 +2526,41 @@ class Source:
             A pandas dataframe containing the relevant crossmatch information.
         """
     
-    Gaia.MAIN_GAIA_TABLE = gaia_table
+        Gaia.MAIN_GAIA_TABLE = gaia_table
 
-    gaia_query = Gaia.cone_search_async(self.coord, radius=search_radius)
-    gaia_results = gaia_query.get_results().to_pandas()
+        gaia_query = Gaia.cone_search_async(self.coord, radius=search_radius)
+        gaia_results = gaia_query.get_results().to_pandas()
 
-    good_gaia = gaia_results.query("parallax >= 0", engine='python')
-    
-    if len(good_gaia) == 0:
-        return good_gaia
+        good_gaia = gaia_results.query("parallax >= 0", engine='python').copy()
+        
+        if len(good_gaia) == 0:
+            return good_gaia
 
-    dist = Distance(
-        parallax=good_gaia.parallax.values*u.mas,
-        allow_negative=True
-    )
+        dist = Distance(
+            parallax=good_gaia.parallax.values*u.mas,
+            allow_negative=True
+        )
 
-    position = SkyCoord(
-        ra=good_gaia.ra.values,
-        dec=good_gaia.dec.values,
-        unit=(u.deg, u.deg),
-        frame='icrs',
-        distance=dist,
-        pm_ra_cosdec=good_gaia.pmra.values*u.mas/u.yr,
-        pm_dec=good_gaia.pmdec.values*u.mas/u.yr,
-        obstime=gaia_epoch
-    )
+        position = SkyCoord(
+            ra=good_gaia.ra.values,
+            dec=good_gaia.dec.values,
+            unit=(u.deg, u.deg),
+            frame='icrs',
+            distance=dist,
+            pm_ra_cosdec=good_gaia.pmra.values*u.mas/u.yr,
+            pm_dec=good_gaia.pmdec.values*u.mas/u.yr,
+            obstime=gaia_epoch
+        )
 
-    newpos = position.apply_space_motion(time)
-    offsets = newpos.separation(coord).arcsec
+        newpos = position.apply_space_motion(time)
+        offsets = newpos.separation(self.coord)
 
-    good_gaia['dist'] = dist
-    good_gaia['pm_corr_ra'] = newpos.ra.deg
-    good_gaia['pm_corr_dec'] = newpos.dec.deg
-    good_gaia['pm_corr_offset'] = offsets
-    
-    return good_gaia.sort_values('offset')
+        good_gaia['dist_pc'] = dist.pc
+        good_gaia['pm_corr_ra'] = newpos.ra.deg
+        good_gaia['pm_corr_dec'] = newpos.dec.deg
+        good_gaia['pm_corr_offset'] = offsets.arcsec
+        
+        return good_gaia[offsets<match_radius].sort_values('pm_corr_offset')
 
 
     def casda_search(
