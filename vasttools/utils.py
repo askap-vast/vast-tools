@@ -465,7 +465,7 @@ def match_planet_to_field(
     )
 
     ol = vts.get_askap_observing_location()
-    with solar_system_ephemeris.set('builtin'):
+    with solar_system_ephemeris.set('de432s'):
         planet_coords = get_body(planet, dates, ol)
 
     seps = planet_coords.separation(

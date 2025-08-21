@@ -1845,6 +1845,20 @@ MarkupSafe = ">=2.0"
 i18n = ["Babel (>=2.7)"]
 
 [[package]]
+name = "jplephem"
+version = "2.23"
+description = "Use a JPL ephemeris to predict planet positions."
+optional = false
+python-versions = "*"
+files = [
+    {file = "jplephem-2.23-py3-none-any.whl", hash = "sha256:66110814810b0b30213bdd058a85a41bedbc030bb8a365c85088674fe02546cf"},
+    {file = "jplephem-2.23.tar.gz", hash = "sha256:d3fb9477e4bf4c39d10497d4ff15e5271b7ac03fa101e1821aac527d646eccf9"},
+]
+
+[package.dependencies]
+numpy = "*"
+
+[[package]]
 name = "jsmin"
 version = "3.0.1"
 description = "JavaScript minifier."
@@ -5197,4 +5211,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.0,<3.11"
-content-hash = "83f21dcce843cdd54e6572eddd365544755fa71b04766ca288e9af1b80023fa0"
+content-hash = "8ebc340baef09e0df1bc63e768261501e88390fa9323b1c7f18c3c2295ceae20"
