@@ -36,6 +36,7 @@ from astropy.time import Time
 from astropy.table import Table
 from astroquery.simbad import Simbad
 from astroquery.ipac.ned import Ned
+from astroquery.vizier import Vizier
 from astroquery.casda import Casda
 from astropy.stats import sigma_clipped_stats
 from astroquery.skyview import SkyView
@@ -2418,6 +2419,63 @@ class Source:
             )
             return None
 
+    def vizier_search(
+        self,
+        radius=: Angle = Angle(20. * u.arcsec)
+        catalogs: Optional[Union[List, str]]=None
+    ) -> Union[None, TableList]:
+        """
+        Searches the specified Vizier catalogs for objects and returns matches
+
+        Args:
+            radius: Radius to search, defaults to Angle(20. * u.arcsec)
+            catalogs: The vizier catalogues (or specific tables) to query. Can
+                be a single catalog (string) or a list of catalogs (each 
+                specified by a string). If no value is provided it will query
+                the default catalogs listed below. If "all" is provided it will
+                query all available catalogs.
+
+        Returns:
+            TableList of matches if there are any, otherwise None
+
+        Raises:
+            ValueError: Error in performing the Vizier query.
+        """
+        
+        _default_catalogs = [
+            'I/355', # Gaia DR3
+            'IV/39', # TESS input catalogue v8.2
+            'B/psr', # PSRcat
+            'VIII/65', # NVSS
+            'J/ApJS/255/30', # VLASS
+            'II/365' # CatWISE
+        ]
+        
+        vizier = Vizier(columns=["*", "+_r"])
+
+        if catalogs is None:
+            catalogs = _default_catalogs
+        if catalogs is 'all':
+            catalogs = None
+        
+        try:
+            vizier_results = vizier.query_region(
+                self.coord,
+                radius=20*u.arcsec,
+                catalog=catalogs
+            )
+
+            if len(vizier_results.keys()) == 0:
+                return None
+            else:
+                return vizier_results
+
+        except Exception as e:
+            raise ValueError(
+                "Error in performing the Vizier query! Error: %s", e
+            )
+            return None
+    
     def casda_search(
         self,
         radius: Angle = Angle(20. * u.arcsec),
