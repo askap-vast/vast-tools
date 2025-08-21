@@ -32,6 +32,7 @@ from astroquery.simbad import Simbad
 from astroquery.ipac.ned import Ned
 from astroquery.vizier import Vizier
 from astroquery.casda import Casda
+from astroquery.gaia import Gaia
 from astropy.stats import sigma_clipped_stats
 from astroquery.skyview import SkyView
 
@@ -2420,7 +2421,7 @@ class Source:
 
     def vizier_search(
         self,
-        radius=: Angle = Angle(20. * u.arcsec)
+        radius: Angle = Angle(20. * u.arcsec),
         catalogs: Optional[Union[List, str]]=None
     ) -> Union[None, TableList]:
         """
@@ -2474,7 +2475,81 @@ class Source:
                 "Error in performing the Vizier query! Error: %s", e
             )
             return None
+
+    def gaia_search(
+        self,
+        time: Time,
+        search_radius: Angle = 1*u.arcmin,
+        match_radius: Angle = 10*u.arcsec,
+        gaia_table: str = "gaiadr3.gaia_source"
+        gaia_epoch: str = "J2016.0"
+    ) -> pd.DataFrame:
+        """
+        Searches Gaia within the specified `search_radius`, calculates proper
+        motion corrections and then crossmatches within the specified
+        `match_radius`. By default the function searches the Gaia DR3 table,
+        which has positions corrected to the J2016.0 epoch. Users can change
+        this, but should be careful to ensure that the provided epoch matches
+        the provided data release.
+
+        Args:
+            time: The time to correct the stellar proper motion to. For a 
+                persistent source this should usually be roughly the middle of the
+                observing period.
+            search_radius: The initial radius to search within - this should be
+                much larger than your crossmatch radius to account for high 
+                proper motion stars. Defaults to 1 arcmin.
+            match_radius: The radius to use for crossmatching after applying
+                proper motion corrections, i.e. the typical crossmatch
+                radius you would use for general queries. Default to 10 arcsec.
+            gaia_table: The gaia table to query. This should only be changed
+                by expert users. Defaults to "gaiadr3.gaia_source".
+            gaia_epoch: The observing epoch of the specified gaia table. This
+                should only be changed by expert users. Defaults to "J2016.0".
+
+        Returns:
+            A pandas dataframe containing the relevant crossmatch information.
+        """
     
+    Gaia.MAIN_GAIA_TABLE = gaia_table
+    
+    # time=Time('2023-02-01T00:00:00', format='isot', scale='utc'),
+
+    gaia_query = Gaia.cone_search_async(self.coord, radius=search_radius)
+    gaia_results = gaia_query.get_results().to_pandas()
+
+    good_gaia = gaia_results.query("parallax >= 0", engine='python')
+    
+    if len(good_gaia) == 0:
+        return good_gaia
+
+    dist = Distance(
+        parallax=good_gaia.parallax.values*u.mas,
+        allow_negative=True
+    )
+
+    position = SkyCoord(
+        ra=good_gaia.ra.values,
+        dec=good_gaia.dec.values,
+        unit=(u.deg, u.deg),
+        frame='icrs',
+        distance=dist,
+        pm_ra_cosdec=good_gaia.pmra.values*u.mas/u.yr,
+        pm_dec=good_gaia.pmdec.values*u.mas/u.yr,
+        obstime=gaia_epoch
+    )
+
+    newpos = position.apply_space_motion(time)
+    offsets = newpos.separation(coord).arcsec
+
+    good_gaia['dist'] = dist
+    good_gaia['pm_corr_ra'] = newpos.ra.deg
+    good_gaia['pm_corr_dec'] = newpos.dec.deg
+    good_gaia['pm_corr_offset'] = offsets
+    
+    return good_gaia.sort_values('offset')
+
+
     def casda_search(
         self,
         radius: Angle = Angle(20. * u.arcsec),
