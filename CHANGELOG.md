@@ -8,9 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Added
 
+- Added Vizier and Gaia source search [#607](https://github.com/askap-vast/vast-tools/pull/607)
 - Allow recalculation of sources_df without pairs existing [#605](https://github.com/askap-vast/vast-tools/pull/605)
 
 #### Changed
+
+- Cleaned up angular offset handling for SIMBAD and NED source search [#607](https://github.com/askap-vast/vast-tools/pull/607)
 
 #### Fixed
 
@@ -20,6 +23,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#607](https://github.com/askap-vast/vast-tools/pull/607): feat, fix: Improve external source search queries
 - [#605](https://github.com/askap-vast/vast-tools/pull/605): feat: Allow recalculation of sources_df without pairs existing
 - [#602](https://github.com/askap-vast/vast-tools/pull/602): fix: Ensure that pipeline image paths match the pipeline project path
 
