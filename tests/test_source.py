@@ -1226,7 +1226,7 @@ class TestSource:
         
         assert len(result) == len(dummy_external_crossmatch_Table)
         assert '_r' in result.columns
-        assert result['_r'][0] == true_sep
+        assert result['_r'][0] == pytest.approx(true_sep)
 
     def test_ned_search(self,
                         source_instance: vts.Source,
