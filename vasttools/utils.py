@@ -399,8 +399,8 @@ def simbad_search(
     if logger is None:
         logger = logging.getLogger()
 
-    # Updated astroquery returns 
-    # "ValueError: 'typed_id' is no longer a votable field. 
+    # Updated astroquery returns
+    # "ValueError: 'typed_id' is no longer a votable field.
     # It is now added by default in 'query_objects' and 'query_region'"
     # ...but not specifying it will break the python 3.8 version.
     # TODO: remove this when we deprecate python 3.8 support.
