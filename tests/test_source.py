@@ -892,6 +892,8 @@ class TestSource:
             return_value=[dummy_fits]
         )
 
+        # TODO: Need to mock the call to `SkyView.survey_dict`
+        # I've tried everything and can't get something that actually works!!!
         result = source.skyview_contour_plot(0, 'DSS2 Blue')
 
         assert isinstance(result, Figure)
