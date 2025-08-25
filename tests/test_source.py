@@ -913,6 +913,8 @@ class TestSource:
         with mocker.patch(vts.SkyView.survey_dict, new_callable=mocker.PropertyMock) as mock_dict:
             mock_dict.return_value = np.array(['DSS2 Blue'])
 
+        # TODO: Need to mock the call to `SkyView.survey_dict`
+        # I've tried everything and can't get something that actually works!!!
         result = source.skyview_contour_plot(0, 'DSS2 Blue')
 
         assert isinstance(result, Figure)

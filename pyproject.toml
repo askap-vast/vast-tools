@@ -10,7 +10,10 @@ include = ["vasttools/data", "example_notebooks"]
 [tool.poetry.dependencies]
 python = ">=3.8.0,<3.11"
 astropy = "^5.2"
-astroquery = "^0"
+astroquery = [
+    {version="^0.4", python = "<3.9"},
+    {version=">0.4.10", python=">=3.9"}
+]
 bokeh = "^3.1"
 colorcet = "^3.1"
 colorlog = "^6.1"
@@ -33,6 +36,7 @@ healpy = "^1.15.0"
 svgpath2mpl = "^1.0.0"
 setuptools = "^70.0.0"
 pydantic = "<2.0.0"
+jplephem = "^2.23"
 
 [tool.poetry.group.dev.dependencies]
 ipdb = "^0.13.6"
