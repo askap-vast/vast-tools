@@ -896,22 +896,10 @@ class TestSource:
         """
         source = source_instance(pipeline=pipeline, add_cutout_data=True)
         
-        print(vts.SkyView)
-        
-        #assert 1==0
-
         mocker_skyview_get_images = mocker.patch(
             'vasttools.source.SkyView.get_images',
             return_value=[dummy_fits]
         )
-        """mocker.patch.object(
-            'vts.SkyView.survey_dict',
-            new_callable=mocker.PropertyMock,
-            return_value = np.array(['DSS2 Blue'])
-        )"""
-        
-        with mocker.patch(vts.SkyView.survey_dict, new_callable=mocker.PropertyMock) as mock_dict:
-            mock_dict.return_value = np.array(['DSS2 Blue'])
 
         # TODO: Need to mock the call to `SkyView.survey_dict`
         # I've tried everything and can't get something that actually works!!!
