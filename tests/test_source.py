@@ -15,7 +15,7 @@ from matplotlib.pyplot import Figure
 from pathlib import Path
 from pytest_mock import mocker, MockerFixture  # noqa: F401
 from radio_beam import Beam
-from typing import Optional
+from typing import Optional, Union, List
 
 import vasttools.source as vts
 
@@ -114,7 +114,7 @@ def dummy_vizier_TableList() -> Table:
         names=('RA', 'DEC', '_r')
     )
 
-    return TableList([('survey', tb)])
+    return TableList([('I/355/gaiadr3', tb)])
 
 @pytest.fixture
 def dummy_selavy_components() -> pd.DataFrame:
@@ -1265,7 +1265,92 @@ class TestSource:
         assert '_r' in result.columns
         assert 'Separation' not in result.columns
 
+    @pytest.mark.parametrize(
+        "catalogs",
+        [('I/355/gaiadr3'), (['I/355/gaiadr3', 'I/340/ucac5']), None, ('all')],
+        ids=["one_catalog_specified", "multi_catalog_specified", "no_catalog_specified", "all_catalog_specified"]
+    )
     def test_vizier_search(self,
+                           source_instance: vts.Source,
+                           dummy_vizier_TableList: Table,
+                           catalogs: Union[List[str], None],
+                           mocker: MockerFixture
+    ) -> None:
+        """
+        Tests the Vizier search method.
+
+        The Vizier service is not queried, the call is mocked and asserted
+        against along with the return value.
+
+        Args:
+            source_instance: The pytest source_instance fixture.
+            dummy_vizier_TableList: The pytest fixture that provides a
+                dummy set of external crossmatches to mimic querying Vizier
+            catalogs: Catalogs to query.
+            mocker: The pytest-mock mocker object.
+
+        Returns:
+            None
+        """
+        
+        source = source_instance()
+        test_radius = Angle(30. * u.arcsec)
+        
+        mocker_vizier = mocker.patch(
+            'astroquery.vizier.core.VizierClass.query_region',
+            return_value=dummy_vizier_TableList
+        )
+
+        result = source.vizier_search(radius=test_radius, catalogs=catalogs)
+
+        if catalogs is None:
+            mocker_vizier.assert_called_once_with(
+                source.coord, radius=test_radius, catalog=vts.DEFAULT_VIZIER_CATALOGS
+            )
+        elif catalogs == 'all':
+            mocker_vizier.assert_called_once_with(
+                source.coord, radius=test_radius, catalog=None
+            )
+        else:
+            mocker_vizier.assert_called_once_with(
+                source.coord, radius=test_radius, catalog=catalogs
+            )
+
+    def test_vizier_search_nomatches(self,
+                           source_instance: vts.Source,
+                           dummy_vizier_TableList: Table,
+                           mocker: MockerFixture
+    ) -> None:
+        """
+        Tests the Vizier search method when it finds no matches.
+
+        The Vizier service is not queried, the call is mocked and asserted
+        against along with the return value.
+
+        Args:
+            source_instance: The pytest source_instance fixture.
+            dummy_vizier_TableList: The pytest fixture that provides a
+                dummy set of external crossmatches to mimic querying Vizier
+            catalogs: Catalogs to query.
+            mocker: The pytest-mock mocker object.
+
+        Returns:
+            None
+        """
+        
+        source = source_instance()
+        test_radius = Angle(30. * u.arcsec)
+        
+        mocker_vizier = mocker.patch(
+            'astroquery.vizier.core.VizierClass.query_region',
+            return_value=TableList([])
+        )
+
+        result = source.vizier_search(radius=test_radius)
+        
+        assert result is None
+
+    def test_vizier_search_no_catalog_specified(self,
                            source_instance: vts.Source,
                            dummy_vizier_TableList: Table,
                            mocker: MockerFixture
@@ -1287,17 +1372,17 @@ class TestSource:
         """
 
         source = source_instance()
-        
+
         mocker_vizier = mocker.patch(
             'astroquery.vizier.core.VizierClass.query_region',
             return_value=dummy_vizier_TableList
         )
 
         test_radius = Angle(30. * u.arcsec)
-        result = source.vizier_search(radius=test_radius, catalogs=['survey'])
+        result = source.vizier_search(radius=test_radius, catalogs=None)
 
         mocker_vizier.assert_called_once_with(
-            source.coord, radius=test_radius, catalog=['survey']
+            source.coord, radius=test_radius, catalog=vts.DEFAULT_VIZIER_CATALOGS
         )
 
         assert len(result) == len(dummy_vizier_TableList)

@@ -59,6 +59,15 @@ crosshair()
 # Switch matplotlib backend.
 matplotlib.pyplot.switch_backend('Agg')
 
+DEFAULT_VIZIER_CATALOGS = [
+    'I/355',  # Gaia DR3
+    'IV/39',  # TESS input catalogue v8.2
+    'B/psr',  # PSRcat
+    'VIII/65',  # NVSS
+    'J/ApJS/255/30',  # VLASS
+    'II/365'  # CatWISE
+]
+
 
 class SourcePlottingError(Exception):
     """
@@ -2458,19 +2467,11 @@ class Source:
             ValueError: Error in performing the Vizier query.
         """
 
-        _default_catalogs = [
-            'I/355',  # Gaia DR3
-            'IV/39',  # TESS input catalogue v8.2
-            'B/psr',  # PSRcat
-            'VIII/65',  # NVSS
-            'J/ApJS/255/30',  # VLASS
-            'II/365'  # CatWISE
-        ]
-
         vizier = Vizier(columns=["*", "+_r"])
 
         if catalogs is None:
-            catalogs = _default_catalogs
+            catalogs = DEFAULT_VIZIER_CATALOGS
+
         if catalogs == 'all':
             catalogs = None
 
