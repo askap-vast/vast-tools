@@ -1385,13 +1385,11 @@ class TestSource:
         # Barnard's star J2016 coordinates
         # Gaia DR3 4472832130942575872
         # SkyCoord(269.4485025254*u.deg, 4.7394200511*u.deg)
-
-
+        
         # Barnard's star coordinates today:
         source.coord = SkyCoord(269.44634656*u.deg, 4.76719574*u.deg)
         time = Time('2025-08-26T00:00:00')
-        
-        #"""
+
         mock_gaia_query = mocker.MagicMock()
         mock_gaia_results = mocker.MagicMock()
         
@@ -1401,15 +1399,18 @@ class TestSource:
         )
         mock_gaia_query.get_results.return_value = mock_gaia_results
         mock_gaia_results.to_pandas.return_value = dummy_gaia_table
-        #"""
-        
-        
-        result = source.gaia_search(time, search_radius=search_radius, match_radius=match_radius)
-        print(result)
 
+        result = source.gaia_search(
+            time,
+            search_radius=search_radius,
+            match_radius=match_radius
+        )
+
+        # There should only be one result
         assert len(result) == 1
+
+        # Check expected offset is good to within 0.5 arcsec
         assert result['pm_corr_offset'].iloc[0] < 0.5/3600.0
-        assert 1==0
 
     def test_casda_search(self,
                           source_instance: vts.Source,
