@@ -10,6 +10,7 @@ from astropy.time import Time
 from astropy.wcs import WCS
 from astropy.table import Table
 from astroquery.skyview import SkyView
+from astroquery.utils.commons import TableList
 from matplotlib.pyplot import Figure
 from pathlib import Path
 from pytest_mock import mocker, MockerFixture  # noqa: F401
@@ -105,6 +106,15 @@ def dummy_external_crossmatch_Table() -> Table:
         names=('RA', 'DEC', 'Separation')
     )
     return tb
+
+@pytest.fixture
+def dummy_vizier_TableList() -> Table:
+    tb = Table(
+        [['21:29:45.3',], ['-04:29:11',], [0.912398003447214*u.arcsec,]],
+        names=('RA', 'DEC', '_r')
+    )
+
+    return TableList([('survey', tb)])
 
 @pytest.fixture
 def dummy_selavy_components() -> pd.DataFrame:
@@ -1239,7 +1249,7 @@ class TestSource:
         """
         source = source_instance()
 
-        mocker_simbad = mocker.patch(
+        mocker_ned = mocker.patch(
             'vasttools.source.Ned.query_region',
             return_value=dummy_external_crossmatch_Table
         )
@@ -1247,13 +1257,51 @@ class TestSource:
         test_radius = Angle(30. * u.arcsec)
         result = source.ned_search(radius=test_radius)
 
-        mocker_simbad.assert_called_once_with(
+        mocker_ned.assert_called_once_with(
             source.coord, radius=test_radius
         )
 
         assert len(result) == len(dummy_external_crossmatch_Table)
         assert '_r' in result.columns
         assert 'Separation' not in result.columns
+
+    def test_vizier_search(self,
+                           source_instance: vts.Source,
+                           dummy_vizier_TableList: Table,
+                           mocker: MockerFixture
+    ) -> None:
+        """
+        Tests the Vizier search method.
+
+        The Vizier service is not queried, the call is mocked and asserted
+        against along with the return value.
+
+        Args:
+            source_instance: The pytest source_instance fixture.
+            dummy_vizier_TableList: The pytest fixture that provides a
+                dummy set of external crossmatches to mimic querying Vizier
+            mocker: The pytest-mock mocker object.
+
+        Returns:
+            None
+        """
+
+        source = source_instance()
+        
+        mocker_vizier = mocker.patch(
+            'astroquery.vizier.core.VizierClass.query_region',
+            return_value=dummy_vizier_TableList
+        )
+
+        test_radius = Angle(30. * u.arcsec)
+        result = source.vizier_search(radius=test_radius, catalogs=['survey'])
+
+        mocker_vizier.assert_called_once_with(
+            source.coord, radius=test_radius, catalog=['survey']
+        )
+
+        assert len(result) == len(dummy_vizier_TableList)
+        assert '_r' in result[0].columns
 
     def test_casda_search(self,
                           source_instance: vts.Source,

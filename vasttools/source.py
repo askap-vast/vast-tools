@@ -2477,7 +2477,7 @@ class Source:
         try:
             vizier_results = vizier.query_region(
                 self.coord,
-                radius=20*u.arcsec,
+                radius=radius,
                 catalog=catalogs
             )
 
