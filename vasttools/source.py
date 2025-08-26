@@ -14,35 +14,37 @@ import os
 import pandas as pd
 import warnings
 import copy
+import astroquery
 
 from astropy.visualization import LinearStretch
 from astropy.visualization import PercentileInterval
 from astropy.visualization import ZScaleInterval, ImageNormalize
-from mpl_toolkits.axes_grid1.anchored_artists import AnchoredEllipse
-from astropy.coordinates import Angle
 from astropy.visualization.wcsaxes import SphericalCircle
-from matplotlib.collections import PatchCollection
 from astropy.wcs.utils import proj_plane_pixel_scales
+from astropy.wcs import WCS
+from astropy.io import fits
+from astropy.coordinates import Angle, Distance, SkyCoord
+from astropy.nddata.utils import Cutout2D
+from astropy import units as u
+from astropy.time import Time
+from astropy.table import Table
+
+from astroquery.simbad import Simbad
+from astroquery.ipac.ned import Ned
+from astroquery.vizier import Vizier
+from astroquery.casda import Casda
+from astroquery.gaia import Gaia
+from astropy.stats import sigma_clipped_stats
+from astroquery.skyview import SkyView
+
+from matplotlib.collections import PatchCollection
+from mpl_toolkits.axes_grid1.anchored_artists import AnchoredEllipse
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
 from matplotlib.container import ErrorbarContainer
 from matplotlib.collections import LineCollection
 from matplotlib.patches import Ellipse
-from astropy.io import fits
-from astropy.coordinates import SkyCoord
-from astropy.nddata.utils import Cutout2D
-from astropy import units as u
-from astropy.time import Time
-from astropy.table import Table
-from astroquery.simbad import Simbad
-from astroquery.ipac.ned import Ned
-from astroquery.casda import Casda
-from astropy.stats import sigma_clipped_stats
-from astroquery.skyview import SkyView
-from astropy.wcs import WCS
-
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from typing import List, Tuple, Optional, Union
 
@@ -50,12 +52,21 @@ from radio_beam import Beam
 
 from vasttools.survey import Image
 from vasttools.utils import crosshair, filter_selavy_components, read_selavy
-from vasttools.tools import offset_postagestamp_axes
+from vasttools.tools import offset_postagestamp_axes, propagate_proper_motion
 
 # run crosshair to set up the marker.
 crosshair()
 # Switch matplotlib backend.
 matplotlib.pyplot.switch_backend('Agg')
+
+DEFAULT_VIZIER_CATALOGS = [
+    'I/355',  # Gaia DR3
+    'IV/39',  # TESS input catalogue v8.2
+    'B/psr',  # PSRcat
+    'VIII/65',  # NVSS
+    'J/ApJS/255/30',  # VLASS
+    'II/365'  # CatWISE
+]
 
 
 class SourcePlottingError(Exception):
@@ -1671,8 +1682,9 @@ class Source:
             self.get_cutout_data(size)
 
         size = self._size
-
+        print("About to get survey_dict")
         surveys = list(SkyView.survey_dict.values())
+        print("Got survey_dict")
         survey_list = [item for sublist in surveys for item in sublist]
 
         if survey not in survey_list:
@@ -2384,6 +2396,16 @@ class Source:
             if result_table is None:
                 return None
 
+            simbad_sc = SkyCoord(
+                result_table['RA'],
+                result_table['DEC'],
+                unit=(u.hourangle, u.deg)
+            )
+
+            seps = self.coord.separation(simbad_sc)
+
+            result_table.add_column(seps.to(u.arcsec), name='_r', index=0)
+
             return result_table
 
         except Exception as e:
@@ -2409,6 +2431,10 @@ class Source:
         """
         try:
             result_table = Ned.query_region(self.coord, radius=radius)
+            
+            seps = result_table['Separation'].to(u.arcsec)
+            result_table.remove_column('Separation')
+            result_table.add_column(seps, name='_r', index=0)
 
             return result_table
 
@@ -2417,6 +2443,127 @@ class Source:
                 "Error in performing the NED region search! Error: %s", e
             )
             return None
+
+    def vizier_search(
+        self,
+        radius: Angle = Angle(20. * u.arcsec),
+        catalogs: Optional[Union[List, str]]=None
+    ) -> Union[None, astroquery.utils.commons.TableList]:
+        """
+        Searches the specified Vizier catalogs for objects and returns matches
+
+        Args:
+            radius: Radius to search, defaults to Angle(20. * u.arcsec)
+            catalogs: The vizier catalogues (or specific tables) to query. Can
+                be a single catalog (string) or a list of catalogs (each
+                specified by a string). If no value is provided it will query
+                the default catalogs listed below. If "all" is provided it will
+                query all available catalogs.
+
+        Returns:
+            TableList of matches if there are any, otherwise None
+
+        Raises:
+            ValueError: Error in performing the Vizier query.
+        """
+
+        vizier = Vizier(columns=["*", "+_r"])
+
+        if catalogs is None:
+            catalogs = DEFAULT_VIZIER_CATALOGS
+
+        if catalogs == 'all':
+            catalogs = None
+
+        try:
+            vizier_results = vizier.query_region(
+                self.coord,
+                radius=radius,
+                catalog=catalogs
+            )
+
+            if len(vizier_results.keys()) == 0:
+                return None
+            else:
+                return vizier_results
+
+        except Exception as e:
+            raise ValueError(
+                "Error in performing the Vizier query! Error: %s", e
+            )
+            return None
+
+    def gaia_search(
+        self,
+        time: Time,
+        search_radius: Angle = 1*u.arcmin,
+        match_radius: Angle = 10*u.arcsec,
+        gaia_table: str = "gaiadr3.gaia_source",
+        gaia_epoch: str = "J2016.0",
+    ) -> pd.DataFrame:
+        """
+        Searches Gaia within the specified `search_radius`, calculates proper
+        motion corrections and then crossmatches within the specified
+        `match_radius`. By default the function searches the Gaia DR3 table,
+        which has positions corrected to the J2016.0 epoch. Users can change
+        this, but should be careful to ensure that the provided epoch matches
+        the provided data release.
+
+        Args:
+            time: The time to correct the stellar proper motion to. For a
+                persistent source this should usually be roughly the middle of
+                the observing period.
+            search_radius: The initial radius to search within - this should be
+                much larger than your crossmatch radius to account for high
+                proper motion stars. Defaults to 1 arcmin.
+            match_radius: The radius to use for crossmatching after applying
+                proper motion corrections, i.e. the typical crossmatch
+                radius you would use for general queries. Default to 10 arcsec.
+            gaia_table: The gaia table to query. This should only be changed
+                by expert users. Defaults to "gaiadr3.gaia_source".
+            gaia_epoch: The observing epoch of the specified gaia table. This
+                should only be changed by expert users. Defaults to "J2016.0".
+
+        Returns:
+            A pandas dataframe containing the relevant crossmatch information.
+        """
+
+        Gaia.MAIN_GAIA_TABLE = gaia_table
+        Gaia.ROW_LIMIT = -1 # Return unlimited rows
+
+        gaia_query = Gaia.cone_search_async(self.coord, radius=search_radius)
+        gaia_results = gaia_query.get_results().to_pandas()
+
+        good_gaia = gaia_results.query("parallax >= 0").copy()
+        
+        if len(good_gaia) == 0:
+            return good_gaia
+
+        dist = Distance(
+            parallax=good_gaia.parallax.values*u.mas,
+            allow_negative=True
+        )
+
+        newpos = propagate_proper_motion(
+            ra=good_gaia.ra.values*u.deg,
+            dec=good_gaia.dec.values*u.deg,
+            dist=dist,
+            pm_ra_cosdec=good_gaia.pmra.values*u.mas/u.yr,
+            pm_dec=good_gaia.pmdec.values*u.mas/u.yr,
+            ref_epoch=gaia_epoch,
+            obs_time=time
+        )
+
+        offsets = newpos.separation(self.coord)
+
+        good_gaia['dist_pc'] = dist.pc
+        good_gaia['pm_corr_ra'] = newpos.ra.deg
+        good_gaia['pm_corr_dec'] = newpos.dec.deg
+        good_gaia['pm_corr_offset'] = offsets.arcsec
+
+        out_df = good_gaia[offsets < match_radius].sort_values('pm_corr_offset')
+
+        return out_df
 
     def casda_search(
         self,
