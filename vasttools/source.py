@@ -52,7 +52,7 @@ from radio_beam import Beam
 
 from vasttools.survey import Image
 from vasttools.utils import crosshair, filter_selavy_components, read_selavy
-from vasttools.tools import offset_postagestamp_axes
+from vasttools.tools import offset_postagestamp_axes, propagate_proper_motion
 
 # run crosshair to set up the marker.
 crosshair()
@@ -2529,40 +2529,56 @@ class Source:
         """
 
         Gaia.MAIN_GAIA_TABLE = gaia_table
+        Gaia.ROW_LIMIT = -1
 
         gaia_query = Gaia.cone_search_async(self.coord, radius=search_radius)
         gaia_results = gaia_query.get_results().to_pandas()
+        #print(gaia_results)
+        #gaia_results.to_csv('/import/ada2/ddob1600/vast-tools/tests/data/astroquery_gaiadr3_barnards_star.csv')
 
         good_gaia = gaia_results.query("parallax >= 0", engine='python').copy()
+        #print(good_gaia)
+        
+        ####
+        #good_gaia = gaia_results.query('source_id==4472832130942575872')
+        #print(good_gaia)
+        
+        #exit()
 
         if len(good_gaia) == 0:
             return good_gaia
 
+        
         dist = Distance(
             parallax=good_gaia.parallax.values*u.mas,
             allow_negative=True
         )
-
-        position = SkyCoord(
-            ra=good_gaia.ra.values,
-            dec=good_gaia.dec.values,
-            unit=(u.deg, u.deg),
-            frame='icrs',
-            distance=dist,
+        
+        newpos = propagate_proper_motion(
+            ra=good_gaia.ra.values*u.deg,
+            dec=good_gaia.dec.values*u.deg,
+            dist=dist,
             pm_ra_cosdec=good_gaia.pmra.values*u.mas/u.yr,
             pm_dec=good_gaia.pmdec.values*u.mas/u.yr,
-            obstime=gaia_epoch
+            ref_epoch=gaia_epoch,
+            obs_time=time
         )
-
-        newpos = position.apply_space_motion(time)
+        
+        #print(newpos[0])
+        #print(newpos[0].separation(self.coord))
+        #exit()
+        
         offsets = newpos.separation(self.coord)
 
         good_gaia['dist_pc'] = dist.pc
         good_gaia['pm_corr_ra'] = newpos.ra.deg
         good_gaia['pm_corr_dec'] = newpos.dec.deg
         good_gaia['pm_corr_offset'] = offsets.arcsec
-
-        return good_gaia[offsets < match_radius].sort_values('pm_corr_offset')
+        
+        out_df = good_gaia[offsets < match_radius].sort_values('pm_corr_offset')
+        print(out_df[['source_id', 'ra', 'dec', 'pm_corr_offset']])
+        #out_df.to_csv('/import/ada2/ddob1600/vast-tools/tests/data/astroquery_gaiadr3_barnards_star_results.csv')
+        return out_df
 
     def casda_search(
         self,

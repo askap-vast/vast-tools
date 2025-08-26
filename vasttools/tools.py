@@ -24,7 +24,8 @@ from astropy.time import Time
 from typing import Union, Dict, Any, Tuple, Optional
 
 from astropy import units as u
-from astropy.coordinates import SkyCoord, Angle
+from astropy.coordinates import SkyCoord, Distance, Angle
+from astropy.time import Time
 
 from vasttools.survey import load_fields_file
 from vasttools.moc import VASTMOCS
@@ -828,3 +829,41 @@ def wise_color_color_plot(
     ax.xaxis.set_major_locator(matplotlib.ticker.MultipleLocator(1))
     ax.yaxis.set_major_locator(matplotlib.ticker.MultipleLocator(1))
     return fig
+
+def propagate_proper_motion(
+    ra: u.Quantity,
+    dec: u.Quantity,
+    dist: Distance,
+    pm_ra_cosdec: u.Quantity,
+    pm_dec: u.Quantity,
+    ref_epoch: str,
+    obs_time: Time,
+):
+    """
+    Propagates the proper motion of a source given the source position at some
+    epoch, the proper motion parameters, and the observation time.
+    
+    Args:
+        ra: Right Ascension, as an astropy quantity (equivalent to degrees).
+        dec: Declination, as an astropy quantity (equivatlent to degrees).
+        dist: Distance, as an astropy Distance - usually generated from a
+            parallax measurement.
+        pm_ra_cosdec: The proper motion in Right Ascension as an astropy
+            quantity (equivalent to mas/yr).
+        pm_dec: The proper motion in Declination, as an astropy quantity
+            (equivalent to mas/yr).
+        ref_epoch: The reference epoch as a string (e.g. "J2000", "J2016.0")
+        obs_time: The time to propagate the position to.
+    """
+
+    position = SkyCoord(
+        ra=ra,
+        dec=dec,
+        frame='icrs',
+        distance=dist,
+        pm_ra_cosdec=pm_ra_cosdec,
+        pm_dec=pm_dec,
+        obstime=ref_epoch
+    )
+
+    return position.apply_space_motion(obs_time)

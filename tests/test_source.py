@@ -117,6 +117,11 @@ def dummy_vizier_TableList() -> Table:
     return TableList([('I/355/gaiadr3', tb)])
 
 @pytest.fixture
+def dummy_gaia_table() -> pd.DataFrame:
+    df = pd.read_csv(TEST_DATA_DIR / 'astroquery_gaiadr3_barnards_star.csv', index_col=False)
+    return df
+
+@pytest.fixture
 def dummy_selavy_components() -> pd.DataFrame:
     """
     Provides a dummy set of selavy components containing only the columns
@@ -1349,6 +1354,62 @@ class TestSource:
         result = source.vizier_search(radius=test_radius)
         
         assert result is None
+
+    def test_gaia_search(self,
+                           source_instance: vts.Source,
+                           dummy_gaia_table,
+                           mocker: MockerFixture
+    ) -> None:
+        """
+        Tests the Gaia search method.
+
+        The Gaia service is not queried, the call is mocked and asserted
+        against along with the return value.
+
+        Args:
+            source_instance: The pytest source_instance fixture.
+            dummy_gaia_table: The pytest fixture that provides a
+                dummy set of external crossmatches to mimic querying Vizier
+            catalogs: Catalogs to query.
+            mocker: The pytest-mock mocker object.
+
+        Returns:
+            None
+        """
+        
+        search_radius = Angle(2 * u.arcmin)
+        match_radius = Angle(1. * u.arcsec)
+        
+        source = source_instance()
+        
+        # Barnard's star J2016 coordinates
+        # Gaia DR3 4472832130942575872
+        # SkyCoord(269.4485025254*u.deg, 4.7394200511*u.deg)
+
+
+        # Barnard's star coordinates today:
+        source.coord = SkyCoord(269.44634656*u.deg, 4.76719574*u.deg)
+        time = Time('2025-08-26T00:00:00')
+        
+        #"""
+        mock_gaia_query = mocker.MagicMock()
+        mock_gaia_results = mocker.MagicMock()
+        
+        mocker_gaia_search = mocker.patch(
+            'vasttools.source.Gaia.cone_search_async',
+            return_value=mock_gaia_query
+        )
+        mock_gaia_query.get_results.return_value = mock_gaia_results
+        mock_gaia_results.to_pandas.return_value = dummy_gaia_table
+        #"""
+        
+        
+        result = source.gaia_search(time, search_radius=search_radius, match_radius=match_radius)
+        print(result)
+
+        assert len(result) == 1
+        assert result['pm_corr_offset'].iloc[0] < 0.5/3600.0
+        assert 1==0
 
     def test_casda_search(self,
                           source_instance: vts.Source,
