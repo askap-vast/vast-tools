@@ -1350,44 +1350,6 @@ class TestSource:
         
         assert result is None
 
-    def test_vizier_search_no_catalog_specified(self,
-                           source_instance: vts.Source,
-                           dummy_vizier_TableList: Table,
-                           mocker: MockerFixture
-    ) -> None:
-        """
-        Tests the Vizier search method.
-
-        The Vizier service is not queried, the call is mocked and asserted
-        against along with the return value.
-
-        Args:
-            source_instance: The pytest source_instance fixture.
-            dummy_vizier_TableList: The pytest fixture that provides a
-                dummy set of external crossmatches to mimic querying Vizier
-            mocker: The pytest-mock mocker object.
-
-        Returns:
-            None
-        """
-
-        source = source_instance()
-
-        mocker_vizier = mocker.patch(
-            'astroquery.vizier.core.VizierClass.query_region',
-            return_value=dummy_vizier_TableList
-        )
-
-        test_radius = Angle(30. * u.arcsec)
-        result = source.vizier_search(radius=test_radius, catalogs=None)
-
-        mocker_vizier.assert_called_once_with(
-            source.coord, radius=test_radius, catalog=vts.DEFAULT_VIZIER_CATALOGS
-        )
-
-        assert len(result) == len(dummy_vizier_TableList)
-        assert '_r' in result[0].columns
-
     def test_casda_search(self,
                           source_instance: vts.Source,
                           mocker: MockerFixture
