@@ -9,7 +9,6 @@ from astropy.io import fits
 from astropy.time import Time
 from astropy.wcs import WCS
 from astropy.table import Table
-from astroquery.skyview import SkyView
 from astroquery.utils.commons import TableList
 from matplotlib.pyplot import Figure
 from pathlib import Path

@@ -2455,7 +2455,7 @@ class Source:
         Args:
             radius: Radius to search, defaults to Angle(20. * u.arcsec)
             catalogs: The vizier catalogues (or specific tables) to query. Can
-                be a single catalog (string) or a list of catalogs (each 
+                be a single catalog (string) or a list of catalogs (each
                 specified by a string). If no value is provided it will query
                 the default catalogs listed below. If "all" is provided it will
                 query all available catalogs.
