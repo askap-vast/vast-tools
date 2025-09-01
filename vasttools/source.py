@@ -464,6 +464,8 @@ class Source:
         # Markers for each frequency
         markers = ['o', 'D', '*', 'X', 's', 'd', 'p']
 
+        max_flux = measurements_df[flux_col].max()
+
         self.logger.debug("Frequencies: {}".format(freqs))
         for i, (freq, measurements) in enumerate(grouped_df):
             self.logger.debug("Plotting {} MHz data".format(freq))
@@ -514,9 +516,8 @@ class Source:
             if upper_lim_mask.any():
                 upperlim_points = ax.errorbar(
                     plot_dates[upper_lim_mask],
-                    sigma_thresh *
-                    upper_lims[value_col],
-                    yerr=upper_lims[err_value_col],
+                    sigma_thresh * upper_lims[value_col],
+                    yerr=0.05*max_flux,
                     uplims=uplims,
                     lolims=False,
                     marker=marker,
