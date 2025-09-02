@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Changed
 
+- Change upper limit arrow size to be proportional to maximum flux density [#612](https://github.com/askap-vast/vast-tools/pull/612)
 - Cleaned up angular offset handling for SIMBAD and NED source search [#607](https://github.com/askap-vast/vast-tools/pull/607)
 
 #### Fixed
@@ -25,9 +26,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#612](https://github.com/askap-vast/vast-tools/pull/612): fix: Change upper limit arrow size to be proportional to maximum flux density
 - [#607](https://github.com/askap-vast/vast-tools/pull/607): feat, fix: Improve external source search queries
 - [#611](https://github.com/askap-vast/vast-tools/pull/611): fix: Fixed SkyView connection hanging
-- [#609](https://github.com/askap-vast/vast-tools/pull/609: fix: Fixed inaccurate planet crossmatching by changing solar system ephemeris to JPL de432s
+- [#609](https://github.com/askap-vast/vast-tools/pull/609): fix: Fixed inaccurate planet crossmatching by changing solar system ephemeris to JPL de432s
 - [#605](https://github.com/askap-vast/vast-tools/pull/605): feat: Allow recalculation of sources_df without pairs existing
 - [#602](https://github.com/askap-vast/vast-tools/pull/602): fix: Ensure that pipeline image paths match the pipeline project path
 
