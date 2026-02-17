@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Added
 
+- Added epochs 75-79 [#614](https://github.com/askap-vast/vast-tools/pull/614)
 - Added Vizier and Gaia source search along with corresponding tests [#607](https://github.com/askap-vast/vast-tools/pull/607)
 - Allow recalculation of sources_df without pairs existing [#605](https://github.com/askap-vast/vast-tools/pull/605)
 
@@ -26,6 +27,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### List of PRs
 
+- [#614](https://github.com/askap-vast/vast-tools/pull/614): feat: Added epochs 75-79
 - [#612](https://github.com/askap-vast/vast-tools/pull/612): fix: Change upper limit arrow size to be proportional to maximum flux density
 - [#607](https://github.com/askap-vast/vast-tools/pull/607): feat, fix: Improve external source search queries
 - [#611](https://github.com/askap-vast/vast-tools/pull/611): fix: Fixed SkyView connection hanging
