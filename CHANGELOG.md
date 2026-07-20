@@ -4,7 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), with an added `List of PRs` section and links to the relevant PRs on the individal updates. This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased](https://github.com/askap-vast/vast-pipeline/compare/v3.2.0...HEAD)
+## [Unreleased](https://github.com/askap-vast/vast-pipeline/compare/v3.3.0...HEAD)
+
+#### Added
+
+#### Changed
+
+#### Fixed
+
+#### Removed
+
+#### List of PRs
+
+
+## [3.3.0](https://github.com/askap-vast/vast-tools/releases/v3.3.0) (2026-07-20)
 
 #### Added
 
@@ -18,7 +31,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Cleaned up angular offset handling for SIMBAD and NED source search [#607](https://github.com/askap-vast/vast-tools/pull/607)
 
 #### Fixed
-
+- Replace polyfill link with cloudflare secure alternative [#617](https://github.com/askap-vast/vast-tools/pull/617)
 - Partial fix for SkyView connection hanging by bumping astroquery version (only works for python>=3.9) [#611](https://github.com/askap-vast/vast-tools/pull/611)
 - Fixed inaccurate planet crossmatching by changing solar system ephemeris to JPL de432s [#609](https://github.com/askap-vast/vast-tools/pull/609)
 - Ensure that pipeline image paths match the pipeline project path [#602](https://github.com/askap-vast/vast-tools/pull/602)
@@ -26,7 +39,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 #### Removed
 
 #### List of PRs
-
+- [#617](https://github.com/askap-vast/vast-tools/pull/617): fix, docs: Replace polyfill link with cloudflare secure alternative
 - [#614](https://github.com/askap-vast/vast-tools/pull/614): feat: Added epochs 75-79
 - [#612](https://github.com/askap-vast/vast-tools/pull/612): fix: Change upper limit arrow size to be proportional to maximum flux density
 - [#607](https://github.com/askap-vast/vast-tools/pull/607): feat, fix: Improve external source search queries
