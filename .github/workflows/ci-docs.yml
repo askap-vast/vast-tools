@@ -6,8 +6,6 @@ on:
      - master
      - main
 
-on: [pull_request]
-
 jobs:
   deploy:
     runs-on: ubuntu-24.04
