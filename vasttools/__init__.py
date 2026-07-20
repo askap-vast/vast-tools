@@ -9,7 +9,7 @@ functions and classes for use within the VAST project.
 '''
 
 __author__ = 'Dougal Dobie, Adam Stewart'
-__version__ = "3.2.0"
+__version__ = "3.3.0"
 
 
 RELEASED_EPOCHS = {
@@ -85,7 +85,12 @@ RELEASED_EPOCHS = {
     "71": "71",
     "72": "72",
     "73": "73",
-    "74": "74"
+    "74": "74",
+    "75": "75",
+    "76": "76",
+    "77": "77",
+    "78": "78",
+    "79": "79",
 }
 
 OBSERVED_EPOCHS = {

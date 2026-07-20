@@ -1736,10 +1736,15 @@ class TestPipeAnalysis:
             expected_m_int.to_numpy()
         )
 
+    @pytest.mark.parametrize(
+        'pairs_exist',
+        [True, False]
+    )
     def test_recalc_sources_df(
         self,
         dummy_PipeAnalysis: vtp.PipeAnalysis,
-        mocker: MockerFixture
+        mocker: MockerFixture,
+        pairs_exist: bool
     ) -> None:
         """
         Tests the method that recalculates the source statistics.
@@ -1748,14 +1753,16 @@ class TestPipeAnalysis:
             dummy_PipeAnalysis: The dummy PipeAnalysis object that is used
                 for testing.
             mocker: The pytest mock mocker object.
+            pairs_exist: Whether or not the measurement pairs exist.
 
         Returns:
             None
         """
-        pandas_read_parquet_mocker = mocker.patch(
-            'vasttools.pipeline.pd.read_parquet',
-            side_effect=dummy_pipeline_measurement_pairs
-        )
+        if pairs_exist:
+            pandas_read_parquet_mocker = mocker.patch(
+                'vasttools.pipeline.pd.read_parquet',
+                side_effect=dummy_pipeline_measurement_pairs
+            )
 
         # define this to speed up the test to avoid dask
         dask_from_pandas_mocker = mocker.patch(
@@ -1796,7 +1803,13 @@ class TestPipeAnalysis:
             .return_value
         ) = metrics_return_value
 
-        dummy_PipeAnalysis.load_two_epoch_metrics()
+        n_cols = dummy_PipeAnalysis.sources.shape[1]
+        if pairs_exist:
+            dummy_PipeAnalysis.load_two_epoch_metrics()
+            
+        else:
+            dummy_PipeAnalysis._measurement_pairs_exists = False
+            n_cols -= 4 # remove the four pairs columns in the dataframe
 
         # remove measurements from image id 2
         new_measurements = dummy_PipeAnalysis.measurements[
@@ -1806,7 +1819,7 @@ class TestPipeAnalysis:
         result = dummy_PipeAnalysis.recalc_sources_df(new_measurements)
 
         assert result['n_selavy'].to_list() == [4, 4, 4]
-        assert result.shape[1] == dummy_PipeAnalysis.sources.shape[1]
+        assert result.shape[1] == n_cols
 
     def test__get_epoch_pair_plotting_df(
         self,

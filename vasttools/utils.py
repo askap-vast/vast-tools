@@ -399,7 +399,15 @@ def simbad_search(
     if logger is None:
         logger = logging.getLogger()
 
-    Simbad.add_votable_fields('ra(d)', 'dec(d)', 'typed_id')
+    # Updated astroquery returns
+    # "ValueError: 'typed_id' is no longer a votable field.
+    # It is now added by default in 'query_objects' and 'query_region'"
+    # ...but not specifying it will break the python 3.8 version.
+    # TODO: remove this when we deprecate python 3.8 support.
+    try:
+        Simbad.add_votable_fields('ra(d)', 'dec(d)', 'typed_id')
+    except:
+        Simbad.add_votable_fields('ra(d)', 'dec(d)')
 
     try:
         result_table = Simbad.query_objects(objects)
@@ -465,7 +473,7 @@ def match_planet_to_field(
     )
 
     ol = vts.get_askap_observing_location()
-    with solar_system_ephemeris.set('builtin'):
+    with solar_system_ephemeris.set('de432s'):
         planet_coords = get_body(planet, dates, ol)
 
     seps = planet_coords.separation(

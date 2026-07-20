@@ -4,6 +4,51 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), with an added `List of PRs` section and links to the relevant PRs on the individal updates. This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased](https://github.com/askap-vast/vast-pipeline/compare/v3.3.0...HEAD)
+
+#### Added
+
+#### Changed
+
+#### Fixed
+
+#### Removed
+
+#### List of PRs
+
+
+## [3.3.0](https://github.com/askap-vast/vast-tools/releases/v3.3.0) (2026-07-20)
+
+#### Added
+
+- Added epochs 75-79 [#614](https://github.com/askap-vast/vast-tools/pull/614)
+- Added Vizier and Gaia source search along with corresponding tests [#607](https://github.com/askap-vast/vast-tools/pull/607)
+- Allow recalculation of sources_df without pairs existing [#605](https://github.com/askap-vast/vast-tools/pull/605)
+
+#### Changed
+
+- Change upper limit arrow size to be proportional to maximum flux density [#612](https://github.com/askap-vast/vast-tools/pull/612)
+- Cleaned up angular offset handling for SIMBAD and NED source search [#607](https://github.com/askap-vast/vast-tools/pull/607)
+
+#### Fixed
+- Replace polyfill link with cloudflare secure alternative [#617](https://github.com/askap-vast/vast-tools/pull/617)
+- Partial fix for SkyView connection hanging by bumping astroquery version (only works for python>=3.9) [#611](https://github.com/askap-vast/vast-tools/pull/611)
+- Fixed inaccurate planet crossmatching by changing solar system ephemeris to JPL de432s [#609](https://github.com/askap-vast/vast-tools/pull/609)
+- Ensure that pipeline image paths match the pipeline project path [#602](https://github.com/askap-vast/vast-tools/pull/602)
+
+#### Removed
+
+#### List of PRs
+- [#617](https://github.com/askap-vast/vast-tools/pull/617): fix, docs: Replace polyfill link with cloudflare secure alternative
+- [#614](https://github.com/askap-vast/vast-tools/pull/614): feat: Added epochs 75-79
+- [#612](https://github.com/askap-vast/vast-tools/pull/612): fix: Change upper limit arrow size to be proportional to maximum flux density
+- [#607](https://github.com/askap-vast/vast-tools/pull/607): feat, fix: Improve external source search queries
+- [#611](https://github.com/askap-vast/vast-tools/pull/611): fix: Fixed SkyView connection hanging
+- [#609](https://github.com/askap-vast/vast-tools/pull/609): fix: Fixed inaccurate planet crossmatching by changing solar system ephemeris to JPL de432s
+- [#605](https://github.com/askap-vast/vast-tools/pull/605): feat: Allow recalculation of sources_df without pairs existing
+- [#602](https://github.com/askap-vast/vast-tools/pull/602): fix: Ensure that pipeline image paths match the pipeline project path
+
+
 ## [3.2.0](https://github.com/askap-vast/vast-tools/releases/v3.2.0) (2024-05-08)
 
 #### Added
@@ -46,6 +91,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Removed lightgallery functionality from docs [#334](https://github.com/askap-vast/vast-tools/pull/334)
 
 #### List of PRs
+
 - [#598](https://github.com/askap-vast/vast-tools/pull/598): feat: Add epochs 73 and 74
 - [#597](https://github.com/askap-vast/vast-tools/pull/597): fix: Updated open_fits to correctly handle NaN padding in CompImageHDUs
 - [#592](https://github.com/askap-vast/vast-tools/pull/592): fix: Updated ubuntu-20.04 -> ubuntu-24.04 in github workflows
@@ -119,6 +165,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 #### Removed
 
 #### List of PRs
+
 - [#537](https://github.com/askap-vast/vast-tools/pull/537): fix: Convert all Source names to strings
 - [#538](https://github.com/askap-vast/vast-tools/pull/538): fix: Fix incorrect warnings when using COMBINED data
 - [#537](https://github.com/askap-vast/vast-tools/pull/537): feat: Add epoch 61

@@ -8,11 +8,13 @@ from astropy.coordinates import Angle, SkyCoord
 from astropy.io import fits
 from astropy.time import Time
 from astropy.wcs import WCS
+from astropy.table import Table
+from astroquery.utils.commons import TableList
 from matplotlib.pyplot import Figure
 from pathlib import Path
 from pytest_mock import mocker, MockerFixture  # noqa: F401
 from radio_beam import Beam
-from typing import Optional
+from typing import Optional, Union, List
 
 import vasttools.source as vts
 
@@ -96,6 +98,27 @@ def dummy_filter_selavy_components(x, *args, **kwargs) -> pd.DataFrame:
     """
     return x
 
+@pytest.fixture
+def dummy_external_crossmatch_Table() -> Table:
+    tb = Table(
+        [['21:29:45.3',], ['-04:29:11',], [0.912398003447214*u.arcsec,]],
+        names=('RA', 'DEC', 'Separation')
+    )
+    return tb
+
+@pytest.fixture
+def dummy_vizier_TableList() -> Table:
+    tb = Table(
+        [['21:29:45.3',], ['-04:29:11',], [0.912398003447214*u.arcsec,]],
+        names=('RA', 'DEC', '_r')
+    )
+
+    return TableList([('I/355/gaiadr3', tb)])
+
+@pytest.fixture
+def dummy_gaia_table() -> pd.DataFrame:
+    df = pd.read_csv(TEST_DATA_DIR / 'astroquery_gaiadr3_barnards_star.csv', index_col=False)
+    return df
 
 @pytest.fixture
 def dummy_selavy_components() -> pd.DataFrame:
@@ -886,12 +909,14 @@ class TestSource:
             None
         """
         source = source_instance(pipeline=pipeline, add_cutout_data=True)
-
-        mocker_skyview = mocker.patch(
+        
+        mocker_skyview_get_images = mocker.patch(
             'vasttools.source.SkyView.get_images',
             return_value=[dummy_fits]
         )
 
+        # TODO: Need to mock the call to `SkyView.survey_dict`
+        # I've tried everything and can't get something that actually works!!!
         result = source.skyview_contour_plot(0, 'DSS2 Blue')
 
         assert isinstance(result, Figure)
@@ -1166,6 +1191,7 @@ class TestSource:
 
     def test_simbad_search(self,
                            source_instance: vts.Source,
+                           dummy_external_crossmatch_Table: Table,
                            mocker: MockerFixture
     ) -> None:
         """
@@ -1176,6 +1202,9 @@ class TestSource:
 
         Args:
             source_instance: The pytest source_instance fixture.
+            dummy_external_crossmatch_Table: The pytest fixture that provides a
+                dummy set of external crossmatches to mimic querying SIMBAD
+                or NED.
             mocker: The pytest-mock mocker object.
 
         Returns:
@@ -1185,8 +1214,10 @@ class TestSource:
 
         mocker_simbad = mocker.patch(
             'vasttools.source.Simbad.query_region',
-            return_value=-99
+            return_value=dummy_external_crossmatch_Table
         )
+        
+        true_sep = dummy_external_crossmatch_Table['Separation'].value[0]
 
         test_radius = Angle(30. * u.arcsec)
         result = source.simbad_search(radius=test_radius)
@@ -1194,10 +1225,14 @@ class TestSource:
         mocker_simbad.assert_called_once_with(
             source.coord, radius=test_radius
         )
-        assert result == -99
+        
+        assert len(result) == len(dummy_external_crossmatch_Table)
+        assert '_r' in result.columns
+        assert result['_r'][0] == pytest.approx(true_sep)
 
     def test_ned_search(self,
                         source_instance: vts.Source,
+                        dummy_external_crossmatch_Table: Table,
                         mocker: MockerFixture
     ) -> None:
         """
@@ -1208,6 +1243,9 @@ class TestSource:
 
         Args:
             source_instance: The pytest source_instance fixture.
+            dummy_external_crossmatch_Table: The pytest fixture that provides a
+                dummy set of external crossmatches to mimic querying SIMBAD
+                or NED.
             mocker: The pytest-mock mocker object.
 
         Returns:
@@ -1215,18 +1253,163 @@ class TestSource:
         """
         source = source_instance()
 
-        mocker_simbad = mocker.patch(
+        mocker_ned = mocker.patch(
             'vasttools.source.Ned.query_region',
-            return_value=-99
+            return_value=dummy_external_crossmatch_Table
         )
 
         test_radius = Angle(30. * u.arcsec)
         result = source.ned_search(radius=test_radius)
 
-        mocker_simbad.assert_called_once_with(
+        mocker_ned.assert_called_once_with(
             source.coord, radius=test_radius
         )
-        assert result == -99
+
+        assert len(result) == len(dummy_external_crossmatch_Table)
+        assert '_r' in result.columns
+        assert 'Separation' not in result.columns
+
+    @pytest.mark.parametrize(
+        "catalogs",
+        [('I/355/gaiadr3'), (['I/355/gaiadr3', 'I/340/ucac5']), None, ('all')],
+        ids=["one_catalog_specified", "multi_catalog_specified", "no_catalog_specified", "all_catalog_specified"]
+    )
+    def test_vizier_search(self,
+                           source_instance: vts.Source,
+                           dummy_vizier_TableList: Table,
+                           catalogs: Union[List[str], None],
+                           mocker: MockerFixture
+    ) -> None:
+        """
+        Tests the Vizier search method.
+
+        The Vizier service is not queried, the call is mocked and asserted
+        against along with the return value.
+
+        Args:
+            source_instance: The pytest source_instance fixture.
+            dummy_vizier_TableList: The pytest fixture that provides a
+                dummy set of external crossmatches to mimic querying Vizier
+            catalogs: Catalogs to query.
+            mocker: The pytest-mock mocker object.
+
+        Returns:
+            None
+        """
+        
+        source = source_instance()
+        test_radius = Angle(30. * u.arcsec)
+        
+        mocker_vizier = mocker.patch(
+            'astroquery.vizier.core.VizierClass.query_region',
+            return_value=dummy_vizier_TableList
+        )
+
+        result = source.vizier_search(radius=test_radius, catalogs=catalogs)
+
+        if catalogs is None:
+            mocker_vizier.assert_called_once_with(
+                source.coord, radius=test_radius, catalog=vts.DEFAULT_VIZIER_CATALOGS
+            )
+        elif catalogs == 'all':
+            mocker_vizier.assert_called_once_with(
+                source.coord, radius=test_radius, catalog=None
+            )
+        else:
+            mocker_vizier.assert_called_once_with(
+                source.coord, radius=test_radius, catalog=catalogs
+            )
+
+    def test_vizier_search_nomatches(self,
+                           source_instance: vts.Source,
+                           dummy_vizier_TableList: Table,
+                           mocker: MockerFixture
+    ) -> None:
+        """
+        Tests the Vizier search method when it finds no matches.
+
+        The Vizier service is not queried, the call is mocked and asserted
+        against along with the return value.
+
+        Args:
+            source_instance: The pytest source_instance fixture.
+            dummy_vizier_TableList: The pytest fixture that provides a
+                dummy set of external crossmatches to mimic querying Vizier
+            catalogs: Catalogs to query.
+            mocker: The pytest-mock mocker object.
+
+        Returns:
+            None
+        """
+        
+        source = source_instance()
+        test_radius = Angle(30. * u.arcsec)
+        
+        mocker_vizier = mocker.patch(
+            'astroquery.vizier.core.VizierClass.query_region',
+            return_value=TableList([])
+        )
+
+        result = source.vizier_search(radius=test_radius)
+        
+        assert result is None
+
+    def test_gaia_search(self,
+                           source_instance: vts.Source,
+                           dummy_gaia_table,
+                           mocker: MockerFixture
+    ) -> None:
+        """
+        Tests the Gaia search method.
+
+        The Gaia service is not queried, the call is mocked and asserted
+        against along with the return value.
+
+        Args:
+            source_instance: The pytest source_instance fixture.
+            dummy_gaia_table: The pytest fixture that provides a
+                dummy set of external crossmatches to mimic querying Vizier
+            catalogs: Catalogs to query.
+            mocker: The pytest-mock mocker object.
+
+        Returns:
+            None
+        """
+        
+        search_radius = Angle(2 * u.arcmin)
+        match_radius = Angle(1. * u.arcsec)
+        
+        source = source_instance()
+        
+        # Barnard's star J2016 coordinates
+        # Gaia DR3 4472832130942575872
+        # SkyCoord(269.4485025254*u.deg, 4.7394200511*u.deg)
+        
+        # Barnard's star coordinates today:
+        source.coord = SkyCoord(269.44634656*u.deg, 4.76719574*u.deg)
+        time = Time('2025-08-26T00:00:00')
+
+        mock_gaia_query = mocker.MagicMock()
+        mock_gaia_results = mocker.MagicMock()
+        
+        mocker_gaia_search = mocker.patch(
+            'vasttools.source.Gaia.cone_search_async',
+            return_value=mock_gaia_query
+        )
+        mock_gaia_query.get_results.return_value = mock_gaia_results
+        mock_gaia_results.to_pandas.return_value = dummy_gaia_table
+
+        result = source.gaia_search(
+            time,
+            search_radius=search_radius,
+            match_radius=match_radius
+        )
+
+        # There should only be one result
+        assert len(result) == 1
+
+        # Check expected offset is good to within 0.5 arcsec
+        assert result['pm_corr_offset'].iloc[0] < 0.5/3600.0
 
     def test_casda_search(self,
                           source_instance: vts.Source,
