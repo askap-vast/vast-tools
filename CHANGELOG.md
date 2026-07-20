@@ -10,12 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Changed
 
+- Update github actions installation procedures to use a maintained poetry installer [#623](https://github.com/askap-vast/vast-tools/pull/623)
+- Pin mkdocs-material to a sensible version [#623](https://github.com/askap-vast/vast-tools/pull/623)
+
 #### Fixed
 
 #### Removed
 
 #### List of PRs
 
+- Update github actions installation procedures to use a maintained poetry installer and pin mkdocs-material to a sensible version: fix, docs: [#623](https://github.com/askap-vast/vast-tools/pull/623)
 
 ## [3.3.0](https://github.com/askap-vast/vast-tools/releases/v3.3.0) (2026-07-20)
 
