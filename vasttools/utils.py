@@ -765,3 +765,54 @@ def open_fits(
         return fits.HDUList(hdul[1:])
     else:
         return hdul
+
+
+
+def coord2name(ra, dec, catalogue_name: str = "ASKAP"):
+    """
+    Build IAU-style source names from RA/Dec in degrees.
+
+    Parameters
+    ----------
+    ra : float, array-like, or pandas.Series
+        Right Ascension in degrees.
+    dec : float, array-like, or pandas.Series
+        Declination in degrees.
+    catalogue_name : str, optional
+        Prefix catalogue name, default "ASKAP".
+
+    Returns
+    -------
+    pandas.Series
+        Source names like 'ASKAP JHHMMSS.SDDMMSS'.
+    """
+    # Normalise inputs to 1D numpy arrays
+    if np.isscalar(ra):
+        ra_arr = np.array([ra], dtype=float)
+        dec_arr = np.array([dec], dtype=float)
+        scalar_input = True
+    else:
+        ra_arr = np.asarray(ra, dtype=float)
+        dec_arr = np.asarray(dec, dtype=float)
+        scalar_input = False
+
+    coords = SkyCoord(ra=ra_arr * u.deg, dec=dec_arr * u.deg, frame="icrs")
+
+    # Use built-in hmsdms string then reformat
+    hmsdms = coords.to_string('hmsdms', sep=':', precision=1, pad=True)
+    names = []
+    for s in hmsdms:
+        ra_str, dec_str = s.split()
+        # RA: HH:MM:SS.SS -> HHMMSS.S
+        hh, mm, ss = ra_str.split(':')
+        ra_compact = f"{hh}{mm}{ss[:4]}"  # truncate to nearst tenth of a second 
+        # Dec: ±DD:MM:SS.SS -> ±DDMMSS
+        sign = '+' if dec_str.strip()[0] == '+' else '-'
+        dd, dm, ds = dec_str.replace('+','').replace('-','').split(':')
+        dec_compact = f"{sign}{dd}{dm}{ds[:2]}"  # truncate to nearest second 
+        names.append(f"{catalogue_name} J{ra_compact}{dec_compact}")
+
+    result = pd.Series(names)
+    if scalar_input:
+        return result.iloc[0]
+    return result
